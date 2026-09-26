@@ -16,7 +16,7 @@
   min-width: 0;
 }
 
-/* Repeat the talk button's state once it has one: lit, blinking, red. */
+/* Repeat the talk button's state: lit, blinking, red. */
 .dots {
   display: inline-flex;
   flex: none;
@@ -34,6 +34,52 @@
   height: 4px;
   border-radius: 50%;
   background: var(--muted);
+}
+
+:host(.loading) .dots i,
+:host(.working) .dots i {
+  background: var(--flow);
+}
+
+:host(.recording) .dots {
+  border-color: var(--voice-live-edge);
+}
+
+:host(.recording) .dots i,
+:host(.recording) .level i {
+  background: var(--ok);
+}
+
+:host(.working) .dots i {
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+:host(.working) .dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+:host(.working) .dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+:host(.blocked) .dots {
+  border-color: var(--voice-trouble-edge);
+}
+
+:host(.blocked) .dots i {
+  background: var(--bad-soft);
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.working) .dots i {
+    animation: none;
+  }
 }
 
 /* Flat while nothing listens; each dash takes its own share (--k) of the
@@ -63,6 +109,7 @@
 }
 
 button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 34px;
@@ -94,6 +141,17 @@ button {
   background: var(--flow-tint-strong);
 }
 
+.mic[aria-pressed='true'] {
+  border-color: var(--ok);
+  background: var(--voice-live-wash);
+}
+
+.mic[aria-disabled='true'] {
+  border-color: var(--voice-trouble-edge);
+  background: transparent;
+  color: var(--bad-soft);
+}
+
 /* A setting, not an act, so it sits beside the talk button, quieter. */
 .speak {
   gap: 7px;
@@ -112,6 +170,34 @@ button {
   flex: none;
   width: 15px;
   height: 15px;
+}
+
+.speak[aria-pressed='true'] {
+  border-color: var(--flow-edge);
+  background: var(--flow-soft);
+  color: var(--ink);
+}
+
+/* Downloading: a ring fills round the button whose model it is.
+   Transcribing: a dashed one. */
+button::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 7px;
+  pointer-events: none;
+}
+
+button.loading::after {
+  padding: 2px;
+  background: conic-gradient(var(--flow) calc(var(--p, 0) * 1turn), var(--flow-tint) 0);
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+:host(.working) .mic::after {
+  border: 1px dashed var(--flow);
 }
 
 .caption,
@@ -133,6 +219,18 @@ button {
   font-size: 12px;
   line-height: 1.5;
   color: var(--ink-soft);
+}
+
+.status {
+  align-self: stretch;
+  margin-top: 10px;
+}
+
+.said {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 .touch {

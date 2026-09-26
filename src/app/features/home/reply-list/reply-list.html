@@ -1,0 +1,13 @@
+<ol>
+  @for (entry of entries(); track entry.id) {
+    <li>
+      <app-reply-entry
+        [entry]="entry"
+        [isSpeaking]="speakingId() === entry.id"
+        (pressed)="pressed.emit({ entryId: entry.id, action: $event })"
+        (stopSpeaking)="stopSpeaking.emit()"
+        (followed)="followed.emit($event)"
+      />
+    </li>
+  }
+</ol>

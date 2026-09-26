@@ -61,6 +61,10 @@
   --flow-wash-strong: rgba(142, 162, 255, 0.1);
   --flow-edge: rgba(142, 162, 255, 0.5);
   --flow-dash: rgba(142, 162, 255, 0.45);
+  /* The voice block: green while it listens, red when it cannot. */
+  --voice-live-edge: rgba(95, 227, 161, 0.5);
+  --voice-live-wash: rgba(95, 227, 161, 0.16);
+  --voice-trouble-edge: rgba(255, 111, 94, 0.35);
 
   /* Gradients, not blurs: a blurred panel over a live sky costs a phone its
      frame rate. */
@@ -246,6 +250,15 @@
   --sheet-failed-edge: rgba(255, 111, 94, 0.5);
   --sheet-failed-wash: rgba(255, 111, 94, 0.1);
   --sheet-failed-ink: #ffb3aa;
+
+  /* pr-starmap's assistant on Home: its buttons, a reply's glass, and a
+     task's proposal in the warm frame kept for decisions. */
+  --act-wash: rgba(142, 162, 255, 0.06);
+  --act-go-wash: rgba(142, 162, 255, 0.16);
+  --reply-glass: linear-gradient(165deg, rgba(16, 23, 46, 0.9), rgba(8, 12, 26, 0.92));
+  --warm-edge: rgba(255, 194, 77, 0.3);
+  --proposal-glass: linear-gradient(165deg, rgba(30, 25, 16, 0.92), rgba(12, 11, 16, 0.94));
+  --proposal-well: rgba(4, 6, 14, 0.7);
 
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;

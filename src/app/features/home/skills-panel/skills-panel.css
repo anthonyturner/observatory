@@ -87,3 +87,12 @@
     margin: -14px 0;
   }
 }
+
+/* The site never answered: unknown, which is not the same as none. */
+.lost span {
+  display: block;
+}
+
+.lost .abtn {
+  margin-top: 8px;
+}

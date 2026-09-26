@@ -12,4 +12,13 @@ describe('HelpState', () => {
     help.close();
     expect(help.isOpen()).toBe(false);
   });
+
+  it('opens, and stays open when opened again', () => {
+    const help = TestBed.inject(HelpState);
+
+    help.open();
+    help.open();
+
+    expect(help.isOpen()).toBe(true);
+  });
 });

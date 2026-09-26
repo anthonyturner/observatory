@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { Skill } from '../data/skills';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Skill } from '../../../core/assistant/assistant.types';
 
-/** One skill as an outlined tile naming its task, with an arrow. */
+/** One skill as an outlined tile naming its task, with an arrow. A press
+ *  proposes the task; it says Proposing… until the reply is back. */
 @Component({
   selector: 'app-skill-tile',
   templateUrl: './skill-tile.html',
@@ -10,4 +11,6 @@ import { Skill } from '../data/skills';
 })
 export class SkillTile {
   readonly skill = input.required<Skill>();
+  readonly isProposing = input(false);
+  readonly pressed = output<Skill>();
 }

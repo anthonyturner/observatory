@@ -152,9 +152,10 @@ it needs, and `GET /api/route` says whether Jev is on, where the site runs
   instant, free, and works with no key.
 - **Tier 2, a quick answer**: a few sentences from Claude Haiku, labelled as
   one, for a general question that needs no files.
-- **Tier 3, work in a project**: only ever proposed, as a `claude -p` command
-  to paste, quoted for PowerShell or bash (the local site writes it for this
-  machine's shell; the hosted one, for both). Nothing is run.
+- **Tier 3, work in a project**: proposed, as a `claude -p` command to paste,
+  quoted for PowerShell or bash (the local site writes it for this machine's
+  shell; the hosted one, for both). Locally, the proposal also carries a
+  one-use token for **Run** (see below); nothing runs until you confirm it.
 
 Everything else goes to Jev (`typesafe/jev-1.13`) through
 OpenRouter, which answers which tier, which action and which project, each with
@@ -198,6 +199,34 @@ An id is lower-case words joined by dashes; a label is up to 40 characters;
 most 24 skills in all. The hosted site offers the starters only. On the hosted
 site the assistant is the owner's alone: a visitor to the public preview is
 refused, since every request can cost money.
+
+## Run: tier-3 work on this machine
+
+A request that means work in a project, such as reading or changing code, can
+become a proposal with a **Run** button. Once you confirm it, the local API
+starts `claude -p --output-format stream-json --verbose` in that project's
+clone and streams the output to the page, with Cancel and a list of recent
+runs.
+
+- **Where it runs.** Only the local API (`npm run api`, which `npm start`
+  includes) can run anything. The hosted site has no runner: there `/api/runs`
+  does not exist, and a proposal shows only the command to copy.
+- **What it needs.** `claude` on the PATH, and a clone of the project, found
+  the same way as for collision courses. Without either, the proposal says why
+  and shows only the command.
+- **What limits it.** A run needs a proposal token that works once, lasts five
+  minutes, and only for the exact prompt and folder the proposal showed. The
+  folder must be a known clone both when the token is made and when it is
+  used. Only one run goes at a time, and each stops after 30 minutes. Cancel,
+  or stopping the API, kills Claude Code and everything it started.
+- **What it never does.** It never passes `--dangerously-skip-permissions` or
+  any other permission flag: your own Claude Code allow rules and hooks apply,
+  and `-p` refuses a tool they do not allow. It never puts the prompt on the
+  command line, and never hands the server's own keys to the run. A cancelled
+  run keeps whatever it already changed, so check `git status` in that folder.
+
+[ADR-0005](docs/decisions/0005-run-tier-3-tasks-on-the-local-site-only.md)
+records the decision and what any change to it must keep.
 
 ## Host it on Vercel
 

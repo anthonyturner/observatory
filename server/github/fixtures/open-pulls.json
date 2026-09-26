@@ -1,0 +1,464 @@
+{
+  "replies": [
+    {
+      "data": {
+        "repository": {
+          "pullRequests": {
+            "nodes": [
+              {
+                "number": 17,
+                "title": "feat(apply): add a button to prepare top matches on demand",
+                "url": "https://github.com/anthonyturner/jobpilot/pull/17",
+                "mergeable": "MERGEABLE",
+                "statusCheckRollup": {
+                  "nodes": [
+                    {
+                      "commit": {
+                        "statusCheckRollup": {
+                          "contexts": {
+                            "nodes": [
+                              {
+                                "__typename": "CheckRun",
+                                "name": "test",
+                                "status": "COMPLETED",
+                                "conclusion": "SUCCESS",
+                                "startedAt": "2026-09-26T09:37:11Z",
+                                "completedAt": "2026-09-26T09:37:58Z",
+                                "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/36233325534/job/108380471385",
+                                "checkSuite": {
+                                  "workflowRun": {
+                                    "workflow": {
+                                      "name": "CI"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "closingIssuesReferences": {
+                  "nodes": []
+                },
+                "updatedAt": "2026-09-26T09:47:07Z"
+              },
+              {
+                "number": 16,
+                "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies",
+                "url": "https://github.com/anthonyturner/jobpilot/pull/16",
+                "mergeable": "MERGEABLE",
+                "statusCheckRollup": {
+                  "nodes": [
+                    {
+                      "commit": {
+                        "statusCheckRollup": {
+                          "contexts": {
+                            "nodes": [
+                              {
+                                "__typename": "CheckRun",
+                                "name": "test",
+                                "status": "COMPLETED",
+                                "conclusion": "SUCCESS",
+                                "startedAt": "2026-09-26T09:03:18Z",
+                                "completedAt": "2026-09-26T09:04:06Z",
+                                "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/36231608497/job/108375697643",
+                                "checkSuite": {
+                                  "workflowRun": {
+                                    "workflow": {
+                                      "name": "CI"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "closingIssuesReferences": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOUo7qUM8AAAABTKp2fA",
+                      "number": 14,
+                      "url": "https://github.com/anthonyturner/jobpilot/issues/14",
+                      "repository": {
+                        "id": "R_kgDOUo7qUA",
+                        "name": "jobpilot",
+                        "owner": {
+                          "id": "MDQ6VXNlcjUyMTAwNDE=",
+                          "login": "anthonyturner"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "updatedAt": "2026-09-26T09:44:27Z"
+              },
+              {
+                "number": 7,
+                "title": "chore(deps): Bump @fastify/static from 8.3.0 to 10.1.4",
+                "url": "https://github.com/anthonyturner/jobpilot/pull/7",
+                "mergeable": "MERGEABLE",
+                "statusCheckRollup": {
+                  "nodes": [
+                    {
+                      "commit": {
+                        "statusCheckRollup": {
+                          "contexts": {
+                            "nodes": [
+                              {
+                                "__typename": "CheckRun",
+                                "name": "test",
+                                "status": "COMPLETED",
+                                "conclusion": "SUCCESS",
+                                "startedAt": "2026-09-24T09:54:21Z",
+                                "completedAt": "2026-09-24T09:55:16Z",
+                                "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984073456/job/107582505619",
+                                "checkSuite": {
+                                  "workflowRun": {
+                                    "workflow": {
+                                      "name": "CI"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "closingIssuesReferences": {
+                  "nodes": []
+                },
+                "updatedAt": "2026-09-24T09:54:15Z"
+              },
+              {
+                "number": 6,
+                "title": "chore(deps): Bump @angular/forms from 21.2.24 to 22.1.7",
+                "url": "https://github.com/anthonyturner/jobpilot/pull/6",
+                "mergeable": "MERGEABLE",
+                "statusCheckRollup": {
+                  "nodes": [
+                    {
+                      "commit": {
+                        "statusCheckRollup": {
+                          "contexts": {
+                            "nodes": [
+                              {
+                                "__typename": "CheckRun",
+                                "name": "test",
+                                "status": "COMPLETED",
+                                "conclusion": "FAILURE",
+                                "startedAt": "2026-09-24T09:54:17Z",
+                                "completedAt": "2026-09-24T09:55:01Z",
+                                "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984066066/job/107582480769",
+                                "checkSuite": {
+                                  "workflowRun": {
+                                    "workflow": {
+                                      "name": "CI"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "closingIssuesReferences": {
+                  "nodes": []
+                },
+                "updatedAt": "2026-09-24T09:54:11Z"
+              },
+              {
+                "number": 5,
+                "title": "chore(deps): Bump @angular/platform-browser from 21.2.24 to 22.1.7",
+                "url": "https://github.com/anthonyturner/jobpilot/pull/5",
+                "mergeable": "MERGEABLE",
+                "statusCheckRollup": {
+                  "nodes": [
+                    {
+                      "commit": {
+                        "statusCheckRollup": {
+                          "contexts": {
+                            "nodes": [
+                              {
+                                "__typename": "CheckRun",
+                                "name": "test",
+                                "status": "COMPLETED",
+                                "conclusion": "FAILURE",
+                                "startedAt": "2026-09-24T09:54:15Z",
+                                "completedAt": "2026-09-24T09:55:03Z",
+                                "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984063781/job/107582473753",
+                                "checkSuite": {
+                                  "workflowRun": {
+                                    "workflow": {
+                                      "name": "CI"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "closingIssuesReferences": {
+                  "nodes": []
+                },
+                "updatedAt": "2026-09-24T09:54:10Z"
+              },
+              {
+                "number": 4,
+                "title": "chore(deps): Bump @angular/core from 21.2.24 to 22.1.7",
+                "url": "https://github.com/anthonyturner/jobpilot/pull/4",
+                "mergeable": "MERGEABLE",
+                "statusCheckRollup": {
+                  "nodes": [
+                    {
+                      "commit": {
+                        "statusCheckRollup": {
+                          "contexts": {
+                            "nodes": [
+                              {
+                                "__typename": "CheckRun",
+                                "name": "test",
+                                "status": "COMPLETED",
+                                "conclusion": "FAILURE",
+                                "startedAt": "2026-09-24T09:54:06Z",
+                                "completedAt": "2026-09-24T09:54:42Z",
+                                "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984046775/job/107582420540",
+                                "checkSuite": {
+                                  "workflowRun": {
+                                    "workflow": {
+                                      "name": "CI"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "closingIssuesReferences": {
+                  "nodes": []
+                },
+                "updatedAt": "2026-09-24T09:54:01Z"
+              },
+              {
+                "number": 3,
+                "title": "chore(deps-dev): Bump the development-tooling group with 8 updates",
+                "url": "https://github.com/anthonyturner/jobpilot/pull/3",
+                "mergeable": "MERGEABLE",
+                "statusCheckRollup": {
+                  "nodes": [
+                    {
+                      "commit": {
+                        "statusCheckRollup": {
+                          "contexts": {
+                            "nodes": [
+                              {
+                                "__typename": "CheckRun",
+                                "name": "test",
+                                "status": "COMPLETED",
+                                "conclusion": "FAILURE",
+                                "startedAt": "2026-09-24T09:53:59Z",
+                                "completedAt": "2026-09-24T09:54:28Z",
+                                "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984035788/job/107582385238",
+                                "checkSuite": {
+                                  "workflowRun": {
+                                    "workflow": {
+                                      "name": "CI"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "closingIssuesReferences": {
+                  "nodes": []
+                },
+                "updatedAt": "2026-09-24T09:53:53Z"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "expected": [
+    {
+      "closingIssuesReferences": [],
+      "mergeable": "MERGEABLE",
+      "number": 17,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-26T09:37:58Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/36233325534/job/108380471385",
+          "name": "test",
+          "startedAt": "2026-09-26T09:37:11Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        }
+      ],
+      "title": "feat(apply): add a button to prepare top matches on demand",
+      "updatedAt": "2026-09-26T09:47:07Z",
+      "url": "https://github.com/anthonyturner/jobpilot/pull/17"
+    },
+    {
+      "closingIssuesReferences": [
+        {
+          "id": "I_kwDOUo7qUM8AAAABTKp2fA",
+          "number": 14,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/issues/14"
+        }
+      ],
+      "mergeable": "MERGEABLE",
+      "number": 16,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-26T09:04:06Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/36231608497/job/108375697643",
+          "name": "test",
+          "startedAt": "2026-09-26T09:03:18Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        }
+      ],
+      "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies",
+      "updatedAt": "2026-09-26T09:44:27Z",
+      "url": "https://github.com/anthonyturner/jobpilot/pull/16"
+    },
+    {
+      "closingIssuesReferences": [],
+      "mergeable": "MERGEABLE",
+      "number": 7,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-24T09:55:16Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984073456/job/107582505619",
+          "name": "test",
+          "startedAt": "2026-09-24T09:54:21Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        }
+      ],
+      "title": "chore(deps): Bump @fastify/static from 8.3.0 to 10.1.4",
+      "updatedAt": "2026-09-24T09:54:15Z",
+      "url": "https://github.com/anthonyturner/jobpilot/pull/7"
+    },
+    {
+      "closingIssuesReferences": [],
+      "mergeable": "MERGEABLE",
+      "number": 6,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-24T09:55:01Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984066066/job/107582480769",
+          "name": "test",
+          "startedAt": "2026-09-24T09:54:17Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        }
+      ],
+      "title": "chore(deps): Bump @angular/forms from 21.2.24 to 22.1.7",
+      "updatedAt": "2026-09-24T09:54:11Z",
+      "url": "https://github.com/anthonyturner/jobpilot/pull/6"
+    },
+    {
+      "closingIssuesReferences": [],
+      "mergeable": "MERGEABLE",
+      "number": 5,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-24T09:55:03Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984063781/job/107582473753",
+          "name": "test",
+          "startedAt": "2026-09-24T09:54:15Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        }
+      ],
+      "title": "chore(deps): Bump @angular/platform-browser from 21.2.24 to 22.1.7",
+      "updatedAt": "2026-09-24T09:54:10Z",
+      "url": "https://github.com/anthonyturner/jobpilot/pull/5"
+    },
+    {
+      "closingIssuesReferences": [],
+      "mergeable": "MERGEABLE",
+      "number": 4,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-24T09:54:42Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984046775/job/107582420540",
+          "name": "test",
+          "startedAt": "2026-09-24T09:54:06Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        }
+      ],
+      "title": "chore(deps): Bump @angular/core from 21.2.24 to 22.1.7",
+      "updatedAt": "2026-09-24T09:54:01Z",
+      "url": "https://github.com/anthonyturner/jobpilot/pull/4"
+    },
+    {
+      "closingIssuesReferences": [],
+      "mergeable": "MERGEABLE",
+      "number": 3,
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-09-24T09:54:28Z",
+          "conclusion": "FAILURE",
+          "detailsUrl": "https://github.com/anthonyturner/jobpilot/actions/runs/35984035788/job/107582385238",
+          "name": "test",
+          "startedAt": "2026-09-24T09:53:59Z",
+          "status": "COMPLETED",
+          "workflowName": "CI"
+        }
+      ],
+      "title": "chore(deps-dev): Bump the development-tooling group with 8 updates",
+      "updatedAt": "2026-09-24T09:53:53Z",
+      "url": "https://github.com/anthonyturner/jobpilot/pull/3"
+    }
+  ]
+}

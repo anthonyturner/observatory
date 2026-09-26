@@ -1,0 +1,114 @@
+{
+  "replies": [
+    {
+      "data": {
+        "repository": {
+          "pullRequests": {
+            "nodes": [
+              {
+                "number": 17,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 16,
+                "closingIssuesReferences": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOUo7qUM8AAAABTKp2fA",
+                      "number": 14,
+                      "url": "https://github.com/anthonyturner/jobpilot/issues/14",
+                      "repository": {
+                        "id": "R_kgDOUo7qUA",
+                        "name": "jobpilot",
+                        "owner": {
+                          "id": "MDQ6VXNlcjUyMTAwNDE=",
+                          "login": "anthonyturner"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 7,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 6,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 5,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 4,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 3,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "expected": [
+    {
+      "closingIssuesReferences": [],
+      "number": 17
+    },
+    {
+      "closingIssuesReferences": [
+        {
+          "id": "I_kwDOUo7qUM8AAAABTKp2fA",
+          "number": 14,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/issues/14"
+        }
+      ],
+      "number": 16
+    },
+    {
+      "closingIssuesReferences": [],
+      "number": 7
+    },
+    {
+      "closingIssuesReferences": [],
+      "number": 6
+    },
+    {
+      "closingIssuesReferences": [],
+      "number": 5
+    },
+    {
+      "closingIssuesReferences": [],
+      "number": 4
+    },
+    {
+      "closingIssuesReferences": [],
+      "number": 3
+    }
+  ]
+}

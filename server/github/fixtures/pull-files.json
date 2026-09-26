@@ -1,0 +1,265 @@
+{
+  "replies": [
+    {
+      "data": {
+        "repository": {
+          "pullRequests": {
+            "nodes": [
+              {
+                "number": 17,
+                "files": {
+                  "nodes": [
+                    {
+                      "path": "docs/assisted-apply.md",
+                      "additions": 6,
+                      "deletions": 0,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/src/domain/auto-prepare.ts",
+                      "additions": 35,
+                      "deletions": 0,
+                      "changeType": "ADDED"
+                    },
+                    {
+                      "path": "server/src/http/app.ts",
+                      "additions": 14,
+                      "deletions": 2,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/src/http/application-routes.ts",
+                      "additions": 22,
+                      "deletions": 2,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/src/services/apply/auto-prepare-service.ts",
+                      "additions": 95,
+                      "deletions": 48,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/test/auto-prepare.test.ts",
+                      "additions": 203,
+                      "deletions": 1,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "web/src/app/core/api.service.ts",
+                      "additions": 10,
+                      "deletions": 0,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "web/src/app/core/models.ts",
+                      "additions": 29,
+                      "deletions": 0,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "web/src/app/core/prepare-tracker.service.ts",
+                      "additions": 78,
+                      "deletions": 0,
+                      "changeType": "ADDED"
+                    },
+                    {
+                      "path": "web/src/app/features/applications/applications-page.ts",
+                      "additions": 138,
+                      "deletions": 8,
+                      "changeType": "MODIFIED"
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 16,
+                "files": {
+                  "nodes": [
+                    {
+                      "path": "docs/assisted-apply.md",
+                      "additions": 3,
+                      "deletions": 1,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/src/persistence/application-repository.ts",
+                      "additions": 22,
+                      "deletions": 0,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/src/services/apply/auto-prepare-service.ts",
+                      "additions": 18,
+                      "deletions": 0,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/test/auto-prepare.test.ts",
+                      "additions": 80,
+                      "deletions": 0,
+                      "changeType": "MODIFIED"
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 7,
+                "files": {
+                  "nodes": [
+                    {
+                      "path": "package-lock.json",
+                      "additions": 31,
+                      "deletions": 182,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/package.json",
+                      "additions": 1,
+                      "deletions": 1,
+                      "changeType": "MODIFIED"
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 6,
+                "files": {
+                  "nodes": [
+                    {
+                      "path": "package-lock.json",
+                      "additions": 22,
+                      "deletions": 56,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "web/package.json",
+                      "additions": 1,
+                      "deletions": 1,
+                      "changeType": "MODIFIED"
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 5,
+                "files": {
+                  "nodes": [
+                    {
+                      "path": "package-lock.json",
+                      "additions": 24,
+                      "deletions": 36,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "web/package.json",
+                      "additions": 1,
+                      "deletions": 1,
+                      "changeType": "MODIFIED"
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 4,
+                "files": {
+                  "nodes": [
+                    {
+                      "path": "package-lock.json",
+                      "additions": 27,
+                      "deletions": 36,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "web/package.json",
+                      "additions": 1,
+                      "deletions": 1,
+                      "changeType": "MODIFIED"
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 3,
+                "files": {
+                  "nodes": [
+                    {
+                      "path": "package-lock.json",
+                      "additions": 7079,
+                      "deletions": 7539,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "package.json",
+                      "additions": 1,
+                      "deletions": 1,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "server/package.json",
+                      "additions": 2,
+                      "deletions": 2,
+                      "changeType": "MODIFIED"
+                    },
+                    {
+                      "path": "web/package.json",
+                      "additions": 6,
+                      "deletions": 6,
+                      "changeType": "MODIFIED"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "expected": [
+    {
+      "number": 17,
+      "files": [
+        "docs/assisted-apply.md",
+        "server/src/domain/auto-prepare.ts",
+        "server/src/http/app.ts",
+        "server/src/http/application-routes.ts",
+        "server/src/services/apply/auto-prepare-service.ts",
+        "server/test/auto-prepare.test.ts",
+        "web/src/app/core/api.service.ts",
+        "web/src/app/core/models.ts",
+        "web/src/app/core/prepare-tracker.service.ts",
+        "web/src/app/features/applications/applications-page.ts"
+      ]
+    },
+    {
+      "number": 16,
+      "files": [
+        "docs/assisted-apply.md",
+        "server/src/persistence/application-repository.ts",
+        "server/src/services/apply/auto-prepare-service.ts",
+        "server/test/auto-prepare.test.ts"
+      ]
+    },
+    {
+      "number": 7,
+      "files": ["package-lock.json", "server/package.json"]
+    },
+    {
+      "number": 6,
+      "files": ["package-lock.json", "web/package.json"]
+    },
+    {
+      "number": 5,
+      "files": ["package-lock.json", "web/package.json"]
+    },
+    {
+      "number": 4,
+      "files": ["package-lock.json", "web/package.json"]
+    },
+    {
+      "number": 3,
+      "files": ["package-lock.json", "package.json", "server/package.json", "web/package.json"]
+    }
+  ]
+}

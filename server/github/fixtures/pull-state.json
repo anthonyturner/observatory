@@ -1,0 +1,14 @@
+{
+  "replies": [
+    {
+      "data": {
+        "repository": {
+          "pullRequest": {
+            "state": "OPEN"
+          }
+        }
+      }
+    }
+  ],
+  "expected": "OPEN"
+}

@@ -22,8 +22,8 @@ function fakeGitHub(overrides: Partial<GitHubReader> = {}): GitHubReader & { ask
     asked,
     viewer: async () => 'me',
     ownedRepos: async () => [
-      { name: 'alpha', nameWithOwner: 'me/alpha' },
-      { name: 'beta', nameWithOwner: 'me/beta' },
+      { name: 'alpha', nameWithOwner: 'me/alpha', isPrivate: false },
+      { name: 'beta', nameWithOwner: 'me/beta', isPrivate: true },
     ],
     openPulls: async (repo) =>
       repo === 'me/alpha' ? [pull(1, 'UNKNOWN'), pull(2, 'MERGEABLE', [])] : [],

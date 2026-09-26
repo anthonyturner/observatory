@@ -1,0 +1,12 @@
+<app-usage-section heading="Tokens" [small]="small()">
+  <app-usage-tiles [tiles]="tiles()" />
+  <div class="legend">
+    @for (key of legend(); track key.id) {
+      <span class="key"
+        ><i [style.background]="key.colour"></i>{{ key.label }} <b>{{ key.total }}</b></span
+      >
+    }
+  </div>
+  <app-usage-token-chart [chart]="chart()" />
+  <app-usage-model-table [rows]="models()" />
+</app-usage-section>

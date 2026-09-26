@@ -1,0 +1,37 @@
+svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.val {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  fill: var(--muted);
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  fill: var(--muted);
+}
+
+.label.strong {
+  fill: var(--ink);
+}
+
+.bar {
+  fill: var(--flow);
+}
+
+.bar.dim {
+  fill: var(--usage-bar-dim);
+}
+
+.hit {
+  fill: transparent;
+}
+
+.hit:hover {
+  fill: var(--usage-hit-hover);
+}

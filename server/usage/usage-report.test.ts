@@ -6,6 +6,7 @@ import { describe, it } from 'node:test';
 import { REPORT_DAYS, usageReport } from './usage-report.ts';
 
 const NOW = new Date(2026, 8, 26, 12, 0).getTime();
+const NO_PROJECT = () => ({ name: 'folder', repo: null });
 
 describe('usageReport', () => {
   it('puts the limits and a month of tokens together', async () => {
@@ -17,7 +18,13 @@ describe('usageReport', () => {
       JSON.stringify({
         type: 'assistant',
         timestamp: new Date(NOW - 60_000).toISOString(),
-        message: { id: 'm', model: 'claude-opus-5', usage: { input_tokens: 1, output_tokens: 2 } },
+        sessionId: 's1',
+        message: {
+          id: 'm',
+          model: 'claude-opus-5',
+          content: [{ type: 'tool_use', name: 'Bash' }],
+          usage: { input_tokens: 1, output_tokens: 2 },
+        },
       }),
     );
     const samplesFile = join(root, 'samples.jsonl');
@@ -31,12 +38,17 @@ describe('usageReport', () => {
     );
 
     const report = await usageReport(
-      { logsDir, samplesFile, cacheFile: join(root, 'cache.json') },
+      { logsDir, samplesFile, cacheFile: join(root, 'cache.json'), projectOf: NO_PROJECT },
       NOW,
     );
 
     assert.equal(report.tokens.rows.length, REPORT_DAYS);
     assert.deepEqual(report.tokens.rows.at(-1)?.families, { opus: 3 });
+    assert.equal(report.tokens.from, report.tokens.rows[0].day);
+    assert.equal(report.tokens.totals.sessions, 1);
+    assert.equal(report.tokens.models[0].model, 'claude-opus-5');
+    assert.deepEqual(report.tools, [{ name: 'Bash', count: 1 }]);
+    assert.equal(report.projects[0].name, 'folder');
     assert.equal(report.limits?.week?.pct, 5);
     assert.equal(report.limits?.five, null);
   });
@@ -49,11 +61,14 @@ describe('usageReport', () => {
         logsDir: join(root, 'none'),
         samplesFile: join(root, 'none.jsonl'),
         cacheFile: join(root, 'cache.json'),
+        projectOf: NO_PROJECT,
       },
       NOW,
     );
 
     assert.equal(report.limits, null);
     assert.ok(report.tokens.rows.every((row) => Object.keys(row.families).length === 0));
+    assert.deepEqual(report.projects, []);
+    assert.deepEqual(report.tools, []);
   });
 });

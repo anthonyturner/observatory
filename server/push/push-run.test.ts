@@ -62,7 +62,19 @@ function memoryTriage(state: TriageState): TriageStore & { current: () => Triage
 }
 
 const frame: Frame = { at: '2026-09-24T00:00:00.000Z', items: [], departed: [] };
-const usage: UsageReport = { generatedAt: 'x', limits: null, tokens: { days: 30, rows: [] } };
+const usage: UsageReport = {
+  generatedAt: 'x',
+  limits: null,
+  tokens: {
+    days: 30,
+    from: '2026-08-26',
+    rows: [],
+    totals: { tokens: 0, cacheRead: 0, messages: 0, sessions: 0, toolCalls: 0, subagents: 0 },
+    models: [],
+  },
+  tools: [],
+  projects: [],
+};
 const logs: LogSnapshot = {
   generatedAt: 'x',
   source: 'App',

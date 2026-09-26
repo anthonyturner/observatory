@@ -1,0 +1,55 @@
+@let c = chart();
+<svg
+  [attr.width]="c.width"
+  [attr.height]="c.height"
+  [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height"
+  role="img"
+  aria-label="Weekly limit used through this week"
+>
+  @for (line of c.grid; track $index) {
+    <line
+      class="grid"
+      [attr.x1]="line.x1"
+      [attr.x2]="line.x2"
+      [attr.y1]="line.y1"
+      [attr.y2]="line.y2"
+    />
+  }
+  @for (text of c.axis; track $index) {
+    <text class="axis" [attr.x]="text.x" [attr.y]="text.y" [attr.text-anchor]="text.anchor">
+      {{ text.text }}
+    </text>
+  }
+  @if (c.now; as now) {
+    <line
+      class="now"
+      [attr.x1]="now.line.x1"
+      [attr.x2]="now.line.x2"
+      [attr.y1]="now.line.y1"
+      [attr.y2]="now.line.y2"
+    />
+    <text class="axis" [attr.x]="now.label.x" [attr.y]="now.label.y">{{ now.label.text }}</text>
+  }
+  @if (c.area) {
+    <path class="area" [attr.d]="c.area" />
+  }
+  @if (c.line) {
+    <path class="line" [attr.d]="c.line" />
+  }
+  @if (c.projection; as projection) {
+    <path class="projection" [class.over]="projection.isOver" [attr.d]="projection.path" />
+  }
+  @if (c.dot; as dot) {
+    <circle class="dot" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4.5" />
+  }
+  @for (hit of c.hits; track $index) {
+    <rect
+      class="hit"
+      [attr.x]="hit.x"
+      [attr.y]="hit.y"
+      [attr.width]="hit.width"
+      [attr.height]="hit.height"
+      [attr.data-tip]="hit.tip"
+    />
+  }
+</svg>

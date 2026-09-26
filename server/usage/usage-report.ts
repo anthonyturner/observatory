@@ -1,6 +1,9 @@
+import { rememberProjects, resolveProject } from './checkout-projects.ts';
 import { messagesSince } from './log-cache.ts';
 import { limitsFrom, readSamples } from './limit-windows.ts';
-import { tokenDays, windowStart } from './token-days.ts';
+import { type ProjectOf, projectUsage } from './project-usage.ts';
+import { dayKeys, tokenDays, windowStart } from './token-days.ts';
+import { modelUsage, tokenTotals, topTools } from './usage-breakdown.ts';
 import { LOG_CACHE_FILE, SAMPLES_FILE, SESSION_LOGS_DIR } from './usage-paths.ts';
 import type { UsageReport } from './usage-types.ts';
 
@@ -11,16 +14,19 @@ export interface UsageSources {
   readonly logsDir: string;
   readonly samplesFile: string;
   readonly cacheFile: string;
+  /** Which project a session's working directory belongs to. */
+  readonly projectOf: ProjectOf;
 }
 
 export const DEFAULT_SOURCES: UsageSources = {
   logsDir: SESSION_LOGS_DIR,
   samplesFile: SAMPLES_FILE,
   cacheFile: LOG_CACHE_FILE,
+  projectOf: resolveProject,
 };
 
-/** Claude Code usage as the meters read it: the limit windows from the
- *  recorded readings, and each day's tokens from the session logs. */
+/** Claude Code usage: the limit windows from the recorded readings, and a
+ *  month of tokens from the session logs by day, model, tool and project. */
 export async function usageReport(
   sources = DEFAULT_SOURCES,
   now = Date.now(),
@@ -30,9 +36,19 @@ export async function usageReport(
     windowStart(now, REPORT_DAYS),
     sources.cacheFile,
   );
+  const days = dayKeys(now, REPORT_DAYS);
+  const rows = tokenDays(messages, now, REPORT_DAYS);
   return {
     generatedAt: new Date(now).toISOString(),
     limits: limitsFrom(readSamples(sources.samplesFile), now),
-    tokens: { days: REPORT_DAYS, rows: tokenDays(messages, now, REPORT_DAYS) },
+    tokens: {
+      days: REPORT_DAYS,
+      from: days[0],
+      rows,
+      totals: tokenTotals(rows, messages),
+      models: modelUsage(messages),
+    },
+    tools: topTools(messages),
+    projects: projectUsage(messages, rememberProjects(sources.projectOf), days),
   };
 }

@@ -1,0 +1,25 @@
+svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--edge-soft);
+  stroke-width: 1;
+}
+
+.axis,
+.val {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  fill: var(--faint);
+}
+
+.val {
+  fill: var(--muted);
+}
+
+.bar {
+  fill: var(--flow);
+}

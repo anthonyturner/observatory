@@ -74,6 +74,10 @@ files on this machine, so it listens on loopback only:
 - **Review queue** (`/p/<owner>/<repo>`, reached from an Orrery world): the
   open pull requests as a star map or a list, blocked first, with a panel per
   pull request and the Issues tab.
+- **Usage** (`#usage` on a star map): the plan limits, this week reading by
+  reading with where the pace leads, earlier weeks, and a month of tokens by
+  day, model, project and tool. Sessions are counted to the GitHub checkout
+  (or worktree) they ran in. Read every minute while the screen is open.
 - **Triage**: mark a pull request seen, snooze it or dismiss it until it
   changes. Kept in `~/.claude/observatory/triage/`; nothing is written to
   GitHub.

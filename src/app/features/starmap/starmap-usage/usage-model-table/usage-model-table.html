@@ -1,0 +1,30 @@
+@if (rows().length) {
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Replies</th>
+          <th>Input</th>
+          <th>Output</th>
+          <th>Cache writes</th>
+          <th>Cache reads</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.model) {
+          <tr>
+            <td><i [style.background]="row.colour"></i>{{ row.model }}</td>
+            <td>{{ row.replies }}</td>
+            <td>{{ row.input }}</td>
+            <td>{{ row.output }}</td>
+            <td>{{ row.cacheWrite }}</td>
+            <td>{{ row.cacheRead }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <p class="none">No replies in the session logs for these days.</p>
+}

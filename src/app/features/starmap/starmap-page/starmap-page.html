@@ -21,7 +21,7 @@
   [replaying]="!!memory.replay()"
   (picked)="pick($event)"
   (pickedComet)="pickComet($event)"
-  (pickedLog)="logs.pick($event)"
+  (pickedLog)="pickLog($event)"
 />
 
 @if (view() === 'list' && chart() === 'logs') {

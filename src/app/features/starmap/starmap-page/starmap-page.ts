@@ -36,6 +36,7 @@ import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
 import { CometCard } from '../comet-card/comet-card';
+import { StarmapSound } from '../sound/starmap-sound';
 import { mergePlan } from '../merge-plan';
 import { PlanPanel } from '../plan-panel/plan-panel';
 import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
@@ -82,6 +83,9 @@ const SIDE_PANEL_WIDTH = 380;
 const PLAN_PANEL_WIDTH = 400;
 /** The card's Snooze, as pr-starmap's: a week. */
 const SNOOZE_DAYS = 7;
+
+/** Blocked buckets: the tension voice counts them. */
+const BLOCKED: ReadonlySet<string> = new Set(['conflicted', 'failing']);
 
 /** The comets' legend chip, which shows and hides them rather than filtering. */
 const COMETS = 'comets';
@@ -154,6 +158,7 @@ export class StarmapPage {
   protected readonly collisions = inject(CollisionsFeed);
   private readonly ledger = inject(LedgerFeed);
   protected readonly memory = inject(MemoryView);
+  private readonly sound = inject(StarmapSound);
   protected readonly usage = inject(UsageWatch);
   private readonly triage = inject(TriageClient);
   protected readonly session = inject(ViewerSession);
@@ -447,6 +452,18 @@ export class StarmapPage {
       if (this.chart() !== 'issues') return;
       untracked(() => this.navigateTo(fragment));
     });
+    // The drone measures the sky on show: blocked pull requests, or faults still
+    // burning; the issues leave it where it was.
+    effect(() => {
+      const chart = this.chart();
+      const blocked =
+        chart === 'prs'
+          ? this.skyItems().filter((item) => BLOCKED.has(item.bucket)).length
+          : chart === 'logs'
+            ? this.logs.layout().stars.filter((star) => star.urgent).length
+            : null;
+      if (blocked !== null) untracked(() => this.sound.setTension(blocked));
+    });
     // A refresh lays the Log Sky out again; the card and threads follow their fault.
     effect(() => {
       this.logs.layout();
@@ -527,6 +544,13 @@ export class StarmapPage {
   protected pick(number: number | null): void {
     this.selectedComet.set(null);
     this.openPull.set(number);
+    const item = this.skyItems().find((each) => each.pr === number);
+    if (item) this.sound.ping(BLOCKED.has(item.bucket), item.pr);
+  }
+
+  protected pickLog(star: LogStar | null): void {
+    this.logs.pick(star);
+    if (star) this.sound.ping(star.urgent);
   }
 
   protected pickComet(comet: Comet): void {

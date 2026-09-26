@@ -8,7 +8,7 @@ import {
   output,
 } from '@angular/core';
 import { MotionPreference } from '../../../core/motion/motion-preference';
-import { SoundPreference } from '../../../core/sound/sound-preference';
+import { StarmapSound } from '../sound/starmap-sound';
 import { HelpState } from '../../../shared/help/help-state';
 import { Chart, SkyView, isListOnly } from '../starmap-view';
 
@@ -55,7 +55,12 @@ export class StarmapTools {
 
   protected readonly charts = CHARTS;
   protected readonly motion = inject(MotionPreference);
-  protected readonly sound = inject(SoundPreference);
+  protected readonly sound = inject(StarmapSound);
+  protected readonly volumePercent = computed(() => Math.round(this.sound.volume() * 100));
+
+  protected onVolume(event: Event): void {
+    this.sound.setVolume(Number((event.target as HTMLInputElement).value) / 100);
+  }
   protected readonly help = inject(HelpState);
   /** Folded away on a small screen; the page hides its charts with the tools. */
   readonly folded = model(readFolded());

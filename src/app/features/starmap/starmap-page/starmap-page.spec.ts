@@ -5,7 +5,6 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { AMBIENT_PLAYER } from '../../../core/sound/sound-preference';
-import { PullPanel } from '../../queue/pull-panel/pull-panel';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapPage } from './starmap-page';
 
@@ -118,19 +117,40 @@ describe('StarmapPage', () => {
     expect(element.querySelector('.state')?.textContent).toContain('No logs charted yet.');
   });
 
-  it('opens a star’s pull request, records triage from it, and reads the queue again', () => {
-    const { fixture, http } = render();
+  it('opens a star’s card, and its full screen from Open; Esc closes them in turn', () => {
+    const { fixture, element, http, button } = render();
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
 
     sky.picked.emit(7);
     fixture.detectChanges();
+    expect(element.querySelector('.prno')?.textContent).toBe('#7');
+    button('Open')?.click();
+    fixture.detectChanges();
     http.expectOne('/api/pull?repo=me/a&number=7');
-    const panel = fixture.debugElement.query(By.directive(PullPanel))
-      .componentInstance as PullPanel;
-    panel.triaged.emit({ action: 'dismiss' });
+    expect(element.querySelector('app-pull-panel')).not.toBeNull();
 
-    http.expectOne('/api/triage').flush({});
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(element.querySelector('app-pull-panel')).toBeNull();
+    expect(element.querySelector('.prno')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(element.querySelector('.prno')).toBeNull();
+  });
+
+  it('snoozes a pull request for a week from its card, then reads the queue again', () => {
+    const { fixture, http, button } = render();
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+    sky.picked.emit(9);
+    fixture.detectChanges();
+
+    button('Snooze 7d')?.click();
+
+    const post = http.expectOne('/api/triage');
+    expect(post.request.body).toEqual({ repo: 'me/a', number: 9, action: 'snooze', days: 7 });
+    post.flush({});
     http.expectOne('/api/queue?repo=me/a');
   });
 });

@@ -12,11 +12,27 @@ const item = {
   deletions: 2,
   idleDays: 4,
   ageDays: 9,
+  branch: 'feat/12',
+  mergeable: 'CONFLICTING',
+  changedFiles: 4,
   isSeen: true,
   hidden: null,
 };
 
 describe('parseQueueReport', () => {
+  it('reads a missing branch as empty and mergeability as unknown, never as fine', () => {
+    const { branch, mergeable, changedFiles, ...bare } = item;
+    void [branch, mergeable, changedFiles];
+    const report = parseQueueReport({ generatedAt: 'x', repo: 'me/a', items: [bare] });
+
+    expect(report?.items[0]).toEqual({
+      ...item,
+      branch: '',
+      mergeable: 'UNKNOWN',
+      changedFiles: null,
+    });
+  });
+
   it('keeps every well-formed item', () => {
     const report = parseQueueReport({ generatedAt: 'x', repo: 'me/a', items: [item] });
 

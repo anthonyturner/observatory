@@ -24,6 +24,9 @@ const queue: QueueReport = {
       updatedAt: '2026-09-25T00:00:00Z',
       idleDays: 1,
       ageDays: 1,
+      branch: 'feat/x',
+      mergeable: 'MERGEABLE',
+      changedFiles: 1,
     },
   ],
 };

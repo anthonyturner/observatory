@@ -73,15 +73,26 @@
 
 <app-help-card title="Review queue" [entries]="helpEntries" [keys]="helpKeys" />
 
-@if (openPull(); as number) {
+@if (chart() === 'prs' && openItem(); as item) {
+  <app-star-card
+    [item]="item"
+    [context]="cardContext()"
+    (closed)="openPull.set(null)"
+    (open)="openSheet($event)"
+    (snooze)="recordTriage($event, { action: 'snooze', days: SNOOZE_DAYS })"
+    (dismiss)="recordTriage($event, { action: 'dismiss' })"
+  />
+}
+
+@if (sheetPull(); as number) {
   <app-pull-panel
     [repo]="repo()"
     [number]="number"
-    [triage]="openTriage()"
-    [collisions]="openCollisions()"
+    [triage]="sheetTriage()"
+    [collisions]="sheetCollisions()"
     [collisionCheck]="collisionCheck()"
-    (picked)="openPull.set($event)"
+    (picked)="openSheet($event)"
     (triaged)="recordTriage(number, $event)"
-    (closed)="openPull.set(null)"
+    (closed)="sheetPull.set(null)"
   />
 }

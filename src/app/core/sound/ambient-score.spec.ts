@@ -1,4 +1,4 @@
-import { BAR_S, CHORDS, TONIC, barAt, hz } from './ambient-score';
+import { BAR_S, CHORDS, TONIC, barAt, hz, uneaseOf } from './ambient-score';
 import { seededRandom } from '../instrument/seeded-random';
 
 describe('ambient score', () => {
@@ -45,5 +45,23 @@ describe('ambient score', () => {
       false,
       true,
     ]);
+  });
+
+  it('sweeps every other bar under strain', () => {
+    const random = seededRandom(3);
+    expect([0, 1, 2, 3].map((i) => barAt(i, random, 0.8).hasSweep)).toEqual([
+      false,
+      true,
+      false,
+      true,
+    ]);
+  });
+});
+
+describe('uneaseOf', () => {
+  it('follows the mood, and is a little uneasy while unknown', () => {
+    expect(uneaseOf({ name: 'calm', stress: 0 })).toBe(0);
+    expect(uneaseOf({ name: 'strained', stress: 0.9 })).toBe(0.9);
+    expect(uneaseOf({ name: 'unknown', stress: 0 })).toBeGreaterThan(0);
   });
 });

@@ -1,5 +1,7 @@
-import { ErrorHandler } from '@angular/core';
+import { ErrorHandler, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { CoreMood } from '../instrument/core-mood';
+import { CORE_MOOD } from '../instrument/core-tokens';
 import { AmbientPlayer } from './ambient-synth';
 import { AMBIENT_PLAYER, SoundPreference } from './sound-preference';
 
@@ -8,6 +10,7 @@ const KEY = 'observatory.sound';
 class FakePlayer implements AmbientPlayer {
   starts = 0;
   stops = 0;
+  unease: number | null = null;
   constructor(private readonly fails = false) {}
   start(): Promise<void> {
     this.starts++;
@@ -16,17 +19,23 @@ class FakePlayer implements AmbientPlayer {
   stop(): void {
     this.stops++;
   }
+  setUnease(level: number): void {
+    this.unease = level;
+  }
 }
 
-function setup(player = new FakePlayer()) {
+const CALM: CoreMood = { name: 'calm', stress: 0, reason: 'nothing blocked' };
+
+function setup(player = new FakePlayer(), mood = signal<CoreMood>(CALM)) {
   const errors: unknown[] = [];
   TestBed.configureTestingModule({
     providers: [
+      { provide: CORE_MOOD, useValue: mood },
       { provide: AMBIENT_PLAYER, useValue: () => player },
       { provide: ErrorHandler, useValue: { handleError: (e: unknown) => errors.push(e) } },
     ],
   });
-  return { sound: TestBed.inject(SoundPreference), player, errors };
+  return { sound: TestBed.inject(SoundPreference), player, errors, mood };
 }
 
 describe('SoundPreference', () => {
@@ -65,5 +74,14 @@ describe('SoundPreference', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(errors).toHaveLength(1);
+  });
+
+  it('tells the player how uneasy to sound, and follows the mood as it changes', () => {
+    const { sound, player, mood } = setup();
+    sound.toggle();
+    expect(player.unease).toBe(0);
+    mood.set({ name: 'strained', stress: 0.8, reason: '' });
+    TestBed.tick();
+    expect(player.unease).toBe(0.8);
   });
 });

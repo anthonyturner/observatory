@@ -1,0 +1,57 @@
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  background: var(--fog-veil);
+  opacity: calc(var(--fog) * 0.42);
+}
+
+/* Slow drifting wisps: the fog is weather, not a filter. */
+.wisp {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--fog-wisp), transparent);
+  opacity: var(--fog);
+  animation: drift 90s linear infinite;
+}
+
+.wisp.one {
+  top: -10vmax;
+  left: -20vmax;
+}
+
+.wisp.two {
+  top: 25vh;
+  left: 40vw;
+  animation-duration: 120s;
+  animation-delay: -40s;
+}
+
+.wisp.three {
+  top: 55vh;
+  left: -10vw;
+  animation-duration: 150s;
+  animation-delay: -90s;
+}
+
+:host(.still) .wisp {
+  animation: none;
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(-15vw);
+  }
+  to {
+    transform: translateX(45vw);
+  }
+}

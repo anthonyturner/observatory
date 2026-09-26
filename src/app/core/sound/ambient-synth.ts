@@ -6,6 +6,8 @@ export interface AmbientPlayer {
   /** Resolves once audio is running; browsers allow that only after a gesture. */
   start(): Promise<void>;
   stop(): void;
+  /** How uneasy to sound, 0 calm to 1 strained; glides there. */
+  setUnease(level: number): void;
 }
 
 /** Bars are written this far ahead on the audio clock, so a busy page or a
@@ -33,6 +35,14 @@ const BELL_PARTIAL = 2.76;
 const PING_DECAY_S = 3.2;
 const SWEEP_LEVEL = 0.012;
 const SILENT = 0.0001;
+/* The uneasy layer: a tritone and a minor ninth over the root, low and
+   filtered, wavering. Quiet at its loudest: it should be felt more than heard. */
+const UNEASE_INTERVALS = [6, 13] as const;
+const UNEASE_MAX_GAIN = 0.05;
+const UNEASE_CUTOFF_HZ = 520;
+const UNEASE_WAVER_HZ = 0.25;
+const UNEASE_WAVER_SPREAD_HZ = 1.5;
+const UNEASE_GLIDE_S = 3;
 
 /** The audio graph every note plays into. */
 interface Rig {
@@ -50,10 +60,16 @@ interface Drone {
   retune(bar: Bar, at: number): void;
 }
 
+interface Unease extends Drone {
+  setLevel(level: number, at: number): void;
+}
+
 /** The ambient score on the Web Audio API: generated live, never a recording. */
 export class AmbientSynth implements AmbientPlayer {
   private rig: Rig | null = null;
   private drone: Drone | null = null;
+  private unease: Unease | null = null;
+  private uneaseLevel = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private suspendTimer: ReturnType<typeof setTimeout> | null = null;
   private nextBarAt = 0;
@@ -68,8 +84,15 @@ export class AmbientSynth implements AmbientPlayer {
     this.nextBarAt = rig.context.currentTime + 0.1;
     this.barIndex = 0;
     this.drone = startDrone(rig);
+    this.unease = startUnease(rig);
+    this.unease.setLevel(this.uneaseLevel, rig.context.currentTime);
     this.timer = setInterval(() => this.schedule(), TICK_MS);
     this.schedule();
+  }
+
+  setUnease(level: number): void {
+    this.uneaseLevel = level;
+    if (this.rig) this.unease?.setLevel(level, this.rig.context.currentTime);
   }
 
   stop(): void {
@@ -83,6 +106,8 @@ export class AmbientSynth implements AmbientPlayer {
     this.timer = null;
     this.drone?.stop();
     this.drone = null;
+    this.unease?.stop();
+    this.unease = null;
     // Suspending only frees the audio device early; if it fails, it idles silent.
     this.rig?.context.suspend().catch(() => undefined);
   }
@@ -101,7 +126,7 @@ export class AmbientSynth implements AmbientPlayer {
     // A timer held back past the bar would otherwise play every missed bar at once.
     if (this.nextBarAt < context.currentTime) this.nextBarAt = context.currentTime + 0.1;
     while (this.nextBarAt < context.currentTime + LOOKAHEAD_S) {
-      this.playBar(rig, barAt(this.barIndex, Math.random), this.nextBarAt);
+      this.playBar(rig, barAt(this.barIndex, Math.random, this.uneaseLevel), this.nextBarAt);
       this.nextBarAt += BAR_S;
       this.barIndex++;
     }
@@ -109,6 +134,7 @@ export class AmbientSynth implements AmbientPlayer {
 
   private playBar(rig: Rig, bar: Bar, at: number): void {
     this.drone?.retune(bar, at);
+    this.unease?.retune(bar, at);
     pad(rig, bar, at);
     bar.pings.forEach((ping) => playPing(rig, ping, at + ping.offsetS));
     if (bar.hasSweep) sweep(rig, at);
@@ -173,6 +199,47 @@ function startDrone({ context, bus }: Rig): Drone {
       voices.forEach(({ oscillator, octave }) =>
         oscillator.frequency.setTargetAtTime(hz(bar.root + octave), at, 1.5),
       ),
+  };
+}
+
+/** The uneasy layer under the score, silent while calm. Its loudness and its
+ *  waver both follow the level, so strain is heard as restlessness. */
+function startUnease({ context, bus }: Rig): Unease {
+  const filter = context.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = UNEASE_CUTOFF_HZ;
+  const waver = context.createGain();
+  const wobble = context.createOscillator();
+  wobble.frequency.value = UNEASE_WAVER_HZ;
+  const wobbleDepth = context.createGain();
+  wobbleDepth.gain.value = 0.5;
+  wobble.connect(wobbleDepth).connect(waver.gain);
+  waver.gain.value = 0.5;
+  const level = context.createGain();
+  level.gain.value = 0;
+  filter.connect(waver).connect(level).connect(bus);
+  const voices = UNEASE_INTERVALS.map((interval) => {
+    const oscillator = context.createOscillator();
+    oscillator.type = 'sawtooth';
+    oscillator.connect(filter);
+    return { oscillator, interval };
+  });
+  const sources = [wobble, ...voices.map((voice) => voice.oscillator)];
+  sources.forEach((source) => source.start());
+  return {
+    stop: () => sources.forEach((source) => source.stop()),
+    retune: (bar, at) =>
+      voices.forEach(({ oscillator, interval }) =>
+        oscillator.frequency.setTargetAtTime(hz(bar.root + 12 + interval), at, 1.5),
+      ),
+    setLevel: (value, at) => {
+      level.gain.setTargetAtTime(UNEASE_MAX_GAIN * Math.pow(value, 1.3), at, UNEASE_GLIDE_S / 3);
+      wobble.frequency.setTargetAtTime(
+        UNEASE_WAVER_HZ + value * UNEASE_WAVER_SPREAD_HZ,
+        at,
+        UNEASE_GLIDE_S / 3,
+      );
+    },
   };
 }
 

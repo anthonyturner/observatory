@@ -37,6 +37,16 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
       'A wave rolls across the floor each time fresh project data arrives, about every five minutes. No ripple for a long while means the data has stopped coming.',
   },
   {
+    term: 'Progress',
+    meaning:
+      'When a refresh shows issues closed or pull requests merged since the last one, that project’s dot bursts green and green comets flare into the core, one per thing done.',
+  },
+  {
+    term: 'Fog',
+    meaning:
+      'Home fogs over as its project data ages: nothing for six hours, full by three days. A line under the core says how old the data is. Fresh data clears it.',
+  },
+  {
     term: 'Dots',
     meaning:
       'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name; click a dot to go to its card. A dot fades, with a slow grey pulsing ring, once its oldest pull request has sat untouched for a week.',
@@ -54,7 +64,7 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Sound',
     meaning:
-      'An ambient score made in this browser as you listen, with a hum that pulses with the core. Off until you turn it on, and remembered.',
+      'An ambient score made in this browser as you listen, with a hum that pulses with the core. It follows the core’s mood: a low, wavering unease rises under it as projects strain. Off until you turn it on, and remembered.',
   },
   {
     term: 'Ask',

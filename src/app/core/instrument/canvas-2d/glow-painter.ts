@@ -9,6 +9,8 @@ export interface GrowingBead {
   readonly grown: number;
   /** The lit project's bead draws larger and brighter. */
   readonly isLit: boolean;
+  /** How strongly its stale ring shows this frame, 0 for a fresh project. */
+  readonly stalePulse: number;
 }
 
 export interface GlowScene {
@@ -30,6 +32,9 @@ const LIT_GLOW_ALPHA = 0.9;
 const BEAD_CORE = 0.75;
 const BEAD_RING = 1.9;
 const RING_ALPHA = 0.85;
+/** The stale ring sits outside the blocked one, dashed so the two never read alike. */
+const STALE_RING = 2.4;
+const STALE_DASH = [2, 3];
 const HEART_SIZE = 0.03;
 /** Two blurs, a tight one and a wide one, read as light rather than as a smudge. */
 const BLURS = [
@@ -107,13 +112,15 @@ export class GlowPainter {
     context.globalAlpha = scene.intro;
     context.fillStyle = palette.heart;
     fillCircle(context, heart.x, heart.y, scene.radius * HEART_SIZE * scene.breath + 1);
-    for (const { bead, grown, isLit } of scene.beads) {
+    for (const { bead, grown, isLit, stalePulse } of scene.beads) {
       const seen = lens.project(bead.x, bead.y, bead.z);
       const size = bead.size * seen.scale * grown * (isLit ? LIT_BEAD_GROWTH : 1);
       const colour = palette.colour(bead.severity.color);
       context.globalAlpha = bead.dim;
       context.fillStyle = colour;
       fillCircle(context, seen.x, seen.y, size * BEAD_CORE);
+      if (stalePulse > 0)
+        strokeStaleRing(context, palette, { x: seen.x, y: seen.y, size, pulse: stalePulse });
       if (!bead.isRinged) continue;
       context.globalAlpha = RING_ALPHA * bead.dim;
       context.strokeStyle = colour;
@@ -149,4 +156,20 @@ function fillCircle(context: CanvasRenderingContext2D, x: number, y: number, rad
   context.beginPath();
   context.arc(x, y, Math.max(radius, 0), 0, Math.PI * 2);
   context.fill();
+}
+
+function strokeStaleRing(
+  context: CanvasRenderingContext2D,
+  palette: CorePalette,
+  ring: { x: number; y: number; size: number; pulse: number },
+): void {
+  context.save();
+  context.globalAlpha = ring.pulse;
+  context.strokeStyle = palette.stale;
+  context.lineWidth = 1;
+  context.setLineDash(STALE_DASH);
+  context.beginPath();
+  context.arc(ring.x, ring.y, ring.size * STALE_RING, 0, Math.PI * 2);
+  context.stroke();
+  context.restore();
 }

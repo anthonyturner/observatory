@@ -1,5 +1,6 @@
 import { ProjectSnapshot } from '../projects/project.types';
 import { Severity, compareProjects, severityOf } from '../projects/severity';
+import { clamp01 } from './easing';
 import { ORBIT } from './proportions';
 import { Point3, tilt } from './tilt';
 
@@ -12,6 +13,8 @@ export interface Bead extends Point3 {
   /** The far side of the ring sits a little dimmer, as it would. */
   readonly dim: number;
   readonly isRinged: boolean;
+  /** 0 fresh to 1 long neglected, from the project's oldest untouched PR. */
+  readonly staleness: number;
   /** Seconds after the beads are laid out before this one starts to grow. */
   readonly delay: number;
 }
@@ -38,6 +41,16 @@ const MIN_BEAD = 3;
 const MAX_BEAD = 10;
 const FIRST_DELAY_S = 0.35;
 const DELAY_STEP_S = 0.07;
+/** A project starts to fade once its oldest untouched PR is a week old, and
+ *  is at its faintest by six weeks. */
+const STALE_FROM_DAYS = 7;
+const FULLY_STALE_DAYS = 42;
+/** How much of its brightness the stalest bead gives up. */
+const STALE_DIMMING = 0.55;
+/** The stale ring pulses once every few seconds, like a slow reminder. */
+const STALE_PULSE_S = 3.5;
+/** A still core holds the ring at this much of its strength. */
+const STALE_STILL = 0.45;
 
 const isShown = (project: ProjectSnapshot): boolean =>
   project.dashboardUrl !== '' || severityOf(project).id === 'blocked';
@@ -68,10 +81,24 @@ export function layoutBeads(projects: readonly ProjectSnapshot[], coreRadius: nu
       severity,
       // Grows with open work, floored so an empty project still shows.
       size: Math.min(MIN_BEAD + Math.sqrt(project.open) * 1.25, MAX_BEAD) * scale,
-      dim: 0.62 + 0.38 * ((at.z / orbit + 1) / 2),
+      dim: (0.62 + 0.38 * ((at.z / orbit + 1) / 2)) * (1 - STALE_DIMMING * stalenessOf(project)),
       isRinged: severity.id === 'blocked',
+      staleness: stalenessOf(project),
       delay: FIRST_DELAY_S + index * DELAY_STEP_S,
     };
   });
   return { beads, overflow: hidden > 0 ? { ...slotAt(shown.length), count: hidden } : null };
+}
+
+/** How neglected a project is, 0 to 1, from its oldest untouched PR's age. */
+export function stalenessOf(project: ProjectSnapshot): number {
+  const days = project.oldestIdleDays ?? 0;
+  return clamp01((days - STALE_FROM_DAYS) / (FULLY_STALE_DAYS - STALE_FROM_DAYS));
+}
+
+/** How strongly a stale bead's ring shows at `time`: 0 for a fresh one. */
+export function stalePulse(staleness: number, time: number, isStill: boolean): number {
+  if (staleness <= 0) return 0;
+  if (isStill) return staleness * STALE_STILL;
+  return staleness * (0.25 + 0.35 * (0.5 + 0.5 * Math.sin((time * Math.PI * 2) / STALE_PULSE_S)));
 }

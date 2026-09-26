@@ -8,6 +8,8 @@ export interface CorePalette {
   readonly ring: string;
   readonly heart: string;
   readonly mark: string;
+  /** The ring a neglected project's bead wears. */
+  readonly stale: string;
   readonly markFont: string;
   /** Any CSS colour, `var()` included, as the canvas can take it. */
   colour(expression: string): string;
@@ -34,6 +36,7 @@ export function readPalette(element: HTMLElement): CorePalette {
     ring: colour('var(--core-ring)'),
     heart: colour('var(--core-heart)'),
     mark: colour('var(--muted)'),
+    stale: colour('var(--core-stale)'),
     markFont: `${MARK_FONT_SIZE} ${getComputedStyle(element).getPropertyValue('--font-mono')}`,
     colour,
   };

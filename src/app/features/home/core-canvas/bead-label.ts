@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { LIT_BEAD_GROWTH } from '../../../core/instrument/beads';
+import { Bead, LIT_BEAD_GROWTH } from '../../../core/instrument/beads';
 import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { LitProject } from '../../../core/projects/lit-project';
 
@@ -57,7 +57,14 @@ export class BeadLabel {
       isLeft,
       labelX: isLeft ? placed.x - offset : placed.x + offset,
       name: project.name,
-      said: project.error ? 'unreadable' : `${bead.severity.word} · ${project.open} open`,
+      said: project.error ? 'unreadable' : saidOf(bead),
     };
   });
+}
+
+/** "blocked · 19 open", with how long it has sat when it has gone stale. */
+function saidOf(bead: Bead): string {
+  const said = `${bead.severity.word} · ${bead.project.open} open`;
+  const days = bead.project.oldestIdleDays;
+  return bead.staleness > 0 && days !== undefined ? `${said} · untouched ${days} d` : said;
 }

@@ -1,6 +1,6 @@
 import { ProjectSnapshot } from '../../projects/project.types';
 import { ballCount2D } from '../ball-network';
-import { BeadLayout, layoutBeads } from '../beads';
+import { BeadLayout, layoutBeads, stalePulse } from '../beads';
 import { CoreAnimator, CorePose, ballRadiusOf, beadGrowth } from '../core-animator';
 import { CoreFrame, CoreRenderer } from '../core-renderer';
 import { CoreView } from '../core-view';
@@ -114,16 +114,21 @@ export class Canvas2DCoreRenderer implements CoreRenderer {
       radius: view.radius,
       breath: pose.breath,
       intro: pose.intro,
-      beads: this.growingBeads(pose, frame.litKey),
+      beads: this.growingBeads(pose, frame),
       width: view.width,
       height: view.height,
     });
     if (this.layout.overflow) paintOverflow(context, this.lens, palette, this.layout.overflow);
   }
 
-  private growingBeads(pose: CorePose, litKey: string | null): GrowingBead[] {
+  private growingBeads(pose: CorePose, frame: CoreFrame): GrowingBead[] {
     return this.layout.beads
-      .map((bead) => ({ bead, grown: beadGrowth(pose, bead), isLit: bead.key === litKey }))
+      .map((bead) => ({
+        bead,
+        grown: beadGrowth(pose, bead),
+        isLit: bead.key === frame.litKey,
+        stalePulse: stalePulse(bead.staleness, frame.time, frame.isStill),
+      }))
       .filter((growing) => growing.grown > 0);
   }
 

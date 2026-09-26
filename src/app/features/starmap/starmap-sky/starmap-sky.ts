@@ -28,6 +28,13 @@ export interface SkyInsets {
 }
 
 const DEFAULT_INSETS: SkyInsets = { top: 140, bottom: 70, side: 0 };
+const TYPING_OR_DIALOG = 'input, textarea, select, [contenteditable], [role="dialog"]';
+const PANS: Readonly<Record<string, readonly [number, number]>> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
 
 /**
  * pr-starmap's star map: the review queue as constellations, drawn in 3D with
@@ -39,6 +46,7 @@ const DEFAULT_INSETS: SkyInsets = { top: 140, bottom: 70, side: 0 };
   template: '<canvas #sky aria-label="Star map of the review queue"></canvas>',
   styleUrl: './starmap-sky.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown)': 'onKey($event)' },
 })
 export class StarmapSky {
   readonly items = input.required<readonly SkyItem[]>();
@@ -123,6 +131,22 @@ export class StarmapSky {
     if (star) this.engine?.goTo(star);
   }
 
+  /** + and − zoom, the arrows pan; keys typed into a field or a dialog are theirs. */
+  protected onKey(event: KeyboardEvent): void {
+    const target = event.target;
+    if (target instanceof Element && target.closest(TYPING_OR_DIALOG)) return;
+    if (this.hidden()) return;
+    const pan = PANS[event.key];
+    if (pan) {
+      event.preventDefault();
+      this.pan(pan[0], pan[1]);
+    } else if (event.key === '+' || event.key === '=') {
+      this.zoomIn();
+    } else if (event.key === '-' || event.key === '_') {
+      this.zoomOut();
+    }
+  }
+
   private start(): void {
     const canvas = this.canvas().nativeElement;
     try {
@@ -172,7 +196,7 @@ export class StarmapSky {
 }
 
 /** A legend filter as a test on a star: a bucket, or the quick wins across them. */
-function filterFor(filter: string | null): ((star: SkyStar) => boolean) | null {
+export function filterFor(filter: string | null): ((star: SkyStar) => boolean) | null {
   if (!filter) return null;
   if (filter === 'quick') return (star) => !!star.quick;
   return (star) => star.key === filter;

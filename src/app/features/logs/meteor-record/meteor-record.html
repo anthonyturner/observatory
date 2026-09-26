@@ -1,0 +1,19 @@
+<figure class="meteors">
+  <figcaption>
+    @if (caption(); as words) {
+      <span>{{ words.what }}</span
+      ><span
+        >{{ words.span }} <b>{{ words.peak }}</b> {{ words.after }}</span
+      >
+    }
+  </figcaption>
+  <canvas
+    #canvas
+    aria-label="Errors and warnings per day"
+    (pointermove)="onPointerMove($event)"
+    (pointerleave)="tip.set(null)"
+  ></canvas>
+  @if (tip(); as shown) {
+    <div class="mtip" [style.left.px]="shown.left">{{ shown.text }}</div>
+  }
+</figure>

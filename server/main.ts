@@ -1,5 +1,11 @@
 import { cachedReads } from './app/api-reads.ts';
-import { ownerRoutes } from './app/api-routes.ts';
+import { ownerRoutes, withAssistant } from './app/api-routes.ts';
+import { assistantRouter } from './assistant/assistant-router.ts';
+import { openRouter } from './assistant/open-router.ts';
+import { localKey } from './assistant/open-router-key.ts';
+import { projectsOf } from './assistant/projects-of.ts';
+import { localShells } from './assistant/shell-commands.ts';
+import { fileSkills } from './assistant/skills-file.ts';
 import { fileCloneFinder } from './collisions/clone-finder.ts';
 import { collisionsReport } from './collisions/collisions-report.ts';
 import { gitPairMerger } from './collisions/pair-merger.ts';
@@ -59,12 +65,25 @@ const runner = localRunner({
 });
 shutDownWithProcess(runner);
 
+const assistant = assistantRouter({
+  models: openRouter({ key: localKey() }),
+  projects: async () => projectsOf(await reads.projects()),
+  skills: fileSkills(),
+  where: 'local',
+  shells: localShells(process.platform),
+  runner,
+});
+
 // Loopback only: the API reads files from this machine's home folder, acts as
 // the account `gh` is signed in with, and runs Claude Code once the owner
 // confirms a proposal.
 const server = createApiServer(
   guardRuns(
-    createApiHandler(withLocalSession(withRunsRoutes(ownerRoutes(reads, triage, editor), runner))),
+    createApiHandler(
+      withLocalSession(
+        withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
+      ),
+    ),
   ),
 );
 

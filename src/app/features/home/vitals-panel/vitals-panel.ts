@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { HudSection } from '../../../shared/hud-section/hud-section';
-import { VITALS_COLUMN } from '../data/vitals';
+import { VITALS_COLUMN } from '../data/vitals-column';
 import { DirectiveList } from '../vitals/directive-list/directive-list';
 import { DocTabs } from '../vitals/doc-tabs/doc-tabs';
 import { VitalReadout } from '../vitals/vital-readout/vital-readout';

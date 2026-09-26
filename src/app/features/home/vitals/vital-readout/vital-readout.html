@@ -15,6 +15,9 @@
 } @else {
   <p class="number unknown">
     unknown<small>{{ vital.note }}</small>
+    @if (vital.how) {
+      <small>{{ vital.how }}</small>
+    }
   </p>
 }
 <app-sparkline class="trend" [values]="vital.series ?? []" [max]="vital.max" />

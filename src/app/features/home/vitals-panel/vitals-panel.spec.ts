@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { VITALS_COLUMN, VitalsColumn } from '../data/vitals';
+import { VitalsColumn } from '../data/vitals';
+import { VITALS_COLUMN } from '../data/vitals-column';
 import { VitalsPanel } from './vitals-panel';
 
 const column: VitalsColumn = {

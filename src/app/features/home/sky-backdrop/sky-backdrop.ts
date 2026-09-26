@@ -13,16 +13,15 @@ import {
 import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
-import { knownOpenIssues } from '../../../core/projects/open-issues';
 import { PROJECTS } from '../../../core/projects/projects-source';
 import { SKY_CANVAS, SkyCanvas, skyViewOf } from '../../../core/sky/sky-painter';
-import { starTrails } from '../../../core/sky/star-trails';
+import { cometsFor } from '../../../core/sky/comets';
 
-/** The sky barely moves, so it redraws far less often than the core. */
-const SKY_FPS = 12;
+/** Comets move fast enough to need a steady rate, but no more than the core's. */
+const SKY_FPS = 30;
 
 /** The night behind every page: fixed, decorative, and never takes a pointer.
- *  One star trail per open issue turns slowly about where the core sits. */
+ *  One comet per open issue falls through it, in its project's colour. */
 @Component({
   selector: 'app-sky-backdrop',
   template: '',
@@ -37,8 +36,8 @@ export class SkyBackdrop {
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
   private readonly projects = inject(PROJECTS);
-  /** Unknown until the projects are read: no stars, rather than a made-up count. */
-  private readonly openIssues = computed(() => knownOpenIssues(this.projects()) ?? 0);
+  /** Empty until the projects are read: no comets, rather than a made-up count. */
+  private readonly comets = computed(() => cometsFor(this.projects()));
   private readonly makeCanvas = inject(SKY_CANVAS);
   private painter: SkyCanvas | null = null;
   private loop: FrameLoop | null = null;
@@ -47,8 +46,8 @@ export class SkyBackdrop {
     afterNextRender(() => this.start());
     effect(() => {
       // Read before the painter exists too, or the effect never learns to rerun.
-      const trails = starTrails(this.openIssues());
-      this.painter?.setTrails(trails);
+      const comets = this.comets();
+      this.painter?.setComets(comets);
       this.loop?.kick();
     });
     effect(() => {
@@ -70,7 +69,7 @@ export class SkyBackdrop {
       return;
     }
     this.painter = painter;
-    painter.setTrails(starTrails(this.openIssues()));
+    painter.setComets(this.comets());
     this.place();
     const window = this.document.defaultView;
     this.loop = new FrameLoop({

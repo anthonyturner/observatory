@@ -1,15 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import { CoreView } from '../instrument/core-view';
 import { resolveColour } from '../instrument/palette';
-import {
-  PlacedTrail,
-  STAR_TINTS,
-  StarTint,
-  StarTrail,
-  TRAIL_TURN_PER_S,
-  liftFaint,
-  placeTrails,
-} from './star-trails';
+import { Comet, flightAt } from './comets';
 
 /** Where the sky is centred and how big it is. */
 export interface SkyView {
@@ -18,7 +10,6 @@ export interface SkyView {
   readonly pixelRatio: number;
   readonly poleX: number;
   readonly poleY: number;
-  readonly coreRadius: number;
 }
 
 interface SkyInks {
@@ -26,22 +17,18 @@ interface SkyInks {
   readonly mid: string;
   readonly deep: string;
   readonly vignette: string;
-  readonly stars: Readonly<Record<StarTint, string>>;
 }
 
-/** The trail image can't be larger than this on a side. */
-const MAX_TRAIL_IMAGE = 2048;
-/** The trail image is a little larger than the window, so its corners never show as it turns. */
-const TRAIL_MARGIN = 1.12;
-const TRAIL_STEPS = 12;
 const GRAIN_SIZE = 128;
 const GRAIN_ALPHA = 0.045;
 const GRAIN_DRIFT_PX = 64;
 const GLOW_REACH = 0.9;
 const VIGNETTE_FROM = 0.3;
 const VIGNETTE_TO = 0.78;
+/** A comet's head is a little wider than its tail. */
+const HEAD_GROWTH = 1.3;
 
-/** The sky with no core measured yet: centred, as a core would be. */
+/** Where the sky glows from: the core, or where a core would be before one is measured. */
 export function skyViewOf(
   view: CoreView | null,
   viewport: { width: number; height: number; pixelRatio: number },
@@ -52,7 +39,6 @@ export function skyViewOf(
     pixelRatio: Math.min(viewport.pixelRatio || 1, 2),
     poleX: view?.poleX ?? viewport.width / 2,
     poleY: view?.poleY ?? viewport.height * 0.4,
-    coreRadius: view?.radius ?? 120,
   };
 }
 
@@ -60,7 +46,7 @@ export function skyViewOf(
  *  has no canvas, can stand in something quiet. */
 export interface SkyCanvas {
   canDraw(): boolean;
-  setTrails(trails: readonly StarTrail[]): void;
+  setComets(comets: readonly Comet[]): void;
   setView(view: SkyView): void;
   paint(time: number, isStill: boolean): void;
   dispose(): void;
@@ -71,19 +57,17 @@ export const SKY_CANVAS = new InjectionToken<(host: HTMLElement) => SkyCanvas>('
   factory: () => (host) => new SkyPainter(host),
 });
 
-/** Paints the night behind Home: a green glow round the pole, the star
- *  trails turning about it with their heads twinkling, a vignette and grain. */
+/** Paints the night behind Home: a green glow round the core, a rain of
+ *  comets in their projects' colours, a vignette and grain. */
 export class SkyPainter implements SkyCanvas {
   private readonly canvas: HTMLCanvasElement;
   private readonly context: CanvasRenderingContext2D | null;
   private readonly inks: SkyInks;
-  private readonly trailImage: HTMLCanvasElement;
   private readonly grain: HTMLCanvasElement;
+  private readonly colours = new Map<string, string>();
+  private readonly host: HTMLElement;
   private view: SkyView | null = null;
-  private trails: readonly StarTrail[] = [];
-  private placed: PlacedTrail[] = [];
-  private trailSpan = 0;
-  private trailKey = '';
+  private comets: readonly Comet[] = [];
 
   constructor(host: HTMLElement) {
     const document = host.ownerDocument;
@@ -92,7 +76,7 @@ export class SkyPainter implements SkyCanvas {
     host.append(this.canvas);
     this.context = this.canvas.getContext('2d');
     this.inks = readInks(host);
-    this.trailImage = document.createElement('canvas');
+    this.host = host;
     this.grain = grainTile(document);
   }
 
@@ -100,9 +84,8 @@ export class SkyPainter implements SkyCanvas {
     return this.context !== null;
   }
 
-  setTrails(trails: readonly StarTrail[]): void {
-    this.trails = trails;
-    this.trailKey = '';
+  setComets(comets: readonly Comet[]): void {
+    this.comets = comets;
   }
 
   setView(view: SkyView): void {
@@ -121,12 +104,11 @@ export class SkyPainter implements SkyCanvas {
   paint(time: number, isStill: boolean): void {
     const { context, view } = this;
     if (!context || !view) return;
-    this.repaintTrails(view);
     context.setTransform(view.pixelRatio, 0, 0, view.pixelRatio, 0, 0);
     context.globalCompositeOperation = 'source-over';
     context.globalAlpha = 1;
     this.paintNight(context, view);
-    this.paintTrails(context, view, time, isStill);
+    this.paintComets(context, view, time);
     this.paintVignette(context, view);
     this.paintGrain(context, view, time, isStill);
   }
@@ -152,86 +134,52 @@ export class SkyPainter implements SkyCanvas {
     context.fillRect(0, 0, view.width, view.height);
   }
 
-  private paintTrails(
-    context: CanvasRenderingContext2D,
-    view: SkyView,
-    time: number,
-    isStill: boolean,
-  ): void {
-    if (!this.placed.length) return;
+  private paintComets(context: CanvasRenderingContext2D, view: SkyView, time: number): void {
     context.save();
-    context.translate(view.poleX, view.poleY);
-    context.rotate(-time * TRAIL_TURN_PER_S);
     context.globalCompositeOperation = 'lighter';
-    context.drawImage(
-      this.trailImage,
-      -this.trailSpan,
-      -this.trailSpan,
-      this.trailSpan * 2,
-      this.trailSpan * 2,
-    );
-    for (const trail of this.placed) {
-      const twinkle = isStill ? 1 : 0.62 + 0.38 * Math.sin(time * trail.rate + trail.phase);
-      context.globalAlpha = Math.min(1, trail.alpha * trail.fade * 1.7 * twinkle);
-      context.fillStyle = this.inks.stars[trail.tint];
-      context.beginPath();
-      context.arc(
-        Math.cos(trail.head) * trail.radius,
-        Math.sin(trail.head) * trail.radius,
-        0.4 + trail.size * 0.7,
-        0,
-        Math.PI * 2,
-      );
-      context.fill();
+    context.lineCap = 'round';
+    for (const comet of this.comets) {
+      const flight = flightAt(comet, time, view);
+      if (flight) this.paintComet(context, comet, flight);
     }
     context.restore();
   }
 
-  /** The arcs are drawn once into an image, and again only when the window
-   *  outgrows it, the core changes size or the stars change. */
-  private repaintTrails(view: SkyView): void {
-    const reach =
-      Math.hypot(
-        Math.max(view.poleX, view.width - view.poleX),
-        Math.max(view.poleY, view.height - view.poleY),
-      ) + 40;
-    const key = `${this.trails.length}|${Math.round(view.coreRadius)}|${Math.ceil(reach / 100)}|${view.pixelRatio}`;
-    if (key === this.trailKey) return;
-    this.trailKey = key;
-    this.trailSpan = Math.ceil(reach * TRAIL_MARGIN);
-    this.placed = placeTrails(this.trails, this.trailSpan, view.coreRadius);
-    const size = Math.min(MAX_TRAIL_IMAGE, Math.ceil(this.trailSpan * 2 * view.pixelRatio));
-    const scale = size / (this.trailSpan * 2);
-    this.trailImage.width = this.trailImage.height = size;
-    const image = this.trailImage.getContext('2d');
-    if (!image) return;
-    image.clearRect(0, 0, size, size);
-    image.save();
-    image.translate(size / 2, size / 2);
-    image.globalCompositeOperation = 'lighter';
-    image.lineCap = 'round';
-    for (const trail of this.placed) this.arc(image, trail, scale);
-    image.restore();
+  /** A streak from its bright head back to nothing, and a small round head. */
+  private paintComet(
+    context: CanvasRenderingContext2D,
+    comet: Comet,
+    flight: NonNullable<ReturnType<typeof flightAt>>,
+  ): void {
+    const colour = this.colourOf(comet.colour);
+    const tail = context.createLinearGradient(
+      flight.headX,
+      flight.headY,
+      flight.tailX,
+      flight.tailY,
+    );
+    tail.addColorStop(0, colour);
+    tail.addColorStop(1, 'transparent');
+    context.globalAlpha = flight.alpha;
+    context.strokeStyle = tail;
+    context.lineWidth = comet.widthPx;
+    context.beginPath();
+    context.moveTo(flight.headX, flight.headY);
+    context.lineTo(flight.tailX, flight.tailY);
+    context.stroke();
+    context.fillStyle = colour;
+    context.beginPath();
+    context.arc(flight.headX, flight.headY, comet.widthPx * HEAD_GROWTH, 0, Math.PI * 2);
+    context.fill();
   }
 
-  /** Brightest at the head, the leading end as the sky turns. */
-  private arc(image: CanvasRenderingContext2D, trail: PlacedTrail, scale: number): void {
-    image.strokeStyle = this.inks.stars[trail.tint];
-    image.lineWidth = trail.width * scale;
-    for (let step = 0; step < TRAIL_STEPS; step++) {
-      image.globalAlpha = liftFaint(
-        trail.alpha * trail.fade * Math.pow((TRAIL_STEPS - step) / TRAIL_STEPS, 1.7),
-      );
-      image.beginPath();
-      image.arc(
-        0,
-        0,
-        trail.radius * scale,
-        trail.head + (trail.length * step) / TRAIL_STEPS,
-        trail.head + (trail.length * (step + 1)) / TRAIL_STEPS,
-      );
-      image.stroke();
-    }
+  /** Severity colours are CSS variables, which a canvas cannot read; resolved once each. */
+  private colourOf(expression: string): string {
+    const known = this.colours.get(expression);
+    if (known) return known;
+    const resolved = resolveColour(this.host, expression);
+    this.colours.set(expression, resolved);
+    return resolved;
   }
 
   private paintVignette(context: CanvasRenderingContext2D, view: SkyView): void {
@@ -278,16 +226,11 @@ export class SkyPainter implements SkyCanvas {
 
 function readInks(host: HTMLElement): SkyInks {
   const ink = (token: string): string => resolveColour(host, `var(${token})`);
-  const stars = Object.fromEntries(STAR_TINTS.map((tint) => [tint, ink(tint)])) as Record<
-    StarTint,
-    string
-  >;
   return {
     glow: ink('--sky-glow'),
     mid: ink('--sky-mid'),
     deep: ink('--sky-deep'),
     vignette: ink('--sky-vignette'),
-    stars,
   };
 }
 

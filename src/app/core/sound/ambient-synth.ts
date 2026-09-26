@@ -1,5 +1,21 @@
 import { BAR_S, BREATH_S, Bar, Ping, barAt, hz } from './ambient-score';
+import { Chime, chimesFor, homeMotif } from './home-chimes';
+import { pluck } from './instruments';
+import { WorldVoice } from './orrery-score';
 import { Rig, RoomShape, buildRig, envelope, fadeTo, playFor } from './sound-rig';
+
+/** What Home's score listens to, read afresh every bar. */
+export interface HomeListening {
+  /** The projects on the ring, worst first. Empty until they are read. */
+  voices(): readonly WorldVoice[];
+  /** The lit project, whose motif plays when it changes. */
+  lit(): string | null;
+}
+
+const NOBODY: HomeListening = { voices: () => [], lit: () => null };
+/** A chime rings this many times longer than the same instrument's pluck on the Orrery. */
+const CHIME_RING = 3;
+const MOTIF_LEAD_S = 0.05;
 
 /** Plays the ambient score. Behind an interface so the preference can be
  *  tested without an audio device. */
@@ -64,6 +80,11 @@ interface Unease extends Drone {
 
 /** The ambient score on the Web Audio API: generated live, never a recording. */
 export class AmbientSynth implements AmbientPlayer {
+  private lastLit: string | null = null;
+  private currentBar: Bar | null = null;
+
+  constructor(private readonly listening: HomeListening = NOBODY) {}
+
   private rig: Rig | null = null;
   private drone: Drone | null = null;
   private unease: Unease | null = null;
@@ -126,6 +147,7 @@ export class AmbientSynth implements AmbientPlayer {
     const rig = this.rig;
     if (!rig) return;
     const { context } = rig;
+    this.playMotifIfLit(rig);
     // A timer held back past the bar would otherwise play every missed bar at once.
     if (this.nextBarAt < context.currentTime) this.nextBarAt = context.currentTime + 0.1;
     while (this.nextBarAt < context.currentTime + LOOKAHEAD_S) {
@@ -135,13 +157,42 @@ export class AmbientSynth implements AmbientPlayer {
     }
   }
 
+  private playMotifIfLit(rig: Rig): void {
+    const lit = this.listening.lit();
+    if (lit === this.lastLit) return;
+    this.lastLit = lit;
+    const voice = this.listening.voices().find((one) => one.key === lit);
+    if (!voice || !this.currentBar) return;
+    const at = rig.context.currentTime + MOTIF_LEAD_S;
+    homeMotif(voice, this.currentBar).forEach((chime) => playChime(rig, chime, at));
+  }
+
   private playBar(rig: Rig, bar: Bar, at: number): void {
     this.drone?.retune(bar, at);
     this.unease?.retune(bar, at);
     pad(rig, bar, at);
-    bar.pings.forEach((ping) => playPing(rig, ping, at + ping.offsetS));
+    this.currentBar = bar;
+    const voices = this.listening.voices();
+    // Before the projects are read, the old random pings stand in for them.
+    if (voices.length) {
+      chimesFor(this.barIndex, bar, voices).forEach((chime) => playChime(rig, chime, at));
+    } else {
+      bar.pings.forEach((ping) => playPing(rig, ping, at + ping.offsetS));
+    }
     if (bar.hasSweep) sweep(rig, at);
   }
+}
+
+/** A project's chime: its severity's instrument, ringing long and soft. */
+function playChime(rig: Rig, chime: Chime, barAt: number): void {
+  pluck(rig, {
+    at: barAt + chime.offsetS,
+    midi: chime.midi,
+    severity: chime.severity,
+    pan: chime.pan,
+    level: chime.level,
+    ring: CHIME_RING,
+  });
 }
 
 /** Two sines an octave apart through a filter that opens and closes with the core's breath. */

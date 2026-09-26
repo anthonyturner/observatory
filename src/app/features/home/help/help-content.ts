@@ -54,7 +54,7 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Sound',
     meaning:
-      'An ambient score made in this browser as you listen, with a hum that pulses with the core. It follows the core’s mood: a low, wavering unease rises under it as projects strain. Off until you turn it on, and remembered.',
+      'An ambient score made in this browser as you listen, with a hum that pulses with the core. Each project on the ring chimes in its own slow rhythm, busier with more open work, in an instrument that says its state and from where its dot sits; pointing at a project plays its motif. A low, wavering unease rises under it as projects strain. Off until you turn it on, and remembered.',
   },
   {
     term: 'Ask',

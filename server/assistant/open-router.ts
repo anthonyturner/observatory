@@ -1,3 +1,4 @@
+import { isTimeout, pause } from '../util/outbound.ts';
 import { keyScrubber } from './key-scrub.ts';
 import { OpenRouterError, reasonOf } from './open-router-error.ts';
 
@@ -79,11 +80,6 @@ const QUICK_SYSTEM =
   'sentences or a short list. Put code in `backticks`. No headings and no preamble. If the question needs the ' +
   "developer's own files, code or commands run on their machine, say in one sentence that it needs a Claude Code " +
   'task instead.';
-
-const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-const isTimeout = (error: unknown): boolean =>
-  error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
 
 const isObject = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null;

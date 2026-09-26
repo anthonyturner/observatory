@@ -1,3 +1,5 @@
+import type { AssistantRouter } from '../assistant/assistant-router.ts';
+import { routeRequestFrom } from '../assistant/route-request.ts';
 import { editRequestFrom, editTargetFrom } from '../edits/edit-request.ts';
 import type { PullEditor } from '../edits/pull-editor.ts';
 import type { RouteTable } from '../http/api-handler.ts';
@@ -57,5 +59,16 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       },
     },
     bodyLimits: { '/api/edit': EDIT_BODY_LIMIT_BYTES },
+  };
+}
+
+const ROUTE_PATH = '/api/route';
+
+/** `table` with Home's assistant: what it can do, and where a request goes. */
+export function withAssistant(table: RouteTable, assistant: AssistantRouter): RouteTable {
+  return {
+    ...table,
+    get: { ...table.get, [ROUTE_PATH]: () => assistant.status() },
+    post: { ...table.post, [ROUTE_PATH]: (body) => assistant.route(routeRequestFrom(body)) },
   };
 }

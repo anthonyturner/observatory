@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import type { AssistantRouter } from '../assistant/assistant-router.ts';
+import type { RouteRequest } from '../assistant/route-contract.ts';
 import type { EditRequest, EditTarget } from '../edits/edit-request.ts';
 import type { PullEditor } from '../edits/pull-editor.ts';
 import { createApiHandler } from '../http/api-handler.ts';
@@ -7,7 +9,7 @@ import type { QueueReport } from '../queue/queue-report.ts';
 import { EMPTY_TRIAGE, type TriageState } from '../triage/triage.ts';
 import type { TriageStore } from '../triage/triage-store.ts';
 import type { ApiReads } from './api-reads.ts';
-import { ownerRoutes } from './api-routes.ts';
+import { ownerRoutes, withAssistant } from './api-routes.ts';
 
 const queue: QueueReport = {
   generatedAt: '2026-09-26T00:00:00Z',
@@ -160,5 +162,44 @@ describe('ownerRoutes', () => {
 
   it('refuses a malformed repository name', async () => {
     assert.equal((await handle(new Request('http://x/api/queue?repo=nope'))).status, 400);
+  });
+});
+
+describe('withAssistant', () => {
+  const routed: RouteRequest[] = [];
+  const assistant: AssistantRouter = {
+    status: async () => ({ jev: 'off', where: 'local', skills: [] }),
+    route: async (request) => {
+      routed.push(request);
+      return { via: 'keyword', tier: 1, action: 'help', op: 'help', jev: 'off' };
+    },
+  };
+  const handle = createApiHandler(
+    withAssistant(ownerRoutes(reads, memoryTriage(), recordingEditor()), assistant),
+  );
+  const route = (body: unknown) =>
+    handle(
+      new Request('http://x/api/route', {
+        method: 'POST',
+        headers: { 'x-observatory': '1', 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+    );
+
+  it('answers the status, routes a request in shape, and keeps the owner’s routes', async () => {
+    const status = await (await handle(new Request('http://x/api/route'))).json();
+    const reply = (await (await route({ text: ' help ' })).json()) as { op: string };
+
+    assert.deepEqual(status, { jev: 'off', where: 'local', skills: [] });
+    assert.equal(reply.op, 'help');
+    assert.deepEqual(routed, [{ skill: null, pick: null, text: 'help' }]);
+    assert.equal((await handle(new Request('http://x/api/labels?repo=me/app'))).status, 200);
+  });
+
+  it('refuses a request that is not one', async () => {
+    const response = await route({ text: '' });
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: 'bad request: nothing to route' });
   });
 });

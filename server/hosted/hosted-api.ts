@@ -48,6 +48,8 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
     history: storeHistoryStore(store),
     collisions: (repo) => uncheckedCollisions(github, repo),
     usage: async () => null,
+    // A log folder is on the owner's machine, out of the hosted site's reach.
+    logs: async () => ({ configured: false, reason: 'not-set' }),
   });
   const owner = ownerRoutes(reads, storeTriageStore(store));
   const signIn = githubSignIn({

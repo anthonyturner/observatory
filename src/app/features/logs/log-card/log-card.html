@@ -1,0 +1,29 @@
+@if (view(); as card) {
+  <div class="card" [style.--sev]="card.colour">
+    <button class="close" type="button" aria-label="Close" (click)="closed.emit()">&times;</button>
+    <div>
+      <div class="bucketname">{{ card.kicker }}</div>
+      <div class="prno">{{ card.title }}</div>
+    </div>
+    @if (card.heading) {
+      <h2>{{ card.heading }}</h2>
+    }
+    @if (card.excerpt) {
+      <p class="excerpt">{{ card.excerpt }}</p>
+    }
+    <dl class="facts">
+      @for (fact of card.facts; track fact.term) {
+        <dt>{{ fact.term }}</dt>
+        <dd [class.hot]="fact.isHot">{{ fact.value }}</dd>
+      }
+    </dl>
+    @if (card.message; as message) {
+      <div class="cardacts">
+        <button type="button" (click)="copy(message)">{{ copyLabel() }}</button>
+        @if (card.findUrl; as url) {
+          <a [href]="url" target="_blank" rel="noopener">Find in code</a>
+        }
+      </div>
+    }
+  </div>
+}

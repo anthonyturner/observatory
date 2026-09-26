@@ -1,5 +1,5 @@
 import { cachedReads } from './app/api-reads.ts';
-import { ownerRoutes, withAssistant } from './app/api-routes.ts';
+import { ROUTE_PATH, ownerRoutes, withAssistant } from './app/api-routes.ts';
 import { assistantRouter } from './assistant/assistant-router.ts';
 import { openRouter } from './assistant/open-router.ts';
 import { localKey } from './assistant/open-router-key.ts';
@@ -14,6 +14,7 @@ import { pullEditor } from './edits/pull-editor.ts';
 import { ghCliReader } from './github/gh-cli-reader.ts';
 import { fileHistoryStore } from './history/history-store.ts';
 import { createApiHandler } from './http/api-handler.ts';
+import { guardLoopback } from './http/loopback-guard.ts';
 import { createApiServer } from './http/api-server.ts';
 import { withLocalSession } from './http/session.ts';
 import { fsLogFolder } from './logs/log-folder.ts';
@@ -21,12 +22,14 @@ import { fileLogsConfig } from './logs/logs-config.ts';
 import { logsReport } from './logs/logs-report.ts';
 import { findClaude } from './runner/claude-command.ts';
 import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
-import { guardRuns } from './runner/runs-guard.ts';
-import { withRunsRoutes } from './runner/runs-routes.ts';
+import { RUNS_PATH, withRunsRoutes } from './runner/runs-routes.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { fileHandoffStore } from './agents/handoff-store.ts';
 import { usageReport } from './usage/usage-report.ts';
+import { elevenLabs } from './voice/eleven-labs.ts';
+import { localElevenLabs } from './voice/eleven-labs-settings.ts';
+import { SPEAK_PATH, VOICE_PATH, withVoiceRoutes } from './voice/voice-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -74,16 +77,29 @@ const assistant = assistantRouter({
   runner,
 });
 
+const voiceSettings = localElevenLabs();
+const voice = {
+  voice: elevenLabs({ key: voiceSettings.key }),
+  preferredVoice: voiceSettings.preferredVoice,
+};
+
 // Loopback only: the API reads files from this machine's home folder, acts as
 // the account `gh` is signed in with, and runs Claude Code once the owner
 // confirms a proposal.
+/** Routes that run code or spend the owner's money: this machine's own page only. */
+const LOOPBACK_ONLY: ReadonlySet<string> = new Set([RUNS_PATH, ROUTE_PATH, VOICE_PATH, SPEAK_PATH]);
+
 const server = createApiServer(
-  guardRuns(
+  guardLoopback(
     createApiHandler(
       withLocalSession(
-        withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
+        withVoiceRoutes(
+          withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
+          voice,
+        ),
       ),
     ),
+    LOOPBACK_ONLY,
   ),
 );
 
@@ -104,5 +120,10 @@ server.listen(port, '127.0.0.1', () => {
     claude
       ? `Tier-3 runs are on: ${claude.file}`
       : 'Tier-3 runs are off: claude is not on the PATH.',
+  );
+  console.log(
+    voiceSettings.key
+      ? 'The ElevenLabs voice is on.'
+      : 'The ElevenLabs voice is off: no ELEVENLABS_API_KEY.',
   );
 });

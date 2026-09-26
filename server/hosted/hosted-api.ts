@@ -16,6 +16,8 @@ import { type ApiHandler, createApiHandler, json } from '../http/api-handler.ts'
 import { withoutCode } from '../queue/pull-detail.ts';
 import type { Store } from '../store/store.ts';
 import { upstashStore } from '../store/upstash-store.ts';
+import { elevenLabs } from '../voice/eleven-labs.ts';
+import { withVoiceRoutes } from '../voice/voice-routes.ts';
 import { storeTriageStore } from '../triage/triage-store.ts';
 import { machineRoutes } from './machine-routes.ts';
 import {
@@ -130,8 +132,12 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
     shells: ALL_SHELLS,
     runner: null,
   });
-  // Built into the owner's table so visitorRoutes refuses it with every other owner route.
-  const owner = withAssistant(ownerRoutes(reads, triage, editor), assistant);
+  // Built into the owner's table so visitorRoutes refuses them with every other owner route:
+  // every call to either can cost the owner money.
+  const owner = withVoiceRoutes(withAssistant(ownerRoutes(reads, triage, editor), assistant), {
+    voice: elevenLabs({ key: config.elevenLabs.key }),
+    preferredVoice: config.elevenLabs.preferredVoice,
+  });
   const machines = machineRoutes({
     reads,
     store,

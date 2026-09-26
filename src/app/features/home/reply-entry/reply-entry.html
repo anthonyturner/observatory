@@ -23,7 +23,7 @@
     <a [href]="url" (click)="follow($event, url)">Open it</a>
   }
 </p>
-<div class="acts">
+<div class="acts" #acts>
   @for (action of entry().actions; track $index) {
     @switch (action.kind) {
       @case ('send') {

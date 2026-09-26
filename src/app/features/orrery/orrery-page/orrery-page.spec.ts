@@ -43,7 +43,7 @@ describe('OrreryPage', () => {
     fixture.detectChanges();
     expect(element.querySelector('#help-title')?.textContent).toBe('Orrery');
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
     fixture.detectChanges();
     expect(element.querySelector('#help-title')).toBeNull();
   });

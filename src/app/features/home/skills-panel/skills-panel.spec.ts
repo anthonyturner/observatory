@@ -4,16 +4,18 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ASSISTANT_API, AssistantApi } from '../../../core/assistant/assistant-api';
 import { AssistantStatus, RouteReply, Skill } from '../../../core/assistant/assistant.types';
+import { ReplyFocus } from '../../../core/assistant/reply-focus';
+import { ReplyLog } from '../../../core/assistant/reply-log';
 import { SKILLS_SHOWN, SkillsPanel } from './skills-panel';
 
 const skills = (count: number): Skill[] =>
   Array.from({ length: count }, (_, index) => ({ id: `s${index}`, label: `Skill ${index}` }));
 
-async function render(status: () => Promise<AssistantStatus>) {
-  const api: AssistantApi = {
-    status: vi.fn(status),
-    route: vi.fn(() => new Promise<RouteReply>(() => undefined)),
-  };
+async function render(
+  status: () => Promise<AssistantStatus>,
+  route: () => Promise<RouteReply> = () => new Promise<RouteReply>(() => undefined),
+) {
+  const api: AssistantApi = { status: vi.fn(status), route: vi.fn(route) };
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
@@ -23,6 +25,7 @@ async function render(status: () => Promise<AssistantStatus>) {
     ],
   });
   const fixture = TestBed.createComponent(SkillsPanel);
+  document.body.append(fixture.nativeElement as HTMLElement);
   await fixture.whenStable();
   fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
@@ -37,6 +40,8 @@ const known = (list: Skill[]) => async (): Promise<AssistantStatus> => ({
 });
 
 describe('SkillsPanel', () => {
+  afterEach(() => document.body.replaceChildren());
+
   it('shows the first few, then browses all and folds them again', async () => {
     const { fixture, element, tiles } = await render(known(skills(SKILLS_SHOWN + 2)));
     const toggle = element.querySelector<HTMLButtonElement>('.browse button');
@@ -87,5 +92,62 @@ describe('SkillsPanel', () => {
     element.querySelector<HTMLButtonElement>('app-skill-tile button')?.click();
 
     expect(api.route).toHaveBeenCalledWith({ skill: 's0' });
+  });
+
+  it('takes the focus to the reply’s first choice while the tile still has it', async () => {
+    const whichProject: RouteReply = {
+      tier: 3,
+      ask: [{ label: 'app', pick: { project: 'app' } }],
+      commands: [],
+    };
+    const { fixture, element } = await render(known(skills(2)), async () => whichProject);
+    const tile = element.querySelector<HTMLButtonElement>('app-skill-tile button');
+
+    tile?.focus();
+    tile?.click();
+    await fixture.whenStable();
+
+    const latest = TestBed.inject(ReplyLog).entries()[0];
+    expect(TestBed.inject(ReplyFocus).firstAction()).toEqual({ entryId: latest.id });
+  });
+
+  it('leaves the focus alone once it has moved off the tile', async () => {
+    let answer: (reply: RouteReply) => void = () => undefined;
+    const { fixture, element } = await render(
+      known(skills(2)),
+      () => new Promise<RouteReply>((resolve) => (answer = resolve)),
+    );
+    const [first, second] = element.querySelectorAll<HTMLButtonElement>('app-skill-tile button');
+
+    first.focus();
+    first.click();
+    second.focus();
+    answer({ tier: 3, ask: [{ label: 'app', pick: {} }], commands: [] });
+    await fixture.whenStable();
+
+    expect(TestBed.inject(ReplyFocus).firstAction()).toBeNull();
+  });
+
+  it('gives Try again the focus back while the skills still do not load', async () => {
+    const { fixture, element } = await render(() => Promise.reject(new Error('offline')));
+    const retry = element.querySelector<HTMLButtonElement>('.lost button');
+
+    retry?.focus();
+    retry?.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(element.querySelector('.lost button'));
+  });
+
+  it('takes the focus to the first skill once they load', async () => {
+    let loads = 0;
+    const { fixture, element } = await render(() =>
+      loads++ === 0 ? Promise.reject(new Error('offline')) : known(skills(2))(),
+    );
+
+    element.querySelector<HTMLButtonElement>('.lost button')?.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(element.querySelector('app-skill-tile button'));
   });
 });

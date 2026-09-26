@@ -21,9 +21,11 @@ import {
 import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LastSeen } from '../../../core/queue/last-seen';
 import { QueueFeed } from '../../../core/queue/queue-feed';
+import { queueFog } from '../../../core/queue/queue-fog';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { Clock } from '../../../core/time/clock';
 import { IssuesTab } from '../../issues/issues-tab/issues-tab';
+import { FogVeil } from '../../../shared/night-sky/fog-veil';
 import { HelpButton } from '../../../shared/help/help-button';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
@@ -60,6 +62,7 @@ const ISSUES_FRAGMENT = 'issues';
     QueueList,
     HelpButton,
     HelpCard,
+    FogVeil,
   ],
   hostDirectives: [HelpShortcuts],
   providers: [QueueFeed, HistoryFeed, CollisionsFeed],
@@ -136,6 +139,7 @@ export class ReviewQueuePage {
     const number = this.openPull();
     return number === null ? [] : collisionsOf(this.collisions.report(), number);
   });
+  protected readonly fog = computed(() => queueFog(this.state(), this.now().getTime()));
   protected readonly stamp = computed(() => queueStamp(this.state(), this.now().getTime()));
   protected readonly waiting = computed(() => {
     const { status } = this.state();

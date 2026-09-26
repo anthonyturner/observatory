@@ -224,6 +224,27 @@ describe('ReviewQueuePage', () => {
     expect(element.querySelector('app-help-card')?.textContent).toContain('Threads');
   });
 
+  it('keeps the sky and fogs it when a refresh fails', () => {
+    const { fixture, element } = render();
+    const http = TestBed.inject(HttpTestingController);
+    expect(element.querySelector('app-fog-veil .veil')).toBeNull();
+
+    element.querySelector<HTMLButtonElement>('li .open')?.click();
+    fixture.detectChanges();
+    const panel = fixture.debugElement.query(By.directive(PullPanel))
+      .componentInstance as PullPanel;
+    panel.triaged.emit({ action: 'seen' });
+    http.expectOne('/api/triage').flush({});
+    http
+      .expectOne('/api/queue?repo=me/a')
+      .error(new ProgressEvent('error'), { status: 0, statusText: 'offline' });
+    fixture.detectChanges();
+
+    expect(element.querySelectorAll('li .open').length).toBe(2);
+    expect(element.querySelector('.pulls-stamp')?.textContent).toContain('refresh failing');
+    expect(element.querySelector('app-fog-veil .veil')).not.toBeNull();
+  });
+
   it('leads back to Home and the Orrery', () => {
     const hrefs = Array.from(render().element.querySelectorAll('.links a')).map((a) =>
       a.getAttribute('href'),

@@ -3,12 +3,22 @@ import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { Subscription, catchError, interval, map, of, startWith, switchMap } from 'rxjs';
 import { QueueReport, parseQueueReport } from './queue-report';
 
-/** Where one repository's queue stands. Only `ready` carries it. */
+/** Where one repository's queue stands. Only `ready` carries it; a `ready`
+ *  queue is stale when reads since have failed, and is kept rather than lost. */
 export type QueueState =
   | { readonly status: 'reading' }
   | { readonly status: 'unreachable' }
   | { readonly status: 'refused'; readonly reason: string }
-  | { readonly status: 'ready'; readonly report: QueueReport };
+  | { readonly status: 'ready'; readonly report: QueueReport; readonly isStale?: boolean };
+
+/** The state after a read: a failed read keeps the queue already shown, marked
+ *  stale, so the sky fogs over instead of vanishing. A refusal still replaces it. */
+export function nextQueueState(previous: QueueState, read: QueueState): QueueState {
+  if (read.status === 'unreachable' && previous.status === 'ready') {
+    return { ...previous, isStale: true };
+  }
+  return read;
+}
 
 const QUEUE_URL = '/api/queue';
 /** The API reads GitHub at most every two minutes for a queue. */
@@ -32,7 +42,7 @@ export class QueueFeed {
   /** Reads the queue again now, keeping what is shown until the answer comes:
    *  after a triage action, which the API merges in on every read. */
   refresh(repo: string): void {
-    this.fetch(repo).subscribe((state) => this.current.set(state));
+    this.fetch(repo).subscribe((state) => this.current.update((now) => nextQueueState(now, state)));
   }
 
   /** Starts reading `repo`'s queue, in place of any it was reading. */
@@ -44,7 +54,7 @@ export class QueueFeed {
         startWith(0),
         switchMap(() => this.fetch(repo)),
       )
-      .subscribe((state) => this.current.set(state));
+      .subscribe((state) => this.current.update((now) => nextQueueState(now, state)));
   }
 
   private fetch(repo: string) {

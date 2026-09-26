@@ -1,4 +1,4 @@
-import { keyScrubber } from '../assistant/key-scrub.ts';
+import { keyScrubber } from '../util/key-scrub.ts';
 import { isTimeout, pause } from '../util/outbound.ts';
 import { complaintOf } from './eleven-labs-complaint.ts';
 import { ElevenLabsError, voiceReasonOf } from './eleven-labs-error.ts';

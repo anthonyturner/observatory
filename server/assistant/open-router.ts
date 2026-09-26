@@ -1,5 +1,5 @@
 import { isTimeout, pause } from '../util/outbound.ts';
-import { keyScrubber } from './key-scrub.ts';
+import { keyScrubber } from '../util/key-scrub.ts';
 import { OpenRouterError, reasonOf } from './open-router-error.ts';
 
 /** One question Jev answers by choosing among `criteria`, keyed by the answer. */

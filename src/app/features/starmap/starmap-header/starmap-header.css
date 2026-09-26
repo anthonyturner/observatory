@@ -1,0 +1,163 @@
+/* pr-starmap's chrome, rule for rule. */
+:host {
+  display: block;
+}
+
+.brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+/* A way back up to the orrery, above the title: where a level you came down from belongs. */
+.up {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  margin-bottom: 9px;
+  padding: 4px 12px 4px 9px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+
+.up:hover {
+  color: var(--ink);
+  border-color: var(--flow);
+  transform: translateX(-2px);
+}
+
+.up:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+.up span[aria-hidden] {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--flow);
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 34px;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  background: var(--starmap-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.stamp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.stamp.replaying {
+  color: var(--warm);
+}
+
+/* Said once, beside the stamp, when the sky has fogged over. */
+.stale {
+  padding: 2px 9px;
+  border: 1px solid var(--starmap-stale-edge);
+  border-radius: 999px;
+  background: var(--starmap-stale-wash);
+  color: var(--starmap-stale-ink);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+  max-width: 720px;
+}
+
+.lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 13px 5px 10px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-family: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(14px) saturate(140%);
+  transition:
+    border-color 0.25s,
+    color 0.25s,
+    transform 0.25s,
+    box-shadow 0.25s;
+}
+
+.lg:hover {
+  border-color: var(--sev);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.lg:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+.lg[aria-pressed='true'] {
+  border-color: var(--sev);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--sev),
+    0 8px 24px -10px var(--sev);
+}
+
+.lg[data-empty='1'] {
+  opacity: 0.3;
+}
+
+.lg .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sev);
+  box-shadow: 0 0 10px 1px var(--sev);
+}
+
+.lg b {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  h1 {
+    font-size: 26px;
+  }
+}

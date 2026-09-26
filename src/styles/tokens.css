@@ -99,6 +99,15 @@
   --queue-row-hover: linear-gradient(90deg, rgba(142, 162, 255, 0.16), rgba(142, 162, 255, 0) 70%);
   --queue-quick: #9ef0c0;
 
+  /* The star map's chrome, as pr-starmap paints it. */
+  --starmap-title: linear-gradient(180deg, #ffffff 0%, #9fb3e8 125%);
+  --starmap-hover: rgba(142, 162, 255, 0.14);
+  --starmap-press: rgba(142, 162, 255, 0.2);
+  --starmap-stale-edge: rgba(190, 200, 230, 0.28);
+  --starmap-stale-wash: rgba(120, 130, 170, 0.14);
+  --starmap-stale-ink: #c9d1ea;
+  --starmap-row-title: #d3dcf5;
+
   /* A collision thread: a pair that would conflict. */
   --chart-thread-conflict: var(--bad);
 

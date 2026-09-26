@@ -11,11 +11,19 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { QueueFeed } from '../../../core/queue/queue-feed';
+import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { Clock } from '../../../core/time/clock';
 import { IssuesTab } from '../../issues/issues-tab/issues-tab';
 import { OrreryTools } from '../../orrery/orrery-tools/orrery-tools';
 import { PullPanel } from '../pull-panel/pull-panel';
-import { QueueFilter, queueLegend, queueSections, queueStamp } from '../queue-view';
+import {
+  QueueFilter,
+  hiddenCount,
+  queueLegend,
+  queueSections,
+  queueStamp,
+  visibleItems,
+} from '../queue-view';
 import { StarChart } from '../star-chart/star-chart';
 
 export type QueueView = 'map' | 'list';
@@ -36,6 +44,7 @@ export class ReviewQueuePage {
   private readonly feed = inject(QueueFeed);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly triage = inject(TriageClient);
   private readonly now = inject(Clock).now;
 
   protected readonly repo = toSignal(
@@ -61,8 +70,18 @@ export class ReviewQueuePage {
     const state = this.state();
     return state.status === 'ready' ? state.report.items : [];
   });
-  protected readonly legend = computed(() => queueLegend(this.items()));
-  protected readonly sections = computed(() => queueSections(this.items(), this.filter()));
+  /** Whether snoozed and dismissed pull requests are shown too. */
+  protected readonly showHidden = signal(false);
+  protected readonly hidden = computed(() => hiddenCount(this.items()));
+  /** What the chart, legend and list show. */
+  protected readonly visible = computed(() => visibleItems(this.items(), this.showHidden()));
+  protected readonly legend = computed(() => queueLegend(this.visible()));
+  protected readonly sections = computed(() => queueSections(this.visible(), this.filter()));
+  /** The open pull request's triage, for its panel. */
+  protected readonly openTriage = computed(() => {
+    const item = this.items().find((each) => each.number === this.openPull());
+    return item ? { isSeen: item.isSeen, hidden: item.hidden } : null;
+  });
   protected readonly stamp = computed(() => queueStamp(this.state(), this.now().getTime()));
   protected readonly waiting = computed(() => {
     const { status } = this.state();
@@ -70,7 +89,8 @@ export class ReviewQueuePage {
     if (status === 'unreachable')
       return 'The queue is out of reach: is the API running (npm start)?';
     if (status === 'refused') return 'That is not a repository this page can read.';
-    return this.items().length ? null : 'Nothing open: no pull request is waiting.';
+    if (!this.items().length) return 'Nothing open: no pull request is waiting.';
+    return this.visible().length ? null : 'Everything open is snoozed or dismissed.';
   });
 
   constructor() {
@@ -89,6 +109,12 @@ export class ReviewQueuePage {
       fragment: tab === 'issues' ? ISSUES_FRAGMENT : undefined,
       replaceUrl: true,
     });
+  }
+
+  /** Records a triage action, then reads the queue again to show it. */
+  protected recordTriage(number: number, choice: TriageChoice): void {
+    const repo = this.repo();
+    this.triage.record(repo, number, choice).subscribe(() => this.feed.refresh(repo));
   }
 
   /** A legend button filters to its bucket; pressing it again shows everything. */

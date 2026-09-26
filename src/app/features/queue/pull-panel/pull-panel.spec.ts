@@ -40,6 +40,33 @@ function render() {
 }
 
 describe('PullPanel', () => {
+  it('offers triage for what it is, and asks for the one pressed', () => {
+    const { fixture, http, element } = render();
+    fixture.componentRef.setInput('triage', { isSeen: true, hidden: { reason: 'dismissed' } });
+    const asked: unknown[] = [];
+    fixture.componentInstance.triaged.subscribe((choice) => asked.push(choice));
+    http.expectOne('/api/pull?repo=me/a&number=58').flush(detail);
+    fixture.detectChanges();
+    const buttons = Array.from(element.querySelectorAll<HTMLButtonElement>('.triage button'));
+
+    expect(buttons.map((button) => button.textContent?.trim())).toEqual(['Mark unseen', 'Restore']);
+    buttons[1].click();
+    expect(asked).toEqual([{ action: 'restore' }]);
+  });
+
+  it('offers snoozes and dismissal for one in the queue', () => {
+    const { fixture, http, element } = render();
+    fixture.componentRef.setInput('triage', { isSeen: false, hidden: null });
+    http.expectOne('/api/pull?repo=me/a&number=58').flush(detail);
+    fixture.detectChanges();
+
+    expect(
+      Array.from(element.querySelectorAll('.triage button')).map((button) =>
+        button.textContent?.trim(),
+      ),
+    ).toEqual(['Mark seen', 'Snooze 1 day', 'Snooze 7 days', 'Dismiss']);
+  });
+
   it('says it is reading, then shows the pull request', () => {
     const { fixture, http, element } = render();
     expect(element.querySelector('.state')?.textContent).toContain('Reading #58');

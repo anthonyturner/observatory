@@ -29,6 +29,12 @@ export class QueueFeed {
     inject(DestroyRef).onDestroy(() => this.watching?.unsubscribe());
   }
 
+  /** Reads the queue again now, keeping what is shown until the answer comes:
+   *  after a triage action, which the API merges in on every read. */
+  refresh(repo: string): void {
+    this.fetch(repo).subscribe((state) => this.current.set(state));
+  }
+
   /** Starts reading `repo`'s queue, in place of any it was reading. */
   watch(repo: string): void {
     this.watching?.unsubscribe();

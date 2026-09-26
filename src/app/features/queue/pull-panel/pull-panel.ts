@@ -9,9 +9,14 @@ import {
   output,
 } from '@angular/core';
 import { PullDetailFeed } from '../../../core/queue/pull-detail-feed';
+import { Hidden } from '../../../core/queue/queue-report';
+import { TriageChoice } from '../../../core/queue/triage-client';
 import { Clock } from '../../../core/time/clock';
 import { DECISION_LABEL, checkTally, checksToName, shortDate } from '../pull-view';
 import { BUCKET_LOOK } from '../queue-view';
+
+/** Snooze lengths offered, in days. */
+const SNOOZE_DAYS = [1, 7] as const;
 
 /** One pull request's details, beside the queue: why it is where it is,
  *  its checks, its review, what it closes, and its description. */
@@ -27,7 +32,15 @@ import { BUCKET_LOOK } from '../queue-view';
 export class PullPanel {
   readonly repo = input.required<string>();
   readonly number = input.required<number>();
+  /** Where it stands in this machine's triage, when the queue knows it. */
+  readonly triage = input<{ readonly isSeen: boolean; readonly hidden: Hidden | null } | null>(
+    null,
+  );
   readonly closed = output<void>();
+  /** Asks to record a triage action. */
+  readonly triaged = output<TriageChoice>();
+
+  protected readonly snoozeDays = SNOOZE_DAYS;
 
   private readonly feed = inject(PullDetailFeed);
   private readonly now = inject(Clock).now;

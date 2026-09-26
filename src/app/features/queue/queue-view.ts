@@ -1,11 +1,10 @@
-import { PULL_BUCKETS, PullBucket } from '../../core/projects/projects-report';
+import { QUEUE_BUCKETS, QueueBucket, QueueItem, shownBucket } from '../../core/queue/queue-report';
 import { QueueState } from '../../core/queue/queue-feed';
-import { QueueItem } from '../../core/queue/queue-report';
 import { hoursMinutes, localDayKey } from '../../core/usage/usage-format';
 
 /** How each bucket reads on the page: pr-starmap's star names, what they mean, their colour. */
 export const BUCKET_LOOK: Record<
-  PullBucket,
+  QueueBucket,
   { name: string; meaning: string; why: string; color: string }
 > = {
   conflicted: {
@@ -38,20 +37,45 @@ export const BUCKET_LOOK: Record<
     why: 'Ready for a review: oldest first.',
     color: 'var(--count-unreviewed)',
   },
+  fresh: {
+    name: 'Quies',
+    meaning: 'Seen recently',
+    why: 'You have looked at it: context, not a demand.',
+    color: 'var(--ok)',
+  },
 };
 
 /** A quick win is waiting on you and small enough to read in one sitting. */
 export const QUICK_LINES = 200;
 export const QUICK_FILTER = 'quick';
 
-export type QueueFilter = PullBucket | typeof QUICK_FILTER | null;
+export type QueueFilter = QueueBucket | typeof QUICK_FILTER | null;
 
 export const linesOf = (item: QueueItem): number | null =>
   item.additions === null ? null : item.additions + (item.deletions ?? 0);
 
 export function isQuickWin(item: QueueItem): boolean {
   const lines = linesOf(item);
-  return item.bucket === 'unreviewed' && lines !== null && lines <= QUICK_LINES;
+  const waiting = item.bucket === 'unreviewed';
+  return waiting && lines !== null && lines <= QUICK_LINES;
+}
+
+/** Pull requests in the queue now: none dismissed or snoozed, unless asked for. */
+export const visibleItems = (items: readonly QueueItem[], showHidden: boolean): QueueItem[] =>
+  items.filter((item) => showHidden || item.hidden === null);
+
+export const hiddenCount = (items: readonly QueueItem[]): number =>
+  items.filter((item) => item.hidden !== null).length;
+
+/** "snoozed until Sep 30" or "dismissed until it changes", for a hidden row. */
+export function hiddenNote(item: QueueItem, locale?: string): string | null {
+  if (!item.hidden) return null;
+  if (item.hidden.reason === 'dismissed') return 'dismissed until it changes';
+  const until = new Date(item.hidden.until).toLocaleDateString(locale, {
+    month: 'short',
+    day: 'numeric',
+  });
+  return `snoozed until ${until}`;
 }
 
 /** One row of the list. */
@@ -62,10 +86,12 @@ export interface QueueRow {
   readonly isDraft: boolean;
   /** "closes #3 · idle 4d · +40 −2". */
   readonly detail: string;
+  /** Why it is hidden, when it is shown anyway. */
+  readonly hiddenNote: string | null;
 }
 
 export interface QueueSection {
-  readonly bucket: PullBucket;
+  readonly bucket: QueueBucket;
   readonly name: string;
   readonly meaning: string;
   readonly color: string;
@@ -95,18 +121,21 @@ const rowOf = (item: QueueItem): QueueRow => ({
   url: item.url,
   isDraft: item.isDraft,
   detail: detailOf(item),
+  hiddenNote: hiddenNote(item),
 });
 
 /** The list, one section per bucket in order, narrowed by the filter. */
 export function queueSections(items: readonly QueueItem[], filter: QueueFilter): QueueSection[] {
-  return PULL_BUCKETS.filter((bucket) => !filter || filter === QUICK_FILTER || filter === bucket)
+  return QUEUE_BUCKETS.filter((bucket) => !filter || filter === QUICK_FILTER || filter === bucket)
     .map((bucket) => ({
       bucket,
       name: BUCKET_LOOK[bucket].name,
       meaning: BUCKET_LOOK[bucket].meaning,
       color: BUCKET_LOOK[bucket].color,
       rows: items
-        .filter((item) => item.bucket === bucket && (filter !== QUICK_FILTER || isQuickWin(item)))
+        .filter(
+          (item) => shownBucket(item) === bucket && (filter !== QUICK_FILTER || isQuickWin(item)),
+        )
         .map(rowOf),
     }))
     .filter((section) => section.rows.length > 0);
@@ -114,10 +143,10 @@ export function queueSections(items: readonly QueueItem[], filter: QueueFilter):
 
 /** A legend button per bucket, then quick wins, each with its count. */
 export function queueLegend(items: readonly QueueItem[]): LegendEntry[] {
-  const buckets = PULL_BUCKETS.map((bucket) => ({
+  const buckets = QUEUE_BUCKETS.map((bucket) => ({
     filter: bucket,
     label: BUCKET_LOOK[bucket].meaning.toLowerCase(),
-    count: items.filter((item) => item.bucket === bucket).length,
+    count: items.filter((item) => shownBucket(item) === bucket).length,
     color: BUCKET_LOOK[bucket].color,
   }));
   return [

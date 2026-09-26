@@ -13,6 +13,8 @@ const item = (number: number, overrides: Partial<QueueItem> = {}): QueueItem => 
   deletions: 1,
   idleDays: 0,
   ageDays: 0,
+  isSeen: false,
+  hidden: null,
   ...overrides,
 });
 

@@ -43,6 +43,11 @@ export class OrreryPage {
       : 'No worlds yet: the signed-in GitHub account owns no repositories.';
   });
 
+  /** A world's review queue, one level down; Back returns here. */
+  protected openQueue(repo: string): void {
+    void this.router.navigateByUrl(`/p/${repo}`);
+  }
+
   /** Home opens at the project's card, which Home brings into view. */
   protected showOnHome(repo: string): void {
     void this.router.navigate(['/'], { queryParams: { project: repo } });

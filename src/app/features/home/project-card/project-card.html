@@ -2,7 +2,7 @@
 <article class="card" [attr.aria-labelledby]="nameId">
   <span class="kind">{{ severity().kind }}</span>
   <h3 class="name" [id]="nameId">
-    <a [href]="snapshot.dashboardUrl">{{ snapshot.name }}</a>
+    <a [routerLink]="snapshot.dashboardUrl">{{ snapshot.name }}</a>
   </h3>
   <div class="repo">{{ snapshot.repo }}</div>
 
@@ -36,7 +36,7 @@
 
   <nav class="links" [attr.aria-label]="snapshot.name + ': parts of its star map'">
     @for (part of parts; track part.label) {
-      <a [href]="snapshot.dashboardUrl + part.hash">{{ part.label }}</a>
+      <a [routerLink]="snapshot.dashboardUrl" [fragment]="part.fragment">{{ part.label }}</a>
     }
   </nav>
   <a

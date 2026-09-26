@@ -13,12 +13,12 @@ const sleep: Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * says `UNKNOWN`. Asking for one pull request starts the work, so a short
  * retry usually settles it. Whatever is still unknown stays unknown.
  */
-export async function settleMergeable(
-  github: GitHubReader,
+export async function settleMergeable<P extends PullRequest>(
+  github: Pick<GitHubReader, 'mergeableOf'>,
   repo: string,
-  pulls: readonly PullRequest[],
+  pulls: readonly P[],
   wait: Sleep = sleep,
-): Promise<PullRequest[]> {
+): Promise<P[]> {
   let settled = [...pulls];
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const pending = settled.filter((pull) => pull.mergeable === 'UNKNOWN');

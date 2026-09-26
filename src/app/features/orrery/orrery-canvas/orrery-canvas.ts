@@ -10,6 +10,7 @@ import {
   inject,
   input,
   model,
+  output,
   viewChild,
 } from '@angular/core';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
@@ -59,6 +60,8 @@ export class OrreryCanvas {
   readonly worlds = input.required<readonly OrreryWorld[]>();
   /** The repository of the world whose card is shown, or null. */
   readonly selected = model<string | null>(null);
+  /** Asks to open a world's review queue: a click, or a second tap on a touch screen. */
+  readonly open = output<string>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly document = inject(DOCUMENT);
@@ -241,7 +244,7 @@ export class OrreryCanvas {
     this.press = null;
     if (wasClick) {
       this.camera.stopDrift();
-      this.clickAt(event.clientX, event.clientY);
+      this.clickAt(event.clientX, event.clientY, event.pointerType === 'touch');
     }
     this.loop?.kick();
   }
@@ -318,10 +321,17 @@ export class OrreryCanvas {
     }
   }
 
-  /** A click pins the world's card; a click on empty sky clears it. */
-  private clickAt(x: number, y: number): void {
+  /** A click opens the world's review queue. A touch screen has no hover, so
+   *  its first tap shows the card and a second tap on the same world opens it.
+   *  A click on empty sky clears the card. */
+  private clickAt(x: number, y: number, isTouch: boolean): void {
     const key = pickWorld(this.drawn, x, y);
     this.cancelHide();
+    const isFirstTap = isTouch && key !== this.selected();
+    if (key && !isFirstTap) {
+      this.open.emit(key);
+      return;
+    }
     this.pinned = key;
     this.selected.set(key);
   }

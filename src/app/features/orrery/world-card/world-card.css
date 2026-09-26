@@ -172,6 +172,12 @@ dd {
     background 0.2s;
 }
 
+.actions .primary {
+  flex-basis: 100%;
+  border-color: var(--flow-edge);
+  background: var(--flow-soft);
+}
+
 .actions > *:hover {
   border-color: var(--flow);
   background: var(--flow-tint-strong);

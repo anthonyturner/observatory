@@ -1,0 +1,51 @@
+<header class="hud">
+  <div class="brand">
+    <h1>Review Queue</h1>
+    <span class="stamp">{{ stamp() }}</span>
+  </div>
+  <nav class="links" aria-label="Other views">
+    <a routerLink="/orrery">Orrery</a>
+    <a routerLink="/"><span aria-hidden="true">&lsaquo;</span> Home</a>
+  </nav>
+</header>
+
+<div class="legend" role="group" aria-label="Show only">
+  @for (entry of legend(); track entry.filter) {
+    <button
+      type="button"
+      [style.--sev]="entry.color"
+      [attr.aria-pressed]="filter() === entry.filter"
+      [disabled]="entry.count === 0"
+      (click)="toggleFilter(entry.filter)"
+    >
+      <span class="dot" aria-hidden="true"></span><b>{{ entry.count }}</b> {{ entry.label }}
+    </button>
+  }
+</div>
+
+<main class="list">
+  @if (waiting(); as message) {
+    <p class="state" role="status">{{ message }}</p>
+  }
+  @for (section of sections(); track section.bucket) {
+    <section [style.--sev]="section.color" [attr.aria-labelledby]="'bucket-' + section.bucket">
+      <h2 [id]="'bucket-' + section.bucket">
+        {{ section.name }}<small>{{ section.meaning }} · {{ section.rows.length }}</small>
+      </h2>
+      <ul>
+        @for (row of section.rows; track row.number) {
+          <li>
+            <span class="number">#{{ row.number }}</span>
+            <a class="title" [href]="row.url" target="_blank" rel="noopener"
+              >{{ row.title }}<span class="visually-hidden">, on GitHub, in a new tab</span></a
+            >
+            @if (row.isDraft) {
+              <span class="draft">draft</span>
+            }
+            <span class="detail">{{ row.detail }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</main>

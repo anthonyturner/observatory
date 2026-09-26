@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { ProjectJump } from '../../../core/projects/project-jump';
 import { ProjectSnapshot } from '../../../core/projects/project.types';
 import { ProjectCard } from './project-card';
@@ -19,6 +20,8 @@ function render(project: ProjectSnapshot): HTMLElement {
 }
 
 describe('ProjectCard', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
+
   it('shows the worst problem, the counts and the way in', () => {
     const card = render(blocked);
 

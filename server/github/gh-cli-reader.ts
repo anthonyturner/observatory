@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { GitHubReader, PullRequest, RepoRef } from './github-reader.ts';
+import type { QueuePull, QueueReader } from './queue-reader.ts';
 
 const run = promisify(execFile);
 
@@ -11,6 +12,7 @@ const ISSUE_LIMIT = '1000';
 const REPO_LIMIT = '1000';
 const PULL_FIELDS =
   'number,title,url,mergeable,statusCheckRollup,closingIssuesReferences,updatedAt';
+const QUEUE_FIELDS = `${PULL_FIELDS},isDraft,additions,deletions,createdAt`;
 
 async function gh(args: readonly string[]): Promise<string> {
   const { stdout } = await run('gh', [...args], { encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES });
@@ -23,7 +25,7 @@ const ghJson = async <T>(args: readonly string[]): Promise<T> => JSON.parse(awai
 const ISSUES_DISABLED = /has disabled issues/i;
 
 /** GitHub through the `gh` CLI, as the account this machine signed it in with. */
-export function ghCliReader(): GitHubReader {
+export function ghCliReader(): GitHubReader & QueueReader {
   return {
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
@@ -50,6 +52,19 @@ export function ghCliReader(): GitHubReader {
         PULL_LIMIT,
         '--json',
         PULL_FIELDS,
+      ]),
+    queuePulls: (repo) =>
+      ghJson<QueuePull[]>([
+        'pr',
+        'list',
+        '--repo',
+        repo,
+        '--state',
+        'open',
+        '--limit',
+        PULL_LIMIT,
+        '--json',
+        QUEUE_FIELDS,
       ]),
     mergeableOf: async (repo, pull) =>
       (

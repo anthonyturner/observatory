@@ -1,4 +1,4 @@
-<app-orrery-canvas #canvas [worlds]="worlds()" [(selected)]="selected" />
+<app-orrery-canvas #canvas [worlds]="worlds()" [(selected)]="selected" (open)="openQueue($event)" />
 
 <header class="hud top">
   <div class="brand">
@@ -17,6 +17,7 @@
     [world]="world"
     (closed)="selected.set(null)"
     (showOnHome)="showOnHome($event)"
+    (openQueue)="openQueue($event)"
     (pointerenter)="canvas.holdCard()"
     (pointerleave)="canvas.releaseCard()"
   />

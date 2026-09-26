@@ -5,7 +5,7 @@ import { usageMeters } from './usage-meters';
 import { SAMPLE_VITALS_COLUMN, VitalsColumn } from './vitals';
 
 /** Where Home's left column reads from. The usage meters are live from
- *  pr-starmap's site; issues, directives and documents are still samples. */
+ *  Observatory's API; issues, directives and documents are still samples. */
 export const VITALS_COLUMN = new InjectionToken<Signal<VitalsColumn>>('VITALS_COLUMN', {
   providedIn: 'root',
   factory: () => {

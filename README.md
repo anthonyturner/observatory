@@ -35,6 +35,7 @@ Requires Node.js 24.15 or newer.
 npm ci
 npm start          # http://localhost:4200
 npm test -- --watch=false
+npm run test:server
 npm run lint
 npm run build
 ```
@@ -42,15 +43,25 @@ npm run build
 ## Live data
 
 The usage meters (tokens today, the 5-hour window and the weekly limit) are
-live. They read your Claude Code usage from [pr-starmap](https://github.com/anthonyturner/pr-starmap)'s
-local site, which `npm start` proxies at `/api`:
+live. `npm start` runs Observatory's own API (`server/`, on port 4319) next to
+the Angular dev server, which proxies `/api` to it. The API reads Claude Code's
+files on this machine, so it listens on loopback only:
 
-```bash
-# in a pr-starmap checkout
-node bin/serve.mjs          # http://localhost:4317
-```
+- **Tokens** come from Claude Code's session logs in `~/.claude/projects`, each
+  reply counted once, by local day and model family.
+- **Limits** come from your status line, the one place Claude Code reports
+  them. Add this to a Node status line script, where `status` is the JSON it
+  was given on stdin:
 
-Without it the meters say "store out of reach" rather than showing a number.
+  ```js
+  import('file:///path/to/observatory/server/usage/limit-recorder.ts')
+    .then((m) => m.record(status))
+    .catch(() => {});
+  ```
+
+  Readings are kept in `~/.claude/observatory/usage/`. Without them the limit
+  meters say so rather than showing a number.
+
 Everything else on Home is still sample data.
 
 ## Working on it

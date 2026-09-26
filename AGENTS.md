@@ -14,6 +14,8 @@ that matches the work before starting it.
 | `npm run build` | Builds the project. Run it before calling any change finished. |
 | `npm test -- --watch=false` | Runs the tests. |
 | `npm run lint` | Runs the linters. |
+| `npm run test:server` | Runs the API server's tests (`node:test`). |
+| `npm run typecheck:server` | Type-checks the API server under strict TypeScript. |
 
 The default branch is `main`. Infer the layout from the
 repository tree, which cannot drift out of date the way a list in this file can.

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ProjectJump } from '../../../core/projects/project-jump';
 import { ProjectSnapshot } from '../../../core/projects/project.types';
 import { ProjectCard } from './project-card';
 
@@ -35,5 +36,32 @@ describe('ProjectCard', () => {
 
     expect(card.querySelector('.unknown')?.textContent).toContain('Counts unknown, not zero.');
     expect(card.querySelector('.counts')).toBeNull();
+  });
+
+  it('comes into view, lit and focused, when its dot is clicked', () => {
+    Element.prototype.scrollIntoView ??= () => undefined;
+    const fixture = TestBed.createComponent(ProjectCard);
+    fixture.componentRef.setInput('project', blocked);
+    fixture.detectChanges();
+    const card = fixture.nativeElement as HTMLElement;
+    document.body.append(card);
+
+    TestBed.inject(ProjectJump).jumpTo('me/pr-starmap');
+    fixture.detectChanges();
+
+    expect(card.classList).toContain('flash');
+    expect(document.activeElement).toBe(card.querySelector('.name a'));
+    card.remove();
+  });
+
+  it('ignores a jump to another project', () => {
+    const fixture = TestBed.createComponent(ProjectCard);
+    fixture.componentRef.setInput('project', blocked);
+    fixture.detectChanges();
+
+    TestBed.inject(ProjectJump).jumpTo('me/other');
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).classList).not.toContain('flash');
   });
 });

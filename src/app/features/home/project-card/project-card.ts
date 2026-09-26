@@ -2,12 +2,19 @@ import {
   ChangeDetectionStrategy,
   Component,
   DOCUMENT,
+  DestroyRef,
+  ElementRef,
   computed,
+  effect,
   inject,
   input,
+  signal,
+  untracked,
 } from '@angular/core';
+import { MotionPreference } from '../../../core/motion/motion-preference';
 import { countBarsOf } from '../../../core/projects/count-bars';
 import { LitProject } from '../../../core/projects/lit-project';
+import { ProjectJump } from '../../../core/projects/project-jump';
 import { totalsOf } from '../../../core/projects/project-totals';
 import { ProjectSnapshot } from '../../../core/projects/project.types';
 import { severityOf } from '../../../core/projects/severity';
@@ -26,6 +33,8 @@ const STAR_MAP_PARTS: readonly StarMapPart[] = [
 ];
 
 let nextCardId = 0;
+/** How long a card stays highlighted after a jump to it. */
+const FLASH_MS = 1800;
 
 /** One project: its worst problem as a colour, what is waiting, and the way in. */
 @Component({
@@ -35,6 +44,7 @@ let nextCardId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.--sev]': 'severity().color',
+    '[class.flash]': 'isFlashing()',
     // Pointing at a card, or tabbing into it, lights its bead on the core.
     '(pointerenter)': 'light()',
     '(pointerleave)': 'unlightUnlessFocused($event)',
@@ -54,6 +64,35 @@ export class ProjectCard {
 
   private readonly lit = inject(LitProject);
   private readonly document = inject(DOCUMENT);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly motion = inject(MotionPreference);
+  private readonly projectJump = inject(ProjectJump);
+  /** A card made after a jump (as the projects arrive) must not answer it late. */
+  private handledJump = this.projectJump.request()?.id ?? 0;
+  private flashTimer: ReturnType<typeof setTimeout> | null = null;
+  protected readonly isFlashing = signal(false);
+
+  constructor() {
+    effect(() => {
+      const request = this.projectJump.request();
+      if (!request || request.id === this.handledJump) return;
+      this.handledJump = request.id;
+      if (request.key === untracked(this.project).repo) untracked(() => this.arrive());
+    });
+    inject(DestroyRef).onDestroy(() => {
+      if (this.flashTimer) clearTimeout(this.flashTimer);
+    });
+  }
+
+  /** Scrolls the card into view, gives its name the focus, and lights it for a moment. */
+  private arrive(): void {
+    const card = this.host.nativeElement;
+    card.scrollIntoView({ behavior: this.motion.isStill() ? 'auto' : 'smooth', block: 'center' });
+    card.querySelector<HTMLElement>('.name a')?.focus({ preventScroll: true });
+    this.isFlashing.set(true);
+    if (this.flashTimer) clearTimeout(this.flashTimer);
+    this.flashTimer = setTimeout(() => this.isFlashing.set(false), FLASH_MS);
+  }
 
   protected light(): void {
     this.lit.light(this.project().repo);

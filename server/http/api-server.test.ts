@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
 import type { AddressInfo } from 'node:net';
 import { after, before, describe, it } from 'node:test';
-import { createApiServer } from './api-server.ts';
+import { BadRequest, createApiServer } from './api-server.ts';
 
 describe('createApiServer', () => {
   const server = createApiServer({
     '/api/ok': async () => ({ hello: 'world' }),
+    '/api/echo': async (query) => {
+      const name = query.get('name');
+      if (!name) throw new BadRequest('name is required');
+      return { name };
+    },
     '/api/broken': async () => {
       throw new Error('boom');
     },
@@ -23,6 +28,19 @@ describe('createApiServer', () => {
 
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { hello: 'world' });
+  });
+
+  it('hands a route its query string', async () => {
+    const response = await fetch(`${base}/api/echo?name=me%2Fa`);
+
+    assert.deepEqual(await response.json(), { name: 'me/a' });
+  });
+
+  it('answers a bad request with 400 and why', async () => {
+    const response = await fetch(`${base}/api/echo`);
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: 'name is required' });
   });
 
   it('says not found for an unknown path or method', async () => {

@@ -46,6 +46,9 @@
   }
 
   <div class="actions">
+    <button type="button" class="primary" (click)="openQueue.emit(snapshot.repo)">
+      Review queue
+    </button>
     <button type="button" (click)="showOnHome.emit(snapshot.repo)">Show on Home</button>
     <a [href]="pullsUrl()" target="_blank" rel="noopener"
       >Pull requests <span aria-hidden="true">&#8599;</span></a

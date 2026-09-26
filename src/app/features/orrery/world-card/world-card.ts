@@ -14,6 +14,8 @@ import { OrreryWorld } from '../../../core/orrery/world-layout';
 export class WorldCard {
   readonly world = input.required<OrreryWorld>();
   readonly closed = output<void>();
+  /** Asks to open this project's review queue. */
+  readonly openQueue = output<string>();
   /** Asks to open Home at this project's card. */
   readonly showOnHome = output<string>();
 

@@ -21,6 +21,11 @@ const ready = (projects: ProjectSnapshot[]): ProjectsState => ({
   report: { generatedAt: new Date().toISOString(), projects, directives: [] },
 });
 
+const buttonNamed = (element: HTMLElement, words: string) =>
+  Array.from(element.querySelectorAll<HTMLButtonElement>('app-world-card .actions button')).find(
+    (button) => button.textContent?.includes(words),
+  );
+
 function render(state: ProjectsState) {
   TestBed.configureTestingModule({
     providers: [provideRouter([]), { provide: PROJECTS_STATE, useValue: signal(state) }],
@@ -53,8 +58,20 @@ describe('OrreryPage', () => {
     const canvas = fixture.debugElement.query(By.directive(OrreryCanvas));
     (canvas.componentInstance as OrreryCanvas).selected.set('me/a');
     fixture.detectChanges();
-    element.querySelector<HTMLButtonElement>('app-world-card .actions button')?.click();
+    buttonNamed(element, 'Show on Home')?.click();
 
     expect(navigate).toHaveBeenCalledWith(['/'], { queryParams: { project: 'me/a' } });
+  });
+
+  it('opens a world’s review queue from its card', () => {
+    const { fixture, element } = render(ready([project('a', 2)]));
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    const canvas = fixture.debugElement.query(By.directive(OrreryCanvas));
+    (canvas.componentInstance as OrreryCanvas).selected.set('me/a');
+    fixture.detectChanges();
+    buttonNamed(element, 'Review queue')?.click();
+
+    expect(navigate).toHaveBeenCalledWith('/p/me/a');
   });
 });

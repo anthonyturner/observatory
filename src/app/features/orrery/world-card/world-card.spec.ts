@@ -35,16 +35,24 @@ describe('WorldCard', () => {
     );
   });
 
-  it('asks to show the project on Home, and to close', () => {
+  it('asks to open the review queue, to show the project on Home, and to close', () => {
     const { fixture, element } = render(project);
     const shown: string[] = [];
+    const opened: string[] = [];
     let closed = 0;
     fixture.componentInstance.showOnHome.subscribe((repo) => shown.push(repo));
+    fixture.componentInstance.openQueue.subscribe((repo) => opened.push(repo));
     fixture.componentInstance.closed.subscribe(() => closed++);
+    const button = (words: string) =>
+      Array.from(element.querySelectorAll<HTMLButtonElement>('.actions button')).find((b) =>
+        b.textContent?.includes(words),
+      );
 
-    element.querySelector<HTMLButtonElement>('.actions button')?.click();
+    button('Review queue')?.click();
+    button('Show on Home')?.click();
     element.querySelector<HTMLButtonElement>('.close')?.click();
 
+    expect(opened).toEqual(['me/rivals_pulse']);
     expect(shown).toEqual(['me/rivals_pulse']);
     expect(closed).toBe(1);
   });

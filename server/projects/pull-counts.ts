@@ -3,6 +3,17 @@ import type { ProjectCounts } from './project-types.ts';
 
 export type PullBucket = 'conflicted' | 'failing' | 'unknown' | 'unlinked' | 'unreviewed';
 
+/** Most urgent first; the index is the sort key. */
+export const BUCKET_ORDER: readonly PullBucket[] = [
+  'conflicted',
+  'failing',
+  'unknown',
+  'unlinked',
+  'unreviewed',
+];
+
+export const bucketRank = (bucket: PullBucket): number => BUCKET_ORDER.indexOf(bucket);
+
 const DAY_MS = 86_400_000;
 const FAILED_VERDICTS = new Set(['FAILURE', 'ERROR', 'TIMED_OUT']);
 

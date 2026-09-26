@@ -11,6 +11,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { countBarsOf } from '../../../core/projects/count-bars';
 import { LitProject } from '../../../core/projects/lit-project';
@@ -22,14 +23,14 @@ import { severityOf } from '../../../core/projects/severity';
 /** A part of a project's star map the card links to. */
 interface StarMapPart {
   readonly label: string;
-  readonly hash: string;
+  readonly fragment?: string;
 }
 
 const STAR_MAP_PARTS: readonly StarMapPart[] = [
-  { label: 'PRs', hash: '' },
-  { label: 'Issues', hash: '#issues' },
-  { label: 'Logs', hash: '#logs' },
-  { label: 'Usage', hash: '#usage' },
+  { label: 'PRs' },
+  { label: 'Issues', fragment: 'issues' },
+  { label: 'Logs', fragment: 'logs' },
+  { label: 'Usage', fragment: 'usage' },
 ];
 
 let nextCardId = 0;
@@ -39,6 +40,7 @@ const FLASH_MS = 1800;
 /** One project: its worst problem as a colour, what is waiting, and the way in. */
 @Component({
   selector: 'app-project-card',
+  imports: [RouterLink],
   templateUrl: './project-card.html',
   styleUrl: './project-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

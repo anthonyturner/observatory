@@ -1,0 +1,35 @@
+<figure class="meteors timeline">
+  <figcaption>
+    <span>{{ caption() }}</span>
+    <span class="tctl">
+      <button
+        type="button"
+        [title]="replayTitle()"
+        [disabled]="!canReplay()"
+        [attr.aria-pressed]="playing()"
+        (click)="replay.emit()"
+      >
+        {{ playing() ? 'Pause' : 'Replay' }}
+      </button>
+      <button
+        type="button"
+        title="Back to the sky as it is now"
+        [attr.aria-pressed]="!replayAt()"
+        (click)="live.emit()"
+      >
+        Live
+      </button>
+    </span>
+  </figcaption>
+  <canvas
+    #canvas
+    aria-label="Open pull requests per day; drag to replay a past refresh"
+    (pointerdown)="onPointerDown($event)"
+    (pointerup)="onPointerUp()"
+    (pointermove)="onPointerMove($event)"
+    (pointerleave)="tip.set(null)"
+  ></canvas>
+  @if (tip(); as shown) {
+    <div class="mtip" [style.left.px]="shown.left">{{ shown.text }}</div>
+  }
+</figure>

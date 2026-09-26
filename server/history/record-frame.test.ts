@@ -11,7 +11,7 @@ const reportOf = (...items: [number, string][]): QueueReport =>
   ({
     generatedAt: 'x',
     repo: 'me/a',
-    items: items.map(([number, bucket]) => ({ number, title: `#${number}`, bucket })),
+    items: items.map(([number, bucket]) => ({ number, title: `#${number}`, bucket, idleDays: 2 })),
   }) as unknown as QueueReport;
 
 function memoryStore(frames: Frame[] = []): HistoryStore & { frames: Frame[] } {
@@ -53,7 +53,7 @@ describe('recordFrame', () => {
     const frame = await recordFrame(reportOf([5, 'failing']), store, github, NOW);
 
     assert.equal(store.frames.length, 2);
-    assert.deepEqual(frame?.items, [{ number: 5, title: '#5', bucket: 'failing' }]);
+    assert.deepEqual(frame?.items, [{ number: 5, title: '#5', bucket: 'failing', idleDays: 2 }]);
     // #3 still open past the list's limit, and #4 unreadable: neither is guessed.
     assert.deepEqual(frame?.departed, [
       { number: 1, title: '#1', fate: 'merged' },

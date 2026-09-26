@@ -1,0 +1,178 @@
+{
+  "replies": [
+    {
+      "data": {
+        "search": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "Y3Vyc29yOjEw"
+          },
+          "nodes": [
+            {
+              "number": 17,
+              "title": "feat(apply): add a button to prepare top matches on demand",
+              "createdAt": "2026-09-26T09:04:34Z",
+              "closedAt": null,
+              "mergedAt": null,
+              "state": "OPEN"
+            },
+            {
+              "number": 16,
+              "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies",
+              "createdAt": "2026-09-26T08:56:34Z",
+              "closedAt": null,
+              "mergedAt": null,
+              "state": "OPEN"
+            },
+            {
+              "number": 13,
+              "title": "feat(apply): add an Approve-and-fill one-click action",
+              "createdAt": "2026-09-25T09:53:38Z",
+              "closedAt": "2026-09-26T08:31:21Z",
+              "mergedAt": "2026-09-26T08:31:21Z",
+              "state": "MERGED"
+            },
+            {
+              "number": 12,
+              "title": "feat(apply): prepare applications unattended, up to review",
+              "createdAt": "2026-09-24T12:32:47Z",
+              "closedAt": "2026-09-24T13:04:17Z",
+              "mergedAt": "2026-09-24T13:04:17Z",
+              "state": "MERGED"
+            },
+            {
+              "number": 7,
+              "title": "chore(deps): Bump @fastify/static from 8.3.0 to 10.1.4",
+              "createdAt": "2026-09-24T09:54:14Z",
+              "closedAt": null,
+              "mergedAt": null,
+              "state": "OPEN"
+            },
+            {
+              "number": 6,
+              "title": "chore(deps): Bump @angular/forms from 21.2.24 to 22.1.7",
+              "createdAt": "2026-09-24T09:54:10Z",
+              "closedAt": null,
+              "mergedAt": null,
+              "state": "OPEN"
+            },
+            {
+              "number": 5,
+              "title": "chore(deps): Bump @angular/platform-browser from 21.2.24 to 22.1.7",
+              "createdAt": "2026-09-24T09:54:09Z",
+              "closedAt": null,
+              "mergedAt": null,
+              "state": "OPEN"
+            },
+            {
+              "number": 4,
+              "title": "chore(deps): Bump @angular/core from 21.2.24 to 22.1.7",
+              "createdAt": "2026-09-24T09:53:59Z",
+              "closedAt": null,
+              "mergedAt": null,
+              "state": "OPEN"
+            },
+            {
+              "number": 3,
+              "title": "chore(deps-dev): Bump the development-tooling group with 8 updates",
+              "createdAt": "2026-09-24T09:53:52Z",
+              "closedAt": null,
+              "mergedAt": null,
+              "state": "OPEN"
+            },
+            {
+              "number": 2,
+              "title": "Install the agent playbook and merge AGENTS.md into it",
+              "createdAt": "2026-09-24T09:42:17Z",
+              "closedAt": "2026-09-24T09:51:44Z",
+              "mergedAt": "2026-09-24T09:51:44Z",
+              "state": "MERGED"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "expected": [
+    {
+      "closedAt": null,
+      "createdAt": "2026-09-26T09:04:34Z",
+      "mergedAt": null,
+      "number": 17,
+      "state": "OPEN",
+      "title": "feat(apply): add a button to prepare top matches on demand"
+    },
+    {
+      "closedAt": null,
+      "createdAt": "2026-09-26T08:56:34Z",
+      "mergedAt": null,
+      "number": 16,
+      "state": "OPEN",
+      "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies"
+    },
+    {
+      "closedAt": "2026-09-26T08:31:21Z",
+      "createdAt": "2026-09-25T09:53:38Z",
+      "mergedAt": "2026-09-26T08:31:21Z",
+      "number": 13,
+      "state": "MERGED",
+      "title": "feat(apply): add an Approve-and-fill one-click action"
+    },
+    {
+      "closedAt": "2026-09-24T13:04:17Z",
+      "createdAt": "2026-09-24T12:32:47Z",
+      "mergedAt": "2026-09-24T13:04:17Z",
+      "number": 12,
+      "state": "MERGED",
+      "title": "feat(apply): prepare applications unattended, up to review"
+    },
+    {
+      "closedAt": null,
+      "createdAt": "2026-09-24T09:54:14Z",
+      "mergedAt": null,
+      "number": 7,
+      "state": "OPEN",
+      "title": "chore(deps): Bump @fastify/static from 8.3.0 to 10.1.4"
+    },
+    {
+      "closedAt": null,
+      "createdAt": "2026-09-24T09:54:10Z",
+      "mergedAt": null,
+      "number": 6,
+      "state": "OPEN",
+      "title": "chore(deps): Bump @angular/forms from 21.2.24 to 22.1.7"
+    },
+    {
+      "closedAt": null,
+      "createdAt": "2026-09-24T09:54:09Z",
+      "mergedAt": null,
+      "number": 5,
+      "state": "OPEN",
+      "title": "chore(deps): Bump @angular/platform-browser from 21.2.24 to 22.1.7"
+    },
+    {
+      "closedAt": null,
+      "createdAt": "2026-09-24T09:53:59Z",
+      "mergedAt": null,
+      "number": 4,
+      "state": "OPEN",
+      "title": "chore(deps): Bump @angular/core from 21.2.24 to 22.1.7"
+    },
+    {
+      "closedAt": null,
+      "createdAt": "2026-09-24T09:53:52Z",
+      "mergedAt": null,
+      "number": 3,
+      "state": "OPEN",
+      "title": "chore(deps-dev): Bump the development-tooling group with 8 updates"
+    },
+    {
+      "closedAt": "2026-09-24T09:51:44Z",
+      "createdAt": "2026-09-24T09:42:17Z",
+      "mergedAt": "2026-09-24T09:51:44Z",
+      "number": 2,
+      "state": "MERGED",
+      "title": "Install the agent playbook and merge AGENTS.md into it"
+    }
+  ]
+}

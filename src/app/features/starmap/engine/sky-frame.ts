@@ -24,11 +24,33 @@ export interface SkyFrame {
   /** 0 clear to 1 full: how old the data behind the sky is. */
   readonly fog: number;
   readonly layers: readonly SkyLayer[];
+  /** Which renderer is drawing: the 2D sky draws bursts itself, the 3D one builds them. */
+  readonly renderer: 'canvas' | 'webgl';
   born(star: SkyStar): number;
   passes(star: SkyStar): boolean;
   dim(star: SkyStar): number;
   dimCluster(cluster: SkyCluster): number;
   toScreen(x: number, y: number, z?: number): [number, number];
+}
+
+/**
+ * A burst the 3D scene builds and plays: how it looks, how far through it is,
+ * and where. `key` stays the same from frame to frame while it plays.
+ */
+export interface NewsEffect3D {
+  readonly key: object;
+  readonly mode: 'nova' | 'supernova' | 'implode' | 'shooting';
+  /** 0 to 1 through the burst. */
+  readonly p: number;
+  readonly star: SkyStar | null;
+  readonly colour: string;
+  /** Seeds the debris, so a burst looks the same each time it plays. */
+  readonly seed: number;
+  /** Where a crossing starts, in the world, and its heading. */
+  readonly from: { readonly x: number; readonly y: number; readonly z: number };
+  readonly angle: number;
+  /** Told where a crossing's head is on screen, for its label. */
+  readonly onHead?: (head: [number, number]) => void;
 }
 
 /**
@@ -42,6 +64,8 @@ export interface SkyLayer {
   above?(c: CanvasRenderingContext2D, frame: SkyFrame): void;
   /** Words, after the glow is composited. */
   labels?(ctx: CanvasRenderingContext2D, frame: SkyFrame): void;
+  /** Bursts for the 3D scene to play, where the 2D sky would draw them itself. */
+  effects3D?(frame: SkyFrame): NewsEffect3D[];
 }
 
 /** A renderer: pr-starmap's contract of mount, setScene, frame, pick, toScreen, resize, dispose. */

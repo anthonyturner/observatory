@@ -13,21 +13,24 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { ageWords, fogLevel } from '../../../core/projects/data-age';
-import { changeCount, changesSince } from '../../../core/queue/changes';
 import { CollisionsFeed } from '../../../core/queue/collisions-feed';
 import { HistoryFeed } from '../../../core/queue/history-feed';
-import { LastSeen } from '../../../core/queue/last-seen';
+import { LedgerFeed } from '../../../core/queue/ledger-feed';
+import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { queueFog } from '../../../core/queue/queue-fog';
-import { shownBucket } from '../../../core/queue/queue-report';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
+import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { IssuesTab } from '../../issues/issues-tab/issues-tab';
-import { ChangesCard } from '../../queue/changes-card/changes-card';
+import { ChangesPanel } from '../memory/changes-panel/changes-panel';
+import { MemoryView } from '../memory/memory-view';
+import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
+import { Timeline } from '../memory/timeline/timeline';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
@@ -65,9 +68,21 @@ const BOTTOM_INSET = 70;
 const BOTTOM_INSET_WITH_STRIP = 200;
 /** Past this width a panel down the right edge takes its own column. */
 const SIDE_PANEL_MIN_WIDTH = 900;
-const SIDE_PANEL_WIDTH = 370;
+/** The changes panel's width and the gap beside it. */
+const SIDE_PANEL_WIDTH = 380;
 /** The card's Snooze, as pr-starmap's: a week. */
 const SNOOZE_DAYS = 7;
+
+/** Keys typed into a field belong to the field. */
+const TYPING = 'input, textarea, select, [contenteditable]';
+
+/** An open pull request as the memory compares it. */
+const memoryItemOf = (item: QueueItem): MemoryItem => ({
+  pr: item.number,
+  title: item.title,
+  bucket: shownBucket(item),
+  idleDays: item.idleDays,
+});
 
 /** A message in place of the sky: a headline, and what to do about it. */
 export interface SkyState {
@@ -87,8 +102,9 @@ export interface SkyState {
     StarmapTools,
     StarmapPrList,
     IssuesTab,
+    ChangesPanel,
+    Timeline,
     StarmapUsage,
-    ChangesCard,
     PrScreen,
     StarCard,
     LogCard,
@@ -97,8 +113,20 @@ export interface SkyState {
     HelpCard,
   ],
   hostDirectives: [HelpShortcuts],
-  host: { '(document:keydown.escape)': 'closeTopmost()' },
-  providers: [QueueFeed, HistoryFeed, CollisionsFeed, LogsFeed, LogSkyView, UsageWatch],
+  host: {
+    '(document:keydown.escape)': 'closeTopmost()',
+    '(document:keydown)': 'onKey($event)',
+  },
+  providers: [
+    QueueFeed,
+    HistoryFeed,
+    LedgerFeed,
+    CollisionsFeed,
+    LogsFeed,
+    LogSkyView,
+    MemoryView,
+    UsageWatch,
+  ],
   templateUrl: './starmap-page.html',
   styleUrl: './starmap-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -107,10 +135,12 @@ export class StarmapPage {
   private readonly feed = inject(QueueFeed);
   private readonly history = inject(HistoryFeed);
   private readonly collisions = inject(CollisionsFeed);
+  private readonly ledger = inject(LedgerFeed);
+  protected readonly memory = inject(MemoryView);
   protected readonly usage = inject(UsageWatch);
-  private readonly lastSeenStore = inject(LastSeen);
   private readonly triage = inject(TriageClient);
   protected readonly session = inject(ViewerSession);
+  private readonly motion = inject(MotionPreference);
   protected readonly logs = inject(LogSkyView);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -153,9 +183,19 @@ export class StarmapPage {
   protected readonly items = computed(() =>
     (this.report()?.items ?? []).filter((item) => item.hidden === null),
   );
-  protected readonly skyItems = computed(() => this.items().map(skyItemOf));
+  /** The queue on screen: the live one, or a past refresh while replaying. */
+  protected readonly shownItems = computed((): readonly QueueItem[] => {
+    const replay = this.memory.replay();
+    return replay ? replay.items.map((i) => this.replayed(i)) : this.items();
+  });
+  protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
+  /** The sky's news, as its layer reads it. */
+  protected readonly skyNews = computed(() => {
+    const news = this.memory.news();
+    return { events: news.events, acknowledged: news.acknowledged };
+  });
   protected readonly skyPairs = computed(() =>
-    (this.collisions.report()?.pairs ?? []).map(skyPairOf),
+    this.memory.replay() ? [] : (this.collisions.report()?.pairs ?? []).map(skyPairOf),
   );
   protected readonly title = computed(() => titleOf(this.chart()));
   protected readonly chips = computed(() =>
@@ -169,6 +209,11 @@ export class StarmapPage {
     const report = this.report();
     if (this.chart() === 'usage') return usageStamp(this.usageDocument());
     if (this.chart() !== 'prs') return '';
+    const replay = this.memory.replay();
+    const repo = report?.repo ?? this.repo();
+    if (replay) {
+      return `replay · ${repo} · ${replay.items.length} open as of ${new Date(replay.at).toLocaleString()} · ] steps forward, Live returns`;
+    }
     return queueStamp(
       report?.repo ?? this.repo(),
       this.items().length,
@@ -178,7 +223,7 @@ export class StarmapPage {
   /** How old the sky is, as fog: by the data's age, or at once when refreshes fail. */
   protected readonly fog = computed(() => {
     const report = this.report();
-    if (!report) return 0;
+    if (!report || this.memory.replay()) return 0;
     const now = this.now();
     return Math.max(fogLevel(report.generatedAt, now), queueFog(this.state(), now.getTime()));
   });
@@ -186,7 +231,7 @@ export class StarmapPage {
     if (this.chart() === 'usage') return this.usageFog();
     const state = this.state();
     const report = this.report();
-    if (!report) return null;
+    if (!report || this.memory.replay()) return null;
     if (state.status === 'ready' && state.isStale) return 'refresh failing';
     const now = this.now();
     return fogLevel(report.generatedAt, now) > 0
@@ -220,26 +265,42 @@ export class StarmapPage {
     return null;
   });
 
-  // Carried over until pr-starmap's card, PR screen and memory replace them.
-  private readonly lastSeen = signal<number | null>(null);
   private readonly readAt = computed(() => this.report()?.generatedAt ?? null);
-  protected readonly changes = computed(() => {
-    const readAt = this.readAt();
-    return readAt
-      ? changesSince(this.history.frames(), this.items(), this.lastSeen(), Date.parse(readAt))
-      : null;
+  /** pr-starmap's changes panel: while there is unseen news on the queue's map. */
+  protected readonly showChanges = computed(() => {
+    const news = this.memory.news();
+    return (
+      this.chart() === 'prs' &&
+      this.view() === 'map' &&
+      news.events.length > 0 &&
+      !news.acknowledged
+    );
   });
-  protected readonly hasChanges = computed(
-    () => this.chart() === 'prs' && this.view() === 'map' && changeCount(this.changes()) > 0,
+  /** The timeline under the queue's map, once the ledger has days to show. */
+  protected readonly showTimeline = computed(
+    () =>
+      this.chart() === 'prs' &&
+      this.view() === 'map' &&
+      (this.memory.ledger()?.rows.length ?? 0) > 1,
   );
   protected readonly openItem = computed(
-    () => this.items().find((each) => each.number === this.openPull()) ?? null,
+    () => this.shownItems().find((each) => each.number === this.openPull()) ?? null,
   );
   /** What the rest of the sky says about the selected pull request, for its card. */
   protected readonly cardContext = computed((): CardContext => {
     const number = this.openPull();
     const groups = binaries(this.skyItems(), (item) => item.issues);
+    const replay = this.memory.replay();
+    const news = this.memory.news();
+    const event = news.events.find((e) => e.pr === number && EFFECTS[e.kind].onStar);
+    const live = this.items().some((item) => item.number === number);
     return {
+      replay: replay
+        ? { at: replay.at, now: live ? 'still open' : this.fateNow(number ?? 0), live }
+        : undefined,
+      change: event
+        ? { noun: EFFECTS[event.kind].noun, label: news.label, colour: EFFECTS[event.kind].colour }
+        : undefined,
       pairs: this.skyPairs(),
       binaries: groups
         .filter((g) => g.members.some((item) => item.pr === number))
@@ -265,8 +326,8 @@ export class StarmapPage {
     const wide = (this.window?.innerWidth ?? 0) > SIDE_PANEL_MIN_WIDTH;
     return {
       top: TOP_INSET,
-      bottom: this.showMeteors() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
-      side: this.hasChanges() && wide ? SIDE_PANEL_WIDTH : 0,
+      bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
+      side: this.showChanges() && wide ? SIDE_PANEL_WIDTH : 0,
     };
   });
 
@@ -280,7 +341,7 @@ export class StarmapPage {
       });
       if (repo === '/') return;
       untracked(() => {
-        this.lastSeen.set(this.lastSeenStore.read(repo));
+        this.memory.watch(repo);
         this.feed.watch(repo);
         this.logs.clear();
         this.logs.watch(repo);
@@ -291,10 +352,23 @@ export class StarmapPage {
       this.logs.layout();
       untracked(() => this.logs.follow());
     });
+    // Once the queue and its frames are both in, what changed plays on the sky.
+    effect(() => {
+      const report = this.report();
+      if (!report || !this.memory.framesLoaded()) return;
+      untracked(() => {
+        const events = this.memory.announce(report.generatedAt, this.items().map(memoryItemOf));
+        if (events.length) this.sky()?.fit();
+        this.sky()?.play(events);
+      });
+    });
+    // Replay lays the sky out before its news plays, as pr-starmap refreshed then played.
+    this.memory.onPlay = (events) => setTimeout(() => this.sky()?.play(events));
     effect(() => {
       if (!this.readAt()) return;
       untracked(() => {
         this.history.load(this.repo());
+        this.ledger.load(this.repo());
         this.collisions.load(this.repo());
         this.refreshing.set(false);
       });
@@ -303,6 +377,8 @@ export class StarmapPage {
 
   /** Switches screen by the address, so Back and a shared link keep it. */
   protected setChart(chart: Chart): void {
+    // Replay belongs to the queue sky; every other sky is the present.
+    this.memory.endReplay();
     this.filter.set(null);
     this.openPull.set(null);
     this.logs.clear();
@@ -351,10 +427,63 @@ export class StarmapPage {
     this.feed.refresh(this.repo());
   }
 
-  protected acknowledgeChanges(): void {
-    const now = Date.now();
-    this.lastSeenStore.record(this.repo(), now);
-    this.lastSeen.set(now);
+  /** A point on the timeline: the refresh there, or now. */
+  protected scrub(index: number | null): void {
+    if ((this.memory.replay()?.index ?? null) === index) return;
+    this.memory.stopPlayer();
+    this.openPull.set(null);
+    this.memory.showFrame(index);
+  }
+
+  protected togglePlayer(): void {
+    this.openPull.set(null);
+    this.memory.togglePlayer(this.motion.isStill());
+  }
+
+  /** `[` and `]` step through the recorded refreshes, on the queue's sky. */
+  protected onKey(event: KeyboardEvent): void {
+    if (event.key !== '[' && event.key !== ']') return;
+    const target = event.target;
+    if (target instanceof Element && target.closest(TYPING)) return;
+    if (this.chart() !== 'prs' || this.sheetPull() !== null) return;
+    this.openPull.set(null);
+    this.memory.step(event.key === '[' ? -1 : 1);
+  }
+
+  /** Where a pull request shown in replay stands today. */
+  private fateNow(pr: number): string {
+    return knownFates(this.memory.frames(), this.memory.ledger()).get(pr) ?? 'no longer open';
+  }
+
+  /** A replayed pull request, filled out from the live queue while it is still open. */
+  private replayed(item: MemoryItem): QueueItem {
+    const live = this.items().find((each) => each.number === item.pr);
+    const base: QueueItem = live ?? {
+      number: item.pr,
+      title: item.title,
+      url: `https://github.com/${this.repo()}/pull/${item.pr}`,
+      isDraft: false,
+      bucket: 'unreviewed',
+      closes: [],
+      failingChecks: 0,
+      additions: null,
+      deletions: null,
+      idleDays: item.idleDays,
+      ageDays: 0,
+      branch: '',
+      mergeable: 'UNKNOWN',
+      changedFiles: null,
+      isSeen: false,
+      hidden: null,
+    };
+    const bucket = item.bucket === 'fresh' ? 'unreviewed' : item.bucket;
+    return {
+      ...base,
+      title: item.title,
+      bucket,
+      isSeen: item.bucket === 'fresh',
+      idleDays: item.idleDays,
+    };
   }
 
   /** Esc closes the full screen first, then the card, as on pr-starmap. */

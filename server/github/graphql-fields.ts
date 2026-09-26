@@ -129,6 +129,8 @@ export const PULL_GRAPHQL: Readonly<Record<string, Field>> = {
     'changedFiles',
     'createdAt',
     'updatedAt',
+    'closedAt',
+    'mergedAt',
   ]),
   reviewDecision: { select: 'reviewDecision', shape: orEmpty },
   author: { select: `author ${ACTOR}`, shape: actorOf },

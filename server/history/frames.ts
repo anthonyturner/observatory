@@ -6,6 +6,8 @@ export interface FrameItem {
   readonly number: number;
   readonly title: string;
   readonly bucket: PullBucket;
+  /** How long it had sat untouched, so a replayed star burns as it did then. */
+  readonly idleDays: number;
 }
 
 export type Fate = 'merged' | 'closed';
@@ -39,6 +41,7 @@ export const frameItemsOf = (report: QueueReport): FrameItem[] =>
     number: item.number,
     title: clip(item.title),
     bucket: item.bucket,
+    idleDays: item.idleDays,
   }));
 
 const signature = (items: readonly FrameItem[]): string =>

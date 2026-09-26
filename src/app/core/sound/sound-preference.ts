@@ -22,8 +22,10 @@ export const AMBIENT_PLAYER = new InjectionToken<() => AmbientPlayer>('AMBIENT_P
 const STORAGE_KEY = 'observatory.sound';
 const GESTURES = ['pointerdown', 'keydown'] as const;
 
-/** Whether the ambient score plays. Off until asked for: browsers refuse
- *  audio before a gesture, and a page that makes noise nobody chose is closed. */
+/** Whether the page's score plays. Off until asked for: browsers refuse
+ *  audio before a gesture, and a page that makes noise nobody chose is closed.
+ *  Each page provides its own, with its own score, so leaving a page stops its
+ *  music; the on/off choice is shared. The root one plays Home's score. */
 @Injectable({ providedIn: 'root' })
 export class SoundPreference {
   private readonly wanted = signal(readStoredChoice());
@@ -37,10 +39,11 @@ export class SoundPreference {
   readonly isOn: Signal<boolean> = this.wanted.asReadonly();
 
   constructor() {
-    if (this.wanted()) this.resumeOnFirstGesture();
+    if (this.wanted()) this.resume();
+    this.destroyRef.onDestroy(() => this.player?.dispose());
     effect(() => {
       const unease = uneaseOf(this.mood());
-      this.player?.setUnease(unease);
+      this.player?.setUnease?.(unease);
     });
   }
 
@@ -53,12 +56,18 @@ export class SoundPreference {
 
   private play(): void {
     this.player ??= this.makePlayer();
-    this.player.setUnease(uneaseOf(this.mood()));
+    this.player.setUnease?.(uneaseOf(this.mood()));
     this.player.start().catch((error: unknown) => this.errors.handleError(error));
   }
 
-  /** Someone who left sound on gets it back on their first touch of the page:
-   *  the browser will not allow it any sooner. */
+  /** Someone who left sound on gets it back as soon as the browser allows:
+   *  at once if they have already touched this page (as when they arrive
+   *  from another page of the site), or on their first touch. */
+  private resume(): void {
+    if (this.document.defaultView?.navigator.userActivation?.hasBeenActive) this.play();
+    else this.resumeOnFirstGesture();
+  }
+
   private resumeOnFirstGesture(): void {
     const window = this.document.defaultView;
     const resume = (): void => {

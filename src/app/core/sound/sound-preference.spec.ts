@@ -19,6 +19,9 @@ class FakePlayer implements AmbientPlayer {
   stop(): void {
     this.stops++;
   }
+  dispose(): void {
+    this.stops++;
+  }
   setUnease(level: number): void {
     this.unease = level;
   }

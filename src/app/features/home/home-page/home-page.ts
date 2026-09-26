@@ -9,6 +9,7 @@ import { SkillsPanel } from '../skills-panel/skills-panel';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
 import { TopBar } from '../top-bar/top-bar';
 import { VitalsPanel } from '../vitals-panel/vitals-panel';
+import { SoundPreference } from '../../../core/sound/sound-preference';
 
 /** Home: the HUD over the sky, then the projects below the fold. It lays the
  *  sections out and nothing more. */
@@ -24,6 +25,7 @@ import { VitalsPanel } from '../vitals-panel/vitals-panel';
     FleetSection,
     HelpCard,
   ],
+  providers: [SoundPreference],
   hostDirectives: [HelpShortcuts],
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',

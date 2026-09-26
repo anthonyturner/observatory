@@ -1,5 +1,5 @@
-import { parseRgb, resolveColour } from '../../../core/instrument/palette';
 import { FIELD_TINT_COUNT } from '../../../core/orrery/star-field';
+import { channelReader } from '../../../shared/night-sky/night-sky';
 
 /** The orrery's colours, resolved from tokens.css, since a canvas cannot
  *  read a CSS variable. Each is an `r, g, b` triple, so any alpha can be added. */
@@ -32,19 +32,8 @@ export interface OrreryPalette {
   channels(expression: string): string;
 }
 
-/** `rgba()` from an `r, g, b` triple. */
-export const rgba = (channels: string, alpha = 1): string => `rgba(${channels}, ${alpha})`;
-
 export function readOrreryPalette(element: HTMLElement): OrreryPalette {
-  const cache = new Map<string, string>();
-  const channels = (expression: string): string => {
-    const known = cache.get(expression);
-    if (known) return known;
-    const [r, g, b] = parseRgb(resolveColour(element, expression));
-    const triple = `${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}`;
-    cache.set(expression, triple);
-    return triple;
-  };
+  const channels = channelReader(element);
   const token = (name: string): string => channels(`var(--${name})`);
   const font = (name: string): string =>
     getComputedStyle(element).getPropertyValue(`--font-${name}`).trim();

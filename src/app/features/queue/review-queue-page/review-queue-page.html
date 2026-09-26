@@ -1,9 +1,27 @@
+@if (view() === 'map' && items().length) {
+  <app-star-chart
+    #chart
+    [items]="items()"
+    [filter]="filter()"
+    [selected]="openPull()"
+    (picked)="openPull.set($event)"
+  />
+}
+
 <header class="hud">
   <div class="brand">
     <h1>Review Queue</h1>
     <span class="stamp">{{ stamp() }}</span>
   </div>
-  <nav class="links" aria-label="Other views">
+  <nav class="links" aria-label="Views">
+    <div class="views" role="group" aria-label="Show as">
+      <button type="button" [attr.aria-pressed]="view() === 'map'" (click)="view.set('map')">
+        Map
+      </button>
+      <button type="button" [attr.aria-pressed]="view() === 'list'" (click)="view.set('list')">
+        List
+      </button>
+    </div>
     <a routerLink="/orrery">Orrery</a>
     <a routerLink="/"><span aria-hidden="true">&lsaquo;</span> Home</a>
   </nav>
@@ -23,36 +41,48 @@
   }
 </div>
 
-<main class="list">
-  @if (waiting(); as message) {
-    <p class="state" role="status">{{ message }}</p>
-  }
-  @for (section of sections(); track section.bucket) {
-    <section [style.--sev]="section.color" [attr.aria-labelledby]="'bucket-' + section.bucket">
-      <h2 [id]="'bucket-' + section.bucket">
-        {{ section.name }}<small>{{ section.meaning }} · {{ section.rows.length }}</small>
-      </h2>
-      <ul>
-        @for (row of section.rows; track row.number) {
-          <li>
-            <button type="button" class="open" (click)="openPull.set(row.number)">
-              <span class="number">#{{ row.number }}</span>
-              <span class="title">{{ row.title }}</span>
-              @if (row.isDraft) {
-                <span class="draft">draft</span>
-              }
-              <span class="detail">{{ row.detail }}</span>
-            </button>
-            <a class="github" [href]="row.url" target="_blank" rel="noopener"
-              >GitHub <span aria-hidden="true">&#8599;</span
-              ><span class="visually-hidden">: #{{ row.number }}, in a new tab</span></a
-            >
-          </li>
-        }
-      </ul>
-    </section>
-  }
-</main>
+@if (waiting(); as message) {
+  <p class="state" role="status">{{ message }}</p>
+}
+
+@if (view() === 'list') {
+  <main class="list">
+    @for (section of sections(); track section.bucket) {
+      <section [style.--sev]="section.color" [attr.aria-labelledby]="'bucket-' + section.bucket">
+        <h2 [id]="'bucket-' + section.bucket">
+          {{ section.name }}<small>{{ section.meaning }} · {{ section.rows.length }}</small>
+        </h2>
+        <ul>
+          @for (row of section.rows; track row.number) {
+            <li>
+              <button type="button" class="open" (click)="openPull.set(row.number)">
+                <span class="number">#{{ row.number }}</span>
+                <span class="title">{{ row.title }}</span>
+                @if (row.isDraft) {
+                  <span class="draft">draft</span>
+                }
+                <span class="detail">{{ row.detail }}</span>
+              </button>
+              <a class="github" [href]="row.url" target="_blank" rel="noopener"
+                >GitHub <span aria-hidden="true">&#8599;</span
+                ><span class="visually-hidden">: #{{ row.number }}, in a new tab</span></a
+              >
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </main>
+} @else if (chart(); as starChart) {
+  <footer class="tools">
+    <app-orrery-tools
+      hint="drag · scroll · click a star"
+      (zoomOut)="starChart.zoomOut()"
+      (zoomIn)="starChart.zoomIn()"
+      (fit)="starChart.fit()"
+    />
+  </footer>
+}
 
 @if (openPull(); as number) {
   <app-pull-panel [repo]="repo()" [number]="number" (closed)="openPull.set(null)" />

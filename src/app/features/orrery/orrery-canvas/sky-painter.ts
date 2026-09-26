@@ -1,6 +1,6 @@
-import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
-import { FieldStar, twinkle } from '../../../core/orrery/star-field';
-import { OrreryPalette, rgba } from './orrery-palette';
+import { Viewport } from '../../../core/orrery/orrery-camera';
+import { rgba } from '../../../shared/night-sky/night-sky';
+import { OrreryPalette } from './orrery-palette';
 
 const DEG = Math.PI / 180;
 /** The twelve signs are a dial, not a claim: each world's longitude is its
@@ -28,8 +28,6 @@ const DIAL_MAJOR_EVERY = 6;
 const DIAL_MIN_RADIUS = 40;
 /** House names only when there is room to read them. */
 const HOUSE_LABEL_SCALE = 0.3;
-const GRAIN_SIZE = 128;
-const GRAIN_ALPHA = 0.045;
 
 export function paintBackground(
   ctx: CanvasRenderingContext2D,
@@ -51,31 +49,6 @@ export function paintBackground(
   gradient.addColorStop(1, rgba(palette.skyEdge));
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
-}
-
-/** Distant stars move less than the system as the view pans: parallax. */
-export function paintField(
-  ctx: CanvasRenderingContext2D,
-  stars: readonly FieldStar[],
-  camera: OrreryCamera,
-  view: Viewport,
-  time: number,
-  palette: OrreryPalette,
-): void {
-  const { x, y, scale } = camera.current;
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  for (const star of stars) {
-    const sx = (star.x - x) * scale * star.depth + view.width / 2;
-    const sy = (star.y - y) * scale * star.depth + view.height / 2;
-    if (sx < -10 || sy < -10 || sx > view.width + 10 || sy > view.height + 10) continue;
-    const level = twinkle(star, time);
-    ctx.fillStyle = rgba(palette.stars[star.tint], star.alpha * level);
-    ctx.beginPath();
-    ctx.arc(sx, sy, star.radius * (0.85 + level * 0.3), 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
 }
 
 /** The outer dial, turning very slowly: what makes the drawing read as an
@@ -131,67 +104,5 @@ export function paintDial(
       );
     });
   }
-  ctx.restore();
-}
-
-export function paintVignette(
-  ctx: CanvasRenderingContext2D,
-  view: Viewport,
-  palette: OrreryPalette,
-): void {
-  const { width, height } = view;
-  const gradient = ctx.createRadialGradient(
-    width / 2,
-    height / 2,
-    Math.min(width, height) * 0.3,
-    width / 2,
-    height / 2,
-    Math.max(width, height) * 0.78,
-  );
-  gradient.addColorStop(0, rgba(palette.vignette, 0));
-  gradient.addColorStop(1, rgba(palette.vignette, 0.72));
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-}
-
-/** A tile of noise, made once, laid over the frame as film grain. */
-export function makeGrain(document: Document, random: () => number): HTMLCanvasElement {
-  const grain = document.createElement('canvas');
-  grain.width = grain.height = GRAIN_SIZE;
-  const context = grain.getContext('2d');
-  if (!context) return grain;
-  const image = context.createImageData(GRAIN_SIZE, GRAIN_SIZE);
-  for (let index = 0; index < image.data.length; index += 4) {
-    const value = 118 + random() * 140;
-    image.data[index] = image.data[index + 1] = image.data[index + 2] = value;
-    image.data[index + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
-  return grain;
-}
-
-/** The grain shifts every frame while the sky moves, and holds still with it. */
-export function paintGrain(
-  ctx: CanvasRenderingContext2D,
-  grain: HTMLCanvasElement,
-  view: Viewport,
-  time: number,
-  isStill: boolean,
-): void {
-  const pattern = ctx.createPattern(grain, 'repeat');
-  if (!pattern) return;
-  const ox = isStill ? 0 : Math.trunc(Math.sin(time * 37) * 64);
-  const oy = isStill ? 0 : Math.trunc(Math.cos(time * 41) * 64);
-  ctx.save();
-  ctx.globalCompositeOperation = 'overlay';
-  ctx.globalAlpha = GRAIN_ALPHA;
-  ctx.translate(ox, oy);
-  ctx.fillStyle = pattern;
-  ctx.fillRect(
-    -ox - GRAIN_SIZE,
-    -oy - GRAIN_SIZE,
-    view.width + GRAIN_SIZE * 2,
-    view.height + GRAIN_SIZE * 2,
-  );
   ctx.restore();
 }

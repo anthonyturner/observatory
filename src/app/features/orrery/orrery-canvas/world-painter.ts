@@ -1,6 +1,7 @@
 import { ORBIT_SQUASH } from '../../../core/orrery/orbit';
 import { OrreryWorld } from '../../../core/orrery/world-layout';
-import { OrreryPalette, rgba } from './orrery-palette';
+import { rgba } from '../../../shared/night-sky/night-sky';
+import { OrreryPalette } from './orrery-palette';
 
 /** A world as it stands this frame, in screen pixels. */
 export interface PlacedWorld {

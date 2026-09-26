@@ -93,6 +93,11 @@
     var(--sky-deep) 100%
   );
 
+  /* The star map's deep space: a hint of the galaxy, then black. */
+  --chart-sky-centre: #0a1330;
+  --chart-sky-mid: #060a1c;
+  --chart-sky-edge: #03050c;
+
   /* The review queue: a night lit from above, and rows that brighten under the pointer. */
   --queue-sky: radial-gradient(120% 80% at 50% 0%, #0b1226 0%, var(--void) 70%);
   --queue-row: linear-gradient(90deg, rgba(20, 28, 56, 0.5), rgba(20, 28, 56, 0) 70%);

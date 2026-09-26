@@ -1,0 +1,27 @@
+@if (limits()) {
+  <app-usage-section heading="Plan limits" [small]="lastRead()">
+    <app-usage-tiles [tiles]="tiles()" />
+    @if (week(); as week) {
+      <p class="cap">
+        This week, reading by reading{{
+          week.hasProjection ? ' · dashed: where the recent pace leads' : ''
+        }}
+      </p>
+      <app-usage-week-chart [chart]="week.chart" />
+    }
+    @if (pastWeeks(); as chart) {
+      <p class="cap">Earlier weeks, as far as each got before its reset</p>
+      <app-usage-past-weeks [chart]="chart" />
+    }
+  </app-usage-section>
+} @else {
+  <app-usage-section heading="Plan limits" small="not recorded yet">
+    <p class="note">
+      No readings of your plan limits yet. Claude Code reports the weekly and five-hour percentages
+      that <code>/usage</code> shows to one program only, the status line. Add this line to a Node
+      status line script, after it has parsed its input as <code>status</code>:
+    </p>
+    <pre class="code">{{ recordLine }}</pre>
+    <p class="note">Limits exist only on a Pro or Max plan. The token counts below need neither.</p>
+  </app-usage-section>
+}

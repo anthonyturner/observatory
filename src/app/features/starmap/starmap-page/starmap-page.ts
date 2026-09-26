@@ -15,19 +15,29 @@ import { map } from 'rxjs';
 import { ageWords, fogLevel } from '../../../core/projects/data-age';
 import { changeCount, changesSince } from '../../../core/queue/changes';
 import { CollisionsFeed } from '../../../core/queue/collisions-feed';
-import { collisionsOf } from '../../../core/queue/collisions-report';
 import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LastSeen } from '../../../core/queue/last-seen';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { queueFog } from '../../../core/queue/queue-fog';
 import { shownBucket } from '../../../core/queue/queue-report';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
+import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
+import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { IssuesTab } from '../../issues/issues-tab/issues-tab';
 import { ChangesCard } from '../../queue/changes-card/changes-card';
-import { PullPanel } from '../../queue/pull-panel/pull-panel';
+import { binaries } from '../engine/binary-layer';
+import { CardContext } from '../star-card/card-facts';
+import { StarCard } from '../star-card/star-card';
+import { LogsFeed } from '../../../core/logs/logs-feed';
+import { LogKey } from '../../../core/logs/log-levels';
+import { LogStar } from '../../../core/logs/log-layout';
+import { LogCard } from '../../logs/log-card/log-card';
+import { LogList } from '../../logs/log-list/log-list';
+import { MeteorRecord } from '../../logs/meteor-record/meteor-record';
+import { LogSkyView } from '../log-sky-view';
 import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../../queue/queue-help';
 import { PrScreen } from '../pr-screen/pr-screen';
 import { skyItemOf, skyPairOf } from '../sky-items';
@@ -35,6 +45,8 @@ import { StarmapHeader } from '../starmap-header/starmap-header';
 import { StarmapPrList } from '../starmap-pr-list/starmap-pr-list';
 import { SkyInsets, StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapTools } from '../starmap-tools/starmap-tools';
+import { StarmapUsage } from '../starmap-usage/starmap-usage';
+import { usageStamp } from '../starmap-usage/usage-text';
 import {
   Chart,
   SkyView,
@@ -49,9 +61,13 @@ import {
 /** The chrome Fit keeps the sky clear of, as pr-starmap measures it. */
 const TOP_INSET = 140;
 const BOTTOM_INSET = 70;
+/** With a chart along the bottom, as the Log Sky's meteor record. */
+const BOTTOM_INSET_WITH_STRIP = 200;
 /** Past this width a panel down the right edge takes its own column. */
 const SIDE_PANEL_MIN_WIDTH = 900;
 const SIDE_PANEL_WIDTH = 370;
+/** The card's Snooze, as pr-starmap's: a week. */
+const SNOOZE_DAYS = 7;
 
 /** A message in place of the sky: a headline, and what to do about it. */
 export interface SkyState {
@@ -71,13 +87,18 @@ export interface SkyState {
     StarmapTools,
     StarmapPrList,
     IssuesTab,
+    StarmapUsage,
     ChangesCard,
-    PullPanel,
     PrScreen,
+    StarCard,
+    LogCard,
+    LogList,
+    MeteorRecord,
     HelpCard,
   ],
   hostDirectives: [HelpShortcuts],
-  providers: [QueueFeed, HistoryFeed, CollisionsFeed],
+  host: { '(document:keydown.escape)': 'closeTopmost()' },
+  providers: [QueueFeed, HistoryFeed, CollisionsFeed, LogsFeed, LogSkyView, UsageWatch],
   templateUrl: './starmap-page.html',
   styleUrl: './starmap-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,8 +107,11 @@ export class StarmapPage {
   private readonly feed = inject(QueueFeed);
   private readonly history = inject(HistoryFeed);
   private readonly collisions = inject(CollisionsFeed);
+  protected readonly usage = inject(UsageWatch);
   private readonly lastSeenStore = inject(LastSeen);
   private readonly triage = inject(TriageClient);
+  protected readonly session = inject(ViewerSession);
+  protected readonly logs = inject(LogSkyView);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
@@ -111,9 +135,11 @@ export class StarmapPage {
   protected readonly showCollisions = signal(true);
   protected readonly folded = signal(false);
   protected readonly refreshing = signal(false);
+  /** The pull request whose star is selected, its card open. */
   protected readonly openPull = signal<number | null>(null);
   /** The pull request whose full screen is open. */
   readonly sheetPull = signal<number | null>(null);
+  protected readonly SNOOZE_DAYS = SNOOZE_DAYS;
   protected readonly sky = viewChild<StarmapSky>('sky');
   protected readonly helpEntries = QUEUE_HELP_ENTRIES;
   protected readonly helpKeys = QUEUE_HELP_KEYS;
@@ -135,8 +161,13 @@ export class StarmapPage {
   protected readonly chips = computed(() =>
     this.chart() === 'prs' ? queueChips(this.skyItems()) : [],
   );
+  private readonly usageDocument = computed(() => {
+    const state = this.usage.state();
+    return state.status === 'ready' ? state.document : null;
+  });
   protected readonly stamp = computed(() => {
     const report = this.report();
+    if (this.chart() === 'usage') return usageStamp(this.usageDocument());
     if (this.chart() !== 'prs') return '';
     return queueStamp(
       report?.repo ?? this.repo(),
@@ -152,6 +183,7 @@ export class StarmapPage {
     return Math.max(fogLevel(report.generatedAt, now), queueFog(this.state(), now.getTime()));
   });
   protected readonly stale = computed(() => {
+    if (this.chart() === 'usage') return this.usageFog();
     const state = this.state();
     const report = this.report();
     if (!report) return null;
@@ -161,15 +193,17 @@ export class StarmapPage {
       ? `fogged · ${ageWords(report.generatedAt, now)} old`
       : null;
   });
+  /** Usage fogs by its own age, as the queue does by the queue's. */
+  private readonly usageFog = computed(() => {
+    const generatedAt = this.usageDocument()?.generatedAt;
+    const now = this.now();
+    return generatedAt && fogLevel(generatedAt, now) > 0
+      ? `fogged · ${ageWords(generatedAt, now)} old`
+      : null;
+  });
   protected readonly skyState = computed((): SkyState | null => {
     const chart = this.chart();
-    if (chart === 'logs') {
-      return {
-        headline: 'No logs charted yet.',
-        detail: 'Record a log folder with server/logs/set-dir.ts, then press Refresh.',
-      };
-    }
-    if (chart === 'usage') return { headline: 'No usage read yet.' };
+    if (chart === 'logs') return this.view() === 'map' ? this.logs.message() : null;
     if (chart !== 'prs' || this.view() === 'list') return null;
     const { status } = this.state();
     if (status === 'reading') return { headline: 'Reading the sky…' };
@@ -198,15 +232,23 @@ export class StarmapPage {
   protected readonly hasChanges = computed(
     () => this.chart() === 'prs' && this.view() === 'map' && changeCount(this.changes()) > 0,
   );
-  protected readonly openTriage = computed(() => {
-    const item = this.items().find((each) => each.number === this.openPull());
-    return item ? { isSeen: item.isSeen, hidden: item.hidden } : null;
-  });
-  protected readonly openCollisions = computed(() => {
+  protected readonly openItem = computed(
+    () => this.items().find((each) => each.number === this.openPull()) ?? null,
+  );
+  /** What the rest of the sky says about the selected pull request, for its card. */
+  protected readonly cardContext = computed((): CardContext => {
     const number = this.openPull();
-    return number === null ? [] : collisionsOf(this.collisions.report(), number);
+    const groups = binaries(this.skyItems(), (item) => item.issues);
+    return {
+      pairs: this.skyPairs(),
+      binaries: groups
+        .filter((g) => g.members.some((item) => item.pr === number))
+        .map((g) => ({
+          issue: g.issue,
+          others: g.members.map((item) => item.pr).filter((pr) => pr !== number),
+        })),
+    };
   });
-  protected readonly collisionCheck = computed(() => this.collisions.report()?.check ?? null);
   private readonly sheetItem = computed(
     () => this.items().find((each) => each.number === this.sheetPull()) ?? null,
   );
@@ -215,11 +257,15 @@ export class StarmapPage {
     return item ? shownBucket(item) : null;
   });
   protected readonly sheetTitle = computed(() => this.sheetItem()?.title ?? null);
+  /** The meteor record shows under the Log Sky's map, when it has days. */
+  protected readonly showMeteors = computed(
+    () => this.chart() === 'logs' && this.view() === 'map' && this.logs.hasDays(),
+  );
   protected readonly insets = computed((): SkyInsets => {
     const wide = (this.window?.innerWidth ?? 0) > SIDE_PANEL_MIN_WIDTH;
     return {
       top: TOP_INSET,
-      bottom: BOTTOM_INSET,
+      bottom: this.showMeteors() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
       side: this.hasChanges() && wide ? SIDE_PANEL_WIDTH : 0,
     };
   });
@@ -236,7 +282,14 @@ export class StarmapPage {
       untracked(() => {
         this.lastSeen.set(this.lastSeenStore.read(repo));
         this.feed.watch(repo);
+        this.logs.clear();
+        this.logs.watch(repo);
       });
+    });
+    // A refresh lays the Log Sky out again; the card and threads follow their fault.
+    effect(() => {
+      this.logs.layout();
+      untracked(() => this.logs.follow());
     });
     effect(() => {
       if (!this.readAt()) return;
@@ -252,6 +305,8 @@ export class StarmapPage {
   protected setChart(chart: Chart): void {
     this.filter.set(null);
     this.openPull.set(null);
+    this.logs.clear();
+    this.logs.filter.set(null);
     void this.router.navigate([], {
       relativeTo: this.route,
       fragment: fragmentOf(chart),
@@ -265,8 +320,19 @@ export class StarmapPage {
 
   /** A legend chip narrows the sky to itself; pressing it again shows everything. */
   protected toggleFilter(id: string): void {
+    if (this.chart() === 'logs') {
+      this.logs.toggleFilter(id as LogKey);
+      return;
+    }
     this.filter.update((current) => (current === id ? null : id));
     this.openPull.set(null);
+  }
+
+  /** Flies to a fault from the log list, opens its card and traces it. */
+  protected goToLog(star: LogStar): void {
+    this.skyView.set('map');
+    this.logs.pick(star);
+    this.sky()?.goToLog(star);
   }
 
   /** Flies to a star from the list, and opens it. */
@@ -277,6 +343,10 @@ export class StarmapPage {
   }
 
   protected refresh(): void {
+    if (this.chart() === 'usage') {
+      this.usage.refresh();
+      return;
+    }
     this.refreshing.set(true);
     this.feed.refresh(this.repo());
   }
@@ -285,6 +355,13 @@ export class StarmapPage {
     const now = Date.now();
     this.lastSeenStore.record(this.repo(), now);
     this.lastSeen.set(now);
+  }
+
+  /** Esc closes the full screen first, then the card, as on pr-starmap. */
+  protected closeTopmost(): void {
+    if (this.sheetPull() !== null) this.sheetPull.set(null);
+    else if (this.chart() === 'logs') this.logs.closeCard();
+    else this.openPull.set(null);
   }
 
   /** Opens a pull request's full screen, from its card or another screen. */

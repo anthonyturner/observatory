@@ -26,6 +26,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       '/api/collisions': (query) => reads.collisions(repoOf(query)),
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/issues': (query) => reads.issues(repoOf(query)),
+      '/api/logs': (query) => reads.logs(repoOf(query)),
       '/api/pull': (query) => {
         const [repo, number] = [repoOf(query), numberOf(query)];
         // Refresh on the PR screen asks for it anew rather than a minute-old copy.

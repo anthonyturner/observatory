@@ -15,6 +15,8 @@ export class SheetDiff {
   readonly diff = input.required<string>();
   readonly diffBytes = input.required<number>();
   readonly truncated = input.required<boolean>();
+  /** The preview withholds a private repository's code. */
+  readonly codeHidden = input(false);
 
   protected readonly files = computed(() => diffFilesOf(this.diff()));
   protected readonly sizeKb = computed(() => Math.round(this.diffBytes() / BYTES_PER_KB));

@@ -1,0 +1,33 @@
+@if (document(); as usage) {
+  <app-usage-limits [limits]="usage.limits" [width]="width()" [now]="now()" />
+  @if (usage.tokens; as tokens) {
+    <app-usage-tokens [tokens]="tokens" [width]="width()" />
+  }
+  @if (projects(); as projects) {
+    <app-usage-bars
+      heading="By project"
+      [small]="projects.small"
+      [note]="projects.note"
+      [items]="projects.items"
+      [width]="width()"
+      label="Tokens by project"
+    />
+  }
+  @if (tools(); as tools) {
+    <app-usage-bars
+      heading="Tools"
+      [small]="tools.small"
+      [items]="tools.items"
+      [width]="width()"
+      label="Tool calls by tool"
+    />
+  }
+} @else if (state().status === 'reading') {
+  <p class="none">Reading usage…</p>
+} @else {
+  <p class="none">
+    No usage read yet. Observatory's API reads it from Claude Code's files on this machine while it
+    runs (<code>npm start</code>), or press <code>Refresh</code>.
+  </p>
+}
+<app-usage-tip [tip]="tip()" />

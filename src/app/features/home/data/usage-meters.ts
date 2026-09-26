@@ -1,5 +1,5 @@
 import { LimitWindow, TokenDay, UsageDocument } from '../../../core/usage/usage-document';
-import { UsageState } from '../../../core/usage/usage-feed';
+import { UsageState } from '../../../core/usage/usage-reader';
 import {
   ageOf,
   formatPercent,

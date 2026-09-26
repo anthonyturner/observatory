@@ -26,6 +26,9 @@ const queue: QueueReport = {
       updatedAt: '2026-09-25T00:00:00Z',
       idleDays: 1,
       ageDays: 1,
+      branch: 'feat/x',
+      mergeable: 'MERGEABLE',
+      changedFiles: 1,
     },
   ],
 };
@@ -36,6 +39,7 @@ const reads = {
   pull: async (repo: string, number: number) => ({ repo, number }),
   forgetPull: (repo: string, number: number) => forgotten.push(`${repo}#${number}`),
   labels: async () => [{ name: 'bug', color: 'd73a4a' }],
+  logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
 } as unknown as ApiReads;
 
 /** An editor that remembers what it was asked, and changes nothing. */
@@ -131,6 +135,14 @@ describe('ownerRoutes', () => {
     assert.equal(response.status, 200);
     const read = (await get('/api/queue?repo=me/app')) as { items: { isSeen: boolean }[] };
     assert.equal(read.items[0].isSeen, true);
+  });
+
+  it('reads a repository’s Log Sky', async () => {
+    assert.deepEqual(await get('/api/logs?repo=me/app'), {
+      configured: false,
+      reason: 'not-set',
+      repo: 'me/app',
+    });
   });
 
   it('refuses a malformed repository name', async () => {

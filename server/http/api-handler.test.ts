@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { BadRequest, createApiHandler } from './api-handler.ts';
+import { BadRequest, Forbidden, NotFound, createApiHandler } from './api-handler.ts';
 
 describe('createApiHandler', () => {
   const handle = createApiHandler({
@@ -10,6 +10,12 @@ describe('createApiHandler', () => {
         const name = query.get('name');
         if (!name) throw new BadRequest('name is required');
         return { name };
+      },
+      '/api/gone': async () => {
+        throw new NotFound('no such thing');
+      },
+      '/api/private': async () => {
+        throw new Forbidden('not for you');
       },
       '/api/broken': async () => {
         throw new Error('boom');
@@ -43,6 +49,16 @@ describe('createApiHandler', () => {
 
     assert.equal(response.status, 400);
     assert.deepEqual(await response.json(), { error: 'name is required' });
+  });
+
+  it('answers a route that says not found or forbidden with 404 or 403 and why', async () => {
+    const gone = await get('/api/gone');
+    const hidden = await get('/api/private');
+
+    assert.equal(gone.status, 404);
+    assert.deepEqual(await gone.json(), { error: 'no such thing' });
+    assert.equal(hidden.status, 403);
+    assert.deepEqual(await hidden.json(), { error: 'not for you' });
   });
 
   it('says not found for an unknown path or method', async () => {

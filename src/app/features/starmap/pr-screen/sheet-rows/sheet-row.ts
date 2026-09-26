@@ -41,7 +41,7 @@ export function commitRows(detail: PullDetail, locale?: string): SheetRow[] {
 
 export function checkRows(detail: PullDetail): SheetRow[] {
   return detail.checks.map((check, index) => ({
-    key: `${index}:${check.name}`,
+    key: `${index}:${check.run}`,
     cells: [
       { text: check.run, classes: 'grow' },
       { text: check.result.toLowerCase(), classes: `mono ${resultClass(check.result)}` },

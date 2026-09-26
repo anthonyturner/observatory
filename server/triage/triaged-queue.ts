@@ -1,6 +1,12 @@
 import { BadRequest } from '../http/api-handler.ts';
 import type { QueueItem, QueueReport } from '../queue/queue-report.ts';
-import { type PullTriage, type TriageRequest, applyTriage, triageOf } from './triage.ts';
+import {
+  type PullTriage,
+  type TriageRequest,
+  type TriageState,
+  applyTriage,
+  triageOf,
+} from './triage.ts';
 import type { TriageStore } from './triage-store.ts';
 
 /** A queue item with its triage. */
@@ -10,13 +16,8 @@ export interface TriagedQueue extends Omit<QueueReport, 'items'> {
   readonly items: readonly TriagedItem[];
 }
 
-/** The queue with each pull request's triage merged in, as it stands now. */
-export async function withTriage(
-  report: QueueReport,
-  store: TriageStore,
-  now: number,
-): Promise<TriagedQueue> {
-  const state = await store.read(report.repo);
+/** The queue with each pull request's triage in `state` merged in, as it stands now. */
+export function triagedQueue(report: QueueReport, state: TriageState, now: number): TriagedQueue {
   return {
     ...report,
     items: report.items.map((item) => ({
@@ -24,6 +25,15 @@ export async function withTriage(
       ...triageOf(state, item.number, item.updatedAt, now),
     })),
   };
+}
+
+/** The queue with its stored triage merged in, as it stands now. */
+export async function withTriage(
+  report: QueueReport,
+  store: TriageStore,
+  now: number,
+): Promise<TriagedQueue> {
+  return triagedQueue(report, await store.read(report.repo), now);
 }
 
 /** Records a triage action on an open pull request, and returns where it now stands. */

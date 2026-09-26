@@ -47,7 +47,9 @@
                 "isDraft": true,
                 "additions": 630,
                 "deletions": 61,
-                "createdAt": "2026-09-26T09:04:34Z"
+                "createdAt": "2026-09-26T09:04:34Z",
+                "headRefName": "feat/15-prepare-top-matches-button",
+                "changedFiles": 10
               },
               {
                 "number": 16,
@@ -105,7 +107,9 @@
                 "isDraft": true,
                 "additions": 123,
                 "deletions": 1,
-                "createdAt": "2026-09-26T08:56:34Z"
+                "createdAt": "2026-09-26T08:56:34Z",
+                "headRefName": "fix/14-recover-stuck-drafts",
+                "changedFiles": 4
               },
               {
                 "number": 7,
@@ -149,7 +153,9 @@
                 "isDraft": false,
                 "additions": 32,
                 "deletions": 183,
-                "createdAt": "2026-09-24T09:54:14Z"
+                "createdAt": "2026-09-24T09:54:14Z",
+                "headRefName": "dependabot/npm_and_yarn/fastify/static-10.1.4",
+                "changedFiles": 2
               },
               {
                 "number": 6,
@@ -193,7 +199,9 @@
                 "isDraft": false,
                 "additions": 23,
                 "deletions": 57,
-                "createdAt": "2026-09-24T09:54:10Z"
+                "createdAt": "2026-09-24T09:54:10Z",
+                "headRefName": "dependabot/npm_and_yarn/angular/forms-22.1.7",
+                "changedFiles": 2
               },
               {
                 "number": 5,
@@ -237,7 +245,9 @@
                 "isDraft": false,
                 "additions": 25,
                 "deletions": 37,
-                "createdAt": "2026-09-24T09:54:09Z"
+                "createdAt": "2026-09-24T09:54:09Z",
+                "headRefName": "dependabot/npm_and_yarn/angular/platform-browser-22.1.7",
+                "changedFiles": 2
               },
               {
                 "number": 4,
@@ -281,7 +291,9 @@
                 "isDraft": false,
                 "additions": 28,
                 "deletions": 37,
-                "createdAt": "2026-09-24T09:53:59Z"
+                "createdAt": "2026-09-24T09:53:59Z",
+                "headRefName": "dependabot/npm_and_yarn/angular/core-22.1.7",
+                "changedFiles": 2
               },
               {
                 "number": 3,
@@ -325,7 +337,9 @@
                 "isDraft": false,
                 "additions": 7088,
                 "deletions": 7548,
-                "createdAt": "2026-09-24T09:53:52Z"
+                "createdAt": "2026-09-24T09:53:52Z",
+                "headRefName": "dependabot/npm_and_yarn/development-tooling-67ccecc05a",
+                "changedFiles": 4
               }
             ]
           }
@@ -336,9 +350,11 @@
   "expected": [
     {
       "additions": 630,
+      "changedFiles": 10,
       "closingIssuesReferences": [],
       "createdAt": "2026-09-26T09:04:34Z",
       "deletions": 61,
+      "headRefName": "feat/15-prepare-top-matches-button",
       "isDraft": true,
       "mergeable": "MERGEABLE",
       "number": 17,
@@ -360,6 +376,7 @@
     },
     {
       "additions": 123,
+      "changedFiles": 4,
       "closingIssuesReferences": [
         {
           "id": "I_kwDOUo7qUM8AAAABTKp2fA",
@@ -377,6 +394,7 @@
       ],
       "createdAt": "2026-09-26T08:56:34Z",
       "deletions": 1,
+      "headRefName": "fix/14-recover-stuck-drafts",
       "isDraft": true,
       "mergeable": "MERGEABLE",
       "number": 16,
@@ -398,9 +416,11 @@
     },
     {
       "additions": 32,
+      "changedFiles": 2,
       "closingIssuesReferences": [],
       "createdAt": "2026-09-24T09:54:14Z",
       "deletions": 183,
+      "headRefName": "dependabot/npm_and_yarn/fastify/static-10.1.4",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 7,
@@ -422,9 +442,11 @@
     },
     {
       "additions": 23,
+      "changedFiles": 2,
       "closingIssuesReferences": [],
       "createdAt": "2026-09-24T09:54:10Z",
       "deletions": 57,
+      "headRefName": "dependabot/npm_and_yarn/angular/forms-22.1.7",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 6,
@@ -446,9 +468,11 @@
     },
     {
       "additions": 25,
+      "changedFiles": 2,
       "closingIssuesReferences": [],
       "createdAt": "2026-09-24T09:54:09Z",
       "deletions": 37,
+      "headRefName": "dependabot/npm_and_yarn/angular/platform-browser-22.1.7",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 5,
@@ -470,9 +494,11 @@
     },
     {
       "additions": 28,
+      "changedFiles": 2,
       "closingIssuesReferences": [],
       "createdAt": "2026-09-24T09:53:59Z",
       "deletions": 37,
+      "headRefName": "dependabot/npm_and_yarn/angular/core-22.1.7",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 4,
@@ -494,9 +520,11 @@
     },
     {
       "additions": 7088,
+      "changedFiles": 4,
       "closingIssuesReferences": [],
       "createdAt": "2026-09-24T09:53:52Z",
       "deletions": 7548,
+      "headRefName": "dependabot/npm_and_yarn/development-tooling-67ccecc05a",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 3,

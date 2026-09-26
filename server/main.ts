@@ -9,6 +9,10 @@ import { ghCliReader } from './github/gh-cli-reader.ts';
 import { fileHistoryStore } from './history/history-store.ts';
 import { createApiHandler } from './http/api-handler.ts';
 import { createApiServer } from './http/api-server.ts';
+import { withLocalSession } from './http/session.ts';
+import { fsLogFolder } from './logs/log-folder.ts';
+import { fileLogsConfig } from './logs/logs-config.ts';
+import { logsReport } from './logs/logs-report.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { usageReport } from './usage/usage-report.ts';
@@ -20,11 +24,14 @@ const port = Number(process.env['OBSERVATORY_API_PORT'] ?? DEFAULT_PORT);
 const github = ghCliReader();
 const clones = fileCloneFinder();
 const merger = gitPairMerger();
+const logsConfig = fileLogsConfig();
+const logFolder = fsLogFolder();
 const reads = cachedReads({
   github,
   history: fileHistoryStore(),
   collisions: (repo) => collisionsReport(github, clones, merger, repo),
   usage: () => usageReport(),
+  logs: (repo) => logsReport(logsConfig, logFolder, repo, new Date()),
 });
 const store = fileStore();
 const triage = storeTriageStore(store);
@@ -38,7 +45,9 @@ const editor = pullEditor({
 
 // Loopback only: the API reads files from this machine's home folder and acts
 // as the account `gh` is signed in with.
-const server = createApiServer(createApiHandler(ownerRoutes(reads, triage, editor)));
+const server = createApiServer(
+  createApiHandler(withLocalSession(ownerRoutes(reads, triage, editor))),
+);
 
 // Another copy already on the port would answer the page with its own, older
 // code; say so and stop rather than sit idle behind it.

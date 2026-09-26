@@ -17,17 +17,6 @@ export interface CollisionsReport {
   readonly pairs: readonly Collision[];
 }
 
-/** How a pair is shown: one that would conflict, or one never checked. */
-export type ThreadKind = 'conflict' | 'unchecked';
-
-/** One other pull request a pull request shares files with, for its panel. */
-export interface PullCollision {
-  readonly other: number;
-  readonly kind: ThreadKind | 'clean';
-  /** The conflicting files, or for a clean or unchecked pair the shared ones. */
-  readonly files: readonly string[];
-}
-
 type Json = Record<string, unknown>;
 
 const isObject = (value: unknown): value is Json =>
@@ -60,26 +49,6 @@ export function parseCollisions(value: unknown): CollisionsReport | null {
   };
 }
 
-const kindOf = (pair: Collision): ThreadKind | 'clean' =>
-  pair.conflicts === null ? 'unchecked' : pair.conflicts.length ? 'conflict' : 'clean';
-
-const KIND_ORDER: Record<PullCollision['kind'], number> = { conflict: 0, unchecked: 1, clean: 2 };
-
-/** The pull requests `number` shares files with, those it would conflict with first. */
-export function collisionsOf(report: CollisionsReport | null, number: number): PullCollision[] {
-  return (report?.pairs ?? [])
-    .filter((pair) => pair.a === number || pair.b === number)
-    .map((pair) => {
-      const kind = kindOf(pair);
-      return {
-        other: pair.a === number ? pair.b : pair.a,
-        kind,
-        files: kind === 'conflict' ? (pair.conflicts ?? []) : pair.files,
-      };
-    })
-    .sort((x, y) => KIND_ORDER[x.kind] - KIND_ORDER[y.kind] || x.other - y.other);
-}
-
 /** "3 pairs would conflict", or why the pairs that share files are unchecked. */
 export function collisionSummary(report: CollisionsReport | null): string | null {
   if (!report || !report.pairs.length) return null;
@@ -87,7 +56,7 @@ export function collisionSummary(report: CollisionsReport | null): string | null
     return `${report.pairs.length} pairs share files · unchecked: no local clone`;
   if (report.check === 'unreachable')
     return `${report.pairs.length} pairs share files · unchecked: could not fetch`;
-  const conflicting = report.pairs.filter((pair) => kindOf(pair) === 'conflict').length;
+  const conflicting = report.pairs.filter((pair) => (pair.conflicts?.length ?? 0) > 0).length;
   if (!conflicting) return 'no pull requests collide';
   return conflicting === 1 ? '1 pair would conflict' : `${conflicting} pairs would conflict`;
 }

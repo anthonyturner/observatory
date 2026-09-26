@@ -2,7 +2,7 @@ import { BadRequest } from '../http/api-handler.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 
-/** One repository's triage, kept on this machine. Keys are pull request numbers. */
+/** One repository's triage. Keys are pull request numbers. */
 export interface TriageState {
   /** When each was marked seen. */
   readonly seen: Readonly<Record<string, string>>;
@@ -10,9 +10,12 @@ export interface TriageState {
   readonly dismissed: Readonly<Record<string, string>>;
   /** When each snooze ends. */
   readonly snoozed: Readonly<Record<string, string>>;
+  /** When each one's triage last changed, restores included: triage is kept here and on the
+   *  hosted site, and a push merges the two by whichever changed a pull request last. */
+  readonly changed: Readonly<Record<string, string>>;
 }
 
-export const EMPTY_TRIAGE: TriageState = { seen: {}, dismissed: {}, snoozed: {} };
+export const EMPTY_TRIAGE: TriageState = { seen: {}, dismissed: {}, snoozed: {}, changed: {} };
 
 export const TRIAGE_ACTIONS = ['seen', 'unseen', 'dismiss', 'snooze', 'restore'] as const;
 export type TriageAction = (typeof TRIAGE_ACTIONS)[number];
@@ -36,14 +39,30 @@ const without = (record: Readonly<Record<string, string>>, key: string): Record<
   return copy;
 };
 
-/** The state after `action` on pull request `number`. */
+interface ActionContext {
+  readonly now: number;
+  readonly updatedAt: string;
+  readonly days?: number;
+}
+
+/** The state after `action` on pull request `number`, marked as changed now. */
 export function applyTriage(
   state: TriageState,
   number: number,
   action: TriageAction,
-  context: { readonly now: number; readonly updatedAt: string; readonly days?: number },
+  context: ActionContext,
 ): TriageState {
   const key = String(number);
+  const next = applied(state, key, action, context);
+  return { ...next, changed: { ...state.changed, [key]: new Date(context.now).toISOString() } };
+}
+
+function applied(
+  state: TriageState,
+  key: string,
+  action: TriageAction,
+  context: ActionContext,
+): TriageState {
   const now = new Date(context.now).toISOString();
   switch (action) {
     case 'seen':

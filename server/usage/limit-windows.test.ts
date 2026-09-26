@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { limitsFrom, projectWeek, thin } from './limit-windows.ts';
+import { limitsFrom, pastWeeks, projectWeek, thin } from './limit-windows.ts';
 import type { LimitSample, Point } from './usage-types.ts';
 
 const HOUR = 3_600_000;
@@ -103,5 +103,37 @@ describe('thin', () => {
       [2, 9],
       [4, 2],
     ]);
+  });
+});
+
+describe('pastWeeks', () => {
+  const reading = (at: number, pct: number, resetsAt: number): LimitSample => ({
+    at: iso(at),
+    week: { pct, resetsAt: iso(resetsAt) },
+    five: null,
+  });
+
+  it('keeps each earlier week at its highest reading, oldest first', () => {
+    const lastWeek = NOW - 96 * HOUR;
+    const weekBefore = lastWeek - 168 * HOUR;
+    const samples = [
+      reading(lastWeek - HOUR, 40, lastWeek),
+      reading(weekBefore - 2 * HOUR, 70, weekBefore),
+      reading(lastWeek - 2 * HOUR, 55, lastWeek + 60_000),
+      reading(NOW, 5, NOW + 72 * HOUR),
+    ];
+
+    assert.deepEqual(pastWeeks(samples, samples[3].week), [
+      { resetsAt: iso(weekBefore), peak: 70 },
+      { resetsAt: iso(lastWeek), peak: 55 },
+    ]);
+  });
+});
+
+describe('limitsFrom week', () => {
+  it('starts the week seven days before its reset', () => {
+    const limits = limitsFrom([sample(NOW - HOUR, 10, null)], NOW);
+    assert.equal(limits?.week?.startsAt, iso(NOW + 72 * HOUR - 168 * HOUR));
+    assert.deepEqual(limits?.weeks, []);
   });
 });

@@ -5,13 +5,16 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { messageOf, messagesIn, sessionLogFiles } from './session-log.ts';
 
-const reply = (id: string, output: number, model = 'claude-opus-5') =>
+const reply = (id: string, output: number, model = 'claude-opus-5', tools: string[] = []) =>
   JSON.stringify({
     type: 'assistant',
     timestamp: '2026-09-26T10:00:00Z',
+    sessionId: 's1',
+    cwd: 'E:\repos\observatory',
     message: {
       id,
       model,
+      content: [{ type: 'text', text: 'ok' }, ...tools.map((name) => ({ type: 'tool_use', name }))],
       usage: {
         input_tokens: 10,
         output_tokens: output,
@@ -31,7 +34,17 @@ describe('messageOf', () => {
       output: 7,
       cacheRead: 1000,
       cacheWrite: 50,
+      session: 's1',
+      cwd: 'E:\repos\observatory',
+      tools: [],
     });
+  });
+
+  it('names each tool the reply calls', () => {
+    assert.deepEqual(messageOf(reply('m3', 1, 'claude-opus-5', ['Bash', 'Agent']))?.tools, [
+      'Bash',
+      'Agent',
+    ]);
   });
 
   it('skips other lines, placeholders and lines that do not parse', () => {

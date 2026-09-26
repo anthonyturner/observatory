@@ -1,0 +1,32 @@
+<div class="card" [style.--sev]="bucket()?.colour" [appDraggable]="placeKey">
+  <button class="close" type="button" aria-label="Close" (click)="closed.emit()">&times;</button>
+  <div class="grab" data-handle title="Drag to move">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="bucketname">{{ bucket()?.label }} — {{ bucket()?.sub?.toLowerCase() }}</div>
+    <div class="prno">#{{ item().number }}</div>
+  </div>
+  <h2>{{ item().title }}</h2>
+  <dl class="facts">
+    @for (fact of facts(); track fact.term + fact.value) {
+      <dt>{{ fact.term }}</dt>
+      <dd
+        [class.bad]="fact.tone === 'bad'"
+        [class.hot]="fact.tone === 'hot'"
+        [style.color]="fact.colour"
+      >
+        {{ fact.value }}
+      </dd>
+    }
+  </dl>
+  <div class="cardacts">
+    <button type="button" class="primary" (click)="open.emit(item().number)">Open</button>
+    <a [href]="item().url" target="_blank" rel="noopener">GitHub ↗</a>
+    @if (issueUrl(); as url) {
+      <a [href]="url" target="_blank" rel="noopener">Issue #{{ item().closes[0] }}</a>
+    }
+    @if (canWrite()) {
+      <button type="button" (click)="snooze.emit(item().number)">Snooze 7d</button>
+      <button type="button" (click)="dismiss.emit(item().number)">Dismiss</button>
+    }
+  </div>
+</div>

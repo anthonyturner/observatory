@@ -50,14 +50,7 @@ describe('parsePullDetail', () => {
     const parsed = parsePullDetail(detail);
 
     expect(parsed?.body).toBe('<script>alert(1)</script> Closes #57');
-    expect(parsed?.checks[0]).toEqual({
-      name: 'CI / Test',
-      run: 'Test',
-      outcome: 'failed',
-      result: 'FAILURE',
-      url: 'https://github.com/x/2',
-    });
-    expect(parsed?.reviewDecision).toBe('changes-requested');
+    expect(parsed?.checks[0]).toEqual({ run: 'Test', result: 'FAILURE' });
   });
 
   it('keeps what the PR screen’s tabs show, dropping entries that do not parse', () => {
@@ -76,9 +69,8 @@ describe('parsePullDetail', () => {
     expect(parsed?.fetchedAt).toBe(detail.fetchedAt);
   });
 
-  it('reads a check with no result as pending, and drops a link that is not https', () => {
-    const check = parsePullDetail(detail)?.checks[1];
-    expect([check?.run, check?.result, check?.url]).toEqual(['deploy', 'PENDING', null]);
+  it('names a check by its name when it has no run, and reads no result as pending', () => {
+    expect(parsePullDetail(detail)?.checks[1]).toEqual({ run: 'deploy', result: 'PENDING' });
   });
 
   it('refuses a pull request that is not on GitHub, or not a pull request', () => {
@@ -86,10 +78,11 @@ describe('parsePullDetail', () => {
     expect(parsePullDetail({ error: 'number must be a pull request number' })).toBeNull();
   });
 
-  it('reads an unknown review decision as none, and missing fields as empty', () => {
-    const bare = parsePullDetail({ ...detail, reviewDecision: 'MAYBE', mergeable: 5, files: null });
-    expect(bare?.reviewDecision).toBe('none');
+  it('reads missing or malformed fields as empty, and code as shown unless withheld', () => {
+    const bare = parsePullDetail({ ...detail, mergeable: 5, files: null });
     expect(bare?.mergeable).toBe('UNKNOWN');
+    expect(bare?.diffHidden).toBe(false);
+    expect(parsePullDetail({ ...detail, diffHidden: true })?.diffHidden).toBe(true);
     expect(bare?.files).toEqual([]);
   });
 });

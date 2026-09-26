@@ -4,7 +4,7 @@ import { messagesIn, sessionLogFiles } from './session-log.ts';
 import type { AssistantMessage } from './usage-types.ts';
 
 /** Bump when the cached shape changes, so an old cache is read afresh. */
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 interface CachedFile {
   /** Size and modification time: a file whose key is unchanged is not reread. */

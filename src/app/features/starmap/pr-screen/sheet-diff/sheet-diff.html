@@ -1,4 +1,8 @@
-@if (!diff()) {
+@if (codeHidden()) {
+  <p class="note">
+    This repository is private, so its code is not shown in the preview. Sign in to see it.
+  </p>
+} @else if (!diff()) {
   <p class="note warn">
     This diff is too large to carry here{{ diffBytes() ? ' (' + sizeKb() + ' KB)' : '' }}. Open it
     on GitHub.

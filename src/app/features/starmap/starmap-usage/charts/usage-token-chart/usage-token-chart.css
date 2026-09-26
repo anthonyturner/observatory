@@ -1,0 +1,24 @@
+svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--edge-soft);
+  stroke-width: 1;
+}
+
+.axis {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  fill: var(--faint);
+}
+
+.hit {
+  fill: transparent;
+}
+
+.hit:hover {
+  fill: var(--usage-hit-hover);
+}

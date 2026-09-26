@@ -23,7 +23,13 @@ describe('UsageFeed', () => {
 
     expect(feed.state()).toEqual({
       status: 'ready',
-      document: { generatedAt: '2026-09-26T07:00:00Z', limits: undefined, tokens: undefined },
+      document: {
+        generatedAt: '2026-09-26T07:00:00Z',
+        limits: undefined,
+        tokens: undefined,
+        tools: [],
+        projects: [],
+      },
     });
   });
 

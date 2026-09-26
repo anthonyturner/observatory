@@ -73,6 +73,8 @@ export interface PullDetail {
   /** How long the diff was before it was cut to fit. */
   readonly diffBytes: number;
   readonly diffTruncated: boolean;
+  /** The preview withholds a private repository's code. */
+  readonly diffHidden: boolean;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly fetchedAt: string;
@@ -190,11 +192,21 @@ export function pullDetailOf(raw: RawPull, extras: PullExtras): PullDetail {
     diff: extras.diff,
     diffBytes: extras.diff.length,
     diffTruncated: false,
+    diffHidden: false,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     fetchedAt: extras.fetchedAt,
   });
 }
+
+/** A pull request without its code, as the preview shows a private repository's. */
+export const withoutCode = (detail: PullDetail): PullDetail => ({
+  ...detail,
+  diff: '',
+  diffBytes: 0,
+  diffTruncated: false,
+  diffHidden: true,
+});
 
 /** A pull request number from a request, or a BadRequest. */
 export function pullNumberFrom(value: unknown): number {

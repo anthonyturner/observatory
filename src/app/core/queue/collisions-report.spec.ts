@@ -1,7 +1,6 @@
 import {
   CollisionsReport,
   collisionSummary,
-  collisionThreads,
   collisionsOf,
   parseCollisions,
 } from './collisions-report';
@@ -36,16 +35,6 @@ describe('parseCollisions', () => {
 
   it('refuses an unknown check', () => {
     expect(parseCollisions({ repo: 'me/a', check: 'maybe', pairs: [] })).toBeNull();
-  });
-});
-
-describe('collisionThreads', () => {
-  it('draws pairs that would conflict and unchecked ones, not clean ones', () => {
-    expect(collisionThreads(report)).toEqual([
-      { a: 1, b: 2, kind: 'conflict' },
-      { a: 2, b: 3, kind: 'unchecked' },
-    ]);
-    expect(collisionThreads(null)).toEqual([]);
   });
 });
 

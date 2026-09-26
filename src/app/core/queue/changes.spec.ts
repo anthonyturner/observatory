@@ -1,5 +1,5 @@
 import { PullBucket } from '../projects/projects-report';
-import { changeCount, changeMarks, changesSince } from './changes';
+import { changeCount, changesSince } from './changes';
 import { Frame } from './history-report';
 import { QueueItem } from './queue-report';
 
@@ -91,20 +91,5 @@ describe('changesSince', () => {
     expect(
       changesSince(frames, reopened, Date.parse('2026-09-24T12:00:00Z'), READ_AT)?.merged,
     ).toEqual([]);
-  });
-});
-
-describe('changeMarks', () => {
-  it('marks each open pull request that changed, and none that left', () => {
-    const marks = changeMarks(
-      changesSince(frames, now, Date.parse('2026-09-24T12:00:00Z'), READ_AT),
-    );
-
-    expect([...marks]).toEqual([
-      [5, 'opened'],
-      [1, 'blocked'],
-      [2, 'unblocked'],
-    ]);
-    expect(changeMarks(null).size).toBe(0);
   });
 });

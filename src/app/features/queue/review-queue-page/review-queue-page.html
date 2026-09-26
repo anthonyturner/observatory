@@ -1,11 +1,10 @@
 @if (tab() === 'pulls' && view() === 'map' && visible().length) {
-  <app-star-chart
+  <app-starmap-sky
     #chart
-    [items]="visible()"
+    [items]="skyItems()"
     [filter]="filter()"
     [selected]="openPull()"
-    [marks]="marks()"
-    [threads]="threads()"
+    [pairs]="skyPairs()"
     (picked)="openPull.set($event)"
   />
 }

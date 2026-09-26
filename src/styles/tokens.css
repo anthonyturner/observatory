@@ -31,6 +31,19 @@
   --count-unreviewed: var(--sev-waiting);
   --count-unclaimed: #9fe8ff;
 
+  /* The core: the assistant's body, green as on pr-starmap's Home. Its state
+     picks the ball's tint; the floor and rings stay as they are. */
+  --core-idle: #5cff8e;
+  --core-routing: #7dffc8;
+  --core-error: var(--bad);
+  --core-listening: #8fffb4;
+  --core-transcribing: #c4ffdc;
+  --core-speaking: #b4ffd2;
+  --core-floor: #46ff86;
+  /* Paler than the ball, so the orbit and the tier arcs read over it. */
+  --core-ring: #b4ffd0;
+  --core-heart: #ffffff;
+
   --edge: rgba(120, 150, 220, 0.22);
   --edge-soft: rgba(120, 150, 220, 0.12);
   --flow-glow: rgba(142, 162, 255, 0.45);

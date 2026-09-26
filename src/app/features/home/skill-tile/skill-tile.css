@@ -1,0 +1,53 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 44px;
+  padding: 7px 10px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--panel-soft);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+button::after {
+  content: '\2192';
+  flex: none;
+  color: var(--ink-soft);
+}
+
+button:hover {
+  border-color: var(--flow);
+  background: var(--flow-tint);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.where {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,8 @@
+<button type="button" [title]="skill().description ?? ''">
+  <span class="text">
+    <span class="name">{{ skill().label }}</span>
+    @if (skill().project; as project) {
+      <span class="where">in {{ project }}</span>
+    }
+  </span>
+</button>

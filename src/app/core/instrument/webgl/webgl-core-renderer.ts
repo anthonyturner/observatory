@@ -87,6 +87,7 @@ export class WebGLCoreRenderer implements CoreRenderer {
   }
 
   setProjects(projects: readonly ProjectSnapshot[]): void {
+    if (this.projects.length === 0 && projects.length > 0) this.animator.replayBeads();
     this.projects = projects;
     this.rebuild();
   }

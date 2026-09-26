@@ -14,8 +14,10 @@ export interface CorePose {
   readonly breath: number;
   readonly tierLevels: TierLevels;
   readonly tierSpin: number;
-  /** Real seconds since the first frame, which the beads grow in from. */
+  /** Real seconds since the first frame. */
   readonly sinceStart: number;
+  /** Real seconds since the beads started growing in. */
+  readonly sinceBeads: number;
   readonly isStill: boolean;
 }
 
@@ -33,15 +35,22 @@ const SPOKEN_TIER = 0;
 export class CoreAnimator {
   private look: CoreLook | null = null;
   private startWall: number | null = null;
+  private beadsWall: number | null = null;
   private current: CorePose | null = null;
 
   get pose(): CorePose | null {
     return this.current;
   }
 
+  /** Grows the beads in again from the next frame, as when the first projects arrive. */
+  replayBeads(): void {
+    this.beadsWall = null;
+  }
+
   advance(frame: CoreFrame, inks: Readonly<Record<CoreInk, Rgb>>): void {
     const state = CORE_STATES[frame.state];
     this.startWall ??= frame.wall;
+    this.beadsWall ??= frame.wall;
     this.look = nextLook(this.look, {
       state,
       tint: inks[state.tint],
@@ -62,6 +71,7 @@ export class CoreAnimator {
       }),
       tierSpin: tierSpin(state, frame.time),
       sinceStart,
+      sinceBeads: frame.wall - this.beadsWall,
       isStill: frame.isStill,
     };
   }
@@ -73,4 +83,4 @@ export const ballRadiusOf = (pose: CorePose, coreRadius: number): number =>
 
 /** How far a bead has grown in, 0 to 1. */
 export const beadGrowth = (pose: CorePose, bead: Bead): number =>
-  pose.isStill ? 1 : easeOut((pose.sinceStart - bead.delay) / BEAD_GROW_S);
+  pose.isStill ? 1 : easeOut((pose.sinceBeads - bead.delay) / BEAD_GROW_S);

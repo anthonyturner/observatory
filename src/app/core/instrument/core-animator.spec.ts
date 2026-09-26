@@ -59,3 +59,15 @@ describe('CoreAnimator', () => {
     expect(animator.pose?.tierLevels[2]).toBe(1);
   });
 });
+
+describe('CoreAnimator.replayBeads', () => {
+  it('grows the beads in again from the next frame', () => {
+    const animator = new CoreAnimator();
+    animator.advance(frame(), INKS);
+    animator.advance(frame({ wall: 110 }), INKS);
+    animator.replayBeads();
+    animator.advance(frame({ wall: 110.2 }), INKS);
+    expect(animator.pose && beadGrowth(animator.pose, bead)).toBeLessThanOrEqual(0);
+    expect(animator.pose?.intro).toBe(1);
+  });
+});

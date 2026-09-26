@@ -8,7 +8,7 @@ import { HomePage } from './home-page';
 
 const NO_SKY: SkyCanvas = {
   canDraw: () => false,
-  setTrails: () => undefined,
+  setComets: () => undefined,
   setView: () => undefined,
   paint: () => undefined,
   dispose: () => undefined,

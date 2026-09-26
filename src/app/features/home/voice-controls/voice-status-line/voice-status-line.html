@@ -1,0 +1,11 @@
+<span class="words">{{ words() }}</span>
+@if (line(); as line) {
+  @for (action of line.actions; track action.label) {
+    <button #action type="button" [class]="action.kind" (click)="acted.emit(action)">
+      {{ action.label }}
+    </button>
+  }
+  @if (line.progress; as progress) {
+    <progress max="1" [value]="progress.fraction" [attr.aria-label]="progress.label"></progress>
+  }
+}

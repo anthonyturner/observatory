@@ -47,6 +47,11 @@
   --glass-card-soft: linear-gradient(165deg, rgba(18, 26, 52, 0.9), rgba(7, 11, 24, 0.92));
   --shadow-lift: 0 24px 60px -28px rgba(0, 0, 0, 0.9);
   --sheen-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --glass-gauge: linear-gradient(165deg, rgba(18, 26, 52, 0.78), rgba(7, 11, 24, 0.82));
+  --well: rgba(4, 6, 14, 0.6);
+  --tick: rgba(199, 210, 238, 0.35);
+  --meter-fill: linear-gradient(90deg, rgba(142, 162, 255, 0.3), rgba(142, 162, 255, 0.6));
+  --meter-fill-hot: linear-gradient(90deg, rgba(255, 194, 77, 0.3), rgba(255, 194, 77, 0.65));
   --flow-wash: rgba(142, 162, 255, 0.04);
   --sky-night: radial-gradient(ellipse at 50% 38%, #0b1230 0%, #060a1a 45%, var(--void) 80%);
 

@@ -1,0 +1,123 @@
+:host {
+  position: relative;
+  display: block;
+  padding: 12px 14px 10px;
+  border: 1px solid var(--edge-soft);
+  background: var(--glass-gauge);
+  --meter: var(--meter-fill);
+}
+
+:host(.hot) {
+  --meter: var(--meter-fill-hot);
+}
+
+.corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 0 solid var(--ink-soft);
+  pointer-events: none;
+}
+
+.top-left {
+  top: -1px;
+  left: -1px;
+  border-top-width: 2px;
+  border-left-width: 2px;
+}
+
+.top-right {
+  top: -1px;
+  right: -1px;
+  border-top-width: 2px;
+  border-right-width: 2px;
+}
+
+.bottom-left {
+  bottom: -1px;
+  left: -1px;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+}
+
+.bottom-right {
+  right: -1px;
+  bottom: -1px;
+  border-right-width: 2px;
+  border-bottom-width: 2px;
+}
+
+.reading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: -4px 0 0;
+}
+
+.reading b {
+  font-family: var(--font-condensed);
+  font-weight: 500;
+  font-size: clamp(30px, 5.6vh, 46px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+:host(.hot) .reading b {
+  color: var(--meh);
+}
+
+.reading span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.reading .unknown {
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--muted);
+}
+
+.note {
+  margin: 2px 0 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.meter {
+  position: relative;
+  height: 14px;
+  border: 1px solid var(--edge-soft);
+  background: var(--well);
+}
+
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--meter);
+}
+
+/* Twenty ticks, one per 5%. */
+.ticks {
+  position: absolute;
+  inset: 3px 0;
+  background: repeating-linear-gradient(90deg, var(--tick) 0 1px, transparent 1px 5%);
+}
+
+.scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+@media (min-width: 1024px) and (min-height: 600px) and (max-height: 860px) {
+  :host {
+    padding-block: 10px 8px;
+  }
+}

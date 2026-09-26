@@ -1,0 +1,20 @@
+@let vital = reading();
+<div class="head">
+  <span class="label">{{ vital.label }}</span>
+  @if (vital.age) {
+    <span class="age">{{ vital.age }}</span>
+  }
+  @if (!isUnknown()) {
+    <span class="note">{{ vital.note }}</span>
+  }
+</div>
+@if (vital.value !== null) {
+  <p class="number">
+    {{ vital.value }}<small>{{ vital.unit }}</small>
+  </p>
+} @else {
+  <p class="number unknown">
+    unknown<small>{{ vital.note }}</small>
+  </p>
+}
+<app-sparkline class="trend" [values]="vital.series ?? []" [max]="vital.max" />

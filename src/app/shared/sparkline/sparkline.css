@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: var(--spark-height, clamp(14px, 3.2vh, 26px));
+  overflow: visible;
+}
+
+.line {
+  fill: none;
+  stroke: var(--spark-color, var(--flow));
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.dot {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.base {
+  stroke: var(--edge);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+}

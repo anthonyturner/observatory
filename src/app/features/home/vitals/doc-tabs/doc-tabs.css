@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--edge);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+a:hover {
+  border-color: var(--flow);
+  background: var(--flow-tint);
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  a {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}

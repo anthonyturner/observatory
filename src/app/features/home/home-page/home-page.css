@@ -18,7 +18,6 @@
 
 /* Side columns sit on a scrim so their words keep contrast over the sky. */
 .column {
-  display: block;
   min-width: 0;
   background: var(--scrim-column);
 }

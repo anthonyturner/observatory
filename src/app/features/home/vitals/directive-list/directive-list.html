@@ -1,0 +1,14 @@
+<app-hud-section heading="Directives" note="top 3" [level]="3">
+  <ol>
+    @for (item of directives().items; track item.href) {
+      <li>
+        <span class="box" aria-hidden="true" [style.--c]="item.color"></span>
+        <a target="_blank" rel="noopener" [href]="item.href" [title]="item.title"
+          >{{ item.title }}<span class="visually-hidden">, on GitHub, in a new tab</span></a
+        >
+        <span class="detail">{{ item.detail }}</span>
+      </li>
+    }
+  </ol>
+  <p class="note">{{ directives().note }}</p>
+</app-hud-section>

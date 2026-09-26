@@ -11,7 +11,7 @@
       placeholder="Ask, or name a page to open"
       [readOnly]="isBusy()"
       [attr.aria-busy]="isBusy() ? 'true' : null"
-      (input)="grow()"
+      (input)="onInput()"
       (keydown)="onKeydown($event)"
     ></textarea>
     @if (isKeywordsOnly()) {

@@ -96,14 +96,33 @@ export function commandProposalOf(
 @Injectable({ providedIn: 'root' })
 export class ProposalSlot {
   private readonly shown = signal<Proposal | null>(null);
+  private readonly heardLine = signal<string | null>(null);
 
   readonly proposal = this.shown.asReadonly();
+  /** What was heard while the card was up, and why it was not sent. */
+  readonly heard = this.heardLine.asReadonly();
 
   show(proposal: Proposal): void {
     this.shown.set(proposal);
+    this.heardLine.set(null);
   }
 
   dismiss(): void {
     this.shown.set(null);
+    this.heardLine.set(null);
   }
+
+  /** Says on the card that `words` were heard and put in the box instead. */
+  hear(words: string): void {
+    const proposal = this.shown();
+    if (proposal) this.heardLine.set(heardLineFor(proposal, words));
+  }
+}
+
+/** Speech never starts a task: the card says the words wait in the box. */
+function heardLineFor(proposal: Proposal, words: string): string {
+  const said = words.replace(/[.!?]$/, '');
+  return proposal.kind === 'run'
+    ? `Heard “${said}”. Home never starts a run from speech. Press Run.`
+    : `Heard “${said}”. Home never starts a task from speech, so it is in the box for you to send.`;
 }

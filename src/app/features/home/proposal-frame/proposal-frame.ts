@@ -18,6 +18,8 @@ let nextTitleId = 0;
 })
 export class ProposalFrame {
   readonly heading = input.required<string>();
+  /** What was heard while the card was up, and why it waits in the box. */
+  readonly heard = input<string | null>(null);
 
   protected readonly chip = TASK_CHIP;
   protected readonly titleId = `proposal-title-${nextTitleId++}`;

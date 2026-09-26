@@ -2,6 +2,7 @@ import { Injectable, Provider, computed, inject, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { ASK_CHANNEL, AskChannel } from './ask-channel';
 import { AskBoxFocus } from './ask-box-focus';
+import { AskDraft } from './ask-draft';
 import { AskOutcome, FAILED, outcomeOf } from './ask-outcome';
 import { ASSISTANT_API, AssistantRefused } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
@@ -31,6 +32,7 @@ export class AskFeed implements AskChannel {
   private readonly jump = inject(PageJump);
   private readonly proposals = inject(ProposalSlot);
   private readonly focus = inject(AskBoxFocus);
+  private readonly draft = inject(AskDraft);
   private readonly clock = inject(Clock);
   private readonly asking = signal(false);
   private readonly skillAsking = signal<string | null>(null);
@@ -50,8 +52,9 @@ export class AskFeed implements AskChannel {
 
   submit(text: string, options?: { readonly spoken?: boolean }): void {
     const asked = text.trim();
-    if (!asked || this.asking()) return;
     const spoken = options?.spoken ?? false;
+    if (asked && spoken && this.holdsSpeech()) return this.hold(asked);
+    if (!asked || this.asking()) return;
     this.carriedCut = spoken && this.cutSpeech;
     void this.send({ text: asked }, this.open(asked, spoken ? 'spoken' : 'typed'));
   }
@@ -108,6 +111,18 @@ export class AskFeed implements AskChannel {
     this.proposals.dismiss();
     const request = { text: proposal.prompt, pick: { tier: 3, project: proposal.project } };
     void this.send(request, proposal.entryId);
+  }
+
+  /** Words heard while something else is on the go (a request on its way,
+   *  words in the box, a task proposed) are put in the box, not sent: sending
+   *  could be the wrong thing, and speech never starts a task. */
+  private holdsSpeech(): boolean {
+    return this.asking() || !this.draft.isEmpty() || this.proposals.proposal() !== null;
+  }
+
+  private hold(heard: string): void {
+    this.draft.add(heard);
+    this.proposals.hear(heard);
   }
 
   private open(asked: string, how: AskedHow): number {

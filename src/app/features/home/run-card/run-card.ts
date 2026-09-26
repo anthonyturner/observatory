@@ -25,6 +25,7 @@ import { ProposalFrame } from '../proposal-frame/proposal-frame';
 })
 export class RunCard implements OnInit {
   readonly proposal = input.required<RunProposal>();
+  readonly heard = input<string | null>(null);
 
   protected readonly offer = inject(RunOffer);
   protected readonly motion = inject(MotionPreference);

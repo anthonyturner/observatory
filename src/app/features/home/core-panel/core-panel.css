@@ -34,6 +34,27 @@
   text-align: center;
 }
 
+.mood {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.mood[data-mood='uneasy'] {
+  color: var(--meh);
+}
+
+.mood[data-mood='strained'] {
+  color: var(--bad-soft);
+}
+
+.mood[data-mood='unknown'] {
+  color: var(--muted);
+}
+
 @media (min-width: 1024px) and (min-height: 600px) {
   :host {
     min-height: 0;

@@ -27,6 +27,11 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
       'Each comet falling behind the core is one open issue, in its project’s colour. More issues make a heavier rain; closing one takes its comet away.',
   },
   {
+    term: 'Mood',
+    meaning:
+      'The core’s mood follows your projects: calm, slow green when nothing is blocked; quicker, deeper breathing, warming toward amber, as blocked projects and stuck PRs pile up. Grey until the projects are read. The line under CLAUDE says why.',
+  },
+  {
     term: 'Dots',
     meaning:
       'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name.',

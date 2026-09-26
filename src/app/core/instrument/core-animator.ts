@@ -1,5 +1,6 @@
 import { Bead } from './beads';
 import { CoreLook, Rgb, breathing, nextLook, tierSpin } from './core-look';
+import { CoreMood, UNEASY_WARMTH, UNKNOWN_GREY, withMood } from './core-mood';
 import { CoreFrame } from './core-renderer';
 import { CORE_STATES, CoreInk, TierLevels } from './core-states';
 import { easeOut } from './easing';
@@ -48,12 +49,12 @@ export class CoreAnimator {
   }
 
   advance(frame: CoreFrame, inks: Readonly<Record<CoreInk, Rgb>>): void {
-    const state = CORE_STATES[frame.state];
+    const state = withMood(CORE_STATES[frame.state], frame.mood);
     this.startWall ??= frame.wall;
     this.beadsWall ??= frame.wall;
     this.look = nextLook(this.look, {
       state,
-      tint: inks[state.tint],
+      tint: moodTint(inks, inks[state.tint], frame.mood),
       time: frame.time,
       wall: frame.wall,
       isStill: frame.isStill,
@@ -84,3 +85,12 @@ export const ballRadiusOf = (pose: CorePose, coreRadius: number): number =>
 /** How far a bead has grown in, 0 to 1. */
 export const beadGrowth = (pose: CorePose, bead: Bead): number =>
   pose.isStill ? 1 : easeOut((pose.sinceBeads - bead.delay) / BEAD_GROW_S);
+
+/** The state's tint, warmed toward amber as the projects strain, or greyed
+ *  while they are unknown, so unknown never looks like calm. */
+function moodTint(inks: Readonly<Record<CoreInk, Rgb>>, tint: Rgb, mood: CoreMood): Rgb {
+  const toward = mood.name === 'unknown' ? inks['--core-unknown'] : inks['--core-uneasy'];
+  const amount = mood.name === 'unknown' ? UNKNOWN_GREY : mood.stress * UNEASY_WARMTH;
+  const channel = (i: number): number => tint[i] + (toward[i] - tint[i]) * amount;
+  return [channel(0), channel(1), channel(2)];
+}

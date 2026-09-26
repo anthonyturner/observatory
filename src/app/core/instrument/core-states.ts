@@ -18,7 +18,9 @@ export type CoreInk =
   | '--core-error'
   | '--core-listening'
   | '--core-transcribing'
-  | '--core-speaking';
+  | '--core-speaking'
+  | '--core-uneasy'
+  | '--core-unknown';
 
 export type TierLevels = readonly [number, number, number];
 
@@ -142,6 +144,9 @@ export const CORE_STATES: Readonly<Record<CoreStateId, CoreState>> = {
   },
 };
 
+/** Every ink the palette resolves: the states' own, and the two the mood blends toward. */
 export const CORE_INKS: readonly CoreInk[] = [
   ...new Set(Object.values(CORE_STATES).map((state) => state.tint)),
+  '--core-uneasy',
+  '--core-unknown',
 ];

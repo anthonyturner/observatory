@@ -1,4 +1,5 @@
 import { ProjectSnapshot } from '../projects/project.types';
+import { CoreMood } from './core-mood';
 import { CoreStateId } from './core-states';
 import { HandPose } from './hand';
 import { CoreView } from './core-view';
@@ -16,6 +17,8 @@ export interface CoreFrame {
   readonly hand: HandPose;
   /** The repo of the project lit on the ring, if any. */
   readonly litKey: string | null;
+  /** How the projects stand, which quickens and warms the core. */
+  readonly mood: CoreMood;
 }
 
 /** Draws the core. The 2D and 3D renderers both implement it, so choosing

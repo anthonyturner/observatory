@@ -39,6 +39,9 @@
   --core-listening: #8fffb4;
   --core-transcribing: #c4ffdc;
   --core-speaking: #b4ffd2;
+  /* The mood blends toward these: warm as projects strain, grey while unknown. */
+  --core-uneasy: #ffb35c;
+  --core-unknown: #8d9bc4;
   --core-floor: #46ff86;
   /* Paler than the ball, so the orbit and the tier arcs read over it. */
   --core-ring: #b4ffd0;

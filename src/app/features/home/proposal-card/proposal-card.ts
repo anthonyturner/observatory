@@ -13,5 +13,6 @@ import { ProposalFrame } from '../proposal-frame/proposal-frame';
 })
 export class ProposalCard {
   readonly proposal = input.required<CommandProposal>();
+  readonly heard = input<string | null>(null);
   readonly dismissed = output<void>();
 }

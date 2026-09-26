@@ -1,4 +1,4 @@
-<app-proposal-frame heading="Run this as a Claude Code task">
+<app-proposal-frame heading="Run this as a Claude Code task" [heard]="heard()">
   <p>{{ proposal().intro }}</p>
   @for (command of proposal().commands; track $index) {
     <div class="cmd">

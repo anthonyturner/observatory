@@ -14,6 +14,8 @@
         [isBusy]="feed.busy()"
         [isKeywordsOnly]="isKeywordsOnly()"
         [focusRequests]="focus.requests()"
+        [heard]="draft.heard()"
+        (edited)="draft.noteBox($event)"
         (asked)="feed.submit($event)"
         (escaped)="onEscape()"
       />
@@ -33,10 +35,14 @@
         @for (proposal of proposals(); track proposal.id) {
           @switch (proposal.kind) {
             @case ('run') {
-              <app-run-card [proposal]="proposal" />
+              <app-run-card [proposal]="proposal" [heard]="slot.heard()" />
             }
             @case ('command') {
-              <app-proposal-card [proposal]="proposal" (dismissed)="feed.dismissProposal()" />
+              <app-proposal-card
+                [proposal]="proposal"
+                [heard]="slot.heard()"
+                (dismissed)="feed.dismissProposal()"
+              />
             }
           }
         }

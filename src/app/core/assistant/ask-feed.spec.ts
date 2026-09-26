@@ -5,6 +5,7 @@ import { PAGE_REFRESH, PageRefresh } from '../projects/projects-refresh';
 import { HelpState } from '../../shared/help/help-state';
 import { REPLY_VOICE, ReplyVoice } from '../voice/reply-voice';
 import { ASK_CHANNEL } from './ask-channel';
+import { AskDraft } from './ask-draft';
 import { ASK_FEED_CHANNEL, AskFeed } from './ask-feed';
 import { AskOutcome } from './ask-outcome';
 import { ASSISTANT_API, AssistantApi, AssistantRefused } from './assistant-api';
@@ -413,5 +414,49 @@ describe('AskFeed', () => {
     await settle();
 
     expect(TestBed.inject(AssistantInfo).jev()).toBe('off');
+  });
+
+  describe('words heard through the mic', () => {
+    const COMMAND = reply({
+      tier: 3,
+      prompt: 'fix it',
+      commands: [{ shell: 'bash', command: 'claude -p "fix it"' }],
+    });
+
+    it('go into the box, not out, while a task is proposed, and the card says so', async () => {
+      const { route } = setUp([answer(COMMAND)]);
+      const channel = TestBed.inject(ASK_CHANNEL);
+      channel.submit('fix it');
+      await settle();
+
+      channel.submit('and the other one.', { spoken: true });
+
+      expect(route).toHaveBeenCalledTimes(1);
+      expect(TestBed.inject(AskDraft).heard()).toEqual({ words: 'and the other one.', n: 1 });
+      expect(TestBed.inject(ProposalSlot).heard()).toBe(
+        'Heard “and the other one”. Home never starts a task from speech, so it is in the box for you to send.',
+      );
+    });
+
+    it('go into the box while a request is on its way, or the box holds words', () => {
+      const { route } = setUp([() => new Promise<RouteReply>(() => undefined)]);
+      const channel = TestBed.inject(ASK_CHANNEL);
+      const draft = TestBed.inject(AskDraft);
+      channel.submit('first');
+
+      channel.submit('second', { spoken: true });
+      expect(route).toHaveBeenCalledTimes(1);
+      expect(draft.heard()?.words).toBe('second');
+      expect(draft.isEmpty()).toBe(false);
+    });
+
+    it('are sent as typed words would be when nothing else is on the go', () => {
+      const { route } = setUp([answer(OPEN_ISSUES)]);
+
+      TestBed.inject(ASK_CHANNEL).submit('open issues', { spoken: true });
+
+      expect(route).toHaveBeenCalledWith({ text: 'open issues' });
+      expect(TestBed.inject(AskDraft).heard()).toBeNull();
+    });
   });
 });

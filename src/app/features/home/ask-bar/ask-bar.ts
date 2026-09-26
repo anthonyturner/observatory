@@ -8,6 +8,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { HeardWords } from '../../../core/assistant/ask-draft';
 
 /** An input method still composing a word sends this key code for its Enter. */
 const COMPOSING_KEY_CODE = 229;
@@ -26,7 +27,11 @@ export class AskBar {
   readonly isKeywordsOnly = input(false);
   /** Each new value brings the focus back to the box. */
   readonly focusRequests = input(0);
+  /** Words heard while sending them could be wrong: added to the box, not sent. */
+  readonly heard = input<HeardWords | null>(null);
   readonly asked = output<string>();
+  /** The box's words, whenever they change. */
+  readonly edited = output<string>();
   /** Esc in the box, for the panel to cancel what it can. */
   readonly escaped = output<void>();
 
@@ -35,6 +40,10 @@ export class AskBar {
   constructor() {
     effect(() => {
       if (this.focusRequests() > 0) untracked(() => this.box().nativeElement.focus());
+    });
+    effect(() => {
+      const heard = this.heard();
+      if (heard) untracked(() => this.takeIn(heard.words));
     });
   }
 
@@ -57,6 +66,11 @@ export class AskBar {
     }
   }
 
+  protected onInput(): void {
+    this.grow();
+    this.edited.emit(this.box().nativeElement.value);
+  }
+
   protected grow(): void {
     const box = this.box().nativeElement;
     box.style.height = 'auto';
@@ -69,7 +83,15 @@ export class AskBar {
     if (!text || this.isBusy()) return;
     box.value = '';
     this.grow();
+    this.edited.emit('');
     this.asked.emit(text);
+  }
+
+  private takeIn(words: string): void {
+    const box = this.box().nativeElement;
+    box.value = [box.value.trim(), words].filter(Boolean).join(' ');
+    this.grow();
+    this.edited.emit(box.value);
   }
 }
 

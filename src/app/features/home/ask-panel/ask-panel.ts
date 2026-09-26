@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { AskBoxFocus } from '../../../core/assistant/ask-box-focus';
+import { AskDraft } from '../../../core/assistant/ask-draft';
 import { AskFeed } from '../../../core/assistant/ask-feed';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
 import { jevOffNote } from '../../../core/assistant/jev-off-note';
@@ -43,7 +44,8 @@ export class AskPanel {
   private readonly info = inject(AssistantInfo);
   private readonly log = inject(ReplyLog);
   private readonly projects = inject(PROJECTS);
-  private readonly slot = inject(ProposalSlot);
+  protected readonly slot = inject(ProposalSlot);
+  protected readonly draft = inject(AskDraft);
   private readonly bar = viewChild(AskBar);
 
   protected readonly isOwnersOnly = computed(

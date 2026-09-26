@@ -78,4 +78,32 @@ describe('AskBar', () => {
 
     expect(document.activeElement).toBe(box);
   });
+
+  it('adds words heard to what the box holds, without sending, and says what it holds', () => {
+    const { fixture, box, asked } = render();
+    const edited: string[] = [];
+    fixture.componentInstance.edited.subscribe((text) => edited.push(text));
+    box.value = 'open the ';
+
+    fixture.componentRef.setInput('heard', { words: 'orrery', n: 1 });
+    fixture.detectChanges();
+    fixture.componentRef.setInput('heard', { words: 'please', n: 2 });
+    fixture.detectChanges();
+
+    expect(box.value).toBe('open the orrery please');
+    expect(asked).toEqual([]);
+    expect(edited.at(-1)).toBe('open the orrery please');
+  });
+
+  it('says when typing changes its words, and when sending empties it', () => {
+    const { fixture, box } = render();
+    const edited: string[] = [];
+    fixture.componentInstance.edited.subscribe((text) => edited.push(text));
+
+    box.value = 'refresh';
+    box.dispatchEvent(new Event('input'));
+    box.dispatchEvent(key({ key: 'Enter' }));
+
+    expect(edited).toEqual(['refresh', '']);
+  });
 });

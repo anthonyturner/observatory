@@ -1,7 +1,7 @@
-@if (tab() === 'pulls' && view() === 'map' && items().length) {
+@if (tab() === 'pulls' && view() === 'map' && visible().length) {
   <app-star-chart
     #chart
-    [items]="items()"
+    [items]="visible()"
     [filter]="filter()"
     [selected]="openPull()"
     (picked)="openPull.set($event)"
@@ -53,6 +53,16 @@
         <span class="dot" aria-hidden="true"></span><b>{{ entry.count }}</b> {{ entry.label }}
       </button>
     }
+    @if (hidden()) {
+      <button
+        type="button"
+        class="hidden-toggle"
+        [attr.aria-pressed]="showHidden()"
+        (click)="showHidden.set(!showHidden())"
+      >
+        <b>{{ hidden() }}</b> hidden · {{ showHidden() ? 'Hide' : 'Show' }}
+      </button>
+    }
   </div>
 
   @if (waiting(); as message) {
@@ -76,6 +86,9 @@
                     <span class="draft">draft</span>
                   }
                   <span class="detail">{{ row.detail }}</span>
+                  @if (row.hiddenNote) {
+                    <span class="note">{{ row.hiddenNote }}</span>
+                  }
                 </button>
                 <a class="github" [href]="row.url" target="_blank" rel="noopener"
                   >GitHub <span aria-hidden="true">&#8599;</span
@@ -100,5 +113,11 @@
 }
 
 @if (openPull(); as number) {
-  <app-pull-panel [repo]="repo()" [number]="number" (closed)="openPull.set(null)" />
+  <app-pull-panel
+    [repo]="repo()"
+    [number]="number"
+    [triage]="openTriage()"
+    (triaged)="recordTriage(number, $event)"
+    (closed)="openPull.set(null)"
+  />
 }

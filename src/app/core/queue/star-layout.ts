@@ -1,12 +1,11 @@
 import { seededRandom } from '../instrument/seeded-random';
 import { Box } from '../orrery/orrery-camera';
-import { PULL_BUCKETS, PullBucket } from '../projects/projects-report';
-import { QueueItem } from './queue-report';
+import { QUEUE_BUCKETS, QueueBucket, QueueItem, shownBucket } from './queue-report';
 
 /** One pull request as a star, with everything that does not change per frame. */
 export interface ChartStar {
   readonly item: QueueItem;
-  readonly bucket: PullBucket;
+  readonly bucket: QueueBucket;
   /** Its resting place on the sky, in chart units. */
   readonly x: number;
   readonly y: number;
@@ -28,7 +27,7 @@ export interface ChartStar {
 
 /** One bucket's constellation. */
 export interface Constellation {
-  readonly bucket: PullBucket;
+  readonly bucket: QueueBucket;
   readonly centreX: number;
   readonly centreY: number;
   readonly stars: readonly ChartStar[];
@@ -64,7 +63,7 @@ const MAX_DELAY = 3;
 /** A pull request's seed: Knuth's multiplicative hash of its number. */
 const seedOf = (number: number): number => (number * 2654435761) % 2147483647;
 
-const URGENT: ReadonlySet<PullBucket> = new Set(['conflicted', 'failing']);
+const URGENT: ReadonlySet<QueueBucket> = new Set(['conflicted', 'failing']);
 
 /**
  * One constellation per bucket that has pull requests, left to right in
@@ -72,11 +71,11 @@ const URGENT: ReadonlySet<PullBucket> = new Set(['conflicted', 'failing']);
  * magnitude and drift follow neglect.
  */
 export function layoutStars(items: readonly QueueItem[]): StarChartLayout {
-  const used = PULL_BUCKETS.filter((bucket) => items.some((item) => item.bucket === bucket));
+  const used = QUEUE_BUCKETS.filter((bucket) => items.some((item) => shownBucket(item) === bucket));
   const slot = CHART_WIDTH / (used.length + 1);
   let order = 0;
   const constellations = used.map((bucket, column) => {
-    const mine = items.filter((item) => item.bucket === bucket);
+    const mine = items.filter((item) => shownBucket(item) === bucket);
     const centreX = slot * (column + 1);
     const centreY =
       CHART_HEIGHT / 2 +

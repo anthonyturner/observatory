@@ -2,7 +2,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
+import { PullPanel } from '../pull-panel/pull-panel';
 import { ReviewQueuePage } from './review-queue-page';
 
 const items = [
@@ -18,6 +20,8 @@ const items = [
     deletions: 1,
     idleDays: 2,
     ageDays: 5,
+    isSeen: false,
+    hidden: null,
   },
   {
     number: 9,
@@ -31,6 +35,23 @@ const items = [
     deletions: 3,
     idleDays: 1,
     ageDays: 1,
+    isSeen: false,
+    hidden: null,
+  },
+  {
+    number: 11,
+    title: 'Old idea',
+    url: 'https://github.com/me/a/pull/11',
+    isDraft: false,
+    bucket: 'unreviewed',
+    closes: [],
+    failingChecks: 0,
+    additions: 3,
+    deletions: 0,
+    idleDays: 40,
+    ageDays: 60,
+    isSeen: true,
+    hidden: { reason: 'dismissed' },
   },
 ];
 
@@ -77,7 +98,7 @@ describe('ReviewQueuePage', () => {
   it('reads the queue of the repository in the address, blocked first', () => {
     const { element } = render();
 
-    expect(element.querySelector('.pulls-stamp')?.textContent).toContain('me/a · 2 open');
+    expect(element.querySelector('.pulls-stamp')?.textContent).toContain('me/a · 3 open');
     expect(Array.from(element.querySelectorAll('h2')).map((h) => h.textContent?.trim())).toEqual([
       'RuinaChecks failing · 1',
       'VigiliaWaiting on you · 1',
@@ -102,6 +123,37 @@ describe('ReviewQueuePage', () => {
     failing?.click();
     fixture.detectChanges();
     expect(element.querySelectorAll('section').length).toBe(2);
+  });
+
+  it('keeps dismissed pull requests out until asked, and says why', () => {
+    const { fixture, element } = render();
+    const toggle = element.querySelector<HTMLButtonElement>('.hidden-toggle');
+
+    expect(toggle?.textContent?.trim()).toBe('1 hidden · Show');
+    expect(element.textContent).not.toContain('Old idea');
+
+    toggle?.click();
+    fixture.detectChanges();
+    expect(element.textContent).toContain('Seen recently');
+    expect(element.textContent).toContain('dismissed until it changes');
+  });
+
+  it('records a triage action from the panel, then reads the queue again', () => {
+    const { fixture, element } = render();
+    const http = TestBed.inject(HttpTestingController);
+
+    element.querySelector<HTMLButtonElement>('li .open')?.click();
+    fixture.detectChanges();
+    http.expectOne('/api/pull?repo=me/a&number=7');
+    const panel = fixture.debugElement.query(By.directive(PullPanel))
+      .componentInstance as PullPanel;
+    expect(panel.triage()).toEqual({ isSeen: false, hidden: null });
+    panel.triaged.emit({ action: 'snooze', days: 7 });
+
+    const post = http.expectOne('/api/triage');
+    expect(post.request.body).toEqual({ repo: 'me/a', number: 7, action: 'snooze', days: 7 });
+    post.flush({ number: 7, isSeen: false, hidden: null });
+    http.expectOne('/api/queue?repo=me/a');
   });
 
   it('leads back to Home and the Orrery', () => {

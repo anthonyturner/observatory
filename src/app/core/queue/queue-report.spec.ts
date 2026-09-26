@@ -12,6 +12,8 @@ const item = {
   deletions: 2,
   idleDays: 4,
   ageDays: 9,
+  isSeen: true,
+  hidden: null,
 };
 
 describe('parseQueueReport', () => {
@@ -29,6 +31,22 @@ describe('parseQueueReport', () => {
     });
 
     expect(report?.items.length).toBe(1);
+  });
+
+  it('reads triage defensively: a malformed hidden is none, and seen must be true', () => {
+    const report = parseQueueReport({
+      generatedAt: 'x',
+      repo: 'me/a',
+      items: [
+        { ...item, isSeen: 'yes', hidden: { reason: 'snoozed' } },
+        { ...item, hidden: { reason: 'snoozed', until: '2026-10-01T00:00:00Z' } },
+      ],
+    });
+
+    expect(report?.items.map((each) => [each.isSeen, each.hidden])).toEqual([
+      [false, null],
+      [true, { reason: 'snoozed', until: '2026-10-01T00:00:00Z' }],
+    ]);
   });
 
   it('reads a missing size as unknown rather than zero', () => {

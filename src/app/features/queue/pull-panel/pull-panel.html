@@ -94,6 +94,29 @@
       }
     </dl>
 
+    @if (triage(); as mine) {
+      <section aria-labelledby="triage-title">
+        <h3 id="triage-title">Triage <small>on this machine only</small></h3>
+        <div class="triage">
+          @if (mine.isSeen) {
+            <button type="button" (click)="triaged.emit({ action: 'unseen' })">Mark unseen</button>
+          } @else {
+            <button type="button" (click)="triaged.emit({ action: 'seen' })">Mark seen</button>
+          }
+          @if (mine.hidden) {
+            <button type="button" (click)="triaged.emit({ action: 'restore' })">Restore</button>
+          } @else {
+            @for (days of snoozeDays; track days) {
+              <button type="button" (click)="triaged.emit({ action: 'snooze', days })">
+                Snooze {{ days }} {{ days === 1 ? 'day' : 'days' }}
+              </button>
+            }
+            <button type="button" (click)="triaged.emit({ action: 'dismiss' })">Dismiss</button>
+          }
+        </div>
+      </section>
+    }
+
     <section aria-labelledby="body-title">
       <h3 id="body-title">Description</h3>
       <pre class="body">{{ pull.body || 'No description.' }}</pre>

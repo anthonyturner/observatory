@@ -1,5 +1,13 @@
 import { QueueItem } from '../../core/queue/queue-report';
-import { isQuickWin, queueLegend, queueSections, queueStamp } from './queue-view';
+import {
+  hiddenCount,
+  hiddenNote,
+  isQuickWin,
+  queueLegend,
+  queueSections,
+  queueStamp,
+  visibleItems,
+} from './queue-view';
 
 const item = (number: number, overrides: Partial<QueueItem> = {}): QueueItem => ({
   number,
@@ -13,6 +21,8 @@ const item = (number: number, overrides: Partial<QueueItem> = {}): QueueItem => 
   deletions: 5,
   idleDays: number,
   ageDays: 10,
+  isSeen: false,
+  hidden: null,
   ...overrides,
 });
 
@@ -44,6 +54,37 @@ describe('queueSections', () => {
   });
 });
 
+describe('triage in the list', () => {
+  const snoozed = item(5, { hidden: { reason: 'snoozed', until: '2026-09-30T12:00:00Z' } });
+  const dismissed = item(6, { hidden: { reason: 'dismissed' } });
+
+  it('puts a seen, waiting pull request in Seen recently, after the rest', () => {
+    const sections = queueSections([item(1, { isSeen: true }), item(2)], null);
+
+    expect(sections.map((section) => section.meaning)).toEqual(['Waiting on you', 'Seen recently']);
+  });
+
+  it('leaves a seen pull request that is blocked where it is', () => {
+    const sections = queueSections([item(1, { bucket: 'conflicted', isSeen: true })], null);
+
+    expect(sections.map((section) => section.bucket)).toEqual(['conflicted']);
+  });
+
+  it('hides snoozed and dismissed ones unless asked, and counts them', () => {
+    const all = [item(1), snoozed, dismissed];
+
+    expect(visibleItems(all, false).map((each) => each.number)).toEqual([1]);
+    expect(visibleItems(all, true).length).toBe(3);
+    expect(hiddenCount(all)).toBe(2);
+  });
+
+  it('says why a row is hidden', () => {
+    expect(hiddenNote(snoozed, 'en-US')).toBe('snoozed until Sep 30');
+    expect(hiddenNote(dismissed)).toBe('dismissed until it changes');
+    expect(hiddenNote(item(1))).toBeNull();
+  });
+});
+
 describe('isQuickWin', () => {
   it('is a small pull request waiting on you, of known size', () => {
     expect(isQuickWin(item(1))).toBe(true);
@@ -61,6 +102,7 @@ describe('queueLegend', () => {
       ['unknown', 1],
       ['unlinked', 0],
       ['unreviewed', 2],
+      ['fresh', 0],
       ['quick', 1],
     ]);
   });

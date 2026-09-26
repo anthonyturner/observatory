@@ -164,6 +164,11 @@ h1 {
   opacity: 0.55;
 }
 
+.legend .hidden-toggle {
+  --sev: var(--muted);
+  margin-left: auto;
+}
+
 .legend .dot {
   width: 8px;
   height: 8px;
@@ -305,6 +310,13 @@ li:hover {
 .detail {
   font-family: var(--font-mono);
   font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* Why a shown row is out of the queue: snoozed or dismissed. */
+.note {
+  font-size: 11.5px;
+  font-style: italic;
   color: var(--muted);
 }
 

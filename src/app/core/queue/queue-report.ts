@@ -1,5 +1,14 @@
 import { PULL_BUCKETS, PullBucket } from '../projects/projects-report';
 
+/** The queue's groups: GitHub's buckets, and Seen recently for a waiting
+ *  pull request you have marked seen. */
+export type QueueBucket = PullBucket | 'fresh';
+export const QUEUE_BUCKETS: readonly QueueBucket[] = [...PULL_BUCKETS, 'fresh'];
+
+/** Why a pull request is out of the queue for now. */
+export type Hidden =
+  { readonly reason: 'dismissed' } | { readonly reason: 'snoozed'; readonly until: string };
+
 /** One open pull request as the review queue lists it. */
 export interface QueueItem {
   readonly number: number;
@@ -13,7 +22,15 @@ export interface QueueItem {
   readonly deletions: number | null;
   readonly idleDays: number;
   readonly ageDays: number;
+  /** Marked seen on this machine. */
+  readonly isSeen: boolean;
+  /** Dismissed or snoozed on this machine, or null when it is in the queue. */
+  readonly hidden: Hidden | null;
 }
+
+/** The group a pull request shows in: a seen, waiting one is Seen recently. */
+export const shownBucket = (item: QueueItem): QueueBucket =>
+  item.bucket === 'unreviewed' && item.isSeen ? 'fresh' : item.bucket;
 
 /** What `GET /api/queue` returns. */
 export interface QueueReport {
@@ -36,6 +53,15 @@ const isGitHubUrl = (value: unknown): value is string =>
   isString(value) && value.startsWith('https://github.com/');
 const countOrNull = (value: unknown): number | null => (isCount(value) ? value : null);
 
+function parseHidden(value: unknown): Hidden | null {
+  if (!isObject(value)) return null;
+  if (value['reason'] === 'dismissed') return { reason: 'dismissed' };
+  if (value['reason'] === 'snoozed' && isString(value['until'])) {
+    return { reason: 'snoozed', until: value['until'] };
+  }
+  return null;
+}
+
 function parseItem(value: unknown): QueueItem | null {
   if (!isObject(value)) return null;
   const { number, title, url, bucket, idleDays, ageDays, failingChecks } = value;
@@ -53,6 +79,8 @@ function parseItem(value: unknown): QueueItem | null {
     deletions: countOrNull(value['deletions']),
     idleDays: isCount(idleDays) ? idleDays : 0,
     ageDays: isCount(ageDays) ? ageDays : 0,
+    isSeen: value['isSeen'] === true,
+    hidden: parseHidden(value['hidden']),
   };
 }
 

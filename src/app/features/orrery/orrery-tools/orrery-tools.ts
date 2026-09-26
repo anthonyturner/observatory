@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 
-/** The orrery's controls: zoom, Fit, and Motion. */
+/** A canvas's camera controls: zoom, Fit, and Motion, with a hint of what to do. */
 @Component({
   selector: 'app-orrery-tools',
   templateUrl: './orrery-tools.html',
@@ -9,6 +9,7 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrreryTools {
+  readonly hint = input('drag · scroll · click a world');
   readonly zoomOut = output<void>();
   readonly zoomIn = output<void>();
   readonly fit = output<void>();

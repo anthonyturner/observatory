@@ -3,6 +3,14 @@ export interface Viewport {
   readonly height: number;
 }
 
+/** A rectangle of the plane, in its own units. */
+export interface Box {
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
+
 export interface CameraPose {
   x: number;
   y: number;
@@ -91,6 +99,17 @@ export class OrreryCamera {
         view.width / (far * 2),
         (view.height - FIT_CHROME_HEIGHT) / (far * FIT_ORBIT_HEIGHT),
       ),
+    );
+  }
+
+  /** Frames a box of the plane, with `margin` units round it, clear of the HUD's bars. */
+  fitBox(box: Box, view: Viewport, margin: number): void {
+    const width = box.right - box.left + margin * 2;
+    const height = box.bottom - box.top + margin * 2;
+    this.target.x = (box.left + box.right) / 2;
+    this.target.y = (box.top + box.bottom) / 2;
+    this.target.scale = clampScale(
+      Math.min(view.width / width, (view.height - FIT_CHROME_HEIGHT) / height),
     );
   }
 

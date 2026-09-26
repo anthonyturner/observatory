@@ -62,6 +62,17 @@ describe('OrreryCamera', () => {
     expect(camera.target.scale).toBeCloseTo(600 / 810);
   });
 
+  it('frames a box, centred, with room round it', () => {
+    const camera = new OrreryCamera();
+
+    camera.fitBox({ left: 100, top: 100, right: 900, bottom: 400 }, view, 100);
+
+    expect(camera.target.x).toBe(500);
+    expect(camera.target.y).toBe(250);
+    // 1000 units wide against 1000 px; 500 tall against 600 px: width limits it.
+    expect(camera.target.scale).toBe(1);
+  });
+
   it('never zooms beyond its limits', () => {
     expect(clampScale(100)).toBe(3);
     expect(clampScale(0)).toBe(0.04);

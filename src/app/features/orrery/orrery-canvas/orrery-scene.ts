@@ -12,12 +12,11 @@ import {
 import { OrreryPalette } from './orrery-palette';
 import {
   makeGrain,
-  paintBackground,
-  paintDial,
   paintField,
   paintGrain,
   paintVignette,
-} from './sky-painter';
+} from '../../../shared/night-sky/night-sky';
+import { paintBackground, paintDial } from './sky-painter';
 import { paintSun, paintSunLabel } from './sun-painter';
 import {
   MIN_WORLD_RADIUS,
@@ -79,7 +78,7 @@ export class OrreryScene {
     const placed = this.worlds.map((world) => this.place(world, frame));
 
     paintBackground(ctx, view, this.palette);
-    paintField(ctx, this.field, camera, view, time, this.palette);
+    paintField(ctx, this.field, camera, view, time, this.palette.stars);
     const dialRadius = (outermostOrbit(this.worlds) + DIAL_BEYOND_ORBIT) * scale;
     if (this.worlds.length) paintDial(ctx, centre, dialRadius, time, scale, this.palette);
     for (const world of placed) paintOrbit(ctx, centre, world, scale, this.palette);
@@ -92,7 +91,7 @@ export class OrreryScene {
 
     paintSunLabel(ctx, centre[0], centre[1], sun, openTotal(this.worlds), scale, this.palette);
     for (const world of placed) paintWorldLabel(ctx, world, scale, this.palette);
-    paintVignette(ctx, view, this.palette);
+    paintVignette(ctx, view, this.palette.vignette);
     paintGrain(ctx, this.grain, view, time, isStill);
 
     return placed

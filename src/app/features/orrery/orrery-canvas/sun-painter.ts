@@ -1,4 +1,5 @@
-import { OrreryPalette, rgba } from './orrery-palette';
+import { rgba } from '../../../shared/night-sky/night-sky';
+import { OrreryPalette } from './orrery-palette';
 
 const RAYS = 16;
 /** Below this zoom the total on the sun is too small to read. */

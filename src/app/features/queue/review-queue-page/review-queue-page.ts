@@ -5,19 +5,24 @@ import {
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { Clock } from '../../../core/time/clock';
+import { OrreryTools } from '../../orrery/orrery-tools/orrery-tools';
 import { PullPanel } from '../pull-panel/pull-panel';
 import { QueueFilter, queueLegend, queueSections, queueStamp } from '../queue-view';
+import { StarChart } from '../star-chart/star-chart';
+
+export type QueueView = 'map' | 'list';
 
 /** A project's review queue: its open pull requests, blocked first. */
 @Component({
   selector: 'app-review-queue-page',
-  imports: [RouterLink, PullPanel],
+  imports: [RouterLink, PullPanel, StarChart, OrreryTools],
   providers: [QueueFeed],
   templateUrl: './review-queue-page.html',
   styleUrl: './review-queue-page.css',
@@ -34,10 +39,13 @@ export class ReviewQueuePage {
     { initialValue: '' },
   );
   protected readonly filter = signal<QueueFilter>(null);
+  /** The star map, or the list: the map first, as pr-starmap opens. */
+  protected readonly view = signal<QueueView>('map');
+  protected readonly chart = viewChild<StarChart>('chart');
   /** The pull request whose panel is open, if any. */
   protected readonly openPull = signal<number | null>(null);
   protected readonly state = this.feed.state;
-  private readonly items = computed(() => {
+  protected readonly items = computed(() => {
     const state = this.state();
     return state.status === 'ready' ? state.report.items : [];
   });

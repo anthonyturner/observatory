@@ -6,6 +6,8 @@
 }
 
 .hud {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -43,7 +45,46 @@ h1 {
 
 .links {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.views {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.views button {
+  min-width: 52px;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 0;
+  border-right: 1px solid var(--edge-soft);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.views button:last-child {
+  border-right: 0;
+}
+
+.views button[aria-pressed='true'] {
+  background: var(--flow-tint-strong);
+  color: var(--ink);
+}
+
+/* The camera's tools sit over the map at its foot. */
+.tools {
+  position: fixed;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  left: 20px;
+  z-index: 2;
 }
 
 .links a {
@@ -71,6 +112,8 @@ h1 {
 
 /* The legend: a button per bucket that narrows the list to it. */
 .legend {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -118,12 +161,17 @@ h1 {
 }
 
 .list {
+  position: relative;
+  z-index: 1;
   max-width: 920px;
   margin: 0 auto;
 }
 
 .state {
-  margin: 30px 0;
+  position: relative;
+  z-index: 2;
+  max-width: 920px;
+  margin: 30px auto;
   padding: 18px 20px;
   border: 1px solid var(--edge);
   border-radius: 14px;

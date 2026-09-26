@@ -34,7 +34,7 @@ const items = [
   },
 ];
 
-function render() {
+function render(view: 'map' | 'list' = 'list') {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
@@ -52,10 +52,25 @@ function render() {
     .expectOne('/api/queue?repo=me/a')
     .flush({ generatedAt: new Date().toISOString(), repo: 'me/a', items });
   fixture.detectChanges();
-  return { fixture, element: fixture.nativeElement as HTMLElement };
+  const element = fixture.nativeElement as HTMLElement;
+  if (view === 'list') {
+    Array.from(element.querySelectorAll<HTMLButtonElement>('.views button'))
+      .find((button) => button.textContent?.trim() === 'List')
+      ?.click();
+    fixture.detectChanges();
+  }
+  return { fixture, element };
 }
 
 describe('ReviewQueuePage', () => {
+  it('opens on the star map, with the camera’s tools', () => {
+    const { element } = render('map');
+
+    expect(element.querySelector('app-star-chart')).not.toBeNull();
+    expect(element.querySelector('.list')).toBeNull();
+    expect(element.querySelector('app-orrery-tools')).not.toBeNull();
+  });
+
   it('reads the queue of the repository in the address, blocked first', () => {
     const { element } = render();
 

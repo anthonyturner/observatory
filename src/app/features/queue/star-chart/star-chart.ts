@@ -6,10 +6,10 @@ import {
   ElementRef,
   ErrorHandler,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
-  model,
   output,
   signal,
   viewChild,
@@ -18,85 +18,75 @@ import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld, pickWorld } from '../../../core/orrery/pick-world';
-import { OrreryWorld, outermostOrbit } from '../../../core/orrery/world-layout';
-import { readOrreryPalette } from './orrery-palette';
-import { OrreryScene } from './orrery-scene';
+import { QueueItem } from '../../../core/queue/queue-report';
+import { layoutStars } from '../../../core/queue/star-layout';
+import { QueueFilter } from '../queue-view';
+import { readChartPalette } from './chart-palette';
+import { ChartScene } from './chart-scene';
 
 const FRAMES_PER_SECOND = 30;
-/** Retina and beyond cost more than they show on a moving sky. */
 const MAX_PIXEL_RATIO = 2;
-/** A press that moves less than this is a click, not a drag. */
 const CLICK_SLOP_PX = 5;
 const WHEEL_ZOOM = 1.16;
 const KEY_ZOOM = 1.2;
 const KEY_PAN_PX = 90;
-/** A hover card lingers this long, so the pointer can travel to it. */
-const HIDE_DELAY_MS = 380;
-/** Worlds that grew in before a still page drew are shown full-grown. */
+/** Room round the stars when the view is framed, for their labels. */
+const FIT_MARGIN = 220;
+/** Stars lit before a still page drew are shown full-grown. */
 const FULLY_GROWN_S = 60;
 
-interface Press {
-  readonly id: number;
-  x: number;
-  y: number;
-  moved: number;
-}
-
-/**
- * The orrery on a full-window canvas: drag to pan, scroll or pinch to zoom,
- * hover a world to show its card, click to pin it.
- */
+/** The review queue as constellations on a full-window canvas. Drag, scroll
+ *  or pinch to move; a click on a star picks its pull request. */
 @Component({
-  selector: 'app-orrery-canvas',
-  template: '<canvas #canvas aria-label="Orrery of every project"></canvas>',
-  styleUrl: './orrery-canvas.css',
+  selector: 'app-star-chart',
+  template: '<canvas #canvas aria-label="The review queue as a star map"></canvas>',
+  styleUrl: './star-chart.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.over]': 'isOverWorld()',
+    '[class.over]': 'isOverStar()',
     '[class.dragging]': 'isDragging()',
     '(document:keydown)': 'onKey($event)',
   },
 })
-export class OrreryCanvas {
-  readonly worlds = input.required<readonly OrreryWorld[]>();
-  /** The repository of the world whose card is shown, or null. */
-  readonly selected = model<string | null>(null);
-  /** Asks to open a world's review queue: a click, or a second tap on a touch screen. */
-  readonly open = output<string>();
+export class StarChart {
+  readonly items = input.required<readonly QueueItem[]>();
+  readonly filter = input<QueueFilter>(null);
+  /** The pull request whose panel is open, ringed on the chart. */
+  readonly selected = input<number | null>(null);
+  readonly picked = output<number>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly document = inject(DOCUMENT);
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
   private readonly camera = new OrreryCamera();
+  private readonly layout = computed(() => layoutStars(this.items()));
   private readonly teardown: (() => void)[] = [];
-  private scene: OrreryScene | null = null;
+  private scene: ChartScene | null = null;
   private context: CanvasRenderingContext2D | null = null;
   private loop: FrameLoop | null = null;
   private view: Viewport = { width: 0, height: 0 };
   private drawn: DrawnWorld[] = [];
   private shownAt: number | null = null;
-  /** Framed once, on the first frame that has both a size and worlds. */
+  /** Framed once, on the first frame that has both a size and stars. */
   private isFramed = false;
   private lastWall: number | null = null;
-  private pointer: { x: number; y: number } | null = null;
-  private pinned: string | null = null;
-  private hideTimer: ReturnType<typeof setTimeout> | null = null;
   private pinch: number | null = null;
-  protected press: Press | null = null;
+  protected press: { id: number; x: number; y: number; moved: number } | null = null;
   /** Signals, so the cursor follows: the canvas changes them outside any template event. */
-  protected readonly isOverWorld = signal(false);
+  protected readonly isOverStar = signal(false);
   protected readonly isDragging = signal(false);
 
   constructor() {
     effect(() => {
-      const worlds = this.worlds();
-      this.scene?.setWorlds(worlds);
-      if (worlds.length && this.shownAt === null) this.showSystem();
+      const layout = this.layout();
+      this.scene?.setLayout(layout);
+      if (layout.stars.length && this.shownAt === null) this.show();
       this.loop?.kick();
     });
     effect(() => {
-      if (this.selected() === null) this.pinned = null;
+      this.filter();
+      this.selected();
       this.motion.isStill();
       this.loop?.kick();
     });
@@ -113,26 +103,16 @@ export class OrreryCanvas {
   }
 
   fit(): void {
-    this.camera.fit(outermostOrbit(this.worlds()), this.view);
+    this.camera.fitBox(this.layout().bounds, this.view, FIT_MARGIN);
     this.loop?.kick();
-  }
-
-  /** The card is under the pointer: keep it. */
-  holdCard(): void {
-    this.cancelHide();
-  }
-
-  /** The pointer left the card: let it go, unless it was pinned. */
-  releaseCard(): void {
-    if (!this.pinned) this.hideSoon();
   }
 
   private start(): void {
     const canvas = this.canvas().nativeElement;
     this.context = canvas.getContext('2d');
     if (!this.context) return;
-    this.scene = new OrreryScene(this.document, readOrreryPalette(canvas));
-    this.scene.setWorlds(this.worlds());
+    this.scene = new ChartScene(this.document, readChartPalette(canvas));
+    this.scene.setLayout(this.layout());
     this.loop = new FrameLoop({
       scheduler: {
         request: (callback) => this.document.defaultView?.requestAnimationFrame(callback),
@@ -145,20 +125,19 @@ export class OrreryCanvas {
       onError: (error) => this.errors.handleError(error),
     });
     this.resize();
-    if (this.worlds().length && this.shownAt === null) this.showSystem();
+    if (this.layout().stars.length && this.shownAt === null) this.show();
     this.listen(canvas);
     this.loop.kick();
   }
 
-  private showSystem(): void {
+  private show(): void {
     this.shownAt = performance.now() / 1000;
   }
 
-  /** The worlds can arrive before the canvas has a size (projects already
-   *  read on Home), so framing waits for both. */
+  /** The stars can arrive before the canvas has a size, so framing waits for both. */
   private frameOnce(): void {
-    if (this.isFramed || !this.view.width || !this.worlds().length) return;
-    this.camera.fit(outermostOrbit(this.worlds()), this.view);
+    if (this.isFramed || !this.view.width || !this.layout().stars.length) return;
+    this.camera.fitBox(this.layout().bounds, this.view, FIT_MARGIN);
     this.camera.settle();
     this.isFramed = true;
   }
@@ -172,8 +151,7 @@ export class OrreryCanvas {
     const isStill = this.motion.isStill();
     if (isStill) this.camera.settle();
     else this.camera.advance(dt, this.press !== null);
-
-    const ratio = this.pixelRatio();
+    const ratio = Math.min(this.document.defaultView?.devicePixelRatio ?? 1, MAX_PIXEL_RATIO);
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, this.view.width, this.view.height);
     this.drawn = this.scene.draw(ctx, {
@@ -182,21 +160,16 @@ export class OrreryCanvas {
       time,
       sinceShown: isStill || this.shownAt === null ? FULLY_GROWN_S : wall - this.shownAt,
       isStill,
-      selectedKey: this.selected(),
+      filter: this.filter(),
+      selected: this.selected(),
     });
-    // Worlds move under a still pointer, so what it rests on can change.
-    if (this.pointer && !this.press) this.hoverAt(this.pointer.x, this.pointer.y);
-  }
-
-  private pixelRatio(): number {
-    return Math.min(this.document.defaultView?.devicePixelRatio ?? 1, MAX_PIXEL_RATIO);
   }
 
   private resize(): void {
     const window = this.document.defaultView;
-    const canvas = this.canvas().nativeElement;
     if (!window) return;
-    const ratio = this.pixelRatio();
+    const canvas = this.canvas().nativeElement;
+    const ratio = Math.min(window.devicePixelRatio ?? 1, MAX_PIXEL_RATIO);
     this.view = { width: window.innerWidth, height: window.innerHeight };
     canvas.width = Math.floor(this.view.width * ratio);
     canvas.height = Math.floor(this.view.height * ratio);
@@ -205,7 +178,6 @@ export class OrreryCanvas {
   }
 
   private listen(canvas: HTMLCanvasElement): void {
-    const window = this.document.defaultView;
     const on = <K extends keyof HTMLElementEventMap>(
       type: K,
       handler: (event: HTMLElementEventMap[K]) => void,
@@ -214,36 +186,47 @@ export class OrreryCanvas {
       canvas.addEventListener(type, handler, options);
       this.teardown.push(() => canvas.removeEventListener(type, handler));
     };
-    on('pointerdown', (event) => this.onPointerDown(canvas, event));
+    on('pointerdown', (event) => {
+      canvas.setPointerCapture(event.pointerId);
+      this.press = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: 0 };
+      this.isDragging.set(true);
+      this.camera.stopDrift();
+      this.loop?.kick();
+    });
     on('pointermove', (event) => this.onPointerMove(event));
-    on('pointerup', (event) => this.onPointerUp(event));
+    on('pointerup', (event) => {
+      const wasClick = this.press !== null && this.press.moved < CLICK_SLOP_PX;
+      this.press = null;
+      this.isDragging.set(false);
+      if (wasClick) this.pickAt(event.clientX, event.clientY);
+      this.loop?.kick();
+    });
     on('pointercancel', () => {
       this.press = null;
       this.isDragging.set(false);
     });
-    on('pointerleave', () => this.onPointerLeave());
-    on('wheel', (event) => this.onWheel(event), { passive: false });
+    on(
+      'wheel',
+      (event) => {
+        event.preventDefault();
+        const factor = event.deltaY < 0 ? WHEEL_ZOOM : 1 / WHEEL_ZOOM;
+        this.camera.zoomAt(event.clientX, event.clientY, factor, this.view);
+        this.loop?.kick();
+      },
+      { passive: false },
+    );
     on('touchmove', (event) => this.onTouchMove(event), { passive: false });
     on('touchend', () => (this.pinch = null));
+    const window = this.document.defaultView;
     const resize = () => this.resize();
     window?.addEventListener('resize', resize);
     this.teardown.push(() => window?.removeEventListener('resize', resize));
   }
 
-  private onPointerDown(canvas: HTMLCanvasElement, event: PointerEvent): void {
-    canvas.setPointerCapture(event.pointerId);
-    this.press = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: 0 };
-    this.isDragging.set(true);
-    this.camera.stopDrift();
-    this.loop?.kick();
-  }
-
   private onPointerMove(event: PointerEvent): void {
-    // A finger has no hover: on a touch screen only a tap picks a world.
-    if (event.pointerType !== 'touch') this.pointer = { x: event.clientX, y: event.clientY };
     const press = this.press;
     if (!press || press.id !== event.pointerId) {
-      if (event.pointerType !== 'touch') this.hoverAt(event.clientX, event.clientY);
+      this.isOverStar.set(pickWorld(this.drawn, event.clientX, event.clientY) !== null);
       return;
     }
     const dx = event.clientX - press.x;
@@ -252,34 +235,6 @@ export class OrreryCanvas {
     press.x = event.clientX;
     press.y = event.clientY;
     this.camera.drag(dx, dy);
-    this.loop?.kick();
-  }
-
-  private onPointerUp(event: PointerEvent): void {
-    const wasClick = this.press !== null && this.press.moved < CLICK_SLOP_PX;
-    this.press = null;
-    this.isDragging.set(false);
-    if (wasClick) {
-      this.camera.stopDrift();
-      this.clickAt(event.clientX, event.clientY, event.pointerType === 'touch');
-    }
-    this.loop?.kick();
-  }
-
-  private onPointerLeave(): void {
-    this.pointer = null;
-    this.isOverWorld.set(false);
-    if (!this.pinned) this.hideSoon();
-  }
-
-  private onWheel(event: WheelEvent): void {
-    event.preventDefault();
-    this.camera.zoomAt(
-      event.clientX,
-      event.clientY,
-      event.deltaY < 0 ? WHEEL_ZOOM : 1 / WHEEL_ZOOM,
-      this.view,
-    );
     this.loop?.kick();
   }
 
@@ -297,10 +252,16 @@ export class OrreryCanvas {
     this.pinch = distance;
   }
 
+  private pickAt(x: number, y: number): void {
+    const key = pickWorld(this.drawn, x, y);
+    if (key) this.picked.emit(Number(key));
+  }
+
   protected onKey(event: KeyboardEvent): void {
+    const target = event.target;
     if (
-      event.target instanceof Element &&
-      event.target.closest('input, textarea, select, [contenteditable]')
+      target instanceof Element &&
+      target.closest('input, textarea, select, [contenteditable], [role="dialog"]')
     ) {
       return;
     }
@@ -327,49 +288,8 @@ export class OrreryCanvas {
     this.loop?.kick();
   }
 
-  private hoverAt(x: number, y: number): void {
-    const key = pickWorld(this.drawn, x, y);
-    this.isOverWorld.set(key !== null);
-    if (key) {
-      this.cancelHide();
-      if (key !== this.selected() && !this.pinned) this.selected.set(key);
-    } else if (this.selected() && !this.pinned) {
-      this.hideSoon();
-    }
-  }
-
-  /** A click opens the world's review queue. A touch screen has no hover, so
-   *  its first tap shows the card and a second tap on the same world opens it.
-   *  A click on empty sky clears the card. */
-  private clickAt(x: number, y: number, isTouch: boolean): void {
-    const key = pickWorld(this.drawn, x, y);
-    this.cancelHide();
-    const isFirstTap = isTouch && key !== this.selected();
-    if (key && !isFirstTap) {
-      this.open.emit(key);
-      return;
-    }
-    this.pinned = key;
-    this.selected.set(key);
-  }
-
-  /** Started once; a hide already pending is left to run, not restarted each frame. */
-  private hideSoon(): void {
-    if (this.hideTimer) return;
-    this.hideTimer = setTimeout(() => {
-      this.hideTimer = null;
-      if (!this.pinned) this.selected.set(null);
-    }, HIDE_DELAY_MS);
-  }
-
-  private cancelHide(): void {
-    if (this.hideTimer) clearTimeout(this.hideTimer);
-    this.hideTimer = null;
-  }
-
   private stop(): void {
     this.loop?.stop();
-    this.cancelHide();
     for (const undo of this.teardown) undo();
   }
 }

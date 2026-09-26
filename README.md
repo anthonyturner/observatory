@@ -200,6 +200,30 @@ most 24 skills in all. The hosted site offers the starters only. On the hosted
 site the assistant is the owner's alone: a visitor to the public preview is
 refused, since every request can cost money.
 
+### The reply voice (ElevenLabs)
+
+Home reads its replies aloud. [ElevenLabs](https://elevenlabs.io/) is a second
+voice beside the one the page runs itself (Kokoro), picked on the page.
+`GET /api/voice` says whether it is on and lists the account's voices (kept for
+ten minutes), and `POST /api/voice/speak` turns one sentence of up to 1,000
+characters into MP3 audio in a chosen voice, with the `eleven_flash_v2_5` model.
+
+**Turning it on.** Locally, put the key in `~/.claude/observatory/.env` or set
+it in the environment, with the voice to start in if you like (a voice id from
+your ElevenLabs account; otherwise the first one listed):
+
+```
+ELEVENLABS_API_KEY=<your key>
+ELEVENLABS_VOICE_ID=<optional voice id>
+```
+
+On Vercel, set `ELEVENLABS_API_KEY`, and optionally `ELEVENLABS_VOICE_ID`, on
+the project. Without a key the voice is off, makes no call, and the page falls
+back to Kokoro. The key is sent to ElevenLabs only, in its own header, and
+scrubbed from every error and log line. On the hosted site the voice is the
+owner's alone: a visitor to the public preview is refused, since every sentence
+costs money.
+
 ## Run: tier-3 work on this machine
 
 A request that means work in a project, such as reading or changing code, can
@@ -292,6 +316,8 @@ day (for example `0 6 * * *`) and `maxDuration` to 300.
 | `PUBLIC_PREVIEW`                              | Optional: `on` lets anyone see your public repositories, read-only; `all` the private ones too. Off unless set. |
 | `PREVIEW_LOGS`                                | Optional: `on` shows visitors the Log Sky, redacted. Off unless set.                                            |
 | `OPENROUTER_API_KEY`                          | Optional: an OpenRouter key, which turns on Jev and quick answers on Home. Off unless set.                      |
+| `ELEVENLABS_API_KEY`                          | Optional: an ElevenLabs key, which turns on the ElevenLabs reply voice on Home. Off unless set.                 |
+| `ELEVENLABS_VOICE_ID`                         | Optional: the ElevenLabs voice to start in. The account's first voice unless set.                               |
 
 A site missing one of the required variables answers every request saying
 which. Generate the secrets with, for example,

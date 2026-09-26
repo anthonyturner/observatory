@@ -62,7 +62,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
   };
 }
 
-const ROUTE_PATH = '/api/route';
+export const ROUTE_PATH = '/api/route';
 
 /** `table` with Home's assistant: what it can do, and where a request goes. */
 export function withAssistant(table: RouteTable, assistant: AssistantRouter): RouteTable {

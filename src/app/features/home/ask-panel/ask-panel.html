@@ -10,6 +10,7 @@
     } @else {
       <app-voice-controls />
       <app-ask-bar
+        appAskKeys
         [isBusy]="feed.busy()"
         [isKeywordsOnly]="isKeywordsOnly()"
         [focusRequests]="focus.requests()"
@@ -45,6 +46,7 @@
           aria-label="Replies"
           [entries]="shown()"
           [speakingId]="speech.entryId()"
+          [focusRequest]="replyFocus.firstAction()"
           (pressed)="feed.press($event.entryId, $event.action)"
           (stopSpeaking)="feed.stopSpeaking()"
           (followed)="feed.follow($event)"
@@ -55,6 +57,7 @@
             <app-reply-list
               [entries]="earlier()"
               [speakingId]="speech.entryId()"
+              [focusRequest]="replyFocus.firstAction()"
               (pressed)="feed.press($event.entryId, $event.action)"
               (stopSpeaking)="feed.stopSpeaking()"
               (followed)="feed.follow($event)"

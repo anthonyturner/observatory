@@ -42,14 +42,14 @@ proposal, with the same limits pr-starmap set:
   which would read the prompt's `%`, `&` and quotes as its own syntax. The run
   keeps the owner's own permission rules and hooks: there is no
   `--dangerously-skip-permissions`, and `-p` refuses a tool the rules do not
-  allow. The server's own credentials (`OPENROUTER_API_KEY`,
+  allow. The server's own credentials (`OPENROUTER_API_KEY`, `ELEVENLABS_API_KEY`,
   `OBSERVATORY_PUSH_TOKEN`, `SESSION_SECRET`) are removed from its environment.
 - **Limits.** One run at a time. A run stops at 30 minutes. Cancel kills the
   process and everything it started (`taskkill /T /F` on Windows, the process
   group elsewhere), and so does the API stopping. A run's output is held in
   memory, at most 2 MB of the newest, with any single line over 256 KB kept as
   its head; the last 5 finished runs are listed.
-- **Who may ask.** `/api/runs` refuses a Host header that is not a loopback
+- **Who may ask.** `/api/runs` (like the paid `/api/route` and `/api/voice` routes) refuses a Host header that is not a loopback
   name (DNS rebinding), a foreign `Origin`, and a POST or DELETE with no
   `Origin`. POST and DELETE also need the `x-observatory` header, as every
   write does.
@@ -120,7 +120,7 @@ proposal, with the same limits pr-starmap set:
 - Tests hold the rest: `runner.test.ts` (used, expired and mismatched tokens,
   the folder check on use, one at a time, the time limit, cancel, the failed
   kill), `claude-launcher.test.ts` (the fixed flags, the shim's command line,
-  the withheld credentials), `runs-guard.test.ts` (Host and Origin), and
+  the withheld credentials), `http/loopback-guard.test.ts` (Host and Origin), and
   `hosted-api.test.ts` ("has no runs routes").
 - In review: any change to the gate, the folder rule, the spawn or the kill
   must say how it keeps the "now has to be true" points above.

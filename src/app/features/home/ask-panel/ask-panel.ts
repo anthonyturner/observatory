@@ -4,6 +4,7 @@ import { AskFeed } from '../../../core/assistant/ask-feed';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
 import { jevOffNote } from '../../../core/assistant/jev-off-note';
 import { ProposalSlot } from '../../../core/assistant/proposal';
+import { ReplyFocus } from '../../../core/assistant/reply-focus';
 import { ReplyLog } from '../../../core/assistant/reply-log';
 import { ReplySpeech } from '../../../core/assistant/reply-speech';
 import { PROJECTS } from '../../../core/projects/projects-source';
@@ -12,6 +13,7 @@ import { ViewerSession } from '../../../core/session/viewer-session';
 import { codeSpans } from '../../../core/text/inline-code';
 import { HudSection } from '../../../shared/hud-section/hud-section';
 import { AskBar } from '../ask-bar/ask-bar';
+import { AskKeys } from './ask-keys';
 import { ProposalCard } from '../proposal-card/proposal-card';
 import { ReplyList } from '../reply-list/reply-list';
 import { RunCard } from '../run-card/run-card';
@@ -27,7 +29,7 @@ const WORKING = 'Working out how to handle it';
  *  would be paid for by the owner, and the API refuses them anyway. */
 @Component({
   selector: 'app-ask-panel',
-  imports: [HudSection, VoiceControls, AskBar, ReplyList, ProposalCard, RunCard],
+  imports: [HudSection, VoiceControls, AskBar, AskKeys, ReplyList, ProposalCard, RunCard],
   templateUrl: './ask-panel.html',
   styleUrl: './ask-panel.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +39,7 @@ export class AskPanel {
   protected readonly session = inject(ViewerSession);
   protected readonly focus = inject(AskBoxFocus);
   protected readonly speech = inject(ReplySpeech);
+  protected readonly replyFocus = inject(ReplyFocus);
   private readonly info = inject(AssistantInfo);
   private readonly log = inject(ReplyLog);
   private readonly projects = inject(PROJECTS);

@@ -3,7 +3,7 @@
   <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
 </div>
 
-<div class="level" aria-hidden="true">
+<div class="level" [style.--level]="level()" aria-hidden="true">
   @for (weight of dashWeights; track $index) {
     <i [style.--k]="weight"></i>
   }
@@ -11,20 +11,39 @@
 
 <div class="row">
   <button
+    #mic
     type="button"
     class="mic"
-    aria-pressed="false"
+    [class.loading]="micProgress() !== null"
+    [style.--p]="micProgress()"
+    [attr.aria-pressed]="talk.isRecording()"
+    [attr.aria-disabled]="talk.isBlocked() || null"
+    aria-describedby="voice-status"
     aria-keyshortcuts="M"
     aria-label="Tap to talk: press once to start and again to stop, or hold and let go to send"
     title="Tap to talk: press once to start and again to stop, or hold it or M and let go to send"
+    (pointerdown)="onMicDown($event)"
+    (pointerup)="talk.release()"
+    (pointercancel)="talk.release()"
+    (contextmenu)="$event.preventDefault()"
+    (click)="onMicClick($event)"
   >
-    Tap to talk
+    {{ micWord() }}
   </button>
   <button
+    #speak
     type="button"
     class="speak"
-    aria-pressed="false"
-    title="Read replies aloud, in this browser"
+    [class.loading]="speakProgress() !== null"
+    [style.--p]="speakProgress()"
+    [attr.aria-pressed]="isSpeakOn()"
+    aria-describedby="voice-status"
+    [title]="
+      isSpeakOn()
+        ? 'Replies are read aloud, in this browser: press to stop'
+        : 'Read replies aloud, in this browser'
+    "
+    (click)="onSpeak()"
   >
     <svg
       viewBox="0 0 24 24"
@@ -36,9 +55,13 @@
       aria-hidden="true"
     >
       <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
-      <path d="M16 9.5l5 5M21 9.5l-5 5" />
+      @if (isSpeakOn()) {
+        <path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" />
+      } @else {
+        <path d="M16 9.5l5 5M21 9.5l-5 5" />
+      }
     </svg>
-    Speak off
+    {{ isSpeakOn() ? 'Speak on' : 'Speak off' }}
   </button>
 </div>
 
@@ -46,4 +69,14 @@
 <p class="hint">
   <span class="wide">Tap to talk, then tap again to send, or hold M and let go. Esc cancels.</span>
   <span class="touch">Tap to talk, then tap again to send, or hold it and let go.</span>
+</p>
+<app-voice-status-line
+  id="voice-status"
+  class="status"
+  [line]="statusLine()"
+  [resting]="restingLine()"
+  (acted)="onAction($event)"
+/>
+<p class="said" aria-live="polite" [class.visually-hidden]="!said()?.isVisible">
+  {{ said()?.words }}
 </p>

@@ -1,4 +1,5 @@
-import { ErrorHandler, InjectionToken, Signal, computed, inject, signal } from '@angular/core';
+import { ErrorHandler, InjectionToken, Signal, computed, inject } from '@angular/core';
+import { CoreStateStore } from '../core-state/core-state-store';
 import { PROJECTS_STATE } from '../projects/projects-source';
 import { Canvas2DCoreRenderer } from './canvas-2d/canvas-2d-core-renderer';
 import { CoreMood, UNKNOWN_MOOD, moodOf } from './core-mood';
@@ -6,10 +7,10 @@ import { CoreRenderer } from './core-renderer';
 import { CoreStateId } from './core-states';
 import { PreferredCoreRenderer } from './preferred-core-renderer';
 
-/** What the core is doing: idle until the assistant lands and drives it. */
+/** What the core is doing, as the assistant and voice drive it. */
 export const CORE_STATE = new InjectionToken<Signal<CoreStateId>>('CORE_STATE', {
   providedIn: 'root',
-  factory: () => signal<CoreStateId>('idle').asReadonly(),
+  factory: () => inject(CoreStateStore).state,
 });
 
 /** How the projects stand: unknown until they are read, then calm to strained. */

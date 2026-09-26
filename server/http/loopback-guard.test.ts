@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { json } from '../http/api-handler.ts';
-import { guardRuns } from './runs-guard.ts';
+import { json } from './api-handler.ts';
+import { guardLoopback } from './loopback-guard.ts';
 
-const handle = guardRuns(async () => json(200, { ok: true }));
+const handle = guardLoopback(
+  async () => json(200, { ok: true }),
+  new Set(['/api/runs', '/api/voice/speak']),
+);
 
 const ask = (path: string, method: string, headers: Record<string, string>) =>
   handle(new Request(`http://localhost:4319${path}`, { method, headers }));
 
-describe('guardRuns', () => {
+describe('guardLoopback', () => {
   it('lets this machine’s page read, start and cancel runs, from any loopback port', async () => {
     const host = { host: 'localhost:4319' };
 
@@ -48,7 +51,8 @@ describe('guardRuns', () => {
     assert.equal((await ask('/api/runs', 'DELETE', { ...host, origin: 'null' })).status, 403);
   });
 
-  it('leaves every other route to the handler', async () => {
+  it('guards every path it is given, and leaves the rest to the handler', async () => {
+    assert.equal((await ask('/api/voice/speak', 'POST', { host: 'evil.example' })).status, 403);
     assert.equal((await ask('/api/triage', 'POST', { host: 'evil.example' })).status, 200);
   });
 });

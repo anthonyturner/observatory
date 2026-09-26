@@ -109,7 +109,7 @@ const RUN_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Task',
     meaning:
-      'A running task has a panel on the right: its state, its time against the 30-minute limit, and what Claude Code does as it happens. It runs with your own Claude Code permissions and hooks. Hide folds the panel into the pill at the top.',
+      'A running task has a panel on the right: its state, its time against the 30-minute limit, and what Claude Code does as it happens. It runs with your own Claude Code permissions and hooks. Hide folds the panel into the pill at the top; the core shows Working while it runs.',
   },
   {
     term: 'Tools',
@@ -150,7 +150,8 @@ export function homeHelpEntries(canRun: boolean): readonly HelpEntry[] {
 }
 
 export const HOME_HELP_KEYS: readonly HelpKey[] = [
+  { key: '/', action: 'ask' },
   { key: '?', action: 'help' },
-  { key: 'Esc', action: 'close' },
+  { key: 'Esc', action: 'close, throw a recording away, stay here or stop speaking' },
   { key: '← → ↑ ↓', action: 'turn the core' },
 ];

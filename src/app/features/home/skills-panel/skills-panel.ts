@@ -1,7 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+  viewChild,
+  viewChildren,
+} from '@angular/core';
 import { AskFeed } from '../../../core/assistant/ask-feed';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
 import { Skill } from '../../../core/assistant/assistant.types';
+import { ReplyFocus } from '../../../core/assistant/reply-focus';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { HudSection } from '../../../shared/hud-section/hud-section';
 import { SkillTile } from '../skill-tile/skill-tile';
@@ -27,6 +39,10 @@ export class SkillsPanel {
   private readonly info = inject(AssistantInfo);
   private readonly session = inject(ViewerSession);
   protected readonly feed = inject(AskFeed);
+  private readonly replyFocus = inject(ReplyFocus);
+  private readonly injector = inject(Injector);
+  private readonly tiles = viewChildren(SkillTile);
+  private readonly retryButton = viewChild<ElementRef<HTMLButtonElement>>('retryButton');
   private readonly expanded = signal(false);
   private readonly retrying = signal(false);
   private readonly hasRetried = signal(false);
@@ -58,10 +74,25 @@ export class SkillsPanel {
     this.expanded.update((isExpanded) => !isExpanded);
   }
 
+  /** A reply that asks which project takes the focus to its first choice,
+   *  if the tile still has it, so a keyboard press lands on the next step. */
+  protected async press(skill: Skill, tile: SkillTile): Promise<void> {
+    const entryId = await this.feed.pressSkill(skill);
+    if (entryId !== null && tile.hasFocus()) this.replyFocus.focusFirstAction(entryId);
+  }
+
+  /** The button had the focus and was disabled while it tried, which drops it. */
   protected async retry(): Promise<void> {
     this.retrying.set(true);
     await this.info.load();
     this.retrying.set(false);
     this.hasRetried.set(true);
+    afterNextRender(() => this.focusAfterRetry(), { injector: this.injector });
+  }
+
+  /** The first skill once they load, else Try again for another go. */
+  private focusAfterRetry(): void {
+    if (this.state().status === 'known') this.tiles()[0]?.focus();
+    else this.retryButton()?.nativeElement.focus();
   }
 }

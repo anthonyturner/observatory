@@ -1,5 +1,4 @@
-import { type ApiHandler, json } from '../http/api-handler.ts';
-import { RUNS_PATH } from './runs-routes.ts';
+import { type ApiHandler, json } from './api-handler.ts';
 
 const HTTP_FORBIDDEN = 403;
 const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
@@ -23,7 +22,7 @@ const originHost = (origin: string): string | null => {
 };
 
 /**
- * Whether a runs request came from this machine's own page. A foreign Host is
+ * Whether a request came from this machine's own page. A foreign Host is
  * a page on another site that rebound its name to 127.0.0.1 (DNS rebinding),
  * and could then send the write header as if it were Observatory's own page.
  * Browsers send Origin with every POST and DELETE, and with a GET only across
@@ -37,11 +36,14 @@ function isFromThisMachine(request: Request): boolean {
   return isLoopback(originHost(origin));
 }
 
-/** `handle`, with the runs routes refused to anything but this machine's own page. */
-export function guardRuns(handle: ApiHandler): ApiHandler {
+/** `handle`, with `paths` refused to anything but this machine's own page: the
+ *  routes that run code or spend the owner's money, where the write header alone
+ *  is no defence against a rebound page. */
+export function guardLoopback(handle: ApiHandler, paths: ReadonlySet<string>): ApiHandler {
   return async (request) => {
-    const isRuns = new URL(request.url).pathname === RUNS_PATH;
-    if (isRuns && !isFromThisMachine(request)) return json(HTTP_FORBIDDEN, { error: 'forbidden' });
+    const isGuarded = paths.has(new URL(request.url).pathname);
+    if (isGuarded && !isFromThisMachine(request))
+      return json(HTTP_FORBIDDEN, { error: 'forbidden' });
     return handle(request);
   };
 }

@@ -4,6 +4,7 @@ import { CorePanel } from '../core-panel/core-panel';
 import { FleetSection } from '../fleet-section/fleet-section';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
+import { CoreStateFeed } from '../../../core/core-state/core-state-feed';
 import { HOME_HELP_KEYS, homeHelpEntries } from '../help/help-content';
 import { RunDockPanel } from '../run-dock/run-dock';
 import { SkillsPanel } from '../skills-panel/skills-panel';
@@ -30,7 +31,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
     RunDockPanel,
   ],
   providers: [SoundPreference],
-  hostDirectives: [HelpShortcuts],
+  hostDirectives: [HelpShortcuts, CoreStateFeed],
   host: { '[class.docked]': 'dock.isOpen()' },
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',

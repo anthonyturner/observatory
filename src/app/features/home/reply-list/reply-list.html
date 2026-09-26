@@ -4,6 +4,7 @@
       <app-reply-entry
         [entry]="entry"
         [isSpeaking]="speakingId() === entry.id"
+        [focusRequest]="focusRequest()"
         (pressed)="pressed.emit({ entryId: entry.id, action: $event })"
         (stopSpeaking)="stopSpeaking.emit()"
         (followed)="followed.emit($event)"

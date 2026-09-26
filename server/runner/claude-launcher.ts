@@ -33,7 +33,12 @@ export interface LaunchContext {
 }
 
 /** The server's own credentials, which a run has no business holding. */
-const WITHHELD_ENV = new Set(['OPENROUTER_API_KEY', 'OBSERVATORY_PUSH_TOKEN', 'SESSION_SECRET']);
+const WITHHELD_ENV = new Set([
+  'OPENROUTER_API_KEY',
+  'ELEVENLABS_API_KEY',
+  'OBSERVATORY_PUSH_TOKEN',
+  'SESSION_SECRET',
+]);
 const CMD_SPECIAL = /["%^&|<>!\r\n]/;
 const CMD_PLAIN = /^[\w.,:=/+-]+$/;
 

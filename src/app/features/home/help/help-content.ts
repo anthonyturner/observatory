@@ -59,7 +59,7 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Sound',
     meaning:
-      'An ambient score made in this browser as you listen, with a hum that pulses with the core. Off until you turn it on, and remembered.',
+      'An ambient score made in this browser as you listen, with a hum that pulses with the core. It follows the core’s mood: a low, wavering unease rises under it as projects strain. Off until you turn it on, and remembered.',
   },
   {
     term: 'Ask',

@@ -42,15 +42,22 @@ const EXTRA_PINGS = 3;
 const PING_OCTAVES = [24, 36] as const;
 const MAX_PAN = 0.8;
 const SWEEP_EVERY = 4;
+/** Under strain the scanner sweeps every other bar. */
+const SWEEP_EVERY_UNEASY = 2;
+const SWEEP_OFTEN_FROM = 0.6;
 /** Pings keep clear of the bar's last second, where the next chord arrives. */
 const PING_WINDOW_S = BAR_S - 1;
 const PING_LEVEL = 0.05;
 
+const sweepEvery = (unease: number): number =>
+  unease >= SWEEP_OFTEN_FROM ? SWEEP_EVERY_UNEASY : SWEEP_EVERY;
+
 /** Hertz for a MIDI note. */
 export const hz = (midi: number): number => 440 * Math.pow(2, (midi - 69) / 12);
 
-/** The bar at `index` in the loop, with its pings drawn from `random` (0 to 1). */
-export function barAt(index: number, random: () => number): Bar {
+/** The bar at `index` in the loop, with its pings drawn from `random` (0 to 1).
+ *  `unease`, 0 to 1, is how strained the projects are. */
+export function barAt(index: number, random: () => number, unease = 0): Bar {
   const chord = CHORDS[((index % CHORDS.length) + CHORDS.length) % CHORDS.length];
   const count = MIN_PINGS + Math.floor(random() * (EXTRA_PINGS + 1));
   const pings = Array.from({ length: count }, (): Ping => {
@@ -68,6 +75,14 @@ export function barAt(index: number, random: () => number): Bar {
     pad: chord.map((tone) => TONIC + tone),
     root: TONIC - 24 + chord[0],
     pings,
-    hasSweep: index % SWEEP_EVERY === SWEEP_EVERY - 1,
+    hasSweep: index % sweepEvery(unease) === sweepEvery(unease) - 1,
   };
+}
+
+/** While the projects are unknown the score is a little uneasy: unknown is never healthy. */
+const UNKNOWN_UNEASE = 0.2;
+
+/** How uneasy the score sounds, 0 to 1, for the core's mood. */
+export function uneaseOf(mood: { readonly name: string; readonly stress: number }): number {
+  return mood.name === 'unknown' ? UNKNOWN_UNEASE : Math.max(0, Math.min(1, mood.stress));
 }

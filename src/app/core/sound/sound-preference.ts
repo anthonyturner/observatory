@@ -5,9 +5,12 @@ import {
   Injectable,
   InjectionToken,
   Signal,
+  effect,
   inject,
   signal,
 } from '@angular/core';
+import { CORE_MOOD } from '../instrument/core-tokens';
+import { uneaseOf } from './ambient-score';
 import { AmbientPlayer, AmbientSynth } from './ambient-synth';
 
 /** Makes the player the Sound button drives. */
@@ -28,12 +31,17 @@ export class SoundPreference {
   private readonly errors = inject(ErrorHandler);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly mood = inject(CORE_MOOD);
   private player: AmbientPlayer | null = null;
 
   readonly isOn: Signal<boolean> = this.wanted.asReadonly();
 
   constructor() {
     if (this.wanted()) this.resumeOnFirstGesture();
+    effect(() => {
+      const unease = uneaseOf(this.mood());
+      this.player?.setUnease(unease);
+    });
   }
 
   toggle(): void {
@@ -45,6 +53,7 @@ export class SoundPreference {
 
   private play(): void {
     this.player ??= this.makePlayer();
+    this.player.setUnease(uneaseOf(this.mood()));
     this.player.start().catch((error: unknown) => this.errors.handleError(error));
   }
 

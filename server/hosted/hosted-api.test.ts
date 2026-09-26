@@ -18,6 +18,8 @@ const ENV = {
   GITHUB_CLIENT_SECRET: 'client-secret',
   ALLOWED_LOGINS: 'me',
   SESSION_SECRET: SECRET,
+  CRON_SECRET: 'c'.repeat(32),
+  PUSH_TOKEN: 'p'.repeat(32),
 };
 
 const pull = (number: number): QueuePull => ({
@@ -32,6 +34,8 @@ const pull = (number: number): QueuePull => ({
   additions: 1,
   deletions: 1,
   createdAt: '2026-09-24T00:00:00Z',
+  headRefName: `change-${number}`,
+  changedFiles: 1,
 });
 
 /** Two repositories, one private; each with one open pull request. */

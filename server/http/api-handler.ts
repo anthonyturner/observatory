@@ -54,7 +54,7 @@ export function json(
 }
 
 /** A request's JSON body, or a BadRequest when it is too large or not JSON. */
-async function readJson(request: Request, maxBytes = MAX_BODY_BYTES): Promise<unknown> {
+export async function readJson(request: Request, maxBytes = MAX_BODY_BYTES): Promise<unknown> {
   const bytes = await request.arrayBuffer();
   if (bytes.byteLength > maxBytes) throw new BadRequest('body too large');
   try {
@@ -65,7 +65,7 @@ async function readJson(request: Request, maxBytes = MAX_BODY_BYTES): Promise<un
 }
 
 /** Runs a route, turning what it throws into the status it stands for. */
-async function answer(produce: () => Promise<unknown>): Promise<Response> {
+export async function answer(produce: () => Promise<unknown>): Promise<Response> {
   try {
     return json(HTTP_OK, await produce());
   } catch (error) {

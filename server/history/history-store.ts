@@ -74,9 +74,20 @@ export function framesFrom(value: unknown): Frame[] {
   return Array.isArray(frames) ? frames.filter(isFrame).sort(byTime) : [];
 }
 
+/** Takes in frames recorded elsewhere, as a push brings this machine's to the hosted site. */
+export interface HistoryMerger {
+  merge(repo: string, frames: readonly Frame[]): Promise<void>;
+}
+
+/** Both lists as one, oldest first, a frame recorded in both kept once, the newest MAX_FRAMES only. */
+export function mergeFrames(ours: readonly Frame[], theirs: readonly Frame[]): Frame[] {
+  const byAt = new Map([...theirs, ...ours].map((frame) => [frame.at, frame]));
+  return [...byAt.values()].sort(byTime).slice(-MAX_FRAMES);
+}
+
 /** Frames as one document per repository, the newest MAX_FRAMES only: for a
  *  store with no cheap append, such as the hosted site's Redis. */
-export function storeHistoryStore(store: Store): HistoryStore {
+export function storeHistoryStore(store: Store): HistoryStore & HistoryMerger {
   const keyOf = (repo: string): string => `history/${repoKey(repo)}`;
   const read = async (repo: string): Promise<Frame[]> =>
     framesFrom(await store.get(keyOf(repo))).slice(-MAX_FRAMES);
@@ -85,6 +96,9 @@ export function storeHistoryStore(store: Store): HistoryStore {
     async append(repo, frame) {
       const frames = [...(await read(repo)), frame].sort(byTime).slice(-MAX_FRAMES);
       await store.set(keyOf(repo), { frames });
+    },
+    async merge(repo, frames) {
+      await store.set(keyOf(repo), { frames: mergeFrames(await read(repo), frames) });
     },
   };
 }

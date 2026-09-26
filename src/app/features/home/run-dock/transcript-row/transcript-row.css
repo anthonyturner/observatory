@@ -1,0 +1,167 @@
+:host {
+  display: block;
+}
+
+:host(.nested) {
+  margin-left: 12px;
+  padding-left: 10px;
+  border-left: 1px dashed var(--edge);
+}
+
+:host(.refused) {
+  padding: 6px 8px 8px;
+  border: 1px solid var(--warm-edge);
+  border-radius: 4px;
+  background: var(--run-refused-wash);
+}
+
+:host(.expected) {
+  padding: 4px 8px 6px;
+  border: 1px dashed var(--edge);
+  border-radius: 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 12px auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: 26px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover {
+  border-color: var(--edge-soft);
+  background: var(--run-row-hover);
+}
+
+.mark,
+.name,
+.arg,
+.tag,
+h4,
+ul,
+.why small,
+.quiet {
+  font-family: var(--font-mono);
+}
+
+.mark {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.name {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--flow);
+  white-space: nowrap;
+}
+
+.arg {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.row[aria-expanded='true'] .arg {
+  white-space: normal;
+}
+
+:host([data-status='ok']) .mark {
+  color: var(--ok);
+}
+
+:host([data-status='err']) .mark {
+  color: var(--bad-soft);
+}
+
+:host([data-status='refused']) .mark {
+  color: var(--meh);
+}
+
+:host(.plain) .name {
+  color: var(--muted);
+}
+
+.detail {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 6px 20px;
+  padding-left: 10px;
+  border-left: 1px solid var(--edge);
+}
+
+h4 {
+  margin: 0;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+}
+
+li span,
+.quiet {
+  color: var(--muted);
+}
+
+.quiet {
+  margin: 0;
+  font-size: 11px;
+}
+
+.tag {
+  display: block;
+  margin: 0 0 2px 6px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--meh);
+}
+
+:host(.expected) .tag {
+  color: var(--muted);
+}
+
+.why {
+  margin: 4px 6px 0 26px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+}
+
+.why small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+@media (max-width: 720px) {
+  .row {
+    min-height: 44px;
+    align-items: center;
+  }
+}

@@ -260,6 +260,70 @@ describe('AskFeed', () => {
     expect(TestBed.inject(ProposalSlot).proposal()).toBeNull();
   });
 
+  describe('a task the local site can run', () => {
+    const RUNNABLE = reply({
+      tier: 3,
+      project: 'app',
+      prompt: 'fix the build',
+      commands: [{ shell: 'PowerShell', command: "claude -p 'fix the build'" }],
+      run: {
+        token: 't0k',
+        folder: 'E:\\repos\\app',
+        name: 'app',
+        expiresAt: Date.now() + 5 * 60_000,
+        limitMs: 30 * 60_000,
+        command: 'claude -p --output-format stream-json --verbose',
+      },
+    });
+
+    it('proposes to run it here: the prompt, the folder and the terms', async () => {
+      const { feed, latest } = setUp([answer(RUNNABLE)]);
+
+      feed.submit('fix the build');
+      await settle();
+
+      expect(TestBed.inject(ProposalSlot).proposal()).toEqual(
+        expect.objectContaining({
+          kind: 'run',
+          entryId: latest().id,
+          prompt: 'fix the build',
+          project: 'app',
+          where: 'app · E:\\repos\\app',
+          terms: expect.stringMatching(/stops after 30 minutes\. Valid for [45] minutes\.$/),
+        }),
+      );
+    });
+
+    it('says Left it on its reply when cancelled', async () => {
+      const { feed, latest } = setUp([answer(RUNNABLE)]);
+      feed.submit('fix the build');
+      await settle();
+
+      feed.leaveProposal(latest().id);
+
+      expect(latest().said.text).toBe('Left it.');
+      expect(TestBed.inject(ProposalSlot).proposal()).toBeNull();
+    });
+
+    it('proposes it again into the same reply, in the same project', async () => {
+      const { feed, latest, route } = setUp([answer(RUNNABLE), answer(RUNNABLE)]);
+      feed.submit('fix the build');
+      await settle();
+      const proposal = TestBed.inject(ProposalSlot).proposal();
+      if (proposal?.kind !== 'run') throw new Error('no proposal to run');
+
+      feed.proposeAgain(proposal);
+      await settle();
+
+      expect(route).toHaveBeenLastCalledWith({
+        text: 'fix the build',
+        pick: { tier: 3, project: 'app' },
+      });
+      expect(TestBed.inject(ProposalSlot).proposal()?.id).not.toBe(proposal.id);
+      expect(latest().id).toBe(proposal.entryId);
+    });
+  });
+
   it('refreshes, saying how it went', async () => {
     const { feed, latest, refresh } = setUp([answer(reply({ tier: 1, op: 'refresh' }))]);
 

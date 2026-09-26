@@ -1,0 +1,130 @@
+:host {
+  display: block;
+}
+
+p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* What will run, where and how, each on its own line, so nothing about it
+   has to be taken on trust. */
+.facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 0;
+}
+
+dt {
+  padding-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--warm);
+}
+
+dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.dim {
+  color: var(--muted);
+}
+
+pre {
+  margin: 0;
+  max-height: calc(8 * 1.5em + 20px);
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--warm-edge);
+  border-radius: 10px;
+  background: var(--proposal-well);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.state {
+  color: var(--warm);
+}
+
+.state:empty {
+  display: none;
+}
+
+.state.bad {
+  color: var(--bad-soft);
+}
+
+.state .abtn {
+  margin-left: 6px;
+}
+
+/* Run arms over 0.7 s, so a doubled click or Enter cannot start a run; the
+   fill shows it arming, and with motion off it simply becomes pressable. */
+.run {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--run-edge);
+  background: var(--run-wash);
+  color: var(--warm);
+}
+
+.run:hover:not(:disabled) {
+  border-color: var(--warm);
+  background: var(--run-wash-hover);
+}
+
+.run:disabled {
+  color: var(--muted);
+  border-color: var(--edge-soft);
+  background: transparent;
+}
+
+.run::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--warm);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+.run.arming::after {
+  transform: scaleX(1);
+  transition: transform 0.7s linear;
+}
+
+:host(.still) .run::after {
+  transition: none;
+}
+
+@media (max-width: 720px) {
+  [proposalActs] {
+    flex: 1 1 0;
+  }
+}

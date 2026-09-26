@@ -31,7 +31,14 @@
           </p>
         }
         @for (proposal of proposals(); track proposal.id) {
-          <app-proposal-card [proposal]="proposal" (dismissed)="feed.dismissProposal()" />
+          @switch (proposal.kind) {
+            @case ('run') {
+              <app-run-card [proposal]="proposal" />
+            }
+            @case ('command') {
+              <app-proposal-card [proposal]="proposal" (dismissed)="feed.dismissProposal()" />
+            }
+          }
         }
         <app-reply-list
           class="replies"

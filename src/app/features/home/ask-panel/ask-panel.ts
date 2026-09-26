@@ -16,6 +16,7 @@ import { AskBar } from '../ask-bar/ask-bar';
 import { AskKeys } from './ask-keys';
 import { ProposalCard } from '../proposal-card/proposal-card';
 import { ReplyList } from '../reply-list/reply-list';
+import { RunCard } from '../run-card/run-card';
 import { VoiceControls } from '../voice-controls/voice-controls';
 
 /** Replies on show; the rest fold into Earlier. */
@@ -28,7 +29,7 @@ const WORKING = 'Working out how to handle it';
  *  would be paid for by the owner, and the API refuses them anyway. */
 @Component({
   selector: 'app-ask-panel',
-  imports: [HudSection, VoiceControls, AskBar, AskKeys, ReplyList, ProposalCard],
+  imports: [HudSection, VoiceControls, AskBar, AskKeys, ReplyList, ProposalCard, RunCard],
   templateUrl: './ask-panel.html',
   styleUrl: './ask-panel.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

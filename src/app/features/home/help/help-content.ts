@@ -1,6 +1,8 @@
 import { HelpEntry, HelpKey } from '../../../shared/help/help-entry';
 
-export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
+const TIER_3 = 'Tier 3';
+
+const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Order',
     meaning:
@@ -76,7 +78,7 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
     meaning: '●●○ A quick answer from a small model. Labelled as one, and it can be wrong.',
   },
   {
-    term: 'Tier 3',
+    term: TIER_3,
     meaning:
       '●●● Work in a project. Home shows the command that runs it as a Claude Code task, for you to run in the project’s folder.',
   },
@@ -91,6 +93,61 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
       'Reads actions and quick answers aloud, in this browser. Off until you turn it on, and remembered.',
   },
 ];
+
+/** Where the local site can run a task, tier 3 says so, and its lines follow. */
+const RUN_HELP_ENTRIES: readonly HelpEntry[] = [
+  {
+    term: TIER_3,
+    meaning:
+      '●●● Work in a project. Home shows the task, the project folder it would run in and the command, and runs it as a Claude Code task only when you press Run. When no project is named, it asks which.',
+  },
+  {
+    term: 'Run',
+    meaning:
+      'Run arms after a moment, then a click, or Enter or Space on Run itself, starts the task. Nothing else does: not Enter anywhere else, and never your voice. A proposal lasts 5 minutes, and one task runs at a time.',
+  },
+  {
+    term: 'Task',
+    meaning:
+      'A running task has a panel on the right: its state, its time against the 30-minute limit, and what Claude Code does as it happens. It runs with your own Claude Code permissions and hooks. Hide folds the panel into the pill at the top; the core shows Working while it runs.',
+  },
+  {
+    term: 'Tools',
+    meaning:
+      'Each tool Claude uses is one line: its name and what it was called with, marked ○ while it runs, ✓ once it worked, ✕ if it failed. Press a line to see the call and what came back. Claude’s own words read as plain text between them. The run ends with a green block (the result, the time, the cost and the turns), or a red one if it stopped with an error.',
+  },
+  {
+    term: 'Refused',
+    meaning:
+      'An amber Not allowed block, marked ⊘, is a tool Claude wanted that your Claude Code settings don’t allow. It was not done, and Claude carried on without it; the count sits under the title. A dashed Expected block is one of your own hooks asking Claude to write where a run from Home can’t: skipped, and nothing to worry about.',
+  },
+  {
+    term: 'Hooks',
+    meaning:
+      'Your own Claude Code hooks run in every task. They fold into one Hooks line; press it for each hook and how it went.',
+  },
+  {
+    term: 'Recent',
+    meaning:
+      'Recent runs, under the output, lists the task running now and the last five that finished since the local site started, with their time and cost. Press one to read it again; Back returns to the current run. With no task running, the pill at the top opens them. Reloading the page picks a running task up where this tab left it.',
+  },
+  {
+    term: 'Cancel',
+    meaning:
+      'Cancel run stops the task and everything it started, at once. Changes it already made stay made. Esc never cancels a task.',
+  },
+];
+
+/** Home's help card: with a local runner, tier 3 runs here and says how. */
+export function homeHelpEntries(canRun: boolean): readonly HelpEntry[] {
+  if (!canRun) return HOME_HELP_ENTRIES;
+  const tier3 = HOME_HELP_ENTRIES.findIndex((entry) => entry.term === TIER_3);
+  return [
+    ...HOME_HELP_ENTRIES.slice(0, tier3),
+    ...RUN_HELP_ENTRIES,
+    ...HOME_HELP_ENTRIES.slice(tier3 + 1),
+  ];
+}
 
 export const HOME_HELP_KEYS: readonly HelpKey[] = [
   { key: '/', action: 'ask' },

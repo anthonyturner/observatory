@@ -43,6 +43,21 @@ export interface ShellCommand {
   readonly command: string;
 }
 
+/** A proposal the local runner will start once the owner presses Run. The
+ *  token is single use, bound to the prompt and folder shown, and expires. */
+export interface RunTicket {
+  readonly token: string;
+  readonly folder: string;
+  /** The project's name for the folder. */
+  readonly name: string;
+  /** When the token stops working, in ms since the epoch. */
+  readonly expiresAt: number;
+  /** How long a run may go on before it is stopped. */
+  readonly limitMs: number;
+  /** The command it runs, without the prompt, which goes on stdin. */
+  readonly command: string;
+}
+
 /** How the router reached its reply. */
 export type ReplyVia = 'keyword' | 'jev' | 'pick' | 'skill';
 
@@ -72,4 +87,6 @@ export interface RouteReply {
   readonly project?: string;
   /** Why the proposal can only be copied, not run here. */
   readonly runWhy?: string;
+  /** Only the local site sends one: the proposal can run here. */
+  readonly run?: RunTicket;
 }

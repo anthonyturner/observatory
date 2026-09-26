@@ -1,0 +1,6 @@
+<app-reply-chip [chip]="chip" />
+<h3 tabindex="-1" appFocusOnArrival [id]="titleId">{{ heading() }}</h3>
+<ng-content />
+<div class="acts">
+  <ng-content select="[proposalActs]" />
+</div>

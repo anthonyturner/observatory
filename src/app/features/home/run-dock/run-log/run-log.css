@@ -1,0 +1,34 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 120px;
+}
+
+.log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 4px;
+  background: var(--run-log-well);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) transparent;
+}
+
+.jump {
+  position: relative;
+  align-self: center;
+  margin-top: -48px;
+  border-radius: 4px;
+  background: var(--run-jump-wash);
+}
+
+.jump:hover {
+  background: var(--run-jump-hover);
+}

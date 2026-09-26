@@ -71,6 +71,25 @@ main {
   }
 }
 
+/* A task's panel docks on the right of a wide screen, and the page makes
+   room for it. The side columns are sized by the window, which the dock does
+   not shrink, so they give up some width to keep the core readable. */
+@media (min-width: 1100px) {
+  :host(.docked) .hud,
+  :host(.docked) main {
+    margin-right: 460px;
+  }
+}
+
+@media (min-width: 1100px) and (min-height: 600px) {
+  :host(.docked) .hud-body {
+    grid-template-columns:
+      clamp(220px, 17vw, 280px) minmax(0, 1fr)
+      clamp(260px, 20vw, 320px);
+    gap: 14px 22px;
+  }
+}
+
 @media (min-width: 721px) and (max-width: 1023px), (min-width: 1024px) and (max-height: 599px) {
   .hud-body {
     padding-inline: 28px;

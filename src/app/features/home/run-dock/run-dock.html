@@ -1,0 +1,57 @@
+@if (head(); as head) {
+  <aside id="run-dock" aria-labelledby="run-title">
+    <div class="head">
+      <h2 id="run-title">
+        Claude Code task <small>{{ head.name }}</small>
+      </h2>
+      <span class="state" [attr.data-state]="head.state">{{ head.stateWord }}</span>
+      <span class="timer" [class.late]="timer()?.isLate">{{ timer()?.text }}</span>
+      <!-- Hide takes the focus, not Cancel run: the key that pressed Run may be pressed again. -->
+      <button #hide type="button" class="abtn quiet" appFocusOnArrival (click)="dock.dismiss()">
+        {{ head.hideLabel }}
+      </button>
+      @if (head.canCancel) {
+        <button
+          type="button"
+          class="abtn stop"
+          [disabled]="head.isStopping || store.isCancelling()"
+          (click)="store.cancel()"
+        >
+          Cancel run
+        </button>
+      }
+      @if (head.backLabel; as backLabel) {
+        <button type="button" class="abtn" (click)="back()">{{ backLabel }}</button>
+      }
+    </div>
+    @if (flags().length) {
+      <p class="flags">
+        @for (flag of flags(); track flag.tone) {
+          <span [attr.data-tone]="flag.tone">{{ flag.text }}</span>
+        }
+      </p>
+    }
+    <p class="what" [title]="head.prompt">{{ head.prompt }}</p>
+    <p class="where">{{ head.folder }}</p>
+    @if (note(); as note) {
+      <p class="note" [class.bad]="note.isBad">
+        {{ note.text }}
+        @if (note.action; as action) {
+          <button type="button" class="abtn" (click)="action.press()">{{ action.label }}</button>
+        }
+      </p>
+    }
+    @for (run of runs(); track run.id) {
+      <app-run-log [entries]="run.entries()" />
+    }
+    @if (dock.recentRows().length) {
+      <app-run-recent
+        [rows]="dock.recentRows()"
+        [isOpen]="fold.isOpen()"
+        (picked)="dock.pick($event)"
+        (toggled)="fold.toggle()"
+      />
+    }
+    <p class="visually-hidden" role="status">{{ announcer.said() }}</p>
+  </aside>
+}

@@ -1,0 +1,41 @@
+@if (fold().refusal; as refusal) {
+  <span class="tag">{{ refusal.tag }}</span>
+}
+<button type="button" class="row" [attr.aria-expanded]="isOpen()" (click)="isOpen.set(!isOpen())">
+  <span class="mark" aria-hidden="true">{{ mark() }}</span>
+  <span class="name">{{ fold().name }}</span>
+  <span class="arg">{{ fold().arg }}</span>
+  <span class="visually-hidden">{{ said() }}</span>
+</button>
+@if (isOpen()) {
+  <div class="detail">
+    @for (part of fold().detail; track $index) {
+      @switch (part.kind) {
+        @case ('block') {
+          <app-detail-block [block]="part" />
+        }
+        @case ('note') {
+          <p class="quiet">{{ part.text }}</p>
+        }
+        @case ('hooks') {
+          <h4>{{ part.title }}</h4>
+          <ul>
+            @for (hook of part.hooks; track $index) {
+              <li>
+                {{ hook.name }}<span>{{ hook.said }}</span>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  </div>
+}
+@if (fold().refusal; as refusal) {
+  <p class="why">
+    {{ refusal.why }}
+    @if (refusal.claudeSaid; as claudeSaid) {
+      <small>{{ claudeSaid }}</small>
+    }
+  </p>
+}

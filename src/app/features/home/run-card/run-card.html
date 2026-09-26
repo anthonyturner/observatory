@@ -1,0 +1,36 @@
+<app-proposal-frame heading="Run this as a Claude Code task?">
+  <dl class="facts">
+    <dt>Prompt</dt>
+    <dd>
+      <pre tabindex="0" aria-label="Prompt">{{ proposal().prompt }}</pre>
+    </dd>
+    <dt>Folder</dt>
+    <dd>{{ proposal().where }}</dd>
+    <dt>Command</dt>
+    <dd>
+      <code>{{ proposal().ticket.command }}</code
+      >&ngsp;<span class="dim">(prompt sent on stdin)</span>
+    </dd>
+  </dl>
+  <p class="small">{{ proposal().terms }}</p>
+  <p class="small">To change the prompt, edit your request and send it again.</p>
+  <p class="state" role="status" [class.bad]="offer.block()?.isBad">
+    @if (offer.block(); as block) {
+      {{ block.text }}
+      <button type="button" class="abtn" (click)="offer.pressBlock()">
+        {{ block.actionLabel }}
+      </button>
+    }
+  </p>
+  <button proposalActs type="button" class="abtn quiet" (click)="offer.leave()">Cancel</button>
+  <button
+    proposalActs
+    type="button"
+    class="abtn run"
+    [class.arming]="isArming()"
+    [disabled]="!offer.canRun()"
+    (click)="offer.run()"
+  >
+    {{ offer.isStarting() ? 'Starting…' : 'Run' }}
+  </button>
+</app-proposal-frame>

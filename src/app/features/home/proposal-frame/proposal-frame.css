@@ -1,0 +1,34 @@
+:host {
+  display: grid;
+  gap: 10px;
+  padding: 15px 18px 16px;
+  border: 1px solid var(--warm-edge);
+  border-radius: 4px;
+  background: var(--proposal-glass);
+}
+
+h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 21px;
+  line-height: 1.15;
+  color: var(--warm);
+}
+
+h3:focus {
+  outline: none;
+}
+
+h3:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}

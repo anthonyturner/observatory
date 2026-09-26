@@ -1,0 +1,193 @@
+:host {
+  display: contents;
+}
+
+/* Beside the page rather than over it: on a wide screen the page makes room
+   for it on the right, so the core, the ask bar and the projects stay usable
+   while a run works. Smaller screens get it as a full-screen sheet. */
+aside {
+  position: fixed;
+  z-index: 8;
+  inset: calc(10px + env(safe-area-inset-top, 0px)) 16px 20px auto;
+  width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--run-dock-glass);
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 1099px) {
+  aside {
+    inset: 0;
+    width: auto;
+    border: 0;
+    border-radius: 0;
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* Only the output gives up height; the lines above it always show whole. */
+aside > :not(app-run-log) {
+  flex: none;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+h2 {
+  flex: 1 1 100%;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+h2 small {
+  margin-left: 6px;
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.state,
+.timer,
+.where,
+.flags {
+  font-family: var(--font-mono);
+}
+
+.state {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--flow);
+}
+
+.state::before {
+  content: '\25CF';
+  margin-right: 7px;
+}
+
+.state[data-state='running']::before {
+  animation: run-dot 1.6s ease-in-out infinite;
+}
+
+:host(.still) .state::before {
+  animation: none;
+}
+
+@keyframes run-dot {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.state[data-state='done'] {
+  color: var(--ok);
+}
+
+.state[data-state='failed'],
+.state[data-state='errored'],
+.state[data-state='time-limit'],
+.state[data-state='shutdown'],
+.state[data-state='lost'] {
+  color: var(--bad-soft);
+}
+
+.state[data-state='stopping'],
+.state[data-state='cancelled'] {
+  color: var(--muted);
+}
+
+.state[data-state='reconnecting'],
+.timer.late,
+.flags [data-tone='refused'] {
+  color: var(--meh);
+}
+
+.timer {
+  flex: 1 1 auto;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.abtn {
+  border-radius: 4px;
+}
+
+.stop {
+  border-color: var(--run-stop-edge);
+  color: var(--bad-soft);
+}
+
+.stop:hover:not(:disabled) {
+  border-color: var(--bad);
+  background: var(--run-stop-wash);
+}
+
+.flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.flags [data-tone='cost'] {
+  color: var(--ink);
+}
+
+.what {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.where {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.note {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 4px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.note.bad {
+  border-color: var(--run-bad-edge);
+  color: var(--bad-soft);
+}
+
+.note .abtn {
+  margin-left: 8px;
+}

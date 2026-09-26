@@ -264,6 +264,26 @@
   --proposal-glass: linear-gradient(165deg, rgba(30, 25, 16, 0.92), rgba(12, 11, 16, 0.94));
   --proposal-well: rgba(4, 6, 14, 0.7);
 
+  /* pr-starmap's tier-3 runs on Home: Run in the warm frame, the task panel
+     beside the page, and its transcript. */
+  --run-edge: rgba(255, 194, 77, 0.6);
+  --run-wash: rgba(255, 194, 77, 0.14);
+  --run-wash-hover: rgba(255, 194, 77, 0.22);
+  --run-pill-edge: rgba(255, 194, 77, 0.45);
+  --run-refused-wash: rgba(255, 194, 77, 0.05);
+  --run-dock-glass: rgba(7, 11, 24, 0.9);
+  --run-log-well: rgba(2, 4, 10, 0.7);
+  --run-jump-wash: rgba(7, 11, 24, 0.95);
+  --run-jump-hover: rgb(18, 26, 52);
+  --run-stop-edge: rgba(255, 111, 94, 0.45);
+  --run-stop-wash: rgba(255, 111, 94, 0.12);
+  --run-bad-edge: rgba(255, 111, 94, 0.35);
+  --run-result-edge: rgba(95, 227, 161, 0.45);
+  --run-result-wash: rgba(95, 227, 161, 0.05);
+  --run-failed-wash: rgba(255, 111, 94, 0.05);
+  --run-row-hover: rgba(142, 162, 255, 0.05);
+  --run-row-current: rgba(142, 162, 255, 0.08);
+
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;

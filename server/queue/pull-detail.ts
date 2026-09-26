@@ -1,5 +1,5 @@
 import type { RawCheck, RawPull } from '../github/pull-reader.ts';
-import { BadRequest } from '../http/api-server.ts';
+import { BadRequest } from '../http/api-handler.ts';
 import { type PullBucket, bucketOf } from '../projects/pull-counts.ts';
 
 export type CheckOutcome = 'passed' | 'failed' | 'pending' | 'skipped';

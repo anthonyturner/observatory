@@ -17,10 +17,10 @@ const reportOf = (...items: [number, string][]): QueueReport =>
 function memoryStore(frames: Frame[] = []): HistoryStore & { frames: Frame[] } {
   return {
     frames,
-    read() {
+    async read() {
       return this.frames;
     },
-    append(_repo, frame) {
+    async append(_repo, frame) {
       this.frames.push(frame);
     },
   };

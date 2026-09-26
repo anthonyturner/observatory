@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { BadRequest } from '../http/api-server.ts';
+import { BadRequest } from '../http/api-handler.ts';
 import type { QueueReport } from '../queue/queue-report.ts';
 import { EMPTY_TRIAGE, type TriageState } from './triage.ts';
 import type { TriageStore } from './triage-store.ts';
@@ -32,28 +32,33 @@ const report: QueueReport = {
 function memoryStore(): TriageStore & { state: TriageState } {
   return {
     state: EMPTY_TRIAGE,
-    read() {
+    async read() {
       return this.state;
     },
-    write(_repo, state) {
+    async write(_repo, state) {
       this.state = state;
     },
   };
 }
 
 describe('recordTriage and withTriage', () => {
-  it('records an action and shows it in the queue at once', () => {
+  it('records an action and shows it in the queue at once', async () => {
     const store = memoryStore();
 
-    const result = recordTriage({ repo: 'me/a', number: 7, action: 'seen' }, report, store, NOW);
+    const result = await recordTriage(
+      { repo: 'me/a', number: 7, action: 'seen' },
+      report,
+      store,
+      NOW,
+    );
 
     assert.deepEqual(result, { number: 7, isSeen: true, hidden: null });
-    assert.equal(withTriage(report, store, NOW).items[0].isSeen, true);
+    assert.equal((await withTriage(report, store, NOW)).items[0].isSeen, true);
   });
 
-  it('refuses a pull request that is not open in the queue', () => {
-    assert.throws(
-      () => recordTriage({ repo: 'me/a', number: 99, action: 'seen' }, report, memoryStore(), NOW),
+  it('refuses a pull request that is not open in the queue', async () => {
+    await assert.rejects(
+      recordTriage({ repo: 'me/a', number: 99, action: 'seen' }, report, memoryStore(), NOW),
       BadRequest,
     );
   });

@@ -1,4 +1,4 @@
-import { BadRequest } from '../http/api-server.ts';
+import { BadRequest } from '../http/api-handler.ts';
 
 /** An owner and a repository name as GitHub allows them. Neither part may
  *  start with a dash, so nothing that looks like an option reaches `gh`. */

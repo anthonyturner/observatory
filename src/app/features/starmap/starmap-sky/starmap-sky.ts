@@ -36,6 +36,9 @@ export interface SkyInsets {
   readonly side: number;
 }
 
+/** A filter that lights one agent's pull requests: `agent:<name>`. */
+export const AGENT_FILTER = 'agent:';
+
 const DEFAULT_INSETS: SkyInsets = { top: 140, bottom: 70, side: 0 };
 const TYPING_OR_DIALOG = 'input, textarea, select, [contenteditable], [role="dialog"]';
 const PANS: Readonly<Record<string, readonly [number, number]>> = {
@@ -67,6 +70,8 @@ export class StarmapSky {
   readonly traced = input<LogStar | null>(null);
   /** The legend's filter: a bucket, `quick`, or none. */
   readonly filter = input<string | null>(null);
+  /** The lit agent's pull requests, for an `agent:` filter. */
+  readonly agentPrs = input<readonly number[]>([]);
   readonly selected = input<number | null>(null);
   readonly pairs = input<readonly SkyPair[]>([]);
   readonly showCollisions = input(true);
@@ -117,9 +122,10 @@ export class StarmapSky {
     });
     effect(() => {
       const filter = this.filter();
+      const prs = this.agentPrs();
       const engine = this.engine;
       if (!engine) return;
-      engine.filter = filterFor(filter);
+      engine.filter = filterFor(filter, prs);
       untracked(() => engine.fit());
     });
     effect(() => {
@@ -260,7 +266,7 @@ export class StarmapSky {
       this.newsLayer,
       this.planLayer,
     ];
-    this.engine.filter = filterFor(this.filter());
+    this.engine.filter = filterFor(this.filter(), this.agentPrs());
     this.engine.fog = this.fog();
     this.engine.setHidden(this.hidden());
     this.layOut(this.chart(), this.items(), this.logLayout());
@@ -314,8 +320,15 @@ export class StarmapSky {
 }
 
 /** A legend filter as a test on a star: a bucket, or the quick wins across them. */
-export function filterFor(filter: string | null): ((star: SkyStar) => boolean) | null {
+export function filterFor(
+  filter: string | null,
+  agentPrs: readonly number[] = [],
+): ((star: SkyStar) => boolean) | null {
   if (!filter) return null;
   if (filter === 'quick') return (star) => !!star.quick;
+  if (filter.startsWith(AGENT_FILTER)) {
+    const prs = new Set(agentPrs);
+    return (star) => prs.has(star.item?.pr ?? -1);
+  }
   return (star) => star.key === filter;
 }

@@ -13,6 +13,7 @@ import {
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
+import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
 
 /** The same limits the `gh` reader asks for, so both see the same lists. */
@@ -24,6 +25,8 @@ const LABEL_LIMIT = 100;
 const DIFF_MEDIA_TYPE = 'application/vnd.github.diff';
 /** As the `gh` reader asks for: sixty days of a busy repository. */
 const LEDGER_LIMIT = 400;
+/** As the `gh` reader asks for: enough for the agents' report cards. */
+const AGENT_LIMIT = 500;
 
 type Node = Readonly<Record<string, unknown>>;
 
@@ -104,6 +107,26 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     return shape(repository['pullRequest']);
   }
 
+  /** Every pull request, open or not, newest first, as `gh pr list --state all` lists them. */
+  async function allPulls(repo: string, fields: readonly string[], limit: number): Promise<Node[]> {
+    const { select, shape } = selectionOf(PULL_GRAPHQL, fields);
+    const nodes = await allPages(async (after) => {
+      const repository = await repositoryOf(
+        `query($owner: String!, $name: String!, $first: Int!, $after: String) {
+          repository(owner: $owner, name: $name) {
+            pullRequests(first: $first, after: $after, orderBy: { field: CREATED_AT, direction: DESC }) {
+              pageInfo { hasNextPage endCursor }
+              nodes { ${select} }
+            }
+          }
+        }`,
+        { ...repoVariables(repo), first: PAGE_SIZE, after },
+      );
+      return pageOf(repository['pullRequests']);
+    }, limit);
+    return nodes.map(shape);
+  }
+
   /** Every pull request updated since a day, through search, as `gh pr list --search` finds them. */
   async function touchedPulls(repo: string, sinceDay: string): Promise<Node[]> {
     const { select, shape } = selectionOf(PULL_GRAPHQL, LEDGER_PULL_FIELDS);
@@ -179,6 +202,8 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     openPulls: async (repo) => shaped<PullRequest>(await openPulls(repo, PULL_REQUEST_FIELDS)),
     queuePulls: async (repo) => shaped<QueuePull>(await openPulls(repo, QUEUE_PULL_FIELDS)),
     closingPulls: async (repo) => shaped<ClosingPull>(await openPulls(repo, CLOSING_PULL_FIELDS)),
+    agentPulls: async (repo) =>
+      shaped<AgentPull>(await allPulls(repo, AGENT_PULL_FIELDS, AGENT_LIMIT)),
     touchedPulls: async (repo, sinceDay) =>
       byNumberDescending(shaped<LedgerPull>(await touchedPulls(repo, sinceDay))),
     pullFiles: async (repo) =>

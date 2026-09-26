@@ -1,0 +1,31 @@
+<aside class="plan agents" aria-labelledby="agentstitle">
+  <div>
+    <h2 id="agentstitle">Agent report cards</h2>
+    <div class="sub">{{ sub() }}</div>
+  </div>
+  <div class="acards">
+    @for (entry of cards(); track entry.card.agent) {
+      <button
+        type="button"
+        class="acard"
+        [attr.aria-pressed]="lit() === entry.card.agent"
+        (click)="light.emit(entry.card.agent)"
+      >
+        <span class="ahead"
+          ><b>{{ entry.card.agent }}</b
+          ><i>{{ entry.card.basis }}</i
+          ><em>{{ entry.card.opened }}</em></span
+        >
+        @for (bar of entry.bars; track bar.label) {
+          <span class="abar"
+            ><span class="n">{{ bar.n }}</span
+            ><span class="track"
+              ><span [style.width.%]="bar.pct" [style.background]="bar.colour"></span></span
+            ><span class="k">{{ bar.label }}</span></span
+          >
+        }
+        <span class="afoot">{{ entry.foot }}</span>
+      </button>
+    }
+  </div>
+</aside>

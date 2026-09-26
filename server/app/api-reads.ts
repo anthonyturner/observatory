@@ -1,3 +1,4 @@
+import { type AgentsReport, type Handoff, reportCards } from '../agents/agents-report.ts';
 import type { CollisionsReport } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
 import type { RawLabel } from '../github/pull-reader.ts';
@@ -27,6 +28,8 @@ const LABELS_TTL_MS = 5 * 60_000;
 const COLLISIONS_TTL_MS = 10 * 60_000;
 /** A log folder can hold hundreds of thousands of lines: read it every five minutes at most. */
 const LOGS_TTL_MS = 5 * 60_000;
+/** Report cards move as pull requests merge: every five minutes at most. */
+const AGENTS_TTL_MS = 5 * 60_000;
 /** The ledger moves a day at a time; ten minutes is fresh enough. */
 const LEDGER_TTL_MS = 10 * 60_000;
 
@@ -40,6 +43,8 @@ export interface ReadSources {
   readonly usage: () => Promise<UsageReport | null>;
   /** An app's log folder, folded, for the Log Sky. */
   readonly logs: (repo: string) => Promise<LogSnapshot | LogsUnconfigured>;
+  /** Every agent handoff the capture hook recorded; none where nothing records them. */
+  readonly handoffs: () => Promise<readonly Handoff[]>;
 }
 
 /** What `GET /api/history` returns. */
@@ -64,6 +69,8 @@ export interface ApiReads {
   ledger(repo: string): Promise<Ledger>;
   usage(): Promise<UsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
+  /** One report card per agent, from the handoffs and the pull requests they opened. */
+  agents(repo: string): Promise<AgentsReport>;
 }
 
 export function cachedReads(sources: ReadSources): ApiReads {
@@ -99,5 +106,9 @@ export function cachedReads(sources: ReadSources): ApiReads {
     ledger: cachedByKey((repo) => ledgerReport(github, repo), LEDGER_TTL_MS),
     usage: sources.usage,
     logs: cachedByKey(sources.logs, LOGS_TTL_MS),
+    agents: cachedByKey(
+      async (repo) => reportCards(await sources.handoffs(), await github.agentPulls(repo), repo),
+      AGENTS_TTL_MS,
+    ),
   };
 }

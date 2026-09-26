@@ -16,12 +16,15 @@ import {
 } from './issue-reader.ts';
 import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
+import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
 
 const PULL_LIMIT = '100';
 const ISSUE_LIMIT = '1000';
 /** Enough for sixty days of a busy repository's pull requests. */
 const LEDGER_LIMIT = '400';
+/** Enough of a repository's pull requests for the agents' report cards. */
+const AGENT_LIMIT = '500';
 const REPO_LIMIT = '1000';
 const LABEL_LIMIT = '200';
 
@@ -133,6 +136,19 @@ export function ghCliReader(): GitHub {
         LABEL_LIMIT,
         '--json',
         'name,color',
+      ]),
+    agentPulls: (repo) =>
+      ghJson<AgentPull[]>([
+        'pr',
+        'list',
+        '--repo',
+        repo,
+        '--state',
+        'all',
+        '--limit',
+        AGENT_LIMIT,
+        '--json',
+        AGENT_PULL_FIELDS.join(','),
       ]),
     touchedPulls: async (repo, sinceDay) =>
       byNumberDescending(

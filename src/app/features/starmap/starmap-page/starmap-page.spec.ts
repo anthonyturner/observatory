@@ -111,9 +111,12 @@ describe('StarmapPage', () => {
   });
 
   it('shows the log sky’s own title and what to do when none is charted', () => {
-    const { element } = render('logs');
+    const { fixture, element, http } = render('logs');
+    http.expectOne('/api/logs?repo=me/a').flush({ configured: false, reason: 'not-set' });
+    fixture.detectChanges();
 
     expect(element.querySelector('h1')?.textContent).toBe('Log Sky');
+    expect(element.querySelector('.stamp')?.textContent).toBe('no logs yet');
     expect(element.querySelector('.state')?.textContent).toContain('No logs charted yet.');
   });
 

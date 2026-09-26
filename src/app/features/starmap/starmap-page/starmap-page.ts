@@ -32,6 +32,13 @@ import { PullPanel } from '../../queue/pull-panel/pull-panel';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
+import { LogsFeed } from '../../../core/logs/logs-feed';
+import { LogKey } from '../../../core/logs/log-levels';
+import { LogStar } from '../../../core/logs/log-layout';
+import { LogCard } from '../../logs/log-card/log-card';
+import { LogList } from '../../logs/log-list/log-list';
+import { MeteorRecord } from '../../logs/meteor-record/meteor-record';
+import { LogSkyView } from '../log-sky-view';
 import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../../queue/queue-help';
 import { skyItemOf, skyPairOf } from '../sky-items';
 import { StarmapHeader } from '../starmap-header/starmap-header';
@@ -54,6 +61,8 @@ import {
 /** The chrome Fit keeps the sky clear of, as pr-starmap measures it. */
 const TOP_INSET = 140;
 const BOTTOM_INSET = 70;
+/** With a chart along the bottom, as the Log Sky's meteor record. */
+const BOTTOM_INSET_WITH_STRIP = 200;
 /** Past this width a panel down the right edge takes its own column. */
 const SIDE_PANEL_MIN_WIDTH = 900;
 const SIDE_PANEL_WIDTH = 370;
@@ -82,11 +91,14 @@ export interface SkyState {
     ChangesCard,
     PullPanel,
     StarCard,
+    LogCard,
+    LogList,
+    MeteorRecord,
     HelpCard,
   ],
   hostDirectives: [HelpShortcuts],
   host: { '(document:keydown.escape)': 'closeTopmost()' },
-  providers: [QueueFeed, HistoryFeed, CollisionsFeed, UsageWatch],
+  providers: [QueueFeed, HistoryFeed, CollisionsFeed, LogsFeed, LogSkyView, UsageWatch],
   templateUrl: './starmap-page.html',
   styleUrl: './starmap-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -99,6 +111,7 @@ export class StarmapPage {
   private readonly lastSeenStore = inject(LastSeen);
   private readonly triage = inject(TriageClient);
   protected readonly session = inject(ViewerSession);
+  protected readonly logs = inject(LogSkyView);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
@@ -190,12 +203,7 @@ export class StarmapPage {
   });
   protected readonly skyState = computed((): SkyState | null => {
     const chart = this.chart();
-    if (chart === 'logs') {
-      return {
-        headline: 'No logs charted yet.',
-        detail: 'Record a log folder with server/logs/set-dir.ts, then press Refresh.',
-      };
-    }
+    if (chart === 'logs') return this.view() === 'map' ? this.logs.message() : null;
     if (chart !== 'prs' || this.view() === 'list') return null;
     const { status } = this.state();
     if (status === 'reading') return { headline: 'Reading the sky…' };
@@ -252,11 +260,15 @@ export class StarmapPage {
     return number === null ? [] : collisionsOf(this.collisions.report(), number);
   });
   protected readonly collisionCheck = computed(() => this.collisions.report()?.check ?? null);
+  /** The meteor record shows under the Log Sky's map, when it has days. */
+  protected readonly showMeteors = computed(
+    () => this.chart() === 'logs' && this.view() === 'map' && this.logs.hasDays(),
+  );
   protected readonly insets = computed((): SkyInsets => {
     const wide = (this.window?.innerWidth ?? 0) > SIDE_PANEL_MIN_WIDTH;
     return {
       top: TOP_INSET,
-      bottom: BOTTOM_INSET,
+      bottom: this.showMeteors() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
       side: this.hasChanges() && wide ? SIDE_PANEL_WIDTH : 0,
     };
   });
@@ -272,7 +284,14 @@ export class StarmapPage {
       untracked(() => {
         this.lastSeen.set(this.lastSeenStore.read(repo));
         this.feed.watch(repo);
+        this.logs.clear();
+        this.logs.watch(repo);
       });
+    });
+    // A refresh lays the Log Sky out again; the card and threads follow their fault.
+    effect(() => {
+      this.logs.layout();
+      untracked(() => this.logs.follow());
     });
     effect(() => {
       if (!this.readAt()) return;
@@ -288,6 +307,8 @@ export class StarmapPage {
   protected setChart(chart: Chart): void {
     this.filter.set(null);
     this.openPull.set(null);
+    this.logs.clear();
+    this.logs.filter.set(null);
     void this.router.navigate([], {
       relativeTo: this.route,
       fragment: fragmentOf(chart),
@@ -301,8 +322,19 @@ export class StarmapPage {
 
   /** A legend chip narrows the sky to itself; pressing it again shows everything. */
   protected toggleFilter(id: string): void {
+    if (this.chart() === 'logs') {
+      this.logs.toggleFilter(id as LogKey);
+      return;
+    }
     this.filter.update((current) => (current === id ? null : id));
     this.openPull.set(null);
+  }
+
+  /** Flies to a fault from the log list, opens its card and traces it. */
+  protected goToLog(star: LogStar): void {
+    this.skyView.set('map');
+    this.logs.pick(star);
+    this.sky()?.goToLog(star);
   }
 
   /** Flies to a star from the list, and opens it. */
@@ -330,6 +362,7 @@ export class StarmapPage {
   /** Esc closes the full screen first, then the card, as on pr-starmap. */
   protected closeTopmost(): void {
     if (this.sheetPull() !== null) this.sheetPull.set(null);
+    else if (this.chart() === 'logs') this.logs.closeCard();
     else this.openPull.set(null);
   }
 

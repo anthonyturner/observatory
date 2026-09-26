@@ -1,0 +1,14 @@
+{
+  "replies": [
+    {
+      "data": {
+        "repository": {
+          "pullRequest": {
+            "mergeable": "MERGEABLE"
+          }
+        }
+      }
+    }
+  ],
+  "expected": "MERGEABLE"
+}

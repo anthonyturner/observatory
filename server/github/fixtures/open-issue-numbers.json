@@ -1,0 +1,35 @@
+{
+  "replies": [
+    {
+      "data": {
+        "repository": {
+          "hasIssuesEnabled": true,
+          "issues": {
+            "pageInfo": {
+              "hasNextPage": false,
+              "endCursor": "Y3Vyc29yOnYyOpK0MjAyNi0wOS0yNFQxMjoyOTo1MFrPAAAAAUvl1r4="
+            },
+            "nodes": [
+              {
+                "number": 18
+              },
+              {
+                "number": 15
+              },
+              {
+                "number": 14
+              },
+              {
+                "number": 11
+              },
+              {
+                "number": 8
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "expected": [18, 15, 14, 11, 8]
+}

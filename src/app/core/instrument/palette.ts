@@ -40,7 +40,7 @@ export function readPalette(element: HTMLElement): CorePalette {
 }
 
 /** The browser resolves the colour for us: set it, read the computed value back, restore. */
-function resolveColour(element: HTMLElement, expression: string): string {
+export function resolveColour(element: HTMLElement, expression: string): string {
   const before = element.style.color;
   element.style.color = expression;
   const resolved = getComputedStyle(element).color;

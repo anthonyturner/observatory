@@ -67,7 +67,24 @@
   --meter-fill: linear-gradient(90deg, rgba(142, 162, 255, 0.3), rgba(142, 162, 255, 0.6));
   --meter-fill-hot: linear-gradient(90deg, rgba(255, 194, 77, 0.3), rgba(255, 194, 77, 0.65));
   --flow-wash: rgba(142, 162, 255, 0.04);
-  --sky-night: radial-gradient(ellipse at 50% 38%, #0b1230 0%, #060a1a 45%, var(--void) 80%);
+  /* Home's night: a green glow round the core, deepening to near black. The
+     canvas paints it; this gradient stands in until it does, or without one. */
+  --sky-glow: #0a2214;
+  --sky-mid: #06120b;
+  --sky-deep: #020604;
+  --sky-vignette: rgba(0, 0, 0, 0.66);
+  --sky-night: radial-gradient(
+    ellipse at 50% 38%,
+    var(--sky-glow) 0%,
+    var(--sky-mid) 42%,
+    var(--sky-deep) 100%
+  );
+  /* Star trails: white, and the pale blues and warm whites of real stars. */
+  --star-white: #ffffff;
+  --star-ice: #dce8ff;
+  --star-blue: #bcd2ff;
+  --star-cream: #fff0d6;
+  --star-amber: #ffd9b8;
 
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;

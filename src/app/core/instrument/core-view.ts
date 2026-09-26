@@ -11,6 +11,10 @@ export interface CoreView {
   /** How much of the core is still on screen, 1 to 0 as it scrolls away. */
   readonly lift: number;
   readonly isAway: boolean;
+  /** The core's centre on the page before any scrolling: the pole the star
+   *  trails turn about, which stays put on the screen as the page scrolls. */
+  readonly poleX: number;
+  readonly poleY: number;
   /** From the core's centre down to the window's bottom before any scrolling,
    *  rounded so a phone's toolbar sliding in and out does not rebuild the floor. */
   readonly floorDepth: number;
@@ -56,6 +60,8 @@ export function coreViewOf(anchor: AnchorBox, viewport: WindowBox): CoreView {
     centreX: anchor.left + anchor.width / 2,
     centreY: anchor.top + anchor.height / 2,
     radius,
+    poleX: anchor.left + anchor.width / 2,
+    poleY,
     lift: isAway ? 0 : clamp01((bottom - radius * 0.2) / (anchor.height * 0.8)),
     isAway,
     floorDepth: Math.max(radius * 2, Math.ceil(unscrolledDepth / FLOOR_STEP) * FLOOR_STEP),

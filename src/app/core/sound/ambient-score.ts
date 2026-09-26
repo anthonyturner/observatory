@@ -1,0 +1,73 @@
+/* The score: what plays in each bar, as plain data, so the choices can be
+   tested without an audio device. Slow on purpose: a bar lasts eight
+   seconds, and the loop of four chords half a minute. */
+
+/** i – VI – III – VII in D minor: Dm, B♭, F, C. It never quite comes home,
+ *  which is what keeps a loop this long from sounding like one. */
+export const CHORDS: readonly (readonly number[])[] = [
+  [0, 3, 7, 14],
+  [-4, 0, 3, 10],
+  [3, 7, 10, 16],
+  [-2, 2, 5, 12],
+];
+
+/** D3, as a MIDI note. */
+export const TONIC = 50;
+export const BAR_S = 8;
+/** The core breathes on a six-second period when idle; the drone breathes with it. */
+export const BREATH_S = 6;
+
+/** A bell-like ping: when in the bar, which note, and where in the room. */
+export interface Ping {
+  readonly offsetS: number;
+  readonly midi: number;
+  /** -1 left to 1 right. */
+  readonly pan: number;
+  readonly level: number;
+}
+
+export interface Bar {
+  readonly chord: readonly number[];
+  /** The bar's pad notes, as MIDI. */
+  readonly pad: readonly number[];
+  /** The drone's root, two octaves down. */
+  readonly root: number;
+  readonly pings: readonly Ping[];
+  /** A quiet filtered sweep across the bar, every few bars. */
+  readonly hasSweep: boolean;
+}
+
+const MIN_PINGS = 2;
+const EXTRA_PINGS = 3;
+const PING_OCTAVES = [24, 36] as const;
+const MAX_PAN = 0.8;
+const SWEEP_EVERY = 4;
+/** Pings keep clear of the bar's last second, where the next chord arrives. */
+const PING_WINDOW_S = BAR_S - 1;
+const PING_LEVEL = 0.05;
+
+/** Hertz for a MIDI note. */
+export const hz = (midi: number): number => 440 * Math.pow(2, (midi - 69) / 12);
+
+/** The bar at `index` in the loop, with its pings drawn from `random` (0 to 1). */
+export function barAt(index: number, random: () => number): Bar {
+  const chord = CHORDS[((index % CHORDS.length) + CHORDS.length) % CHORDS.length];
+  const count = MIN_PINGS + Math.floor(random() * (EXTRA_PINGS + 1));
+  const pings = Array.from({ length: count }, (): Ping => {
+    const tone = chord[Math.floor(random() * chord.length)];
+    const octave = PING_OCTAVES[Math.floor(random() * PING_OCTAVES.length)];
+    return {
+      offsetS: random() * PING_WINDOW_S,
+      midi: TONIC + octave + tone,
+      pan: (random() * 2 - 1) * MAX_PAN,
+      level: PING_LEVEL * (0.5 + random() * 0.5),
+    };
+  }).sort((a, b) => a.offsetS - b.offsetS);
+  return {
+    chord,
+    pad: chord.map((tone) => TONIC + tone),
+    root: TONIC - 24 + chord[0],
+    pings,
+    hasSweep: index % SWEEP_EVERY === SWEEP_EVERY - 1,
+  };
+}

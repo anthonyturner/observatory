@@ -1,0 +1,82 @@
+import {
+  DOCUMENT,
+  DestroyRef,
+  ErrorHandler,
+  Injectable,
+  InjectionToken,
+  Signal,
+  inject,
+  signal,
+} from '@angular/core';
+import { AmbientPlayer, AmbientSynth } from './ambient-synth';
+
+/** Makes the player the Sound button drives. */
+export const AMBIENT_PLAYER = new InjectionToken<() => AmbientPlayer>('AMBIENT_PLAYER', {
+  providedIn: 'root',
+  factory: () => () => new AmbientSynth(),
+});
+
+const STORAGE_KEY = 'observatory.sound';
+const GESTURES = ['pointerdown', 'keydown'] as const;
+
+/** Whether the ambient score plays. Off until asked for: browsers refuse
+ *  audio before a gesture, and a page that makes noise nobody chose is closed. */
+@Injectable({ providedIn: 'root' })
+export class SoundPreference {
+  private readonly wanted = signal(readStoredChoice());
+  private readonly makePlayer = inject(AMBIENT_PLAYER);
+  private readonly errors = inject(ErrorHandler);
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
+  private player: AmbientPlayer | null = null;
+
+  readonly isOn: Signal<boolean> = this.wanted.asReadonly();
+
+  constructor() {
+    if (this.wanted()) this.resumeOnFirstGesture();
+  }
+
+  toggle(): void {
+    this.wanted.update((on) => !on);
+    storeChoice(this.wanted());
+    if (this.wanted()) this.play();
+    else this.player?.stop();
+  }
+
+  private play(): void {
+    this.player ??= this.makePlayer();
+    this.player.start().catch((error: unknown) => this.errors.handleError(error));
+  }
+
+  /** Someone who left sound on gets it back on their first touch of the page:
+   *  the browser will not allow it any sooner. */
+  private resumeOnFirstGesture(): void {
+    const window = this.document.defaultView;
+    const resume = (): void => {
+      unlisten();
+      if (this.wanted()) this.play();
+    };
+    const unlisten = (): void =>
+      GESTURES.forEach((gesture) => window?.removeEventListener(gesture, resume));
+    GESTURES.forEach((gesture) => window?.addEventListener(gesture, resume));
+    this.destroyRef.onDestroy(unlisten);
+  }
+}
+
+/** Private windows and blocked site data throw here; sound then starts off. */
+function readStoredChoice(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+/** Where storage is blocked the choice lasts for this visit only. */
+function storeChoice(isOn: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, isOn ? 'on' : 'off');
+  } catch {
+    return;
+  }
+}

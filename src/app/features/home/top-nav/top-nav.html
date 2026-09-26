@@ -9,6 +9,16 @@
   >
     {{ motion.isStill() ? 'Motion off' : 'Motion on' }}
   </button>
+  <button
+    type="button"
+    [attr.aria-pressed]="sound.isOn()"
+    [title]="
+      sound.isOn() ? 'Ambient score playing — click to fade it out' : 'Play an ambient score'
+    "
+    (click)="sound.toggle()"
+  >
+    {{ sound.isOn() ? 'Sound on' : 'Sound off' }}
+  </button>
 </div>
 <div class="group">
   <button

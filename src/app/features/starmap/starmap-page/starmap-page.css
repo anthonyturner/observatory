@@ -75,4 +75,9 @@
   .hud.bottom[data-folded] {
     pointer-events: none;
   }
+
+  /* Folded, the charts go with the tools. */
+  .hud.bottom[data-folded] app-meteor-record {
+    display: none;
+  }
 }

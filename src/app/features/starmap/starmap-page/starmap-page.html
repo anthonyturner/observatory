@@ -1,17 +1,24 @@
 <app-starmap-sky
   #sky
+  [chart]="chart() === 'logs' ? 'logs' : 'prs'"
   [items]="skyItems()"
-  [filter]="filter()"
+  [logLayout]="logs.layout()"
+  [filter]="chart() === 'logs' ? logs.filter() : filter()"
   [selected]="openPull()"
+  [selectedLog]="logs.selected()"
+  [traced]="logs.traced()"
   [pairs]="skyPairs()"
   [showCollisions]="showCollisions()"
-  [fog]="fog()"
-  [hidden]="chart() !== 'prs' || view() !== 'map'"
+  [fog]="chart() === 'logs' ? logs.fog() : fog()"
+  [hidden]="(chart() !== 'prs' && chart() !== 'logs') || view() !== 'map'"
   [insets]="insets()"
   (picked)="openPull.set($event)"
+  (pickedLog)="logs.pick($event)"
 />
 
-@if (view() === 'list') {
+@if (view() === 'list' && chart() === 'logs') {
+  <app-log-list [layout]="logs.layout()" [filter]="logs.filter()" (picked)="goToLog($event)" />
+} @else if (view() === 'list') {
   <div class="listview">
     <div class="listwrap">
       @switch (chart()) {
@@ -38,15 +45,22 @@
 <div class="hud top">
   <app-starmap-header
     [title]="title()"
-    [stamp]="stamp()"
-    [stale]="stale()"
-    [chips]="chips()"
-    [filter]="filter()"
+    [stamp]="chart() === 'logs' ? logs.stamp() : stamp()"
+    [stale]="chart() === 'logs' ? logs.stale() : stale()"
+    [chips]="chart() === 'logs' ? logs.chips() : chips()"
+    [filter]="chart() === 'logs' ? logs.filter() : filter()"
     (toggled)="toggleFilter($event)"
   />
 </div>
 
 <div class="hud bottom" [attr.data-folded]="folded() ? '' : null">
+  @if (showMeteors() && logs.snapshot(); as snapshot) {
+    <app-meteor-record
+      [snapshot]="snapshot"
+      [filter]="logs.filter()"
+      [traced]="logs.traced()?.fault ?? null"
+    />
+  }
   <app-starmap-tools
     [chart]="chart()"
     [view]="view()"
@@ -83,6 +97,12 @@
     (snooze)="recordTriage($event, { action: 'snooze', days: SNOOZE_DAYS })"
     (dismiss)="recordTriage($event, { action: 'dismiss' })"
   />
+}
+
+@if (chart() === 'logs' && logs.selected(); as star) {
+  @if (logs.snapshot(); as snapshot) {
+    <app-log-card [star]="star" [snapshot]="snapshot" [repo]="repo()" (closed)="logs.closeCard()" />
+  }
 }
 
 @if (sheetPull(); as number) {

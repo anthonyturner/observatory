@@ -4,29 +4,14 @@ import { RUN_COMMAND } from './claude-command.ts';
 import type { CheckoutRegistry } from './checkouts.ts';
 import { ClaudeRun, type RunSummary } from './claude-run.ts';
 import type { ProcessTreeKiller } from './process-tree.ts';
-import { ProposalBook, type Proposal, type ProposalToken, type StartRequest } from './proposals.ts';
+import type { ProposalRunner, RunOffer } from '../assistant/route-contract.ts';
+import { ProposalBook, type Proposal, type StartRequest } from './proposals.ts';
 import { RUN_LIMITS, type RunLimits } from './run-limits.ts';
 import { RunList, type RunsReport } from './run-list.ts';
 import type { LogFollower } from './run-log.ts';
 
 /** A tier-3 request the assistant would like to run. */
-export interface RunOfferRequest {
-  readonly prompt: string;
-  /** The project to run it in; null when the request did not say. */
-  readonly repo: string | null;
-}
-
-/** A token to run it; or, with no repo, the repos it could run in; or why it cannot run here. */
-export interface RunOffer {
-  readonly run?: ProposalToken;
-  readonly choose?: string[];
-  readonly why?: string;
-}
-
-/** What the assistant's router needs of the runner. */
-export interface RunOfferer {
-  offer(request: RunOfferRequest): Promise<RunOffer>;
-}
+type RunOfferRequest = Parameters<ProposalRunner['offer']>[0];
 
 /** What the runs routes need of the runner. */
 export interface RunControl {
@@ -68,7 +53,7 @@ const NOT_A_CHECKOUT = 'that folder is no longer a local checkout';
  * one project's checkout, one run at a time
  * (docs/decisions/0005-run-tier-3-tasks-on-the-local-site-only.md).
  */
-export class Runner implements RunOfferer, RunControl {
+export class Runner implements ProposalRunner, RunControl {
   private readonly limits: RunLimits;
   private readonly proposals: ProposalBook;
   private readonly runs: RunList;

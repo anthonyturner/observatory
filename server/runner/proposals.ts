@@ -1,17 +1,10 @@
+import type { RunTicket } from '../assistant/route-contract.ts';
 import { randomBytes } from 'node:crypto';
 import { Forbidden } from '../http/api-handler.ts';
 import type { Checkout } from './checkouts.ts';
 
 /** A run the owner may start: what a proposal's Run button carries. */
-export interface ProposalToken {
-  readonly token: string;
-  readonly folder: string;
-  readonly name: string;
-  readonly expiresAt: number;
-  readonly limitMs: number;
-  /** The command as the proposal shows it. */
-  readonly command: string;
-}
+export type ProposalToken = RunTicket;
 
 /** What starting a run must repeat of its proposal, word for word. */
 export interface StartRequest {

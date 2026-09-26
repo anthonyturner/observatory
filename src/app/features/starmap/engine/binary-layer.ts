@@ -2,25 +2,27 @@ import { SkyFrame, SkyLayer } from './sky-frame';
 import { SkyStar } from './sky-model';
 
 /** Two or more pull requests that close the same issue. */
-export interface Binary {
+export interface Binary<T> {
   readonly issue: number;
-  readonly stars: readonly SkyStar[];
+  readonly members: readonly T[];
 }
 
-/** Issue number → the shown pull requests that close it, two or more. */
-export function binaries(
-  stars: readonly SkyStar[],
-  closesOf: (star: SkyStar) => readonly number[],
-): Binary[] {
-  const by = new Map<number, SkyStar[]>();
-  for (const s of stars) {
-    for (const n of closesOf(s)) {
+/** Issue number → the things that close it, where two or more do. */
+export function binaries<T>(
+  things: readonly T[],
+  closesOf: (thing: T) => readonly number[],
+): Binary<T>[] {
+  const by = new Map<number, T[]>();
+  for (const thing of things) {
+    for (const n of closesOf(thing)) {
       const group = by.get(n) ?? [];
-      group.push(s);
+      group.push(thing);
       by.set(n, group);
     }
   }
-  return [...by].filter(([, ss]) => ss.length > 1).map(([issue, ss]) => ({ issue, stars: ss }));
+  return [...by]
+    .filter(([, members]) => members.length > 1)
+    .map(([issue, members]) => ({ issue, members }));
 }
 
 const STRANDS: readonly [number, string][] = [
@@ -36,7 +38,7 @@ const STRANDS: readonly [number, string][] = [
 export class BinaryLayer implements SkyLayer {
   constructor(private readonly closesOf: (star: SkyStar) => readonly number[]) {}
 
-  groups(f: SkyFrame): Binary[] {
+  groups(f: SkyFrame): Binary<SkyStar>[] {
     return f.chart === 'prs' ? binaries(f.stars, this.closesOf) : [];
   }
 
@@ -45,9 +47,9 @@ export class BinaryLayer implements SkyLayer {
     if (!groups.length) return;
     c.save();
     for (const g of groups) {
-      for (let i = 0; i < g.stars.length - 1; i++) {
-        const [x0, y0] = f.toScreen(g.stars[i].ax, g.stars[i].ay, g.stars[i].az);
-        const [x1, y1] = f.toScreen(g.stars[i + 1].ax, g.stars[i + 1].ay, g.stars[i + 1].az);
+      for (let i = 0; i < g.members.length - 1; i++) {
+        const [x0, y0] = f.toScreen(g.members[i].ax, g.members[i].ay, g.members[i].az);
+        const [x1, y1] = f.toScreen(g.members[i + 1].ax, g.members[i + 1].ay, g.members[i + 1].az);
         const len = Math.hypot(x1 - x0, y1 - y0) || 1;
         const nx = -(y1 - y0) / len;
         const ny = (x1 - x0) / len;
@@ -83,8 +85,8 @@ export class BinaryLayer implements SkyLayer {
     ctx.fillStyle = '#ffe7a8';
     ctx.globalAlpha = 0.9;
     for (const g of groups) {
-      const [x0, y0] = f.toScreen(g.stars[0].ax, g.stars[0].ay, g.stars[0].az);
-      const [x1, y1] = f.toScreen(g.stars[1].ax, g.stars[1].ay, g.stars[1].az);
+      const [x0, y0] = f.toScreen(g.members[0].ax, g.members[0].ay, g.members[0].az);
+      const [x1, y1] = f.toScreen(g.members[1].ax, g.members[1].ay, g.members[1].az);
       ctx.fillText(`BINARY · BOTH CLOSE #${g.issue}`, (x0 + x1) / 2, (y0 + y1) / 2 - 12);
     }
     ctx.restore();

@@ -1,0 +1,24 @@
+<div class="listwrap">
+  @for (section of sections(); track section.label) {
+    <section [style.--sev]="section.colour">
+      <h3>
+        {{ section.label }}<small>{{ section.sub }}</small>
+      </h3>
+      <ul>
+        @for (row of section.rows; track row.id) {
+          <li
+            tabindex="0"
+            role="button"
+            [style.--sev]="row.colour"
+            (click)="picked.emit(row.star)"
+            (keydown)="onKey($event, row.star)"
+          >
+            <span class="n">{{ row.count }}</span
+            ><span class="t">{{ row.text }}</span
+            ><span class="i">{{ row.info }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>

@@ -21,6 +21,7 @@ import { LastSeen } from '../../../core/queue/last-seen';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { queueFog } from '../../../core/queue/queue-fog';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
+import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpCard } from '../../../shared/help/help-card';
@@ -28,6 +29,9 @@ import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { IssuesTab } from '../../issues/issues-tab/issues-tab';
 import { ChangesCard } from '../../queue/changes-card/changes-card';
 import { PullPanel } from '../../queue/pull-panel/pull-panel';
+import { binaries } from '../engine/binary-layer';
+import { CardContext } from '../star-card/card-facts';
+import { StarCard } from '../star-card/star-card';
 import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../../queue/queue-help';
 import { skyItemOf, skyPairOf } from '../sky-items';
 import { StarmapHeader } from '../starmap-header/starmap-header';
@@ -53,6 +57,8 @@ const BOTTOM_INSET = 70;
 /** Past this width a panel down the right edge takes its own column. */
 const SIDE_PANEL_MIN_WIDTH = 900;
 const SIDE_PANEL_WIDTH = 370;
+/** The card's Snooze, as pr-starmap's: a week. */
+const SNOOZE_DAYS = 7;
 
 /** A message in place of the sky: a headline, and what to do about it. */
 export interface SkyState {
@@ -75,9 +81,11 @@ export interface SkyState {
     StarmapUsage,
     ChangesCard,
     PullPanel,
+    StarCard,
     HelpCard,
   ],
   hostDirectives: [HelpShortcuts],
+  host: { '(document:keydown.escape)': 'closeTopmost()' },
   providers: [QueueFeed, HistoryFeed, CollisionsFeed, UsageWatch],
   templateUrl: './starmap-page.html',
   styleUrl: './starmap-page.css',
@@ -90,6 +98,7 @@ export class StarmapPage {
   protected readonly usage = inject(UsageWatch);
   private readonly lastSeenStore = inject(LastSeen);
   private readonly triage = inject(TriageClient);
+  protected readonly session = inject(ViewerSession);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
@@ -113,7 +122,11 @@ export class StarmapPage {
   protected readonly showCollisions = signal(true);
   protected readonly folded = signal(false);
   protected readonly refreshing = signal(false);
+  /** The pull request whose star is selected, its card open. */
   protected readonly openPull = signal<number | null>(null);
+  /** The pull request whose full screen is open. */
+  readonly sheetPull = signal<number | null>(null);
+  protected readonly SNOOZE_DAYS = SNOOZE_DAYS;
   protected readonly sky = viewChild<StarmapSky>('sky');
   protected readonly helpEntries = QUEUE_HELP_ENTRIES;
   protected readonly helpKeys = QUEUE_HELP_KEYS;
@@ -211,12 +224,31 @@ export class StarmapPage {
   protected readonly hasChanges = computed(
     () => this.chart() === 'prs' && this.view() === 'map' && changeCount(this.changes()) > 0,
   );
-  protected readonly openTriage = computed(() => {
-    const item = this.items().find((each) => each.number === this.openPull());
+  protected readonly openItem = computed(
+    () => this.items().find((each) => each.number === this.openPull()) ?? null,
+  );
+  /** What the rest of the sky says about the selected pull request, for its card. */
+  protected readonly cardContext = computed((): CardContext => {
+    const number = this.openPull();
+    const groups = binaries(this.skyItems(), (item) => item.issues);
+    return {
+      pairs: this.skyPairs(),
+      binaries: groups
+        .filter((g) => g.members.some((item) => item.pr === number))
+        .map((g) => ({
+          issue: g.issue,
+          others: g.members.map((item) => item.pr).filter((pr) => pr !== number),
+        })),
+    };
+  });
+  protected readonly sheetTriage = computed(() => {
+    // A visitor to the hosted preview cannot change anything, so has no triage to show.
+    if (!this.session.canWrite()) return null;
+    const item = this.items().find((each) => each.number === this.sheetPull());
     return item ? { isSeen: item.isSeen, hidden: item.hidden } : null;
   });
-  protected readonly openCollisions = computed(() => {
-    const number = this.openPull();
+  protected readonly sheetCollisions = computed(() => {
+    const number = this.sheetPull();
     return number === null ? [] : collisionsOf(this.collisions.report(), number);
   });
   protected readonly collisionCheck = computed(() => this.collisions.report()?.check ?? null);
@@ -293,6 +325,17 @@ export class StarmapPage {
     const now = Date.now();
     this.lastSeenStore.record(this.repo(), now);
     this.lastSeen.set(now);
+  }
+
+  /** Esc closes the full screen first, then the card, as on pr-starmap. */
+  protected closeTopmost(): void {
+    if (this.sheetPull() !== null) this.sheetPull.set(null);
+    else this.openPull.set(null);
+  }
+
+  /** Opens a pull request's full screen, from its card or another screen. */
+  openSheet(number: number): void {
+    this.sheetPull.set(number);
   }
 
   protected recordTriage(number: number, choice: TriageChoice): void {

@@ -108,6 +108,14 @@
   --starmap-stale-ink: #c9d1ea;
   --starmap-row-title: #d3dcf5;
 
+  /* pr-starmap's detail card. */
+  --card-glass: linear-gradient(165deg, rgba(18, 26, 52, 0.84), rgba(7, 11, 24, 0.9));
+  --card-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 30px 70px -20px rgba(0, 0, 0, 0.85);
+  --card-title: #dbe3fa;
+  --card-act: rgba(142, 162, 255, 0.07);
+  --card-act-hover: rgba(142, 162, 255, 0.18);
+  --card-primary-edge: rgba(142, 162, 255, 0.55);
+
   /* The Usage screen. Model families keep one colour across versions; the
      order passes pr-starmap's palette check on this night (lightness band,
      colour-blind separation, 3:1 contrast). */
@@ -127,6 +135,21 @@
 
   /* A collision thread: a pair that would conflict. */
   --chart-thread-conflict: var(--bad);
+
+  /* The log sky: errors, warnings, and windows that logged neither. */
+  --log-error: var(--bad);
+  --log-warn: var(--meh);
+  --log-quiet: var(--ok);
+  /* A meteor's burning head, over its streak. */
+  --meteor-head: #ffffff;
+  /* A star's detail card, and the words and message well inside it. */
+  --detail-glass: linear-gradient(165deg, rgba(18, 26, 52, 0.84), rgba(7, 11, 24, 0.9));
+  --detail-heading: #dbe3fa;
+  --detail-well: rgba(0, 0, 0, 0.32);
+  --detail-action: rgba(142, 162, 255, 0.07);
+  --detail-action-hover: rgba(142, 162, 255, 0.18);
+  --list-row-ink: #d3dcf5;
+  --tip-glass: rgba(7, 11, 24, 0.94);
 
   /* The orrery's night: indigo warmed by its sun toward the middle. */
   --orrery-sky-centre: #15122c;

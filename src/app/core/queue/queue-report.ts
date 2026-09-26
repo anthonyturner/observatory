@@ -21,6 +21,11 @@ export interface QueueItem {
   readonly deletions: number | null;
   readonly idleDays: number;
   readonly ageDays: number;
+  /** The head branch, or empty when GitHub did not say. */
+  readonly branch: string;
+  /** GitHub's own word: MERGEABLE, CONFLICTING or UNKNOWN. */
+  readonly mergeable: string;
+  readonly changedFiles: number | null;
   /** Marked seen on this machine. */
   readonly isSeen: boolean;
   /** Dismissed or snoozed on this machine, or null when it is in the queue. */
@@ -78,6 +83,9 @@ function parseItem(value: unknown): QueueItem | null {
     deletions: countOrNull(value['deletions']),
     idleDays: isCount(idleDays) ? idleDays : 0,
     ageDays: isCount(ageDays) ? ageDays : 0,
+    branch: isString(value['branch']) ? value['branch'] : '',
+    mergeable: isString(value['mergeable']) ? value['mergeable'] : 'UNKNOWN',
+    changedFiles: countOrNull(value['changedFiles']),
     isSeen: value['isSeen'] === true,
     hidden: parseHidden(value['hidden']),
   };

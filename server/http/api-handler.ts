@@ -19,6 +19,12 @@ export type ApiHandler = (request: Request) => Promise<Response>;
 /** Thrown by a route when the request itself is wrong: answered 400 with its message. */
 export class BadRequest extends Error {}
 
+/** Thrown by a route when what was asked for is not there, or not for this caller to know of. */
+export class NotFound extends Error {}
+
+/** Thrown by a route this caller may not use: answered 403 with its message. */
+export class Forbidden extends Error {}
+
 /**
  * A write must carry this header. A page on another site cannot add a custom
  * header to a request here without a preflight this server never grants, so
@@ -48,7 +54,7 @@ export function json(
 }
 
 /** A request's JSON body, or a BadRequest when it is too large or not JSON. */
-async function readJson(request: Request, maxBytes = MAX_BODY_BYTES): Promise<unknown> {
+export async function readJson(request: Request, maxBytes = MAX_BODY_BYTES): Promise<unknown> {
   const bytes = await request.arrayBuffer();
   if (bytes.byteLength > maxBytes) throw new BadRequest('body too large');
   try {
@@ -59,11 +65,13 @@ async function readJson(request: Request, maxBytes = MAX_BODY_BYTES): Promise<un
 }
 
 /** Runs a route, turning what it throws into the status it stands for. */
-async function answer(produce: () => Promise<unknown>): Promise<Response> {
+export async function answer(produce: () => Promise<unknown>): Promise<Response> {
   try {
     return json(HTTP_OK, await produce());
   } catch (error) {
     if (error instanceof BadRequest) return json(HTTP_BAD_REQUEST, { error: error.message });
+    if (error instanceof NotFound) return json(HTTP_NOT_FOUND, { error: error.message });
+    if (error instanceof Forbidden) return json(HTTP_FORBIDDEN, { error: error.message });
     console.error(error);
     return json(HTTP_SERVER_ERROR, { error: 'server error' });
   }

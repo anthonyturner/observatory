@@ -1,7 +1,60 @@
 <app-hud-section heading="Ask" note="type or talk">
   <div class="stack">
-    <app-voice-controls />
-    <app-ask-bar />
-    <p class="status" role="status">Not connected yet: nothing is heard or sent.</p>
+    @if (isOwnersOnly()) {
+      <p class="preview-note">
+        The assistant belongs to the owner.
+        @if (session.signInUrl(); as signIn) {
+          <a [href]="signIn">Sign in</a>
+        }
+      </p>
+    } @else {
+      <app-voice-controls />
+      <app-ask-bar
+        [isBusy]="feed.busy()"
+        [isKeywordsOnly]="isKeywordsOnly()"
+        [focusRequests]="focus.requests()"
+        (asked)="feed.submit($event)"
+        (escaped)="onEscape()"
+      />
+      <p class="assistant-status" role="status">{{ status() }}</p>
+      <div class="feed">
+        @if (jevOff(); as note) {
+          <p class="jev-off">
+            @for (span of note; track $index) {
+              @if (span.isCode) {
+                <code>{{ span.text }}</code>
+              } @else {
+                <ng-container>{{ span.text }}</ng-container>
+              }
+            }
+          </p>
+        }
+        @for (proposal of proposals(); track proposal.id) {
+          <app-proposal-card [proposal]="proposal" (dismissed)="feed.dismissProposal()" />
+        }
+        <app-reply-list
+          class="replies"
+          role="log"
+          aria-label="Replies"
+          [entries]="shown()"
+          [speakingId]="speech.entryId()"
+          (pressed)="feed.press($event.entryId, $event.action)"
+          (stopSpeaking)="feed.stopSpeaking()"
+          (followed)="feed.follow($event)"
+        />
+        @if (earlier().length) {
+          <details class="earlier">
+            <summary>Earlier ({{ earlier().length }})</summary>
+            <app-reply-list
+              [entries]="earlier()"
+              [speakingId]="speech.entryId()"
+              (pressed)="feed.press($event.entryId, $event.action)"
+              (stopSpeaking)="feed.stopSpeaking()"
+              (followed)="feed.follow($event)"
+            />
+          </details>
+        }
+      </div>
+    }
   </div>
 </app-hud-section>

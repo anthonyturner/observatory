@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { BadRequest, Forbidden, NotFound, createApiHandler } from './api-handler.ts';
+import { BadRequest, Forbidden, NotFound, createApiHandler, json } from './api-handler.ts';
 
 describe('createApiHandler', () => {
   const handle = createApiHandler({
@@ -20,11 +20,13 @@ describe('createApiHandler', () => {
       '/api/broken': async () => {
         throw new Error('boom');
       },
+      '/api/teapot': async () => json(418, { short: 'stout' }),
     },
     post: {
       '/api/write': async (body) => ({ got: body }),
       '/api/large': async () => ({ ok: true }),
     },
+    delete: { '/api/thing': async (query) => ({ removed: query.get('id') }) },
     bodyLimits: { '/api/large': 64 * 1024 },
   });
   const base = 'http://localhost';
@@ -104,6 +106,32 @@ describe('createApiHandler', () => {
       }),
     );
     assert.equal(response.status, 200);
+  });
+
+  it('sends a Response a route answers with as it is, status and all', async () => {
+    const response = await get('/api/teapot');
+
+    assert.equal(response.status, 418);
+    assert.deepEqual(await response.json(), { short: 'stout' });
+  });
+
+  it('takes a DELETE that carries the header, and refuses one without', async () => {
+    const remove = (headers: Record<string, string>) =>
+      handle(new Request(`${base}/api/thing?id=3`, { method: 'DELETE', headers }));
+
+    const removed = await remove({ 'x-observatory': '1' });
+
+    assert.equal(removed.status, 200);
+    assert.deepEqual(await removed.json(), { removed: '3' });
+    assert.equal((await remove({})).status, 403);
+    assert.equal(
+      (
+        await handle(
+          new Request(`${base}/api/ok`, { method: 'DELETE', headers: { 'x-observatory': '1' } }),
+        )
+      ).status,
+      404,
+    );
   });
 
   it('turns a failing route into a server error, not a crash', async () => {

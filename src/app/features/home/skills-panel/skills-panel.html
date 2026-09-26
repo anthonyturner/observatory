@@ -1,28 +1,47 @@
-<app-hud-section heading="Skills" note="quick access">
-  @if (total() > 0) {
-    <div class="tiles" id="skill-tiles" role="group" aria-label="Skills">
-      @for (skill of visible(); track skill.id) {
-        <app-skill-tile [skill]="skill" />
-      }
-    </div>
-  } @else {
-    <p class="empty"><b>No skills yet</b>One-press tasks will appear here.</p>
-  }
-
-  <p class="browse" [class.none]="total() === 0">
-    @if (hasMore()) {
-      <button
-        type="button"
-        aria-controls="skill-tiles"
-        [attr.aria-expanded]="isExpanded()"
-        (click)="toggleExpanded()"
-      >
-        {{ isExpanded() ? 'Show fewer skills' : 'Browse all skills' }}
-      </button>
-    } @else {
-      <span>Browse all skills</span>
+@if (!isOwnersOnly()) {
+  <app-hud-section heading="Skills" note="quick access">
+    @if (total() > 0) {
+      <div class="tiles" id="skill-tiles" role="group" aria-label="Skills">
+        @for (skill of visible(); track skill.id) {
+          <app-skill-tile
+            [skill]="skill"
+            [isProposing]="feed.pressedSkill() === skill.id"
+            (pressed)="feed.pressSkill($event)"
+          />
+        }
+      </div>
     }
-    <b>{{ total() }}</b>
-  </p>
-  <p class="note">One press proposes · you confirm</p>
-</app-hud-section>
+    @switch (state().status) {
+      @case ('known') {
+        @if (total() === 0) {
+          <p class="empty"><b>No skills yet</b>One-press tasks will appear here.</p>
+        }
+      }
+      @case ('lost') {
+        <p class="empty lost" role="status">
+          <b>Skills didn’t load</b><span>{{ lostWhy() }}</span>
+          <button type="button" class="abtn" [disabled]="isRetrying()" (click)="retry()">
+            {{ isRetrying() ? 'Trying…' : 'Try again' }}
+          </button>
+        </p>
+      }
+    }
+
+    <p class="browse" [class.none]="total() === 0">
+      @if (hasMore()) {
+        <button
+          type="button"
+          aria-controls="skill-tiles"
+          [attr.aria-expanded]="isExpanded()"
+          (click)="toggleExpanded()"
+        >
+          {{ isExpanded() ? 'Show fewer skills' : 'Browse all skills' }}
+        </button>
+      } @else {
+        <span>Browse all skills</span>
+      }
+      <b>{{ count() }}</b>
+    </p>
+    <p class="note">One press proposes · you confirm</p>
+  </app-hud-section>
+}

@@ -13,6 +13,7 @@ form {
   display: flex;
   flex: 1 1 auto;
   align-items: center;
+  gap: 8px;
   min-width: 0;
   min-height: 40px;
   padding: 0 8px 0 12px;
@@ -48,6 +49,24 @@ textarea::placeholder {
   color: var(--muted);
 }
 
+textarea[aria-busy='true'] {
+  color: var(--muted);
+}
+
+.kw-pill {
+  align-self: center;
+  flex: none;
+  padding: 3px 9px;
+  border: 1px solid var(--warm-edge);
+  border-radius: 999px;
+  color: var(--meh);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 button {
   flex: none;
   min-height: 40px;
@@ -68,6 +87,13 @@ button {
 button:hover {
   border-color: var(--flow);
   background: var(--flow-tint);
+}
+
+/* The Jev-off line under the bar says the same, and the box needs the room. */
+@media (min-width: 1024px) and (min-height: 600px), (max-width: 720px) {
+  .kw-pill {
+    display: none;
+  }
 }
 
 @media (max-width: 720px) {

@@ -251,6 +251,15 @@
   --sheet-failed-wash: rgba(255, 111, 94, 0.1);
   --sheet-failed-ink: #ffb3aa;
 
+  /* pr-starmap's assistant on Home: its buttons, a reply's glass, and a
+     task's proposal in the warm frame kept for decisions. */
+  --act-wash: rgba(142, 162, 255, 0.06);
+  --act-go-wash: rgba(142, 162, 255, 0.16);
+  --reply-glass: linear-gradient(165deg, rgba(16, 23, 46, 0.9), rgba(8, 12, 26, 0.92));
+  --warm-edge: rgba(255, 194, 77, 0.3);
+  --proposal-glass: linear-gradient(165deg, rgba(30, 25, 16, 0.92), rgba(12, 11, 16, 0.94));
+  --proposal-well: rgba(4, 6, 14, 0.7);
+
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;

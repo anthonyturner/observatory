@@ -1,14 +1,22 @@
-<form (submit)="holdSubmission($event)">
+<form (submit)="onSubmit($event)">
   <div class="box">
     <label class="visually-hidden" for="ask-input">Ask Home</label>
     <textarea
+      #box
       id="ask-input"
       rows="1"
       maxlength="2000"
       autocomplete="off"
       enterkeyhint="send"
       placeholder="Ask, or name a page to open"
+      [readOnly]="isBusy()"
+      [attr.aria-busy]="isBusy() ? 'true' : null"
+      (input)="grow()"
+      (keydown)="onKeydown($event)"
     ></textarea>
+    @if (isKeywordsOnly()) {
+      <span class="kw-pill">Keywords only</span>
+    }
   </div>
   <button type="submit">Send</button>
 </form>

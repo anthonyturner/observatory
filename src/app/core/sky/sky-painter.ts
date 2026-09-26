@@ -1,7 +1,8 @@
 import { InjectionToken } from '@angular/core';
 import { CoreView } from '../instrument/core-view';
 import { resolveColour } from '../instrument/palette';
-import { Comet, flightAt } from './comets';
+import { Comet, CometFlight, flightAt } from './comets';
+import { Flare, flareAt, flaresFrom } from './flares';
 
 /** Where the sky is centred and how big it is. */
 export interface SkyView {
@@ -17,6 +18,8 @@ interface SkyInks {
   readonly mid: string;
   readonly deep: string;
   readonly vignette: string;
+  /** The green of a flare: work got done. */
+  readonly progress: string;
 }
 
 const GRAIN_SIZE = 128;
@@ -25,6 +28,9 @@ const GRAIN_DRIFT_PX = 64;
 const GLOW_REACH = 0.9;
 const VIGNETTE_FROM = 0.3;
 const VIGNETTE_TO = 0.78;
+const FLARE_WIDTH_PX = 2.2;
+/** A flare is dropped once it has surely arrived. */
+const FLARE_LIFE_S = 3;
 /** A comet's head is a little wider than its tail. */
 const HEAD_GROWTH = 1.3;
 
@@ -47,6 +53,8 @@ export function skyViewOf(
 export interface SkyCanvas {
   canDraw(): boolean;
   setComets(comets: readonly Comet[]): void;
+  /** Sends `count` green comets into the core, from the next frame. */
+  flare(count: number): void;
   setView(view: SkyView): void;
   paint(time: number, isStill: boolean): void;
   dispose(): void;
@@ -68,6 +76,8 @@ export class SkyPainter implements SkyCanvas {
   private readonly host: HTMLElement;
   private view: SkyView | null = null;
   private comets: readonly Comet[] = [];
+  private flares: Flare[] = [];
+  private flaresWaiting = 0;
 
   constructor(host: HTMLElement) {
     const document = host.ownerDocument;
@@ -86,6 +96,10 @@ export class SkyPainter implements SkyCanvas {
 
   setComets(comets: readonly Comet[]): void {
     this.comets = comets;
+  }
+
+  flare(count: number): void {
+    this.flaresWaiting += count;
   }
 
   setView(view: SkyView): void {
@@ -109,6 +123,7 @@ export class SkyPainter implements SkyCanvas {
     context.globalAlpha = 1;
     this.paintNight(context, view);
     this.paintComets(context, view, time);
+    this.paintFlares(context, view, time);
     this.paintVignette(context, view);
     this.paintGrain(context, view, time, isStill);
   }
@@ -146,12 +161,39 @@ export class SkyPainter implements SkyCanvas {
   }
 
   /** A streak from its bright head back to nothing, and a small round head. */
-  private paintComet(
+  /** Flares wait for a frame to learn the scene time, then fly until they arrive. */
+  private paintFlares(context: CanvasRenderingContext2D, view: SkyView, time: number): void {
+    if (this.flaresWaiting > 0) {
+      this.flares = [...this.flares, ...flaresFrom(this.flaresWaiting, time, Math.random)];
+      this.flaresWaiting = 0;
+    }
+    if (!this.flares.length) return;
+    this.flares = this.flares.filter((flare) => time <= flare.startS + FLARE_LIFE_S);
+    context.save();
+    context.globalCompositeOperation = 'lighter';
+    context.lineCap = 'round';
+    for (const flare of this.flares) {
+      const flight = flareAt(flare, time, view);
+      if (flight)
+        this.paintStreak(context, { colour: this.inks.progress, widthPx: FLARE_WIDTH_PX }, flight);
+    }
+    context.restore();
+  }
+
+  private paintComet(context: CanvasRenderingContext2D, comet: Comet, flight: CometFlight): void {
+    this.paintStreak(
+      context,
+      { colour: this.colourOf(comet.colour), widthPx: comet.widthPx },
+      flight,
+    );
+  }
+
+  private paintStreak(
     context: CanvasRenderingContext2D,
-    comet: Comet,
-    flight: NonNullable<ReturnType<typeof flightAt>>,
+    streak: { colour: string; widthPx: number },
+    flight: CometFlight,
   ): void {
-    const colour = this.colourOf(comet.colour);
+    const { colour } = streak;
     const tail = context.createLinearGradient(
       flight.headX,
       flight.headY,
@@ -162,14 +204,14 @@ export class SkyPainter implements SkyCanvas {
     tail.addColorStop(1, 'transparent');
     context.globalAlpha = flight.alpha;
     context.strokeStyle = tail;
-    context.lineWidth = comet.widthPx;
+    context.lineWidth = streak.widthPx;
     context.beginPath();
     context.moveTo(flight.headX, flight.headY);
     context.lineTo(flight.tailX, flight.tailY);
     context.stroke();
     context.fillStyle = colour;
     context.beginPath();
-    context.arc(flight.headX, flight.headY, comet.widthPx * HEAD_GROWTH, 0, Math.PI * 2);
+    context.arc(flight.headX, flight.headY, streak.widthPx * HEAD_GROWTH, 0, Math.PI * 2);
     context.fill();
   }
 
@@ -231,6 +273,7 @@ function readInks(host: HTMLElement): SkyInks {
     mid: ink('--sky-mid'),
     deep: ink('--sky-deep'),
     vignette: ink('--sky-vignette'),
+    progress: ink('--ok'),
   };
 }
 

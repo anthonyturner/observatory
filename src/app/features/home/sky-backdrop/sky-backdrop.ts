@@ -9,10 +9,12 @@ import {
   computed,
   effect,
   inject,
+  untracked,
 } from '@angular/core';
 import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { ProgressFeed } from '../../../core/projects/progress-feed';
 import { PROJECTS } from '../../../core/projects/projects-source';
 import { SKY_CANVAS, SkyCanvas, skyViewOf } from '../../../core/sky/sky-painter';
 import { cometsFor } from '../../../core/sky/comets';
@@ -36,6 +38,8 @@ export class SkyBackdrop {
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
   private readonly projects = inject(PROJECTS);
+  private readonly progress = inject(ProgressFeed);
+  private flaredFor = 0;
   /** Empty until the projects are read: no comets, rather than a made-up count. */
   private readonly comets = computed(() => cometsFor(this.projects()));
   private readonly makeCanvas = inject(SKY_CANVAS);
@@ -54,6 +58,16 @@ export class SkyBackdrop {
       this.geometry.view();
       this.motion.isStill();
       this.place();
+      this.loop?.kick();
+    });
+    effect(() => {
+      const moment = this.progress.latest();
+      if (!moment || moment.id === this.flaredFor) return;
+      this.flaredFor = moment.id;
+      // With motion off nothing flies; the dots still say what got done.
+      if (untracked(this.motion.isStill)) return;
+      const done = moment.progress.reduce((sum, p) => sum + p.closedIssues + p.finishedPulls, 0);
+      this.painter?.flare(done);
       this.loop?.kick();
     });
     inject(DestroyRef).onDestroy(() => {

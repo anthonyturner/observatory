@@ -13,6 +13,6 @@ export function jevOffNote(where: SiteWhere | null, projectName: string | null):
   const key =
     where === 'hosted'
       ? 'set `OPENROUTER_API_KEY` on the Vercel project'
-      : 'set `OPENROUTER_API_KEY` for the API, then restart it';
+      : 'set `OPENROUTER_API_KEY`, or put it in `~/.claude/observatory/.env`, then restart the site';
   return `Jev is off, so only app actions work: ${examples}. Quick answers need an OpenRouter key: ${key}.`;
 }

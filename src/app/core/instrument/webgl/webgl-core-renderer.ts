@@ -106,7 +106,7 @@ export class WebGLCoreRenderer implements CoreRenderer {
     this.animator.advance(frame, palette.inks);
     const pose = this.animator.pose;
     if (!pose) return;
-    model.update({ pose, view, pixelRatio: this.pixelRatio(view) });
+    model.update({ pose, view, pixelRatio: this.pixelRatio(view), frame });
     composer.render();
   }
 

@@ -1,0 +1,45 @@
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.reticle {
+  position: absolute;
+  width: calc(var(--reticle) * 2);
+  height: calc(var(--reticle) * 2);
+  border: 1.4px dashed var(--ink);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
+}
+
+/* Words over the glow get a backing dark enough that their contrast holds
+   whatever the bloom does behind them. */
+.label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 9px;
+  border: 1px solid color-mix(in srgb, var(--sev) 55%, transparent);
+  border-radius: 8px;
+  background: var(--panel);
+  white-space: nowrap;
+  transform: translateY(-50%);
+}
+
+.label.left {
+  transform: translate(-100%, -50%);
+}
+
+.name {
+  font: 500 12.5px var(--font-sans);
+  color: var(--ink);
+}
+
+.said {
+  font: 500 10.5px var(--font-mono);
+  color: var(--muted);
+}

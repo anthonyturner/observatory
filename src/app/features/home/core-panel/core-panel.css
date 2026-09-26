@@ -6,6 +6,7 @@
 }
 
 .anchor {
+  position: relative;
   width: 100%;
   height: clamp(220px, 46vh, 460px);
 }

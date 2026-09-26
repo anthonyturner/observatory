@@ -67,7 +67,7 @@ export class Canvas2DCoreRenderer implements CoreRenderer {
     context.globalAlpha = 1;
     context.clearRect(0, 0, view.width, view.height);
     const pose = this.animator.pose;
-    if (pose && !view.isAway) this.paintCore(context, palette, { view, pose });
+    if (pose && !view.isAway) this.paintCore(context, palette, { view, pose, frame });
   }
 
   dispose(): void {
@@ -79,7 +79,7 @@ export class Canvas2DCoreRenderer implements CoreRenderer {
   private paintCore(
     context: CanvasRenderingContext2D,
     palette: CorePalette,
-    { view, pose }: { view: CoreView; pose: CorePose },
+    { view, pose, frame }: { view: CoreView; pose: CorePose; frame: CoreFrame },
   ): void {
     context.save();
     context.globalCompositeOperation = 'lighter';
@@ -103,6 +103,10 @@ export class Canvas2DCoreRenderer implements CoreRenderer {
       radius: ballRadiusOf(pose, view.radius),
       level: pose.look.level * pose.intro,
       pointCount: ballCount2D(view.radius),
+      yaw: pose.look.spin + frame.hand.yaw,
+      pitch: frame.hand.pitch,
+      hand: frame.hand,
+      isStill: frame.isStill,
     });
     context.restore();
     this.glow.paint(context, this.lens, palette, {
@@ -110,16 +114,16 @@ export class Canvas2DCoreRenderer implements CoreRenderer {
       radius: view.radius,
       breath: pose.breath,
       intro: pose.intro,
-      beads: this.growingBeads(pose),
+      beads: this.growingBeads(pose, frame.litKey),
       width: view.width,
       height: view.height,
     });
     if (this.layout.overflow) paintOverflow(context, this.lens, palette, this.layout.overflow);
   }
 
-  private growingBeads(pose: CorePose): GrowingBead[] {
+  private growingBeads(pose: CorePose, litKey: string | null): GrowingBead[] {
     return this.layout.beads
-      .map((bead) => ({ bead, grown: beadGrowth(pose, bead) }))
+      .map((bead) => ({ bead, grown: beadGrowth(pose, bead), isLit: bead.key === litKey }))
       .filter((growing) => growing.grown > 0);
   }
 

@@ -1,4 +1,4 @@
-import { Bead } from '../beads';
+import { Bead, LIT_BEAD_GROWTH } from '../beads';
 import { CoreLook } from '../core-look';
 import { Lens } from '../lens';
 import { CorePalette, rgbCss } from '../palette';
@@ -7,6 +7,8 @@ import { CorePalette, rgbCss } from '../palette';
 export interface GrowingBead {
   readonly bead: Bead;
   readonly grown: number;
+  /** The lit project's bead draws larger and brighter. */
+  readonly isLit: boolean;
 }
 
 export interface GlowScene {
@@ -24,6 +26,7 @@ const GLOW_SCALE = 0.5;
 const HEART_GLOW_REACH = 0.75;
 const BEAD_GLOW_REACH = 2.6;
 const BEAD_GLOW_ALPHA = 0.55;
+const LIT_GLOW_ALPHA = 0.9;
 const BEAD_CORE = 0.75;
 const BEAD_RING = 1.9;
 const RING_ALPHA = 0.85;
@@ -81,10 +84,11 @@ export class GlowPainter {
       rgbCss(look.tint, 0.35),
     ]);
     glow.fillRect(heart.x - radius, heart.y - radius, radius * 2, radius * 2);
-    for (const { bead, grown } of scene.beads) {
+    for (const { bead, grown, isLit } of scene.beads) {
       const seen = lens.project(bead.x, bead.y, bead.z);
-      const beadReach = bead.size * seen.scale * grown * BEAD_GLOW_REACH;
-      glow.globalAlpha = BEAD_GLOW_ALPHA * bead.dim;
+      const beadReach =
+        bead.size * seen.scale * grown * (isLit ? LIT_BEAD_GROWTH : 1) * BEAD_GLOW_REACH;
+      glow.globalAlpha = (isLit ? LIT_GLOW_ALPHA : BEAD_GLOW_ALPHA) * bead.dim;
       glow.fillStyle = radialFill(glow, { x: seen.x, y: seen.y, reach: beadReach }, [
         palette.colour(bead.severity.color),
       ]);
@@ -103,9 +107,9 @@ export class GlowPainter {
     context.globalAlpha = scene.intro;
     context.fillStyle = palette.heart;
     fillCircle(context, heart.x, heart.y, scene.radius * HEART_SIZE * scene.breath + 1);
-    for (const { bead, grown } of scene.beads) {
+    for (const { bead, grown, isLit } of scene.beads) {
       const seen = lens.project(bead.x, bead.y, bead.z);
-      const size = bead.size * seen.scale * grown;
+      const size = bead.size * seen.scale * grown * (isLit ? LIT_BEAD_GROWTH : 1);
       const colour = palette.colour(bead.severity.color);
       context.globalAlpha = bead.dim;
       context.fillStyle = colour;

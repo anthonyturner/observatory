@@ -9,9 +9,11 @@ import {
   Points,
   SRGBColorSpace,
   ShaderMaterial,
+  Vector2,
 } from 'three';
 import { BallNetwork } from '../ball-network';
 import { CorePose } from '../core-animator';
+import { HAND_BRIGHT, HAND_GROW, HAND_LINE_BRIGHT, HAND_PUSH, HAND_REACH, HandPose } from '../hand';
 import { GpuResources } from './gpu-resources';
 
 export interface BallFrame {
@@ -20,6 +22,12 @@ export interface BallFrame {
   readonly pixelRatio: number;
   /** Dots scale with the core, within bounds, so a phone's ball is not a smear. */
   readonly dotScale: number;
+  readonly hand: HandPose;
+  /** The window, in CSS pixels, to place the hand on the screen. */
+  readonly viewWidth: number;
+  readonly viewHeight: number;
+  /** With motion off, points glow under the hand but are not pushed. */
+  readonly isStill: boolean;
 }
 
 const ADDITIVE = {
@@ -30,21 +38,39 @@ const ADDITIVE = {
 } as const;
 
 /* `depthOf` runs from the back of the ball, 0, to its front, 1, so the back
-   half sits dimmer and the ball reads round. `waveOf` is rippleAt in core-look. */
+   half sits dimmer and the ball reads round. `waveOf` is rippleAt in core-look.
+   `placed` puts a point where the hand leaves it: measured on the screen, in
+   CSS pixels with y up, and pushed along the screen, which is the world's xy
+   since the camera looks straight down z. `handNear` is `nearness` in hand.ts. */
 const SHARED_GLSL = `
   uniform float time; uniform float level; uniform float ripple; uniform float radius;
-  uniform float pixelRatio; uniform float dotScale; varying float glow;
+  uniform float pixelRatio; uniform float dotScale; uniform vec2 handPx; uniform float handGlow;
+  uniform float reachPx; uniform float pushPx; uniform vec2 viewPx; varying float glow;
+  float handNear;
   float depthOf(vec3 p) { return (modelMatrix * vec4(p, 0.)).z / radius * .5 + .5; }
-  float waveOf(vec3 p) { return ripple * pow(.5 + .5 * sin(length(p) * 16. - time * 5.), 8.); }`;
+  float waveOf(vec3 p) { return ripple * pow(.5 + .5 * sin(length(p) * 16. - time * 5.), 8.); }
+  vec4 placed(vec3 p) {
+    vec4 w = modelMatrix * vec4(p, 1.);
+    vec4 c = projectionMatrix * viewMatrix * w;
+    vec2 off = (c.xy / c.w * .5 + .5) * viewPx - handPx;
+    float d = length(off);
+    float u = min(1., d / max(reachPx, 1e-6));
+    float k = 1. - u * u * (3. - 2. * u);
+    handNear = handGlow * k * k;
+    if (d > .001) w.xy += off / d * handNear * pushPx;
+    return projectionMatrix * viewMatrix * w;
+  }`;
 
 const DOT_VERTEX = `${SHARED_GLSL}
   attribute float phase; attribute float weight;
   void main() {
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+    gl_Position = placed(position);
     float wave = waveOf(position);
     float twinkle = .7 + .3 * sin(time * (.6 + phase * 1.8) + phase * 40.);
-    glow = level * (.55 + weight * .9) * twinkle * (.4 + .6 * depthOf(position)) * (1. + wave * 2.5);
-    gl_PointSize = (1.6 + weight * 3.) * (1. + wave * .5) * dotScale * pixelRatio;
+    glow = level * (.55 + weight * .9) * twinkle * (.4 + .6 * depthOf(position)) * (1. + wave * 2.5)
+      * (1. + handNear * ${HAND_BRIGHT.toFixed(2)});
+    gl_PointSize = (1.6 + weight * 3.) * (1. + wave * .5) * (1. + handNear * ${HAND_GROW.toFixed(2)})
+      * dotScale * pixelRatio;
   }`;
 
 const DOT_FRAGMENT = `
@@ -58,8 +84,9 @@ const DOT_FRAGMENT = `
 const LINE_VERTEX = `${SHARED_GLSL}
   attribute float strength;
   void main() {
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
-    glow = level * (.04 + .12 * strength) * (.3 + .7 * depthOf(position)) * (1. + waveOf(position) * 3.);
+    gl_Position = placed(position);
+    glow = level * (.04 + .12 * strength) * (.3 + .7 * depthOf(position)) * (1. + waveOf(position) * 3.)
+      * (1. + handNear * ${HAND_LINE_BRIGHT.toFixed(2)});
   }`;
 
 const LINE_FRAGMENT = `
@@ -86,6 +113,11 @@ export class BallObject {
     radius: { value: 1 },
     pixelRatio: { value: 1 },
     dotScale: { value: 1 },
+    handPx: { value: new Vector2() },
+    handGlow: { value: 0 },
+    reachPx: { value: 1 },
+    pushPx: { value: 0 },
+    viewPx: { value: new Vector2(1, 1) },
   };
 
   constructor(network: BallNetwork, resources: GpuResources) {
@@ -99,6 +131,9 @@ export class BallObject {
     );
     dots.frustumCulled = false;
     web.frustumCulled = false;
+    // Tipped, then turned about the upright: a sideways drag always turns the
+    // ball the way the hand went, however far it was tipped.
+    this.group.rotation.order = 'YXZ';
     this.group.add(web, dots);
   }
 
@@ -107,10 +142,16 @@ export class BallObject {
     return this.uniforms.tint.value;
   }
 
-  update({ pose, radius, pixelRatio, dotScale }: BallFrame): void {
+  update(frame: BallFrame): void {
+    const { pose, radius, pixelRatio, dotScale, hand } = frame;
     const { look } = pose;
     this.group.scale.setScalar(radius);
-    this.group.rotation.set(0, look.spin, 0);
+    this.group.rotation.set(-hand.pitch, look.spin + hand.yaw, 0);
+    this.uniforms.handPx.value.set(hand.x, frame.viewHeight - hand.y);
+    this.uniforms.handGlow.value = hand.glow;
+    this.uniforms.reachPx.value = radius * HAND_REACH;
+    this.uniforms.pushPx.value = frame.isStill ? 0 : radius * HAND_PUSH;
+    this.uniforms.viewPx.value.set(frame.viewWidth, frame.viewHeight);
     this.uniforms.time.value = look.time;
     this.uniforms.tint.value.setRGB(look.tint[0], look.tint[1], look.tint[2], SRGBColorSpace);
     this.uniforms.level.value = look.level * pose.intro;

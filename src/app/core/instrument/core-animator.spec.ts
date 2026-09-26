@@ -11,7 +11,16 @@ const INKS = Object.fromEntries(CORE_INKS.map((ink): [CoreInk, Rgb] => [ink, [0,
 >;
 
 function frame(overrides: Partial<CoreFrame> = {}): CoreFrame {
-  return { time: 0, wall: 100, state: 'idle', stateAge: 0, isStill: false, ...overrides };
+  return {
+    time: 0,
+    wall: 100,
+    state: 'idle',
+    stateAge: 0,
+    isStill: false,
+    hand: { yaw: 0, pitch: 0, x: 0, y: 0, glow: 0 },
+    litKey: null,
+    ...overrides,
+  };
 }
 
 const bead = { delay: 0.5 } as Bead;

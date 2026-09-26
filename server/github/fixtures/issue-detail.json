@@ -1,0 +1,96 @@
+{
+  "replies": [
+    {
+      "data": {
+        "repository": {
+          "issue": {
+            "number": 14,
+            "title": "Recover stuck preparing drafts and skip companies with an open draft in auto-prepare",
+            "url": "https://github.com/anthonyturner/jobpilot/issues/14",
+            "labels": {
+              "nodes": [
+                {
+                  "id": "LA_kwDOUo7qUM8AAAAC37xvvg",
+                  "name": "bug",
+                  "description": "Something isn't working",
+                  "color": "d73a4a"
+                }
+              ]
+            },
+            "assignees": {
+              "nodes": []
+            },
+            "author": {
+              "__typename": "User",
+              "login": "anthonyturner",
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "name": "Anthony Turner"
+            },
+            "createdAt": "2026-09-25T09:55:38Z",
+            "updatedAt": "2026-09-26T08:59:02Z",
+            "closedAt": null,
+            "stateReason": null,
+            "closedByPullRequestsReferences": {
+              "nodes": [
+                {
+                  "id": "PR_kwDOUo7qUM8AAAABFO0bfA",
+                  "number": 16,
+                  "url": "https://github.com/anthonyturner/jobpilot/pull/16",
+                  "repository": {
+                    "id": "R_kgDOUo7qUA",
+                    "name": "jobpilot",
+                    "owner": {
+                      "id": "MDQ6VXNlcjUyMTAwNDE=",
+                      "login": "anthonyturner"
+                    }
+                  }
+                }
+              ]
+            },
+            "body": "## Overview\n\nAn unattended `npm run auto-prepare` run that gets killed mid-draft (log-off,\nshutdown, Task Scheduler stopping the process) leaves that application stuck\nin `preparing` (the state a job sits in while its resume and cover letter are\nbeing tailored) forever. Nothing ever moves it out, and it silently counts\ntoward the \"queue full\" limit, so enough stuck rows make every later run\nreport `queue-full` and exit `0` — the feature stops producing new drafts with\nno error anywhere. Separately, the same-company de-duplication that is meant\nto stop a second draft going out for a company that already has one waiting\nonly works within a single run, so a company with a draft still sitting in\n`preparing` or `review` from an earlier run can get a second one today.\n\n**Engineering refinement was skipped for this issue.** Both fixes are\nlocalized to one service and one repository query, the cause was identified\nduring the PR #12 QA review by reading the code (not guessed), and neither\nchanges an assisted-apply guardrail.\n\n## User story\n\nAs the owner, I want a run that got interrupted to clean up after itself, so\nthat unattended preparation keeps producing new drafts run after run instead\nof quietly going stale, and so that I never end up with two drafts open for\nthe same company.\n\n## Context\n\n- Source: QA review on merged PR #12, non-blocking suggestions 2 and 3\n  (https://github.com/anthonyturner/jobpilot/pull/12#issuecomment-5814526313).\n- Parent: #8.\n- [countWaitingForReview](server/src/persistence/application-repository.ts#L79-L81)\n  counts every application in `preparing` or `review`, with no limit on how\n  long a row has been `preparing`.\n- [AutoPrepareService.run](server/src/services/apply/auto-prepare-service.ts#L57-L84)\n  computes how much room is left in the review queue from that count before\n  selecting any candidates, and stops immediately with outcome `queue-full`\n  once it hits zero. A killed process leaves its in-progress application in\n  `preparing` — nothing in the codebase ever moves a `preparing` row anywhere\n  else.\n- The PR #12 QA review's own evidence puts one draft at up to ~8 minutes; a\n  30-minute staleness threshold (how old a `preparing` row has to be before\n  it's treated as abandoned rather than in progress) leaves a wide margin\n  against a slow-but-live draft.\n- There is an existing, working precedent for exactly this shape of recovery,\n  for sweep (job search) runs rather than applications:\n  [RunRepository.markInterrupted](server/src/persistence/run-repository.ts#L59-L63)\n  marks any run left `running` as `interrupted`.\n  [composition.ts](server/src/composition.ts#L32-L35) only calls it for the\n  server (`recoverInterruptedRuns` defaults to `true`; see the call at\n  [composition.ts#L128](server/src/composition.ts#L128)) — the CLI entry\n  points ([prepare-once.ts](server/src/cli/prepare-once.ts#L17),\n  `sync-once.ts`) explicitly pass `false`, because a command-line process can\n  start while the server is mid-sweep and must not mark that sweep\n  interrupted. The same server-vs-CLI distinction likely applies to\n  recovering `preparing` applications.\n- `AuditActor` is `'user' | 'scheduler' | 'ingest' | 'agent'`\n  ([audit-repository.ts#L3](server/src/persistence/audit-repository.ts#L3));\n  `'scheduler'` is already the actor `AutoPrepareService` uses for its own\n  `autoprepare.*` events, so it is a non-user actor already in use for this\n  exact flow.\n- Separately,\n  [AutoPrepareService.skipReason](server/src/services/apply/auto-prepare-service.ts#L110-L120)\n  only skips a company already picked *within the current run* (the in-memory\n  `companies` set built up as the run goes). The only cross-run company check,\n  [lastSubmissionToCompany](server/src/persistence/application-repository.ts#L110-L118),\n  looks solely at when an application was submitted or last attempted — it has\n  no idea a company already has an application sitting in `preparing` or\n  `review` from a previous run.\n\n## Acceptance criteria\n\n1. At the start of a run, any application in `preparing` for longer than a\n   defined staleness threshold (~30 minutes) is moved to `failed`, with a note\n   explaining why, before candidates are counted or selected — so it no longer\n   counts toward the review-queue count.\n2. Each application recovered this way gets an audit entry (a permanent record\n   of what changed and who/what changed it) recorded under a non-user actor\n   (e.g. `scheduler`), consistent with assisted-apply rule 12.\n3. The recovery touches only `preparing` rows older than the threshold. Every\n   other status (`review`, `approved`, `previewed`, `submitted`,\n   `needs_attention`, `cancelled`, and `preparing` rows still within the\n   threshold) is left exactly as it was, and no approval, fill or submit code\n   path is ever called.\n4. A job whose company already has an application in `preparing` or `review`\n   — from any earlier run, not only the current one — is skipped as a\n   candidate, the same way a same-run company match is skipped today.\n5. The existing per-run same-company skip and the post-submission\n   same-company gap (the cool-down period before re-applying to a company you\n   already applied to) keep working unchanged alongside the new cross-run\n   check in (4).\n\n## Technical notes\n\n- Suggested fix for (1)-(3): at the start of\n  [AutoPrepareService.run](server/src/services/apply/auto-prepare-service.ts#L57-L84),\n  before computing the available room, mark `preparing` applications older\n  than the threshold as `failed` through `ApplicationRepository`, recording\n  the audit entry under `scheduler`. Whether the server's own start-up should\n  *also* recover them (mirroring `recoverInterruptedRuns` /\n  `RunRepository.markInterrupted`, so a stuck row does not wait for the next\n  CLI run) is left as an open question below rather than decided here.\n- Suggested fix for (4)-(5): extend\n  [AutoPrepareService.skipReason](server/src/services/apply/auto-prepare-service.ts#L110-L120)'s\n  company check (or the underlying query) to also treat a company with an\n  existing `preparing` or `review` application as a match, alongside the\n  current in-run set and the `lastSubmissionToCompany` gap.\n- Neither fix changes `application-service.ts`, the `approved → previewed →\n  submitted` path, or any assisted-apply guardrail; both stay inside\n  `AutoPrepareService` and the application repository.\n\n## Out of scope\n\n- Any change to the approval gate, fill or submit paths, or to\n  `application-service.ts`.\n- Recovering a run's sweep record — that path (`RunRepository.markInterrupted`)\n  already exists and is unaffected.\n- Surfacing recovered/skipped applications in the UI beyond what already shows\n  a `failed` status and its note.\n\n## Open questions\n\n- Should the server's own start-up also recover stale `preparing`\n  applications (mirroring `recoverInterruptedRuns` for sweep runs), or is\n  recovery at the start of each `auto-prepare` CLI run enough? Carried from\n  the PR #12 QA review's \"consider whether\" — not settled here.\n- Is 30 minutes the right staleness threshold, given the ~8-minute typical\n  draft time cited in the PR #12 QA review?\n"
+          }
+        }
+      }
+    }
+  ],
+  "expected": {
+    "assignees": [],
+    "author": {
+      "id": "MDQ6VXNlcjUyMTAwNDE=",
+      "is_bot": false,
+      "login": "anthonyturner",
+      "name": "Anthony Turner"
+    },
+    "body": "## Overview\n\nAn unattended `npm run auto-prepare` run that gets killed mid-draft (log-off,\nshutdown, Task Scheduler stopping the process) leaves that application stuck\nin `preparing` (the state a job sits in while its resume and cover letter are\nbeing tailored) forever. Nothing ever moves it out, and it silently counts\ntoward the \"queue full\" limit, so enough stuck rows make every later run\nreport `queue-full` and exit `0` — the feature stops producing new drafts with\nno error anywhere. Separately, the same-company de-duplication that is meant\nto stop a second draft going out for a company that already has one waiting\nonly works within a single run, so a company with a draft still sitting in\n`preparing` or `review` from an earlier run can get a second one today.\n\n**Engineering refinement was skipped for this issue.** Both fixes are\nlocalized to one service and one repository query, the cause was identified\nduring the PR #12 QA review by reading the code (not guessed), and neither\nchanges an assisted-apply guardrail.\n\n## User story\n\nAs the owner, I want a run that got interrupted to clean up after itself, so\nthat unattended preparation keeps producing new drafts run after run instead\nof quietly going stale, and so that I never end up with two drafts open for\nthe same company.\n\n## Context\n\n- Source: QA review on merged PR #12, non-blocking suggestions 2 and 3\n  (https://github.com/anthonyturner/jobpilot/pull/12#issuecomment-5814526313).\n- Parent: #8.\n- [countWaitingForReview](server/src/persistence/application-repository.ts#L79-L81)\n  counts every application in `preparing` or `review`, with no limit on how\n  long a row has been `preparing`.\n- [AutoPrepareService.run](server/src/services/apply/auto-prepare-service.ts#L57-L84)\n  computes how much room is left in the review queue from that count before\n  selecting any candidates, and stops immediately with outcome `queue-full`\n  once it hits zero. A killed process leaves its in-progress application in\n  `preparing` — nothing in the codebase ever moves a `preparing` row anywhere\n  else.\n- The PR #12 QA review's own evidence puts one draft at up to ~8 minutes; a\n  30-minute staleness threshold (how old a `preparing` row has to be before\n  it's treated as abandoned rather than in progress) leaves a wide margin\n  against a slow-but-live draft.\n- There is an existing, working precedent for exactly this shape of recovery,\n  for sweep (job search) runs rather than applications:\n  [RunRepository.markInterrupted](server/src/persistence/run-repository.ts#L59-L63)\n  marks any run left `running` as `interrupted`.\n  [composition.ts](server/src/composition.ts#L32-L35) only calls it for the\n  server (`recoverInterruptedRuns` defaults to `true`; see the call at\n  [composition.ts#L128](server/src/composition.ts#L128)) — the CLI entry\n  points ([prepare-once.ts](server/src/cli/prepare-once.ts#L17),\n  `sync-once.ts`) explicitly pass `false`, because a command-line process can\n  start while the server is mid-sweep and must not mark that sweep\n  interrupted. The same server-vs-CLI distinction likely applies to\n  recovering `preparing` applications.\n- `AuditActor` is `'user' | 'scheduler' | 'ingest' | 'agent'`\n  ([audit-repository.ts#L3](server/src/persistence/audit-repository.ts#L3));\n  `'scheduler'` is already the actor `AutoPrepareService` uses for its own\n  `autoprepare.*` events, so it is a non-user actor already in use for this\n  exact flow.\n- Separately,\n  [AutoPrepareService.skipReason](server/src/services/apply/auto-prepare-service.ts#L110-L120)\n  only skips a company already picked *within the current run* (the in-memory\n  `companies` set built up as the run goes). The only cross-run company check,\n  [lastSubmissionToCompany](server/src/persistence/application-repository.ts#L110-L118),\n  looks solely at when an application was submitted or last attempted — it has\n  no idea a company already has an application sitting in `preparing` or\n  `review` from a previous run.\n\n## Acceptance criteria\n\n1. At the start of a run, any application in `preparing` for longer than a\n   defined staleness threshold (~30 minutes) is moved to `failed`, with a note\n   explaining why, before candidates are counted or selected — so it no longer\n   counts toward the review-queue count.\n2. Each application recovered this way gets an audit entry (a permanent record\n   of what changed and who/what changed it) recorded under a non-user actor\n   (e.g. `scheduler`), consistent with assisted-apply rule 12.\n3. The recovery touches only `preparing` rows older than the threshold. Every\n   other status (`review`, `approved`, `previewed`, `submitted`,\n   `needs_attention`, `cancelled`, and `preparing` rows still within the\n   threshold) is left exactly as it was, and no approval, fill or submit code\n   path is ever called.\n4. A job whose company already has an application in `preparing` or `review`\n   — from any earlier run, not only the current one — is skipped as a\n   candidate, the same way a same-run company match is skipped today.\n5. The existing per-run same-company skip and the post-submission\n   same-company gap (the cool-down period before re-applying to a company you\n   already applied to) keep working unchanged alongside the new cross-run\n   check in (4).\n\n## Technical notes\n\n- Suggested fix for (1)-(3): at the start of\n  [AutoPrepareService.run](server/src/services/apply/auto-prepare-service.ts#L57-L84),\n  before computing the available room, mark `preparing` applications older\n  than the threshold as `failed` through `ApplicationRepository`, recording\n  the audit entry under `scheduler`. Whether the server's own start-up should\n  *also* recover them (mirroring `recoverInterruptedRuns` /\n  `RunRepository.markInterrupted`, so a stuck row does not wait for the next\n  CLI run) is left as an open question below rather than decided here.\n- Suggested fix for (4)-(5): extend\n  [AutoPrepareService.skipReason](server/src/services/apply/auto-prepare-service.ts#L110-L120)'s\n  company check (or the underlying query) to also treat a company with an\n  existing `preparing` or `review` application as a match, alongside the\n  current in-run set and the `lastSubmissionToCompany` gap.\n- Neither fix changes `application-service.ts`, the `approved → previewed →\n  submitted` path, or any assisted-apply guardrail; both stay inside\n  `AutoPrepareService` and the application repository.\n\n## Out of scope\n\n- Any change to the approval gate, fill or submit paths, or to\n  `application-service.ts`.\n- Recovering a run's sweep record — that path (`RunRepository.markInterrupted`)\n  already exists and is unaffected.\n- Surfacing recovered/skipped applications in the UI beyond what already shows\n  a `failed` status and its note.\n\n## Open questions\n\n- Should the server's own start-up also recover stale `preparing`\n  applications (mirroring `recoverInterruptedRuns` for sweep runs), or is\n  recovery at the start of each `auto-prepare` CLI run enough? Carried from\n  the PR #12 QA review's \"consider whether\" — not settled here.\n- Is 30 minutes the right staleness threshold, given the ~8-minute typical\n  draft time cited in the PR #12 QA review?\n",
+    "closedAt": null,
+    "closedByPullRequestsReferences": [
+      {
+        "id": "PR_kwDOUo7qUM8AAAABFO0bfA",
+        "number": 16,
+        "repository": {
+          "id": "R_kgDOUo7qUA",
+          "name": "jobpilot",
+          "owner": {
+            "id": "MDQ6VXNlcjUyMTAwNDE=",
+            "login": "anthonyturner"
+          }
+        },
+        "url": "https://github.com/anthonyturner/jobpilot/pull/16"
+      }
+    ],
+    "createdAt": "2026-09-25T09:55:38Z",
+    "labels": [
+      {
+        "id": "LA_kwDOUo7qUM8AAAAC37xvvg",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 14,
+    "stateReason": "",
+    "title": "Recover stuck preparing drafts and skip companies with an open draft in auto-prepare",
+    "updatedAt": "2026-09-26T08:59:02Z",
+    "url": "https://github.com/anthonyturner/jobpilot/issues/14"
+  }
+}

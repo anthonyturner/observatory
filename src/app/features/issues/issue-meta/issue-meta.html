@@ -1,0 +1,29 @@
+@if (comet()) {
+  <span class="comet-mark" title="No open pull request closes it">comet · nobody on it</span>
+}
+@for (label of labels(); track label.name) {
+  <span class="ilabel" [style.--c]="label.ink"><i></i>{{ label.name }}</span>
+}
+@for (who of assignees(); track who) {
+  <span class="iwho">&#64;{{ who }}</span>
+}
+@if (unassigned()) {
+  <span class="iwho">nobody assigned</span>
+}
+@for (chip of chips(); track chip.number) {
+  @if (chip.href; as href) {
+    <a class="prchip" [href]="href" target="_blank" rel="noopener" [title]="chip.title"
+      >#{{ chip.number }} ↗</a
+    >
+  } @else {
+    <button
+      type="button"
+      class="prchip"
+      [style.--c]="chip.colour"
+      [title]="chip.title"
+      (click)="pull.emit(chip.number)"
+    >
+      <i></i>#{{ chip.number }}
+    </button>
+  }
+}

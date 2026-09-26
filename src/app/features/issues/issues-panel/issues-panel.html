@@ -1,13 +1,4 @@
-<app-issue-bar
-  [tab]="screen.tab()"
-  [counts]="screen.counts()"
-  [labels]="screen.labels()"
-  [label]="screen.label()"
-  [query]="screen.query()"
-  (tabChange)="screen.setTab($event)"
-  (labelChange)="screen.label.set($event)"
-  (queryChange)="screen.query.set($event)"
-/>
+<app-issue-bar />
 <app-issue-list
   [report]="screen.report()"
   [tab]="screen.tab()"
@@ -15,5 +6,7 @@
   [pulls]="pulls()"
   [now]="screen.minute()"
   [message]="screen.message()"
+  [current]="screen.windowIssue()"
   (pull)="pull.emit($event)"
+  (open)="open.emit($event)"
 />

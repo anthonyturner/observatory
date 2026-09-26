@@ -120,6 +120,9 @@
   --issue-comet-edge: rgba(159, 232, 255, 0.4);
   --issue-chip: rgba(142, 162, 255, 0.1);
   --issue-option: #0b1226;
+  --issue-label-ring: rgba(234, 240, 255, 0.4);
+  /* The issue window's bar, pinned over it on a phone. */
+  --issue-bar-wash: rgb(6, 10, 22);
 
   /* pr-starmap's memory: the changes panel and the timeline. */
   --changes-glass: linear-gradient(165deg, rgba(18, 26, 52, 0.88), rgba(7, 11, 24, 0.93));

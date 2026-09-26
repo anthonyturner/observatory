@@ -282,6 +282,7 @@ function drawOverlay(f: SkyFrame): void {
   drawGrid(f);
   const { ctx } = f;
   for (const layer of f.layers) layer.beneath?.(ctx, f);
+  for (const layer of f.layers) layer.flat?.(ctx, f);
   if (f.chart === 'prs') {
     for (const s of f.stars) {
       const grow = f.born(s);

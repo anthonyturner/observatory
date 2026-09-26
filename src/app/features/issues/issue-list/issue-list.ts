@@ -1,15 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { IssuesReport } from '../../../core/issues/issues-report';
-import { IssueNarrowing, IssueTab, OpenPull, issueSection } from '../issue-list';
+import { IssueMeta } from '../issue-meta/issue-meta';
+import { IssueNarrowing, IssueTab, OpenPull, issueSection, isPlainClick } from '../issue-list';
 import { IssuesMessage } from '../issues-screen';
 
 /**
  * pr-starmap's issue list: one section for the tab, a row per issue with its
- * labels, assignees and pull-request chips. An open pull request's chip asks
- * for its screen; any other chip, and the title, are links to GitHub.
+ * labels, assignees and pull-request chips. A title reads the issue here and
+ * stays a link, so Ctrl-click still reaches GitHub.
  */
 @Component({
   selector: 'app-issue-list',
+  imports: [IssueMeta],
   templateUrl: './issue-list.html',
   styleUrls: ['../../starmap/starmap-pr-list/starmap-pr-list.css', './issue-list.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,8 +25,12 @@ export class IssueList {
   readonly now = input.required<number>();
   /** What to say while there is no report. */
   readonly message = input<IssuesMessage | null>(null);
+  /** The issue open in the issue window, whose row reads as current. */
+  readonly current = input<number | null>(null);
   /** Asks for an open pull request's screen. */
   readonly pull = output<number>();
+  /** Asks to read an issue in the issue window. */
+  readonly open = output<number>();
 
   protected readonly section = computed(() => {
     const report = this.report();
@@ -38,4 +44,11 @@ export class IssueList {
         })
       : null;
   });
+
+  /** A plain left click stays on the page; any other opens the link as usual. */
+  protected onTitle(event: MouseEvent, number: number): void {
+    if (!isPlainClick(event)) return;
+    event.preventDefault();
+    this.open.emit(number);
+  }
 }

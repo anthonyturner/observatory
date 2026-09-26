@@ -17,6 +17,14 @@
     }
   </dl>
   <div class="cardacts">
+    <button
+      type="button"
+      class="primary"
+      [attr.data-openissue]="comet().issue"
+      (click)="open.emit(comet().issue)"
+    >
+      Open
+    </button>
     <a [href]="comet().url" target="_blank" rel="noopener">GitHub ↗</a>
   </div>
 </div>

@@ -74,6 +74,8 @@ export class SkyEngine {
   fog = 0;
   layers: SkyLayer[] = [];
   hidden = false;
+  /** Whether Fit frames only the stars the filter passes, or every star. */
+  fitsFiltered = true;
 
   constructor(private readonly host: SkyHost) {
     const ctx = host.canvas.getContext('2d');
@@ -166,7 +168,7 @@ export class SkyEngine {
   /** Frames every shown star between the chrome. */
   fit(): void {
     const { target } = this.camera;
-    const shown = this.filter ? this.stars.filter(this.passes) : this.stars;
+    const shown = this.filter && this.fitsFiltered ? this.stars.filter(this.passes) : this.stars;
     if (!shown.length) {
       target.x = WORLD.w / 2;
       target.y = WORLD.h / 2;
@@ -388,6 +390,7 @@ export class SkyEngine {
     const t = frozen ? STILL_T : this.clock;
 
     this.camera.chase(dt, this.dragging);
+    for (const layer of this.layers) layer.move?.(t, frozen);
     for (const s of this.stars) this.drift(s, t, wall, frozen);
 
     const ctx = this.ctx;

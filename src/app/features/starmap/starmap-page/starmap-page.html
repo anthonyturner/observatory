@@ -1,6 +1,6 @@
 <app-starmap-sky
   #sky
-  [chart]="chart() === 'logs' ? 'logs' : 'prs'"
+  [chart]="skyChart()"
   [items]="skyItems()"
   [logLayout]="logs.layout()"
   [filter]="chart() === 'logs' ? logs.filter() : filter()"
@@ -11,7 +11,7 @@
   [showCollisions]="showCollisions()"
   [news]="skyNews()"
   [fog]="chart() === 'logs' ? logs.fog() : fog()"
-  [hidden]="(chart() !== 'prs' && chart() !== 'logs') || view() !== 'map'"
+  [hidden]="view() !== 'map'"
   [insets]="insets()"
   [plan]="planMarks()"
   [planOn]="planOn()"
@@ -22,6 +22,10 @@
   (picked)="pick($event)"
   (pickedComet)="pickComet($event)"
   (pickedLog)="pickLog($event)"
+  [nursery]="nurseryInput()"
+  [issueNarrowing]="issues.narrowing()"
+  [selectedIssue]="issues.picked()?.issue?.number ?? null"
+  (pickedIssue)="pickIssue($event)"
 />
 
 @if (view() === 'list' && chart() === 'logs') {
@@ -34,7 +38,11 @@
           <app-starmap-pr-list [items]="skyItems()" [filter]="filter()" (go)="goTo($event)" />
         }
         @case ('issues') {
-          <app-issues-panel [pulls]="openPulls()" (pull)="openSheet($event)" />
+          <app-issues-panel
+            [pulls]="openPulls()"
+            (pull)="openSheet($event)"
+            (open)="openIssue($event)"
+          />
         }
         @case ('usage') {
           <app-starmap-usage [repo]="repo()" />
@@ -63,6 +71,9 @@
     [filter]="chart() === 'logs' ? logs.filter() : legendFilter()"
     (toggled)="toggleFilter($event)"
   />
+  @if (docked()) {
+    <div class="issuedock"><app-issue-bar /></div>
+  }
 </div>
 
 <div class="hud bottom" [attr.data-folded]="folded() ? '' : null">
@@ -133,11 +144,35 @@
     (open)="openSheet($event)"
     (snooze)="recordTriage($event, { action: 'snooze', days: SNOOZE_DAYS })"
     (dismiss)="recordTriage($event, { action: 'dismiss' })"
+    (issue)="openIssue($event)"
   />
 }
 
 @if (chart() === 'prs' && selectedComet(); as comet) {
-  <app-comet-card [comet]="comet" (closed)="selectedComet.set(null)" />
+  <app-comet-card [comet]="comet" (closed)="selectedComet.set(null)" (open)="openIssue($event)" />
+}
+
+@if (chart() === 'issues' && issues.picked(); as star) {
+  <app-issue-card
+    [star]="star"
+    [pulls]="openPulls()"
+    [now]="issues.minute()"
+    (closed)="issues.picked.set(null)"
+    (open)="openIssue($event)"
+    (pull)="openSheet($event)"
+  />
+}
+
+@if (issues.windowIssue(); as number) {
+  <app-issue-window
+    [repo]="repo()"
+    [number]="number"
+    [seed]="issues.windowSeed()"
+    [pulls]="openPulls()"
+    [now]="issues.minute()"
+    (closed)="issues.windowIssue.set(null)"
+    (pull)="openSheet($event)"
+  />
 }
 
 @if (chart() === 'logs' && logs.selected(); as star) {

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
 import { Draggable } from '../../../shared/draggable/draggable';
+import { isPlainClick } from '../../issues/issue-list';
 import { BY_ID } from '../engine/sky-model';
 import { CardContext, cardFacts } from './card-facts';
 
@@ -28,6 +29,8 @@ export class StarCard {
   readonly open = output<number>();
   readonly snooze = output<number>();
   readonly dismiss = output<number>();
+  /** Asks to read the issue it closes in the issue window. */
+  readonly issue = output<number>();
 
   protected readonly placeKey = CARD_PLACE_KEY;
   protected readonly bucket = computed(() => BY_ID.get(shownBucket(this.item())));
@@ -38,4 +41,12 @@ export class StarCard {
     const first = item.closes[0];
     return first === undefined ? null : item.url.replace(/\/pull\/\d+$/, `/issues/${first}`);
   });
+
+  /** A plain click reads the issue here; any other follows the link to GitHub. */
+  protected onIssue(event: MouseEvent): void {
+    const first = this.item().closes[0];
+    if (first === undefined || !isPlainClick(event)) return;
+    event.preventDefault();
+    this.issue.emit(first);
+  }
 }

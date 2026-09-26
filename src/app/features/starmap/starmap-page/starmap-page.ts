@@ -25,9 +25,14 @@ import { Clock } from '../../../core/time/clock';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
+import { IssueBar } from '../../issues/issue-bar/issue-bar';
+import { IssueCard } from '../../issues/issue-card/issue-card';
+import { IssueStar } from '../../issues/issue-look';
 import { openPullsOf } from '../../issues/issue-list';
+import { IssueWindow } from '../../issues/issue-window/issue-window';
 import { IssuesPanel } from '../../issues/issues-panel/issues-panel';
 import { IssuesScreen } from '../../issues/issues-screen';
+import { nurseryInputOf } from '../nursery/nursery-layout';
 import { ChangesPanel } from '../memory/changes-panel/changes-panel';
 import { MemoryView } from '../memory/memory-view';
 import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
@@ -54,7 +59,7 @@ import { PrScreen } from '../pr-screen/pr-screen';
 import { skyItemOf, skyPairOf } from '../sky-items';
 import { StarmapHeader } from '../starmap-header/starmap-header';
 import { StarmapPrList } from '../starmap-pr-list/starmap-pr-list';
-import { SkyInsets, StarmapSky } from '../starmap-sky/starmap-sky';
+import { SkyChart, SkyInsets, StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapTools } from '../starmap-tools/starmap-tools';
 import { StarmapUsage } from '../starmap-usage/starmap-usage';
 import { usageStamp } from '../starmap-usage/usage-text';
@@ -72,6 +77,8 @@ import {
 
 /** The chrome Fit keeps the sky clear of, as pr-starmap measures it. */
 const TOP_INSET = 140;
+/** With the issue bar docked under the title, over the nursery. */
+const TOP_INSET_WITH_DOCK = 205;
 const BOTTOM_INSET = 70;
 /** With a chart along the bottom, as the Log Sky's meteor record. */
 const BOTTOM_INSET_WITH_STRIP = 200;
@@ -119,6 +126,9 @@ export interface SkyState {
     StarmapTools,
     StarmapPrList,
     IssuesPanel,
+    IssueBar,
+    IssueCard,
+    IssueWindow,
     ChangesPanel,
     Timeline,
     StarmapUsage,
@@ -178,11 +188,19 @@ export class StarmapPage {
   );
   private readonly fragment = toSignal(this.route.fragment, { initialValue: null });
   protected readonly chart = computed<Chart>(() => chartOf(this.fragment()));
-  /** The pull-request and log skies share one view; issues are a list for now. */
+  /** The pull-request and log skies share one view; Issues keeps its own. */
   private readonly skyView = signal<SkyView>('map');
-  protected readonly view = computed<SkyView>(() =>
-    isListOnly(this.chart()) || this.chart() === 'issues' ? 'list' : this.skyView(),
-  );
+  protected readonly view = computed<SkyView>(() => {
+    const chart = this.chart();
+    if (chart === 'issues') return this.issues.view();
+    return isListOnly(chart) ? 'list' : this.skyView();
+  });
+  protected readonly skyChart = computed((): SkyChart => {
+    const chart = this.chart();
+    return chart === 'logs' || chart === 'issues' ? chart : 'prs';
+  });
+  /** The issue bar docks above the nursery. */
+  protected readonly docked = computed(() => this.chart() === 'issues' && this.view() === 'map');
   protected readonly filter = signal<string | null>(null);
   protected readonly showCollisions = signal(true);
   /** Whether the merge plan is drawn and listed. */
@@ -252,6 +270,13 @@ export class StarmapPage {
   );
   /** The open pull requests the queue knows, for the issues' chips. */
   protected readonly openPulls = computed(() => openPullsOf(this.report()?.items ?? []));
+  /** The Issues tab as the nursery lays it out. */
+  protected readonly nurseryInput = computed(() => {
+    const report = this.issues.report();
+    if (this.chart() !== 'issues' || !report) return null;
+    const open = new Set(this.openPulls().keys());
+    return nurseryInputOf(report, this.issues.tab(), open, untracked(this.now).getTime());
+  });
   private readonly usageDocument = computed(() => {
     const state = this.usage.state();
     return state.status === 'ready' ? state.document : null;
@@ -274,6 +299,7 @@ export class StarmapPage {
   });
   /** How old the sky is, as fog: by the data's age, or at once when refreshes fail. */
   protected readonly fog = computed(() => {
+    if (this.chart() === 'issues') return this.issues.fog();
     const report = this.report();
     if (!report || this.memory.replay()) return 0;
     const now = this.now();
@@ -302,6 +328,7 @@ export class StarmapPage {
   protected readonly skyState = computed((): SkyState | null => {
     const chart = this.chart();
     if (chart === 'logs') return this.view() === 'map' ? this.logs.message() : null;
+    if (chart === 'issues') return this.view() === 'map' ? this.issues.skyMessage() : null;
     if (chart !== 'prs' || this.view() === 'list') return null;
     const { status } = this.state();
     if (status === 'reading') return { headline: 'Reading the sky…' };
@@ -416,7 +443,7 @@ export class StarmapPage {
   protected readonly insets = computed((): SkyInsets => {
     const wide = (this.window?.innerWidth ?? 0) > SIDE_PANEL_MIN_WIDTH;
     return {
-      top: TOP_INSET,
+      top: this.docked() ? TOP_INSET_WITH_DOCK : TOP_INSET,
       bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
       side: !wide
         ? 0
@@ -500,7 +527,7 @@ export class StarmapPage {
     this.openPull.set(null);
     this.logs.clear();
     this.logs.filter.set(null);
-    this.issues.clearFilter();
+    this.issues.leave();
     this.navigateTo(chart === 'issues' ? this.issues.fragment() : fragmentOf(chart));
   }
 
@@ -510,7 +537,16 @@ export class StarmapPage {
   }
 
   protected setView(view: SkyView): void {
-    this.skyView.set(view);
+    if (this.chart() !== 'issues') return this.skyView.set(view);
+    this.issues.setView(view);
+    // The nursery is laid out from the data the list was showing; it arrives now.
+    if (view === 'map') this.sky()?.arriveNursery();
+  }
+
+  /** Reads an issue in the issue window; one window, this or a PR screen, at a time. */
+  protected openIssue(number: number): void {
+    this.sheetPull.set(null);
+    this.issues.windowIssue.set(number);
   }
 
   /** A legend chip narrows the sky to itself; pressing it again shows everything. */
@@ -551,6 +587,12 @@ export class StarmapPage {
   protected pickLog(star: LogStar | null): void {
     this.logs.pick(star);
     if (star) this.sound.ping(star.urgent);
+  }
+
+  /** A click on the nursery: an issue's body opens its card, as a star does. */
+  protected pickIssue(star: IssueStar | null): void {
+    this.issues.picked.set(star);
+    if (star) this.sound.ping(false);
   }
 
   protected pickComet(comet: Comet): void {
@@ -650,13 +692,16 @@ export class StarmapPage {
   /** Esc closes the full screen first, then the card, as on pr-starmap. */
   protected closeTopmost(): void {
     if (this.sheetPull() !== null) this.sheetPull.set(null);
+    else if (this.issues.windowIssue() !== null) this.issues.windowIssue.set(null);
     else if (this.selectedComet()) this.selectedComet.set(null);
+    else if (this.chart() === 'issues') this.issues.picked.set(null);
     else if (this.chart() === 'logs') this.logs.closeCard();
     else this.openPull.set(null);
   }
 
   /** Opens a pull request's full screen, from its card or another screen. */
   openSheet(number: number): void {
+    this.issues.windowIssue.set(null);
     this.sheetPull.set(number);
   }
 

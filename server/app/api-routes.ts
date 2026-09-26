@@ -1,6 +1,7 @@
 import { editRequestFrom, editTargetFrom } from '../edits/edit-request.ts';
 import type { PullEditor } from '../edits/pull-editor.ts';
 import type { RouteTable } from '../http/api-handler.ts';
+import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { triageRequestFrom } from '../triage/triage.ts';
@@ -27,6 +28,12 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/ledger': (query) => reads.ledger(repoOf(query)),
       '/api/issues': (query) => reads.issues(repoOf(query)),
+      '/api/issue': (query) => {
+        const [repo, number] = [repoOf(query), issueNumberFrom(query.get('number'))];
+        // Refresh in the issue window asks for it anew rather than a minute-old copy.
+        if (query.get('fresh') === '1') reads.forgetIssue(repo, number);
+        return reads.issue(repo, number);
+      },
       '/api/logs': (query) => reads.logs(repoOf(query)),
       '/api/pull': (query) => {
         const [repo, number] = [repoOf(query), numberOf(query)];

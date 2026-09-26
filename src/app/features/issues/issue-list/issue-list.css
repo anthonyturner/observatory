@@ -3,6 +3,10 @@ li.issue {
   cursor: default;
 }
 
+li.issue[aria-current='true'] {
+  background: var(--queue-row-hover);
+}
+
 .t a {
   color: inherit;
   text-decoration: none;
@@ -27,84 +31,6 @@ li.issue {
   align-items: center;
   gap: 6px 8px;
   padding-left: 70px;
-}
-
-.imeta:empty {
-  display: none;
-}
-
-.ilabel,
-.iwho,
-.comet-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 1px 8px;
-  border: 1px solid var(--edge-soft);
-  border-radius: 999px;
-  font-size: 11px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.ilabel i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--c);
-}
-
-.iwho {
-  border-color: transparent;
-  padding-inline: 2px;
-  font-family: var(--font-mono);
-  color: var(--faint);
-}
-
-.comet-mark {
-  border-color: var(--issue-comet-edge);
-  color: var(--count-unclaimed);
-}
-
-.prchip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 9px;
-  border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--issue-chip);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    background 0.2s;
-}
-
-.prchip:hover {
-  border-color: var(--c, var(--flow));
-  background: var(--starmap-press);
-}
-
-.prchip:focus-visible {
-  outline: 2px solid var(--flow);
-  outline-offset: 2px;
-}
-
-.prchip i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--c, var(--flow));
-  box-shadow: 0 0 8px var(--c, var(--flow));
-}
-
-a.prchip {
-  background: transparent;
-  color: var(--muted);
 }
 
 .inone {

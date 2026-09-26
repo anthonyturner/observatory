@@ -22,6 +22,7 @@ import { QueueFeed } from '../../../core/queue/queue-feed';
 import { queueFog } from '../../../core/queue/queue-fog';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { Clock } from '../../../core/time/clock';
+import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { IssuesTab } from '../../issues/issues-tab/issues-tab';
@@ -33,6 +34,8 @@ import { StarmapHeader } from '../starmap-header/starmap-header';
 import { StarmapPrList } from '../starmap-pr-list/starmap-pr-list';
 import { SkyInsets, StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapTools } from '../starmap-tools/starmap-tools';
+import { StarmapUsage } from '../starmap-usage/starmap-usage';
+import { usageStamp } from '../starmap-usage/usage-text';
 import {
   Chart,
   SkyView,
@@ -69,12 +72,13 @@ export interface SkyState {
     StarmapTools,
     StarmapPrList,
     IssuesTab,
+    StarmapUsage,
     ChangesCard,
     PullPanel,
     HelpCard,
   ],
   hostDirectives: [HelpShortcuts],
-  providers: [QueueFeed, HistoryFeed, CollisionsFeed],
+  providers: [QueueFeed, HistoryFeed, CollisionsFeed, UsageWatch],
   templateUrl: './starmap-page.html',
   styleUrl: './starmap-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -83,6 +87,7 @@ export class StarmapPage {
   private readonly feed = inject(QueueFeed);
   private readonly history = inject(HistoryFeed);
   private readonly collisions = inject(CollisionsFeed);
+  protected readonly usage = inject(UsageWatch);
   private readonly lastSeenStore = inject(LastSeen);
   private readonly triage = inject(TriageClient);
   private readonly router = inject(Router);
@@ -130,8 +135,13 @@ export class StarmapPage {
   protected readonly chips = computed(() =>
     this.chart() === 'prs' ? queueChips(this.skyItems()) : [],
   );
+  private readonly usageDocument = computed(() => {
+    const state = this.usage.state();
+    return state.status === 'ready' ? state.document : null;
+  });
   protected readonly stamp = computed(() => {
     const report = this.report();
+    if (this.chart() === 'usage') return usageStamp(this.usageDocument());
     if (this.chart() !== 'prs') return '';
     return queueStamp(
       report?.repo ?? this.repo(),
@@ -147,6 +157,7 @@ export class StarmapPage {
     return Math.max(fogLevel(report.generatedAt, now), queueFog(this.state(), now.getTime()));
   });
   protected readonly stale = computed(() => {
+    if (this.chart() === 'usage') return this.usageFog();
     const state = this.state();
     const report = this.report();
     if (!report) return null;
@@ -154,6 +165,14 @@ export class StarmapPage {
     const now = this.now();
     return fogLevel(report.generatedAt, now) > 0
       ? `fogged · ${ageWords(report.generatedAt, now)} old`
+      : null;
+  });
+  /** Usage fogs by its own age, as the queue does by the queue's. */
+  private readonly usageFog = computed(() => {
+    const generatedAt = this.usageDocument()?.generatedAt;
+    const now = this.now();
+    return generatedAt && fogLevel(generatedAt, now) > 0
+      ? `fogged · ${ageWords(generatedAt, now)} old`
       : null;
   });
   protected readonly skyState = computed((): SkyState | null => {
@@ -164,7 +183,6 @@ export class StarmapPage {
         detail: 'Record a log folder with server/logs/set-dir.ts, then press Refresh.',
       };
     }
-    if (chart === 'usage') return { headline: 'No usage read yet.' };
     if (chart !== 'prs' || this.view() === 'list') return null;
     const { status } = this.state();
     if (status === 'reading') return { headline: 'Reading the sky…' };
@@ -263,6 +281,10 @@ export class StarmapPage {
   }
 
   protected refresh(): void {
+    if (this.chart() === 'usage') {
+      this.usage.refresh();
+      return;
+    }
     this.refreshing.set(true);
     this.feed.refresh(this.repo());
   }

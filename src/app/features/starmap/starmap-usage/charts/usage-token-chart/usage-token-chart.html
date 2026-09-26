@@ -1,0 +1,43 @@
+@let c = chart();
+<svg
+  [attr.width]="c.width"
+  [attr.height]="c.height"
+  [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height"
+  role="img"
+  aria-label="Tokens per day by model family"
+>
+  @for (line of c.grid; track $index) {
+    <line
+      class="grid"
+      [attr.x1]="line.x1"
+      [attr.x2]="line.x2"
+      [attr.y1]="line.y1"
+      [attr.y2]="line.y2"
+    />
+  }
+  @for (text of c.axis; track $index) {
+    <text class="axis" [attr.x]="text.x" [attr.y]="text.y" [attr.text-anchor]="text.anchor">
+      {{ text.text }}
+    </text>
+  }
+  @for (segment of c.segments; track $index) {
+    <rect
+      [attr.x]="segment.x"
+      [attr.y]="segment.y"
+      [attr.width]="segment.width"
+      [attr.height]="segment.height"
+      rx="1.5"
+      [style.fill]="segment.colour"
+    />
+  }
+  @for (hit of c.hits; track $index) {
+    <rect
+      class="hit"
+      [attr.x]="hit.x"
+      [attr.y]="hit.y"
+      [attr.width]="hit.width"
+      [attr.height]="hit.height"
+      [attr.data-tip]="hit.tip"
+    />
+  }
+</svg>

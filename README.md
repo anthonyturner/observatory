@@ -8,8 +8,9 @@ Observatory is a rebuild of [pr-starmap](https://github.com/anthonyturner/pr-sta
 whose pages grew into single HTML files thousands of lines long. It is being
 migrated one small piece at a time into typed, tested Angular components.
 
-> **Status:** early. The app shell is in place; Home's widgets are being
-> migrated next, starting with their look and sample data.
+> **Status:** Home is built. Its project cards, usage meters, directives and top
+> bar show live data from GitHub and Claude Code; the assistant panel and the
+> skills are there to look at but not connected yet. The Orrery is next.
 
 ## Stack
 

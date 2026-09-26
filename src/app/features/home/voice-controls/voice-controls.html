@@ -1,0 +1,49 @@
+<div class="head">
+  <app-hud-section class="title" heading="Voice" note="tap to talk" [level]="3" />
+  <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+<div class="level" aria-hidden="true">
+  @for (weight of dashWeights; track $index) {
+    <i [style.--k]="weight"></i>
+  }
+</div>
+
+<div class="row">
+  <button
+    type="button"
+    class="mic"
+    aria-pressed="false"
+    aria-keyshortcuts="M"
+    aria-label="Tap to talk: press once to start and again to stop, or hold and let go to send"
+    title="Tap to talk: press once to start and again to stop, or hold it or M and let go to send"
+  >
+    Tap to talk
+  </button>
+  <button
+    type="button"
+    class="speak"
+    aria-pressed="false"
+    title="Read replies aloud, in this browser"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+      <path d="M16 9.5l5 5M21 9.5l-5 5" />
+    </svg>
+    Speak off
+  </button>
+</div>
+
+<p class="caption">Whisper hears · Kokoro speaks · both local</p>
+<p class="hint">
+  <span class="wide">Tap to talk, then tap again to send, or hold M and let go. Esc cancels.</span>
+  <span class="touch">Tap to talk, then tap again to send, or hold it and let go.</span>
+</p>

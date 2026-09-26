@@ -24,7 +24,6 @@ import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UsageWatch } from '../../../core/usage/usage-watch';
-import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { openPullsOf } from '../../issues/issue-list';
 import { IssuesPanel } from '../../issues/issues-panel/issues-panel';
@@ -48,7 +47,8 @@ import { LogCard } from '../../logs/log-card/log-card';
 import { LogList } from '../../logs/log-list/log-list';
 import { MeteorRecord } from '../../logs/meteor-record/meteor-record';
 import { LogSkyView } from '../log-sky-view';
-import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../../queue/queue-help';
+import { StarmapHelp } from '../starmap-help/starmap-help';
+import { HelpKey } from '../starmap-help/help-content';
 import { PrScreen } from '../pr-screen/pr-screen';
 import { skyItemOf, skyPairOf } from '../sky-items';
 import { StarmapHeader } from '../starmap-header/starmap-header';
@@ -125,7 +125,7 @@ export interface SkyState {
     LogCard,
     LogList,
     MeteorRecord,
-    HelpCard,
+    StarmapHelp,
   ],
   hostDirectives: [HelpShortcuts],
   host: {
@@ -194,8 +194,10 @@ export class StarmapPage {
   readonly sheetPull = signal<number | null>(null);
   protected readonly SNOOZE_DAYS = SNOOZE_DAYS;
   protected readonly sky = viewChild<StarmapSky>('sky');
-  protected readonly helpEntries = QUEUE_HELP_ENTRIES;
-  protected readonly helpKeys = QUEUE_HELP_KEYS;
+  /** The help that fits the screen and view on show, as pr-starmap keys it. */
+  protected readonly helpScreen = computed((): HelpKey =>
+    isListOnly(this.chart()) ? 'usage-list' : (`${this.chart()}-${this.view()}` as HelpKey),
+  );
 
   protected readonly state = this.feed.state;
   private readonly report = computed(() => {

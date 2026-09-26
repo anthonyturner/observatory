@@ -122,7 +122,7 @@
   />
 }
 
-<app-help-card title="Review queue" [entries]="helpEntries" [keys]="helpKeys" />
+<app-starmap-help [screen]="helpScreen()" />
 
 @if (chart() === 'prs' && openItem(); as item) {
   <app-star-card

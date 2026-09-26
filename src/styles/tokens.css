@@ -42,6 +42,8 @@
   /* The mood blends toward these: warm as projects strain, grey while unknown. */
   --core-uneasy: #ffb35c;
   --core-unknown: #8d9bc4;
+  /* A neglected project's bead: a grey ring, apart from the blocked one's colour. */
+  --core-stale: var(--muted);
   --core-floor: #46ff86;
   /* Paler than the ball, so the orbit and the tier arcs read over it. */
   --core-ring: #b4ffd0;

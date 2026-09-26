@@ -14,17 +14,21 @@ export interface Comet {
 export const COMET_CAP = 40;
 export const COMET_COLOUR = '#9fe8ff';
 
+const DAY_MS = 86_400_000;
+const daysSince = (iso: string, now: number): number =>
+  Math.floor((now - Date.parse(iso)) / DAY_MS);
+
 /** The report's unclaimed issues as comets, idlest first, as pr-starmap lists them. */
-export function cometsOf(report: IssuesReport | null): Comet[] {
-  return (report?.items ?? [])
-    .filter((item) => item.pulls.length === 0)
-    .map((item) => ({
-      issue: item.number,
-      title: item.title,
-      url: item.url,
-      labels: item.labels,
-      ageDays: item.ageDays,
-      idleDays: item.idleDays,
+export function cometsOf(report: IssuesReport | null, now: number): Comet[] {
+  return (report?.open ?? [])
+    .filter((issue) => issue.comet)
+    .map((issue) => ({
+      issue: issue.number,
+      title: issue.title,
+      url: issue.url,
+      labels: issue.labels.map((label) => label.name),
+      ageDays: daysSince(issue.createdAt, now),
+      idleDays: daysSince(issue.updatedAt, now),
     }))
     .sort((a, b) => b.idleDays - a.idleDays || a.issue - b.issue);
 }

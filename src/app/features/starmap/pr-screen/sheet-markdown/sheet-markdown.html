@@ -1,0 +1,49 @@
+@if (blocks().length) {
+  <div class="md">
+    @for (block of blocks(); track $index) {
+      @switch (block.kind) {
+        @case ('h3') {
+          <h3><app-md-spans [spans]="block.spans" /></h3>
+        }
+        @case ('h4') {
+          <h4><app-md-spans [spans]="block.spans" /></h4>
+        }
+        @case ('p') {
+          <p><app-md-spans [spans]="block.spans" /></p>
+        }
+        @case ('ul') {
+          <ul>
+            @for (item of block.items; track $index) {
+              <li><app-md-spans [spans]="item" /></li>
+            }
+          </ul>
+        }
+        @case ('pre') {
+          <pre><code>{{ block.code }}</code></pre>
+        }
+        @case ('table') {
+          <table>
+            <thead>
+              <tr>
+                @for (cell of block.head; track $index) {
+                  <th><app-md-spans [spans]="cell" /></th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of block.rows; track $index) {
+                <tr>
+                  @for (cell of row; track $index) {
+                    <td><app-md-spans [spans]="cell" /></td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    }
+  </div>
+} @else {
+  <p class="note">No description.</p>
+}

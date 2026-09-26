@@ -1,0 +1,72 @@
+.note {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.note.warn {
+  color: var(--warm);
+}
+
+.dfile {
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.dfile > button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  background: var(--sheet-file-wash);
+  color: var(--starmap-row-title);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dfile > button:hover {
+  background: var(--flow-soft);
+}
+
+.p {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  margin: 0;
+  padding: 8px 0;
+  overflow-x: auto;
+  background: var(--sheet-diff-well);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+pre span {
+  display: block;
+  padding: 0 14px;
+  white-space: pre;
+}
+
+.a {
+  background: var(--sheet-add-wash);
+  color: var(--sheet-add-ink);
+}
+
+.d {
+  background: var(--sheet-del-wash);
+  color: var(--sheet-del-ink);
+}
+
+.h {
+  color: var(--sheet-hunk-ink);
+  background: var(--sheet-hunk-wash);
+}

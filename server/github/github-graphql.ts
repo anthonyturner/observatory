@@ -21,7 +21,18 @@ interface GraphQlReply {
   readonly message?: string;
 }
 
-const clip = (text: string): string => text.slice(0, MAX_ERROR_LENGTH);
+export const clip = (text: string): string => text.slice(0, MAX_ERROR_LENGTH);
+
+/** What every request to GitHub's API carries: the token, and what it answers in. */
+export function githubHeaders(token: string, accept = 'application/vnd.github+json'): Headers {
+  return new Headers({
+    authorization: `Bearer ${token}`,
+    accept,
+    'content-type': 'application/json',
+    'x-github-api-version': API_VERSION,
+    'user-agent': USER_AGENT,
+  });
+}
 
 function replyOf(text: string): GraphQlReply {
   try {
@@ -40,13 +51,7 @@ export function githubGraphQl(config: GraphQlConfig): GraphQl {
   return async (query, variables = {}) => {
     const response = await send(ENDPOINT, {
       method: 'POST',
-      headers: {
-        authorization: `Bearer ${token}`,
-        accept: 'application/vnd.github+json',
-        'content-type': 'application/json',
-        'x-github-api-version': API_VERSION,
-        'user-agent': USER_AGENT,
-      },
+      headers: githubHeaders(token),
       body: JSON.stringify({ query, variables }),
     });
     const reply = replyOf(await response.text());

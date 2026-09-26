@@ -83,6 +83,35 @@ const LABELS = connection('labels', 100, 'id name description color');
 const labelsOf = (value: unknown): Node[] =>
   nodesOf(value).map((label) => ({ ...label, description: orEmpty(label['description']) }));
 
+const ASSIGNEES: Field = {
+  select: 'assignees(first: 100) { nodes { id login name databaseId } }',
+  shape: (value) => nodesOf(value).map((person) => ({ ...person, name: orEmpty(person['name']) })),
+};
+
+/** A commit's authors as `gh` gives them, with an empty login for one GitHub does not know. */
+function commitOf(node: Node): Node {
+  const commit = asNode(node['commit']);
+  return {
+    authoredDate: commit['authoredDate'],
+    authors: nodesOf(commit['authors']).map((author) => {
+      const user = asNode(author['user']);
+      return {
+        email: orEmpty(author['email']),
+        id: orEmpty(user['id']),
+        login: orEmpty(user['login']),
+        name: orEmpty(author['name']),
+      };
+    }),
+    committedDate: commit['committedDate'],
+    messageBody: commit['messageBody'],
+    messageHeadline: commit['messageHeadline'],
+    oid: commit['oid'],
+  };
+}
+
+/** A pull request or issue GitHub links to, with its repository, as `gh` lists it. */
+const LINKED = 'id number url repository { id name owner { id login } }';
+
 const scalars = (names: readonly string[]): Record<string, Field> =>
   Object.fromEntries(names.map((name) => [name, { select: name, shape: asIs }]));
 
@@ -97,6 +126,7 @@ export const PULL_GRAPHQL: Readonly<Record<string, Field>> = {
     'mergeable',
     'headRefName',
     'baseRefName',
+    'headRefOid',
     'additions',
     'deletions',
     'changedFiles',
@@ -108,11 +138,7 @@ export const PULL_GRAPHQL: Readonly<Record<string, Field>> = {
   reviewDecision: { select: 'reviewDecision', shape: orEmpty },
   author: { select: `author ${ACTOR}`, shape: actorOf },
   labels: { ...LABELS, shape: labelsOf },
-  closingIssuesReferences: connection(
-    'closingIssuesReferences',
-    100,
-    'id number url repository { id name owner { id login } }',
-  ),
+  closingIssuesReferences: connection('closingIssuesReferences', 100, LINKED),
   statusCheckRollup: {
     select: `commits(last: 1) { nodes { commit { statusCheckRollup {
       contexts(first: 100) { nodes { ${CHECKS} } } } } } }`,
@@ -132,16 +158,22 @@ export const PULL_GRAPHQL: Readonly<Record<string, Field>> = {
     shape: nodesOf,
   },
   files: connection('files', 100, 'path additions deletions changeType'),
+  assignees: ASSIGNEES,
+  // The latest hundred, oldest first, as `gh` lists a pull request of up to that many.
+  commits: {
+    select: `commits(last: 100) { nodes { commit { oid messageHeadline messageBody committedDate
+      authoredDate authors(first: 100) { nodes { email name user { id login } } } } } }`,
+    shape: (value) => nodesOf(value).map(commitOf),
+  },
 };
 
 export const ISSUE_GRAPHQL: Readonly<Record<string, Field>> = {
-  ...scalars(['number', 'title', 'url', 'createdAt', 'updatedAt']),
+  ...scalars(['number', 'title', 'url', 'createdAt', 'updatedAt', 'closedAt']),
+  stateReason: { select: 'stateReason', shape: orEmpty },
+  author: { select: `author ${ACTOR}`, shape: actorOf },
+  closedByPullRequestsReferences: connection('closedByPullRequestsReferences', 100, LINKED),
   labels: { ...LABELS, shape: labelsOf },
-  assignees: {
-    select: 'assignees(first: 100) { nodes { id login name databaseId } }',
-    shape: (value) =>
-      nodesOf(value).map((person) => ({ ...person, name: orEmpty(person['name']) })),
-  },
+  assignees: ASSIGNEES,
 };
 
 /** The GraphQL selection for `fields`, and a function that shapes one node like `gh`. */

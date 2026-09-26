@@ -48,7 +48,7 @@ const RECORDED: readonly [string, (reader: GitHub) => Promise<unknown>][] = [
   ['mergeable', (reader) => reader.mergeableOf(REPO, 16)],
   ['open-issues', (reader) => reader.openIssues(REPO)],
   ['open-issue-numbers', (reader) => reader.openIssueNumbers(REPO)],
-  ['closed-since', (reader) => reader.closedSinceCount(REPO, '2026-08-27')],
+  ['closed-issues', (reader) => reader.closedIssues(REPO, '2026-07-28')],
   ['viewer', (reader) => reader.viewer()],
 ];
 
@@ -63,14 +63,15 @@ describe('githubApiReader against recorded GitHub replies', () => {
     });
   }
 
-  it('asks for the right repository and search', async () => {
-    const { reader, sent } = replaying(recording('closed-since').replies);
+  it('searches for closed issues as gh issue list --search does', async () => {
+    const { reader, sent } = replaying(recording('closed-issues').replies);
 
-    await reader.closedSinceCount(REPO, '2026-08-27');
+    await reader.closedIssues(REPO, '2026-07-28');
 
-    assert.deepEqual(sent[0].variables, {
-      query: 'repo:anthonyturner/jobpilot is:issue is:closed closed:>=2026-08-27',
-    });
+    assert.equal(
+      sent[0].variables['query'],
+      '( closed:>=2026-07-28 ) repo:anthonyturner/jobpilot state:closed type:issue',
+    );
   });
 });
 
@@ -190,9 +191,20 @@ describe('githubApiReader where GitHub has no recording to replay', () => {
     await assert.rejects(reader.pullState(REPO, 404), /has no pull request 404/);
   });
 
-  it('counts closed issues no higher than gh lists', async () => {
-    const { reader } = replaying([{ data: { search: { issueCount: 5000 } } }]);
+  it('reads every page of closed issues', async () => {
+    const page = (numbers: number[], next: string | null) => ({
+      data: {
+        search: {
+          pageInfo: { hasNextPage: next !== null, endCursor: next },
+          nodes: numbers.map((number) => ({ number })),
+        },
+      },
+    });
+    const { reader, sent } = replaying([page([9], 'c1'), page([4], null)]);
 
-    assert.equal(await reader.closedSinceCount(REPO, '2026-01-01'), 1000);
+    const numbers = (await reader.closedIssues(REPO, '2026-07-28')).map((issue) => issue.number);
+
+    assert.deepEqual(numbers, [9, 4]);
+    assert.equal(sent[1].variables['after'], 'c1');
   });
 });

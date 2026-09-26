@@ -11,6 +11,8 @@ export type PostRoutes = Readonly<Record<string, PostHandler>>;
 export interface RouteTable {
   readonly get: Routes;
   readonly post: PostRoutes;
+  /** A larger body than MAX_BODY_BYTES, for the POST routes that need one. */
+  readonly bodyLimits?: Readonly<Record<string, number>>;
 }
 
 /** A standard web request in, a response out: the same under Node and in a Vercel function. */
@@ -94,6 +96,7 @@ export function createApiHandler(table: RouteTable): ApiHandler {
     if (!isJson(request)) {
       return json(HTTP_UNSUPPORTED_MEDIA, { error: 'body must be application/json' });
     }
-    return answer(async () => post(await readJson(request)));
+    const limit = table.bodyLimits?.[url.pathname] ?? MAX_BODY_BYTES;
+    return answer(async () => post(await readJson(request, limit)));
   };
 }

@@ -51,6 +51,22 @@ const github = {
   openIssueNumbers: async () => [1],
   pullState: async () => 'OPEN',
   pullFiles: async () => [],
+  pullDetail: async (repo: string, number: number) => ({
+    ...pull(number),
+    url: `https://github.com/${repo}/pull/${number}`,
+    body: '',
+    author: null,
+    baseRefName: 'main',
+    headRefOid: 'f'.repeat(40),
+    labels: [],
+    assignees: [],
+    reviewDecision: '',
+    reviewRequests: [],
+    latestReviews: [],
+    files: [],
+    commits: [],
+  }),
+  pullDiff: async () => 'diff --git a/x b/x\n+secret code',
 } as unknown as GitHub;
 
 function memoryStore(): Store & { readonly data: Map<string, unknown> } {
@@ -177,6 +193,21 @@ describe('hostedApi', () => {
     assert.equal(projects.projects.length, 2);
     assert.equal((await get(handle, '/api/queue?repo=me/secret')).status, 200);
     assert.equal((await triage(handle)).status, 403);
+  });
+
+  it('withholds a private repository’s code from a visitor, and only from a visitor', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+    const read = async (repo: string, cookie?: string) =>
+      (await (await get(handle, `/api/pull?repo=${repo}&number=7`, cookie)).json()) as {
+        diff: string;
+        diffHidden: boolean;
+      };
+
+    const secret = await read('me/secret');
+    assert.deepEqual([secret.diff, secret.diffHidden], ['', true]);
+    assert.equal((await read('me/app')).diffHidden, false);
+    assert.match((await read('me/app')).diff, /secret code/);
+    assert.match((await read('me/secret', ownerCookie)).diff, /secret code/);
   });
 
   it('sends a run-out session to sign in even with the preview on', async () => {

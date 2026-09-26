@@ -32,7 +32,7 @@
           <app-starmap-pr-list [items]="skyItems()" [filter]="filter()" (go)="goTo($event)" />
         }
         @case ('issues') {
-          <app-issues-tab [repo]="repo()" />
+          <app-issues-panel [pulls]="openPulls()" (pull)="openSheet($event)" />
         }
         @case ('usage') {
           <app-starmap-usage [repo]="repo()" />
@@ -58,7 +58,7 @@
     [stale]="chart() === 'logs' ? logs.stale() : stale()"
     [replaying]="chart() === 'prs' && !!memory.replay()"
     [chips]="chart() === 'logs' ? logs.chips() : chips()"
-    [filter]="chart() === 'logs' ? logs.filter() : filter()"
+    [filter]="chart() === 'logs' ? logs.filter() : legendFilter()"
     (toggled)="toggleFilter($event)"
   />
 </div>
@@ -134,14 +134,11 @@
 }
 
 @if (sheetPull(); as number) {
-  <app-pull-panel
+  <app-pr-screen
     [repo]="repo()"
     [number]="number"
-    [triage]="sheetTriage()"
-    [collisions]="sheetCollisions()"
-    [collisionCheck]="collisionCheck()"
-    (picked)="openSheet($event)"
-    (triaged)="recordTriage(number, $event)"
+    [bucket]="sheetBucket()"
+    [title]="sheetTitle()"
     (closed)="sheetPull.set(null)"
   />
 }

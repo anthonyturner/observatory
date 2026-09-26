@@ -27,8 +27,19 @@
                 "assignees": {
                   "nodes": []
                 },
+                "author": {
+                  "__typename": "User",
+                  "login": "anthonyturner",
+                  "id": "MDQ6VXNlcjUyMTAwNDE=",
+                  "name": "Anthony Turner"
+                },
                 "createdAt": "2026-09-26T09:47:53Z",
-                "updatedAt": "2026-09-26T09:47:53Z"
+                "updatedAt": "2026-09-26T09:47:53Z",
+                "closedAt": null,
+                "stateReason": null,
+                "closedByPullRequestsReferences": {
+                  "nodes": []
+                }
               },
               {
                 "number": 15,
@@ -47,8 +58,19 @@
                 "assignees": {
                   "nodes": []
                 },
+                "author": {
+                  "__typename": "User",
+                  "login": "anthonyturner",
+                  "id": "MDQ6VXNlcjUyMTAwNDE=",
+                  "name": "Anthony Turner"
+                },
                 "createdAt": "2026-09-26T08:52:58Z",
-                "updatedAt": "2026-09-26T09:07:51Z"
+                "updatedAt": "2026-09-26T09:07:51Z",
+                "closedAt": null,
+                "stateReason": null,
+                "closedByPullRequestsReferences": {
+                  "nodes": []
+                }
               },
               {
                 "number": 14,
@@ -67,8 +89,33 @@
                 "assignees": {
                   "nodes": []
                 },
+                "author": {
+                  "__typename": "User",
+                  "login": "anthonyturner",
+                  "id": "MDQ6VXNlcjUyMTAwNDE=",
+                  "name": "Anthony Turner"
+                },
                 "createdAt": "2026-09-25T09:55:38Z",
-                "updatedAt": "2026-09-26T08:59:02Z"
+                "updatedAt": "2026-09-26T08:59:02Z",
+                "closedAt": null,
+                "stateReason": null,
+                "closedByPullRequestsReferences": {
+                  "nodes": [
+                    {
+                      "id": "PR_kwDOUo7qUM8AAAABFO0bfA",
+                      "number": 16,
+                      "url": "https://github.com/anthonyturner/jobpilot/pull/16",
+                      "repository": {
+                        "id": "R_kgDOUo7qUA",
+                        "name": "jobpilot",
+                        "owner": {
+                          "id": "MDQ6VXNlcjUyMTAwNDE=",
+                          "login": "anthonyturner"
+                        }
+                      }
+                    }
+                  ]
+                }
               },
               {
                 "number": 11,
@@ -87,8 +134,19 @@
                 "assignees": {
                   "nodes": []
                 },
+                "author": {
+                  "__typename": "User",
+                  "login": "anthonyturner",
+                  "id": "MDQ6VXNlcjUyMTAwNDE=",
+                  "name": "Anthony Turner"
+                },
                 "createdAt": "2026-09-24T12:30:16Z",
-                "updatedAt": "2026-09-24T12:30:56Z"
+                "updatedAt": "2026-09-24T12:30:56Z",
+                "closedAt": null,
+                "stateReason": null,
+                "closedByPullRequestsReferences": {
+                  "nodes": []
+                }
               },
               {
                 "number": 8,
@@ -107,8 +165,19 @@
                 "assignees": {
                   "nodes": []
                 },
+                "author": {
+                  "__typename": "User",
+                  "login": "anthonyturner",
+                  "id": "MDQ6VXNlcjUyMTAwNDE=",
+                  "name": "Anthony Turner"
+                },
                 "createdAt": "2026-09-24T12:29:50Z",
-                "updatedAt": "2026-09-26T08:53:28Z"
+                "updatedAt": "2026-09-26T08:53:28Z",
+                "closedAt": null,
+                "stateReason": null,
+                "closedByPullRequestsReferences": {
+                  "nodes": []
+                }
               }
             ]
           }
@@ -119,6 +188,14 @@
   "expected": [
     {
       "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUyMTAwNDE=",
+        "is_bot": false,
+        "login": "anthonyturner",
+        "name": "Anthony Turner"
+      },
+      "closedAt": null,
+      "closedByPullRequestsReferences": [],
       "createdAt": "2026-09-26T09:47:53Z",
       "labels": [
         {
@@ -129,12 +206,21 @@
         }
       ],
       "number": 18,
+      "stateReason": "",
       "title": "Try again on a failed application always 409s",
       "updatedAt": "2026-09-26T09:47:53Z",
       "url": "https://github.com/anthonyturner/jobpilot/issues/18"
     },
     {
       "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUyMTAwNDE=",
+        "is_bot": false,
+        "login": "anthonyturner",
+        "name": "Anthony Turner"
+      },
+      "closedAt": null,
+      "closedByPullRequestsReferences": [],
       "createdAt": "2026-09-26T08:52:58Z",
       "labels": [
         {
@@ -145,12 +231,35 @@
         }
       ],
       "number": 15,
+      "stateReason": "",
       "title": "Add a button to prepare top matches on demand",
       "updatedAt": "2026-09-26T09:07:51Z",
       "url": "https://github.com/anthonyturner/jobpilot/issues/15"
     },
     {
       "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUyMTAwNDE=",
+        "is_bot": false,
+        "login": "anthonyturner",
+        "name": "Anthony Turner"
+      },
+      "closedAt": null,
+      "closedByPullRequestsReferences": [
+        {
+          "id": "PR_kwDOUo7qUM8AAAABFO0bfA",
+          "number": 16,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/pull/16"
+        }
+      ],
       "createdAt": "2026-09-25T09:55:38Z",
       "labels": [
         {
@@ -161,12 +270,21 @@
         }
       ],
       "number": 14,
+      "stateReason": "",
       "title": "Recover stuck preparing drafts and skip companies with an open draft in auto-prepare",
       "updatedAt": "2026-09-26T08:59:02Z",
       "url": "https://github.com/anthonyturner/jobpilot/issues/14"
     },
     {
       "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUyMTAwNDE=",
+        "is_bot": false,
+        "login": "anthonyturner",
+        "name": "Anthony Turner"
+      },
+      "closedAt": null,
+      "closedByPullRequestsReferences": [],
       "createdAt": "2026-09-24T12:30:16Z",
       "labels": [
         {
@@ -177,12 +295,21 @@
         }
       ],
       "number": 11,
+      "stateReason": "",
       "title": "Check a live application form before approval without filling it",
       "updatedAt": "2026-09-24T12:30:56Z",
       "url": "https://github.com/anthonyturner/jobpilot/issues/11"
     },
     {
       "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUyMTAwNDE=",
+        "is_bot": false,
+        "login": "anthonyturner",
+        "name": "Anthony Turner"
+      },
+      "closedAt": null,
+      "closedByPullRequestsReferences": [],
       "createdAt": "2026-09-24T12:29:50Z",
       "labels": [
         {
@@ -193,6 +320,7 @@
         }
       ],
       "number": 8,
+      "stateReason": "",
       "title": "Run the search-to-review pipeline unattended, up to the approval gate",
       "updatedAt": "2026-09-26T08:53:28Z",
       "url": "https://github.com/anthonyturner/jobpilot/issues/8"

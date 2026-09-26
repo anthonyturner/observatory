@@ -2,29 +2,46 @@ import { IssuesReport } from '../../core/issues/issues-report';
 import { cometsOf } from './comets';
 import { layoutComets } from './engine/comet-layer';
 
-const issue = (number: number, pulls: number[], idleDays: number) => ({
+const NOW = Date.parse('2026-09-26T12:00:00Z');
+const DAY = 86_400_000;
+const issue = (number: number, comet: boolean, idleDays: number) => ({
   number,
   title: `Issue ${number}`,
   url: `https://github.com/me/a/issues/${number}`,
-  labels: ['bug'],
+  labels: [{ name: 'bug', color: 'd73a4a' }],
   assignees: [],
-  pulls,
-  idleDays,
-  ageDays: idleDays + 10,
+  author: null,
+  createdAt: new Date(NOW - (idleDays + 10) * DAY).toISOString(),
+  updatedAt: new Date(NOW - idleDays * DAY).toISOString(),
+  closedAt: null,
+  stateReason: null,
+  comet,
+  prs: comet ? [] : [9],
 });
 
 describe('cometsOf', () => {
-  it('keeps the issues no pull request closes, idlest first', () => {
+  it('keeps the issues no pull request closes, idlest first, aged from their dates', () => {
     const report: IssuesReport = {
       generatedAt: 'x',
       repo: 'me/a',
-      items: [issue(1, [], 5), issue(2, [9], 50), issue(3, [], 40), issue(4, [], 40)],
-      closedRecently: 0,
-      closedWindowDays: 30,
+      days: 60,
+      total: { open: 4, closed: 0, comets: 3 },
+      open: [issue(1, true, 5), issue(2, false, 50), issue(3, true, 40), issue(4, true, 40)],
+      closed: [],
     };
 
-    expect(cometsOf(report).map((c) => c.issue)).toEqual([3, 4, 1]);
-    expect(cometsOf(null)).toEqual([]);
+    const comets = cometsOf(report, NOW);
+
+    expect(comets.map((c) => c.issue)).toEqual([3, 4, 1]);
+    expect(comets[0]).toEqual({
+      issue: 3,
+      title: 'Issue 3',
+      url: 'https://github.com/me/a/issues/3',
+      labels: ['bug'],
+      ageDays: 50,
+      idleDays: 40,
+    });
+    expect(cometsOf(null, NOW)).toEqual([]);
   });
 });
 

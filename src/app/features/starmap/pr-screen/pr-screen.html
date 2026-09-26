@@ -1,0 +1,65 @@
+<div
+  class="sheet"
+  role="dialog"
+  aria-modal="false"
+  [attr.aria-label]="'Pull request ' + number()"
+  [style.--sev]="colour()"
+  [appDraggable]="placeKey"
+>
+  <app-sheet-header
+    [kicker]="kicker()"
+    [number]="number()"
+    [title]="shownTitle()"
+    [url]="url()"
+    [state]="header()"
+    [tab]="tab()"
+    (tabChange)="tab.set($event)"
+    (refresh)="refresh()"
+    (closed)="closed.emit()"
+    (showNewer)="showNewer()"
+  />
+  @for (name of tabs; track name) {
+    <section class="pane" role="tabpanel" [hidden]="name !== tab()">
+      @if (detail(); as pull) {
+        @switch (name) {
+          @case ('overview') {
+            <app-sheet-markdown [source]="pull.body" />
+            @if (pull.bodyTruncated) {
+              <p class="note warn">Description shortened to fit — the rest is on GitHub.</p>
+            }
+          }
+          @case ('files') {
+            <app-sheet-rows [rows]="files()" />
+          }
+          @case ('commits') {
+            <app-sheet-rows [rows]="commits()" [note]="commitsNote()" />
+          }
+          @case ('checks') {
+            <app-sheet-rows [rows]="checks()" empty="No checks ran on this pull request." />
+          }
+          @case ('diff') {
+            <app-sheet-diff
+              [diff]="pull.diff"
+              [diffBytes]="pull.diffBytes"
+              [truncated]="pull.diffTruncated"
+              [codeHidden]="pull.diffHidden"
+            />
+          }
+          @case ('edit') {
+            <app-sheet-editor [detail]="pull" (saved)="refresh()" />
+          }
+        }
+      } @else if (unreachable()) {
+        <div class="missing">
+          <p class="note warn">
+            The details of this pull request could not be read from GitHub. Is the API running?
+          </p>
+          <button type="button" class="fetchbtn" (click)="refresh()">Request fetch</button>
+          <p class="note">Fetches it from GitHub now; this screen fills in by itself.</p>
+        </div>
+      } @else if (name === 'overview') {
+        <p class="note">Loading…</p>
+      }
+    </section>
+  }
+</div>

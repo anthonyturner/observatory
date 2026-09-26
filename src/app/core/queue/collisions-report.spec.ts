@@ -1,9 +1,4 @@
-import {
-  CollisionsReport,
-  collisionSummary,
-  collisionsOf,
-  parseCollisions,
-} from './collisions-report';
+import { CollisionsReport, collisionSummary, parseCollisions } from './collisions-report';
 
 const report: CollisionsReport = {
   repo: 'me/a',
@@ -35,16 +30,6 @@ describe('parseCollisions', () => {
 
   it('refuses an unknown check', () => {
     expect(parseCollisions({ repo: 'me/a', check: 'maybe', pairs: [] })).toBeNull();
-  });
-});
-
-describe('collisionsOf', () => {
-  it('lists the others, conflicts first, with the files that matter', () => {
-    expect(collisionsOf(report, 1)).toEqual([
-      { other: 2, kind: 'conflict', files: ['a.ts'] },
-      { other: 3, kind: 'clean', files: ['c.ts'] },
-    ]);
-    expect(collisionsOf(report, 3).map((each) => each.kind)).toEqual(['unchecked', 'clean']);
   });
 });
 

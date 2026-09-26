@@ -1,0 +1,51 @@
+/* Stuck to the pane's foot while the form scrolls: the pane's own padding is
+   22px at the sides and 26px below, which the negative margins undo. */
+:host {
+  display: block;
+  position: sticky;
+  bottom: -26px;
+  margin: 20px -22px -26px;
+}
+
+.savebar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--edge-soft);
+  background: var(--sheet-savebar);
+}
+
+.grow {
+  flex: 1;
+  min-width: 180px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+button {
+  padding: 9px 16px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 9px;
+  background: var(--sheet-button-wash);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+button.primary {
+  border-color: var(--sheet-edit-edge);
+  background: var(--sheet-edit-wash);
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}

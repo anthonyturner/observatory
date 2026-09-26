@@ -14,7 +14,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { ageWords, fogLevel } from '../../../core/projects/data-age';
 import { CollisionsFeed } from '../../../core/queue/collisions-feed';
-import { collisionsOf } from '../../../core/queue/collisions-report';
 import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LedgerFeed } from '../../../core/queue/ledger-feed';
 import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
@@ -27,12 +26,13 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
-import { IssuesTab } from '../../issues/issues-tab/issues-tab';
+import { openPullsOf } from '../../issues/issue-list';
+import { IssuesPanel } from '../../issues/issues-panel/issues-panel';
+import { IssuesScreen } from '../../issues/issues-screen';
 import { ChangesPanel } from '../memory/changes-panel/changes-panel';
 import { MemoryView } from '../memory/memory-view';
 import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
 import { Timeline } from '../memory/timeline/timeline';
-import { PullPanel } from '../../queue/pull-panel/pull-panel';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
@@ -47,6 +47,7 @@ import { LogList } from '../../logs/log-list/log-list';
 import { MeteorRecord } from '../../logs/meteor-record/meteor-record';
 import { LogSkyView } from '../log-sky-view';
 import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../../queue/queue-help';
+import { PrScreen } from '../pr-screen/pr-screen';
 import { skyItemOf, skyPairOf } from '../sky-items';
 import { StarmapHeader } from '../starmap-header/starmap-header';
 import { StarmapPrList } from '../starmap-pr-list/starmap-pr-list';
@@ -59,6 +60,7 @@ import {
   SkyView,
   chartOf,
   fragmentOf,
+  LegendChip,
   isListOnly,
   queueChips,
   queueStamp,
@@ -108,11 +110,11 @@ export interface SkyState {
     StarmapHeader,
     StarmapTools,
     StarmapPrList,
-    IssuesTab,
+    IssuesPanel,
     ChangesPanel,
     Timeline,
     StarmapUsage,
-    PullPanel,
+    PrScreen,
     StarCard,
     CometCard,
     LogCard,
@@ -129,12 +131,13 @@ export interface SkyState {
     QueueFeed,
     HistoryFeed,
     LedgerFeed,
-    IssuesFeed,
     CollisionsFeed,
     LogsFeed,
     LogSkyView,
     MemoryView,
     UsageWatch,
+    IssuesFeed,
+    IssuesScreen,
   ],
   templateUrl: './starmap-page.html',
   styleUrl: './starmap-page.css',
@@ -146,12 +149,12 @@ export class StarmapPage {
   private readonly collisions = inject(CollisionsFeed);
   private readonly ledger = inject(LedgerFeed);
   protected readonly memory = inject(MemoryView);
-  private readonly issues = inject(IssuesFeed);
   protected readonly usage = inject(UsageWatch);
   private readonly triage = inject(TriageClient);
   protected readonly session = inject(ViewerSession);
   private readonly motion = inject(MotionPreference);
   protected readonly logs = inject(LogSkyView);
+  protected readonly issues = inject(IssuesScreen);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
@@ -163,9 +166,8 @@ export class StarmapPage {
     ),
     { initialValue: '' },
   );
-  protected readonly chart = toSignal(this.route.fragment.pipe(map(chartOf)), {
-    initialValue: 'prs' as Chart,
-  });
+  private readonly fragment = toSignal(this.route.fragment, { initialValue: null });
+  protected readonly chart = computed<Chart>(() => chartOf(this.fragment()));
   /** The pull-request and log skies share one view; issues are a list for now. */
   private readonly skyView = signal<SkyView>('map');
   protected readonly view = computed<SkyView>(() =>
@@ -176,10 +178,7 @@ export class StarmapPage {
   /** The unclaimed issues passing through, and whether they are shown. */
   protected readonly showComets = signal(true);
   protected readonly selectedComet = signal<Comet | null>(null);
-  protected readonly comets = computed(() => {
-    const state = this.issues.state();
-    return cometsOf(state.status === 'ready' ? state.report : null);
-  });
+  protected readonly comets = computed(() => cometsOf(this.issues.report(), this.now().getTime()));
   protected readonly folded = signal(false);
   protected readonly refreshing = signal(false);
   /** The pull request whose star is selected, its card open. */
@@ -216,21 +215,29 @@ export class StarmapPage {
   );
   protected readonly title = computed(() => titleOf(this.chart()));
   protected readonly chips = computed(() => {
-    if (this.chart() !== 'prs') return [];
-    const total = this.comets().length;
-    return [
-      ...queueChips(this.skyItems()),
-      {
-        id: COMETS,
-        colour: COMET_COLOUR,
-        count: total,
-        text: `unclaimed issue${total === 1 ? '' : 's'}`,
-        live: total > 0,
-        pressed: this.showComets() && total > 0,
-        title: total > COMET_CAP ? `The ${COMET_CAP} idlest are drawn` : 'Show or hide the comets',
-      },
-    ];
+    const chart = this.chart();
+    if (chart === 'issues') return this.issues.chips();
+    return chart === 'prs' ? [...queueChips(this.skyItems()), this.cometChip()] : [];
   });
+  /** The comets' own chip: it shows and hides them rather than filtering the stars. */
+  private readonly cometChip = computed((): LegendChip => {
+    const total = this.issues.report()?.total.comets ?? 0;
+    return {
+      id: COMETS,
+      colour: COMET_COLOUR,
+      count: total,
+      text: `unclaimed issue${total === 1 ? '' : 's'}`,
+      live: total > 0,
+      pressed: this.showComets() && total > 0,
+      title: total > COMET_CAP ? `The ${COMET_CAP} idlest are drawn` : 'Show or hide the comets',
+    };
+  });
+  /** What the legend has narrowed the screen to. */
+  protected readonly legendFilter = computed(() =>
+    this.chart() === 'issues' ? this.issues.filter() : this.filter(),
+  );
+  /** The open pull requests the queue knows, for the issues' chips. */
+  protected readonly openPulls = computed(() => openPullsOf(this.report()?.items ?? []));
   private readonly usageDocument = computed(() => {
     const state = this.usage.state();
     return state.status === 'ready' ? state.document : null;
@@ -238,6 +245,7 @@ export class StarmapPage {
   protected readonly stamp = computed(() => {
     const report = this.report();
     if (this.chart() === 'usage') return usageStamp(this.usageDocument());
+    if (this.chart() === 'issues') return this.issues.stamp();
     if (this.chart() !== 'prs') return '';
     const replay = this.memory.replay();
     const repo = report?.repo ?? this.repo();
@@ -259,6 +267,7 @@ export class StarmapPage {
   });
   protected readonly stale = computed(() => {
     if (this.chart() === 'usage') return this.usageFog();
+    if (this.chart() === 'issues') return this.issues.stale();
     const state = this.state();
     const report = this.report();
     if (!report || this.memory.replay()) return null;
@@ -340,17 +349,14 @@ export class StarmapPage {
         })),
     };
   });
-  protected readonly sheetTriage = computed(() => {
-    // A visitor to the hosted preview cannot change anything, so has no triage to show.
-    if (!this.session.canWrite()) return null;
-    const item = this.items().find((each) => each.number === this.sheetPull());
-    return item ? { isSeen: item.isSeen, hidden: item.hidden } : null;
+  private readonly sheetItem = computed(
+    () => this.items().find((each) => each.number === this.sheetPull()) ?? null,
+  );
+  protected readonly sheetBucket = computed(() => {
+    const item = this.sheetItem();
+    return item ? shownBucket(item) : null;
   });
-  protected readonly sheetCollisions = computed(() => {
-    const number = this.sheetPull();
-    return number === null ? [] : collisionsOf(this.collisions.report(), number);
-  });
-  protected readonly collisionCheck = computed(() => this.collisions.report()?.check ?? null);
+  protected readonly sheetTitle = computed(() => this.sheetItem()?.title ?? null);
   /** The meteor record shows under the Log Sky's map, when it has days. */
   protected readonly showMeteors = computed(
     () => this.chart() === 'logs' && this.view() === 'map' && this.logs.hasDays(),
@@ -370,15 +376,23 @@ export class StarmapPage {
       untracked(() => {
         this.filter.set(null);
         this.openPull.set(null);
+        this.sheetPull.set(null);
       });
       if (repo === '/') return;
       untracked(() => {
         this.memory.watch(repo);
         this.feed.watch(repo);
-        this.issues.watch(repo);
         this.logs.clear();
         this.logs.watch(repo);
+        this.issues.watch(repo);
       });
+    });
+    this.issues.openAt(this.fragment());
+    // The Issues tab lives in the address too, so Back and a shared link keep it.
+    effect(() => {
+      const fragment = this.issues.fragment();
+      if (this.chart() !== 'issues') return;
+      untracked(() => this.navigateTo(fragment));
     });
     // A refresh lays the Log Sky out again; the card and threads follow their fault.
     effect(() => {
@@ -416,11 +430,13 @@ export class StarmapPage {
     this.openPull.set(null);
     this.logs.clear();
     this.logs.filter.set(null);
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      fragment: fragmentOf(chart),
-      replaceUrl: true,
-    });
+    this.issues.clearFilter();
+    this.navigateTo(chart === 'issues' ? this.issues.fragment() : fragmentOf(chart));
+  }
+
+  private navigateTo(fragment: string | undefined): void {
+    if ((this.fragment() ?? undefined) === fragment) return;
+    void this.router.navigate([], { relativeTo: this.route, fragment, replaceUrl: true });
   }
 
   protected setView(view: SkyView): void {
@@ -436,6 +452,10 @@ export class StarmapPage {
     }
     if (this.chart() === 'logs') {
       this.logs.toggleFilter(id as LogKey);
+      return;
+    }
+    if (this.chart() === 'issues') {
+      this.issues.toggleComets();
       return;
     }
     this.filter.update((current) => (current === id ? null : id));
@@ -474,6 +494,7 @@ export class StarmapPage {
     }
     this.refreshing.set(true);
     this.feed.refresh(this.repo());
+    this.issues.refresh(this.repo());
   }
 
   /** A point on the timeline: the refresh there, or now. */

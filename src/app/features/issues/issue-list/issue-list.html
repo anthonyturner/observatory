@@ -1,0 +1,60 @@
+@if (section(); as sec) {
+  <section [style.--sev]="sec.colour">
+    <h3>
+      {{ sec.heading }}<small>{{ sec.counts }}</small>
+    </h3>
+    @if (sec.none; as none) {
+      <p class="inone">{{ none }}</p>
+    } @else {
+      <ul>
+        @for (row of sec.rows; track row.issue.number) {
+          <li class="issue" [style.--sev]="row.sev">
+            <span class="n">#{{ row.issue.number }}</span
+            ><span class="t"
+              ><a [href]="row.issue.url" target="_blank" rel="noopener">{{
+                row.issue.title
+              }}</a></span
+            ><span class="i">{{ row.when }}</span>
+            <div class="imeta">
+              @if (row.issue.comet) {
+                <span class="comet-mark" title="No open pull request closes it"
+                  >comet · nobody on it</span
+                >
+              }
+              @for (label of row.labels; track label.name) {
+                <span class="ilabel" [style.--c]="label.ink"><i></i>{{ label.name }}</span>
+              }
+              @for (who of row.issue.assignees; track who) {
+                <span class="iwho">&#64;{{ who }}</span>
+              }
+              @for (chip of row.chips; track chip.number) {
+                @if (chip.href; as href) {
+                  <a
+                    class="prchip"
+                    [href]="href"
+                    target="_blank"
+                    rel="noopener"
+                    [title]="chip.title"
+                    >#{{ chip.number }} ↗</a
+                  >
+                } @else {
+                  <button
+                    type="button"
+                    class="prchip"
+                    [style.--c]="chip.colour"
+                    [title]="chip.title"
+                    (click)="pull.emit(chip.number)"
+                  >
+                    <i></i>#{{ chip.number }}
+                  </button>
+                }
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+} @else if (message(); as m) {
+  <p class="inone">{{ m.headline }} {{ m.detail }}</p>
+}

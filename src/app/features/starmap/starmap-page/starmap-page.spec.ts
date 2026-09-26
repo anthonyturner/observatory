@@ -84,33 +84,28 @@ describe('StarmapPage', () => {
 
   it('counts the unclaimed issues in the legend, and shows or hides their comets', () => {
     const { fixture, element, http } = render();
+    const at = new Date().toISOString();
+    const open = (number: number, comet: boolean) => ({
+      number,
+      title: `Issue ${number}`,
+      url: `https://github.com/me/a/issues/${number}`,
+      labels: [],
+      assignees: [],
+      author: null,
+      createdAt: at,
+      updatedAt: at,
+      closedAt: null,
+      stateReason: null,
+      comet,
+      prs: comet ? [] : [7],
+    });
     http.expectOne('/api/issues?repo=me/a').flush({
-      generatedAt: new Date().toISOString(),
+      generatedAt: at,
       repo: 'me/a',
-      items: [
-        {
-          number: 3,
-          title: 'Old',
-          url: 'https://github.com/me/a/issues/3',
-          labels: [],
-          assignees: [],
-          pulls: [],
-          idleDays: 9,
-          ageDays: 20,
-        },
-        {
-          number: 4,
-          title: 'Taken',
-          url: 'https://github.com/me/a/issues/4',
-          labels: [],
-          assignees: [],
-          pulls: [7],
-          idleDays: 1,
-          ageDays: 2,
-        },
-      ],
-      closedRecently: 0,
-      closedWindowDays: 30,
+      days: 60,
+      total: { open: 2, closed: 0, comets: 1 },
+      open: [open(3, true), open(4, false)],
+      closed: [],
     });
     fixture.detectChanges();
     const chip = Array.from(element.querySelectorAll<HTMLButtonElement>('.lg')).find((b) =>
@@ -162,6 +157,55 @@ describe('StarmapPage', () => {
     expect(element.querySelector('.state')?.textContent).toContain('No logs charted yet.');
   });
 
+  it('lists the issues as pr-starmap does, with its stamp, legend and chips', () => {
+    const { fixture, element, http, button } = render('issues');
+    const issue = (number: number, extra: Record<string, unknown>) => ({
+      number,
+      title: `Issue ${number}`,
+      url: `https://github.com/me/a/issues/${number}`,
+      labels: [{ name: 'bug', color: 'd73a4a' }],
+      assignees: [],
+      author: 'me',
+      createdAt: '2026-09-01T12:00:00Z',
+      updatedAt: '2026-09-20T12:00:00Z',
+      closedAt: null,
+      prs: [],
+      ...extra,
+    });
+    http.expectOne('/api/issues?repo=me/a').flush({
+      generatedAt: new Date().toISOString(),
+      repo: 'me/a',
+      days: 60,
+      total: { open: 2, closed: 0, comets: 1 },
+      open: [issue(1, { comet: true }), issue(2, { comet: false, prs: [7, 3] })],
+      closed: [],
+    });
+    fixture.detectChanges();
+
+    expect(element.querySelector('h1')?.textContent).toBe('Issues');
+    expect(element.querySelector('.stamp')?.textContent).toContain(
+      'me/a · 2 open · 0 closed in 60 days',
+    );
+    expect(element.querySelector('h3')?.textContent).toContain('2 · 1 with nobody on it');
+    expect(element.querySelector('.comet-mark')?.textContent).toContain('comet · nobody on it');
+    expect(element.querySelector('a.prchip')?.getAttribute('href')).toBe(
+      'https://github.com/me/a/pull/3',
+    );
+
+    element.querySelector<HTMLButtonElement>('.lg')?.click();
+    fixture.detectChanges();
+    expect(element.querySelectorAll('li.issue').length).toBe(1);
+    element.querySelector<HTMLButtonElement>('.lg')?.click();
+    fixture.detectChanges();
+
+    button('#7')?.click();
+    fixture.detectChanges();
+    http.expectOne('/api/pull?repo=me/a&number=7');
+    http.expectOne('/api/edit?repo=me/a&number=7');
+    http.expectOne('/api/labels?repo=me/a');
+    expect(element.querySelector('app-pr-screen')).not.toBeNull();
+  });
+
   it('opens a star’s card, and its full screen from Open; Esc closes them in turn', () => {
     const { fixture, element, http, button } = render();
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
@@ -173,11 +217,13 @@ describe('StarmapPage', () => {
     button('Open')?.click();
     fixture.detectChanges();
     http.expectOne('/api/pull?repo=me/a&number=7');
-    expect(element.querySelector('app-pull-panel')).not.toBeNull();
+    http.expectOne('/api/edit?repo=me/a&number=7');
+    http.expectOne('/api/labels?repo=me/a');
+    expect(element.querySelector('app-pr-screen')).not.toBeNull();
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
-    expect(element.querySelector('app-pull-panel')).toBeNull();
+    expect(element.querySelector('app-pr-screen')).toBeNull();
     expect(element.querySelector('.prno')).not.toBeNull();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();

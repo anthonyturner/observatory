@@ -1,0 +1,7 @@
+<div class="savebar">
+  <span class="grow">{{ summary() }}</span>
+  <button type="button" [disabled]="!canClear()" (click)="clear.emit()">Clear status</button>
+  <button type="button" class="primary" [disabled]="saveDisabled()" (click)="save.emit()">
+    {{ saveLabel() }}
+  </button>
+</div>

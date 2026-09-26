@@ -37,6 +37,8 @@ import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
 import { CometCard } from '../comet-card/comet-card';
+import { mergePlan } from '../merge-plan';
+import { PlanPanel } from '../plan-panel/plan-panel';
 import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
 import { IssuesFeed } from '../../../core/issues/issues-feed';
 import { LogsFeed } from '../../../core/logs/logs-feed';
@@ -76,6 +78,8 @@ const BOTTOM_INSET_WITH_STRIP = 200;
 const SIDE_PANEL_MIN_WIDTH = 900;
 /** The changes panel's width and the gap beside it. */
 const SIDE_PANEL_WIDTH = 380;
+/** The merge plan's panel and the gap beside it. */
+const PLAN_PANEL_WIDTH = 400;
 /** The card's Snooze, as pr-starmap's: a week. */
 const SNOOZE_DAYS = 7;
 
@@ -117,6 +121,7 @@ export interface SkyState {
     PrScreen,
     StarCard,
     CometCard,
+    PlanPanel,
     LogCard,
     LogList,
     MeteorRecord,
@@ -146,7 +151,7 @@ export interface SkyState {
 export class StarmapPage {
   private readonly feed = inject(QueueFeed);
   private readonly history = inject(HistoryFeed);
-  private readonly collisions = inject(CollisionsFeed);
+  protected readonly collisions = inject(CollisionsFeed);
   private readonly ledger = inject(LedgerFeed);
   protected readonly memory = inject(MemoryView);
   protected readonly usage = inject(UsageWatch);
@@ -175,6 +180,8 @@ export class StarmapPage {
   );
   protected readonly filter = signal<string | null>(null);
   protected readonly showCollisions = signal(true);
+  /** Whether the merge plan is drawn and listed. */
+  protected readonly planOn = signal(false);
   /** The unclaimed issues passing through, and whether they are shown. */
   protected readonly showComets = signal(true);
   protected readonly selectedComet = signal<Comet | null>(null);
@@ -306,9 +313,46 @@ export class StarmapPage {
 
   private readonly readAt = computed(() => this.report()?.generatedAt ?? null);
   /** pr-starmap's changes panel: while there is unseen news on the queue's map. */
+  /** pr-starmap's merge plan, over every open pull request and every pair. */
+  protected readonly plan = computed(() =>
+    mergePlan(
+      this.items().map((item) => ({
+        number: item.number,
+        title: item.title,
+        head: item.branch,
+        base: item.base,
+        mergeable: item.mergeable,
+        additions: item.additions,
+        deletions: item.deletions,
+      })),
+      (this.collisions.report()?.pairs ?? []).map(skyPairOf),
+    ),
+  );
+  /** The plan's steps that still have a star to point at. */
+  protected readonly planSteps = computed(() => {
+    const shown = new Set(this.skyItems().map((item) => item.pr));
+    return this.plan().filter((step) => shown.has(step.pr));
+  });
+  protected readonly planMarks = computed(() =>
+    this.planSteps().map((step) => ({ pr: step.pr, needsRebase: step.reason === 'needs-rebase' })),
+  );
+  protected readonly conflicting = computed(
+    () =>
+      (this.collisions.report()?.pairs ?? []).filter((p) => (p.conflicts ?? []).length > 0).length,
+  );
+  /** The plan's panel takes the right edge while it is on, over the queue's map. */
+  protected readonly showPlan = computed(
+    () =>
+      this.planOn() &&
+      this.chart() === 'prs' &&
+      this.view() === 'map' &&
+      !this.memory.replay() &&
+      this.collisions.report() !== null,
+  );
   protected readonly showChanges = computed(() => {
     const news = this.memory.news();
     return (
+      !this.showPlan() &&
       this.chart() === 'prs' &&
       this.view() === 'map' &&
       news.events.length > 0 &&
@@ -340,6 +384,7 @@ export class StarmapPage {
       change: event
         ? { noun: EFFECTS[event.kind].noun, label: news.label, colour: EFFECTS[event.kind].colour }
         : undefined,
+      planStep: this.planStepOf(number),
       pairs: this.skyPairs(),
       binaries: groups
         .filter((g) => g.members.some((item) => item.pr === number))
@@ -366,7 +411,13 @@ export class StarmapPage {
     return {
       top: TOP_INSET,
       bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
-      side: this.showChanges() && wide ? SIDE_PANEL_WIDTH : 0,
+      side: !wide
+        ? 0
+        : this.showPlan()
+          ? PLAN_PANEL_WIDTH
+          : this.showChanges()
+            ? SIDE_PANEL_WIDTH
+            : 0,
     };
   });
 
@@ -541,6 +592,7 @@ export class StarmapPage {
       idleDays: item.idleDays,
       ageDays: 0,
       branch: '',
+      base: '',
       mergeable: 'UNKNOWN',
       changedFiles: null,
       isSeen: false,
@@ -554,6 +606,19 @@ export class StarmapPage {
       isSeen: item.bucket === 'fresh',
       idleDays: item.idleDays,
     };
+  }
+
+  /** Where a pull request falls in the merge plan, as its card says. */
+  private planStepOf(number: number | null): { step: number; of: number } | undefined {
+    const plan = this.plan();
+    const index = plan.findIndex((step) => step.pr === number);
+    return index < 0 ? undefined : { step: index + 1, of: plan.length };
+  }
+
+  /** Merge plan: on, the panel takes the right edge and the numbered stars are framed beside it. */
+  protected togglePlan(): void {
+    this.planOn.update((on) => !on);
+    setTimeout(() => this.sky()?.fit());
   }
 
   /** Esc closes the full screen first, then the card, as on pr-starmap. */

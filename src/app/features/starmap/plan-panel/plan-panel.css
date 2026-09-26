@@ -1,0 +1,109 @@
+/* pr-starmap's Merge plan panel: where the changes panel sits; the two never show at once. */
+.plan {
+  position: fixed;
+  right: 20px;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  width: min(370px, calc(100vw - 40px));
+  max-height: min(470px, calc(100vh - 250px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px 17px 14px;
+  border: 1px solid var(--plan-edge);
+  border-radius: 14px;
+  background: var(--plan-glass);
+  backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: var(--plan-shadow);
+  z-index: 5;
+}
+
+h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 21px;
+  color: var(--plan-title);
+}
+
+.sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+li {
+  display: grid;
+  grid-template-columns: 24px 44px 1fr;
+  gap: 2px 8px;
+  align-items: baseline;
+  padding: 5px 6px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--changes-row);
+  cursor: pointer;
+}
+
+li:hover {
+  background: var(--plan-row-hover);
+}
+
+li:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+.i {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--warm);
+  text-align: right;
+}
+
+.n {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.w {
+  grid-column: 3;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.w.hot {
+  color: var(--bad-soft);
+}
+
+.w.ok {
+  color: var(--ok);
+}
+
+@media (max-width: 720px) {
+  .plan {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-height: 38vh;
+  }
+}

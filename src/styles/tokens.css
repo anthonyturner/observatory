@@ -128,6 +128,13 @@
   --changes-row-hover: rgba(142, 162, 255, 0.1);
   --timeline-live: rgba(142, 162, 255, 0.16);
 
+  /* pr-starmap's Merge plan panel, lit in gold. */
+  --plan-edge: rgba(255, 217, 138, 0.32);
+  --plan-glass: linear-gradient(165deg, rgba(30, 26, 44, 0.9), rgba(9, 10, 22, 0.94));
+  --plan-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.85), 0 0 60px -34px #ffd98a;
+  --plan-title: #ffe3a8;
+  --plan-row-hover: rgba(255, 217, 138, 0.08);
+
   /* The Usage screen. Model families keep one colour across versions; the
      order passes pr-starmap's palette check on this night (lightness band,
      colour-blind separation, 3:1 contrast). */

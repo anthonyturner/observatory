@@ -20,6 +20,7 @@ const pull = (number: number, overrides: Partial<QueuePull> = {}): QueuePull => 
   additions: 10,
   deletions: 2,
   headRefName: `feat/${number}`,
+  baseRefName: 'main',
   changedFiles: 3,
   ...overrides,
 });
@@ -41,6 +42,7 @@ describe('queueItemOf', () => {
       additions: 10,
       deletions: 2,
       branch: 'feat/3',
+      base: 'main',
       mergeable: 'MERGEABLE',
       changedFiles: 3,
       updatedAt: new Date(NOW - 3 * DAY).toISOString(),

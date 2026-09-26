@@ -13,6 +13,8 @@
   [fog]="chart() === 'logs' ? logs.fog() : fog()"
   [hidden]="(chart() !== 'prs' && chart() !== 'logs') || view() !== 'map'"
   [insets]="insets()"
+  [plan]="planMarks()"
+  [planOn]="planOn()"
   [comets]="comets()"
   [showComets]="showComets()"
   [selectedComet]="selectedComet()"
@@ -87,6 +89,7 @@
     [chart]="chart()"
     [view]="view()"
     [showCollisions]="showCollisions()"
+    [planOn]="planOn()"
     [refreshing]="refreshing() || usage.isRefreshing()"
     [(folded)]="folded"
     (chartChange)="setChart($event)"
@@ -95,9 +98,19 @@
     (zoomOut)="sky.zoomOut()"
     (fit)="sky.fit()"
     (collisions)="showCollisions.set(!showCollisions())"
+    (plan)="togglePlan()"
     (refresh)="refresh()"
   />
 </div>
+
+@if (showPlan()) {
+  <app-plan-panel
+    [steps]="planSteps()"
+    [check]="collisions.report()?.check ?? null"
+    [conflicting]="conflicting()"
+    (go)="goTo($event)"
+  />
+}
 
 @if (showChanges()) {
   <app-changes-panel

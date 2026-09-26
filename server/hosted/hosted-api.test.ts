@@ -35,6 +35,7 @@ const pull = (number: number): QueuePull => ({
   deletions: 1,
   createdAt: '2026-09-24T00:00:00Z',
   headRefName: `change-${number}`,
+  baseRefName: 'main',
   changedFiles: 1,
 });
 

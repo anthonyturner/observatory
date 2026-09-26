@@ -21,6 +21,7 @@ import { SkyLayout, layoutQueue } from '../engine/sky-layout';
 import { SkyItem, SkyStar } from '../engine/sky-model';
 import { ThreadLayer } from '../engine/thread-layer';
 import { CometLayer, layoutComets } from '../engine/comet-layer';
+import { PlanLayer, PlanMark } from '../engine/plan-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
 import { News, NewsLayer } from '../memory/news-layer';
@@ -75,6 +76,9 @@ export class StarmapSky {
   readonly selectedComet = input<Comet | null>(null);
   /** Whether a past refresh is on screen: comets are the present, so they step aside. */
   readonly replaying = input(false);
+  /** The merge plan's steps, drawn while it is on. */
+  readonly plan = input<readonly PlanMark[]>([]);
+  readonly planOn = input(false);
   /** The review queue's news: what changed, and whether it has been seen. */
   readonly news = input<News>({ events: [], acknowledged: false });
   /** 0 clear to 1 full. */
@@ -96,6 +100,7 @@ export class StarmapSky {
   private readonly threads = new ThreadLayer();
   private readonly newsLayer = new NewsLayer();
   private readonly cometLayer = new CometLayer<Comet>();
+  private readonly planLayer = new PlanLayer();
   private engine: SkyEngine | null = null;
   private isFramed = false;
   /** The skies already framed once, so a data refresh keeps the viewer's camera. */
@@ -130,6 +135,9 @@ export class StarmapSky {
     effect(() => {
       this.cometLayer.show = this.showComets();
       this.cometLayer.paused = this.replaying();
+      this.planLayer.paused = this.replaying();
+      this.planLayer.steps = this.plan();
+      this.planLayer.on = this.planOn();
       this.cometLayer.selected = this.selectedComet();
       this.engine?.kick();
     });
@@ -250,6 +258,7 @@ export class StarmapSky {
       this.binaries,
       this.threads,
       this.newsLayer,
+      this.planLayer,
     ];
     this.engine.filter = filterFor(this.filter());
     this.engine.fog = this.fog();

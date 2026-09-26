@@ -26,7 +26,6 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
-import { IssuesFeed } from '../../../core/issues/issues-feed';
 import { openPullsOf } from '../../issues/issue-list';
 import { IssuesPanel } from '../../issues/issues-panel/issues-panel';
 import { IssuesScreen } from '../../issues/issues-screen';
@@ -37,6 +36,9 @@ import { Timeline } from '../memory/timeline/timeline';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
+import { CometCard } from '../comet-card/comet-card';
+import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
+import { IssuesFeed } from '../../../core/issues/issues-feed';
 import { LogsFeed } from '../../../core/logs/logs-feed';
 import { LogKey } from '../../../core/logs/log-levels';
 import { LogStar } from '../../../core/logs/log-layout';
@@ -58,6 +60,7 @@ import {
   SkyView,
   chartOf,
   fragmentOf,
+  LegendChip,
   isListOnly,
   queueChips,
   queueStamp,
@@ -75,6 +78,9 @@ const SIDE_PANEL_MIN_WIDTH = 900;
 const SIDE_PANEL_WIDTH = 380;
 /** The card's Snooze, as pr-starmap's: a week. */
 const SNOOZE_DAYS = 7;
+
+/** The comets' legend chip, which shows and hides them rather than filtering. */
+const COMETS = 'comets';
 
 /** Keys typed into a field belong to the field. */
 const TYPING = 'input, textarea, select, [contenteditable]';
@@ -110,6 +116,7 @@ export interface SkyState {
     StarmapUsage,
     PrScreen,
     StarCard,
+    CometCard,
     LogCard,
     LogList,
     MeteorRecord,
@@ -168,6 +175,10 @@ export class StarmapPage {
   );
   protected readonly filter = signal<string | null>(null);
   protected readonly showCollisions = signal(true);
+  /** The unclaimed issues passing through, and whether they are shown. */
+  protected readonly showComets = signal(true);
+  protected readonly selectedComet = signal<Comet | null>(null);
+  protected readonly comets = computed(() => cometsOf(this.issues.report(), this.now().getTime()));
   protected readonly folded = signal(false);
   protected readonly refreshing = signal(false);
   /** The pull request whose star is selected, its card open. */
@@ -206,7 +217,20 @@ export class StarmapPage {
   protected readonly chips = computed(() => {
     const chart = this.chart();
     if (chart === 'issues') return this.issues.chips();
-    return chart === 'prs' ? queueChips(this.skyItems()) : [];
+    return chart === 'prs' ? [...queueChips(this.skyItems()), this.cometChip()] : [];
+  });
+  /** The comets' own chip: it shows and hides them rather than filtering the stars. */
+  private readonly cometChip = computed((): LegendChip => {
+    const total = this.issues.report()?.total.comets ?? 0;
+    return {
+      id: COMETS,
+      colour: COMET_COLOUR,
+      count: total,
+      text: `unclaimed issue${total === 1 ? '' : 's'}`,
+      live: total > 0,
+      pressed: this.showComets() && total > 0,
+      title: total > COMET_CAP ? `The ${COMET_CAP} idlest are drawn` : 'Show or hide the comets',
+    };
   });
   /** What the legend has narrowed the screen to. */
   protected readonly legendFilter = computed(() =>
@@ -421,6 +445,11 @@ export class StarmapPage {
 
   /** A legend chip narrows the sky to itself; pressing it again shows everything. */
   protected toggleFilter(id: string): void {
+    if (id === COMETS) {
+      this.showComets.update((shown) => !shown);
+      this.selectedComet.set(null);
+      return;
+    }
     if (this.chart() === 'logs') {
       this.logs.toggleFilter(id as LogKey);
       return;
@@ -441,6 +470,17 @@ export class StarmapPage {
   }
 
   /** Flies to a star from the list, and opens it. */
+  /** A click on the sky: a star's pull request, or empty sky. */
+  protected pick(number: number | null): void {
+    this.selectedComet.set(null);
+    this.openPull.set(number);
+  }
+
+  protected pickComet(comet: Comet): void {
+    this.openPull.set(null);
+    this.selectedComet.set(comet);
+  }
+
   protected goTo(number: number): void {
     this.skyView.set('map');
     this.openPull.set(number);
@@ -519,6 +559,7 @@ export class StarmapPage {
   /** Esc closes the full screen first, then the card, as on pr-starmap. */
   protected closeTopmost(): void {
     if (this.sheetPull() !== null) this.sheetPull.set(null);
+    else if (this.selectedComet()) this.selectedComet.set(null);
     else if (this.chart() === 'logs') this.logs.closeCard();
     else this.openPull.set(null);
   }

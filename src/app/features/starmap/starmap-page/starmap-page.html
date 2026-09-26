@@ -13,7 +13,12 @@
   [fog]="chart() === 'logs' ? logs.fog() : fog()"
   [hidden]="(chart() !== 'prs' && chart() !== 'logs') || view() !== 'map'"
   [insets]="insets()"
-  (picked)="openPull.set($event)"
+  [comets]="comets()"
+  [showComets]="showComets()"
+  [selectedComet]="selectedComet()"
+  [replaying]="!!memory.replay()"
+  (picked)="pick($event)"
+  (pickedComet)="pickComet($event)"
   (pickedLog)="logs.pick($event)"
 />
 
@@ -116,6 +121,10 @@
     (snooze)="recordTriage($event, { action: 'snooze', days: SNOOZE_DAYS })"
     (dismiss)="recordTriage($event, { action: 'dismiss' })"
   />
+}
+
+@if (chart() === 'prs' && selectedComet(); as comet) {
+  <app-comet-card [comet]="comet" (closed)="selectedComet.set(null)" />
 }
 
 @if (chart() === 'logs' && logs.selected(); as star) {

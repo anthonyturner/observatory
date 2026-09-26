@@ -82,6 +82,43 @@ describe('StarmapPage', () => {
     expect(element.querySelector('.lg')?.textContent).toContain('0 cannot merge');
   });
 
+  it('counts the unclaimed issues in the legend, and shows or hides their comets', () => {
+    const { fixture, element, http } = render();
+    const at = new Date().toISOString();
+    const open = (number: number, comet: boolean) => ({
+      number,
+      title: `Issue ${number}`,
+      url: `https://github.com/me/a/issues/${number}`,
+      labels: [],
+      assignees: [],
+      author: null,
+      createdAt: at,
+      updatedAt: at,
+      closedAt: null,
+      stateReason: null,
+      comet,
+      prs: comet ? [] : [7],
+    });
+    http.expectOne('/api/issues?repo=me/a').flush({
+      generatedAt: at,
+      repo: 'me/a',
+      days: 60,
+      total: { open: 2, closed: 0, comets: 1 },
+      open: [open(3, true), open(4, false)],
+      closed: [],
+    });
+    fixture.detectChanges();
+    const chip = Array.from(element.querySelectorAll<HTMLButtonElement>('.lg')).find((b) =>
+      b.textContent?.includes('unclaimed'),
+    );
+
+    expect(chip?.textContent).toContain('1 unclaimed issue');
+    expect(chip?.getAttribute('aria-pressed')).toBe('true');
+    chip?.click();
+    fixture.detectChanges();
+    expect(chip?.getAttribute('aria-pressed')).toBe('false');
+  });
+
   it('leaves dismissed pull requests out, and lists the rest by bucket', () => {
     const { fixture, element, button } = render();
 

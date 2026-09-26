@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { AskPanel } from '../ask-panel/ask-panel';
 import { CorePanel } from '../core-panel/core-panel';
 import { FleetSection } from '../fleet-section/fleet-section';
+import { HelpCard } from '../help/help-card';
+import { HelpShortcuts } from '../help/help-shortcuts';
 import { SkillsPanel } from '../skills-panel/skills-panel';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
 import { TopBar } from '../top-bar/top-bar';
@@ -11,7 +13,17 @@ import { VitalsPanel } from '../vitals-panel/vitals-panel';
  *  sections out and nothing more. */
 @Component({
   selector: 'app-home-page',
-  imports: [SkyBackdrop, TopBar, CorePanel, AskPanel, VitalsPanel, SkillsPanel, FleetSection],
+  imports: [
+    SkyBackdrop,
+    TopBar,
+    CorePanel,
+    AskPanel,
+    VitalsPanel,
+    SkillsPanel,
+    FleetSection,
+    HelpCard,
+  ],
+  hostDirectives: [HelpShortcuts],
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

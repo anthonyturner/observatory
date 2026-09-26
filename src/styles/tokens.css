@@ -27,6 +27,8 @@
      frame rate. */
   --scrim-column: radial-gradient(closest-side, rgba(3, 5, 12, 0.6) 45%, rgba(3, 5, 12, 0));
   --glass-strong: linear-gradient(165deg, rgba(12, 18, 38, 0.86), rgba(9, 14, 30, 0.84));
+  --glass-card: linear-gradient(165deg, rgba(18, 26, 52, 0.95), rgba(7, 11, 24, 0.97));
+  --shadow-card: 0 30px 70px -20px rgba(0, 0, 0, 0.85);
   --sky-night: radial-gradient(ellipse at 50% 38%, #0b1230 0%, #060a1a 45%, var(--void) 80%);
 
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;

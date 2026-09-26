@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { HelpState } from '../help/help-state';
 
 /** The way to the orrery and the page's tools. */
 @Component({
@@ -7,4 +8,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   styleUrl: './top-nav.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TopNav {}
+export class TopNav {
+  protected readonly help = inject(HelpState);
+}

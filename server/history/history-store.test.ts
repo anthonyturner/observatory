@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import type { Store } from '../store/store.ts';
 import { type Frame, MAX_FRAMES } from './frames.ts';
-import { fileHistoryStore, framesFrom, storeHistoryStore } from './history-store.ts';
+import { fileHistoryStore, framesFrom, mergeFrames, storeHistoryStore } from './history-store.ts';
 
 const frameAt = (index: number): Frame => ({
   at: new Date(Date.UTC(2026, 0, 1) + index * 60_000).toISOString(),
@@ -79,6 +79,27 @@ describe('storeHistoryStore', () => {
 
     assert.equal(frames.length, MAX_FRAMES);
     assert.deepEqual(frames[0], frameAt(1));
+  });
+});
+
+describe('mergeFrames', () => {
+  it('keeps both sides’ frames once each, oldest first, the newest MAX_FRAMES only', () => {
+    assert.deepEqual(mergeFrames([frameAt(1), frameAt(3)], [frameAt(3), frameAt(2)]), [
+      frameAt(1),
+      frameAt(2),
+      frameAt(3),
+    ]);
+    const many = Array.from({ length: MAX_FRAMES }, (_, index) => frameAt(index + 1));
+    assert.deepEqual(mergeFrames(many, [frameAt(0)])[0], frameAt(1));
+  });
+
+  it('takes pushed frames into the store', async () => {
+    const store = storeHistoryStore(memoryStore());
+    await store.append('me/a', frameAt(2));
+
+    await store.merge('me/a', [frameAt(1)]);
+
+    assert.deepEqual(await store.read('me/a'), [frameAt(1), frameAt(2)]);
   });
 });
 

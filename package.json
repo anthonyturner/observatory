@@ -12,9 +12,13 @@
     "typecheck:server": "tsc -p server",
     "lint": "ng lint",
     "usage:import-history": "node server/usage/import-history.ts",
+    "push": "node server/push.ts",
     "prepare": "husky"
   },
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "packageManager": "npm@11.17.0",
   "dependencies": {
     "@angular/cdk": "^22.2.0",

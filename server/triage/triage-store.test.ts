@@ -10,7 +10,12 @@ import { storeTriageStore, triageStateFrom } from './triage-store.ts';
 describe('storeTriageStore', () => {
   it('keeps each repository’s triage apart and reads back what it wrote', async () => {
     const store = storeTriageStore(fileStore(mkdtempSync(join(tmpdir(), 'observatory-triage-'))));
-    const state = { seen: { '7': '2026-09-26T12:00:00Z' }, dismissed: {}, snoozed: {} };
+    const state = {
+      seen: { '7': '2026-09-26T12:00:00Z' },
+      dismissed: {},
+      snoozed: {},
+      changed: { '7': '2026-09-26T12:00:00Z' },
+    };
 
     await store.write('me/a', state);
 
@@ -29,6 +34,7 @@ describe('storeTriageStore', () => {
       seen: { '3': '2026-09-01T00:00:00Z' },
       dismissed: {},
       snoozed: {},
+      changed: {},
     });
     assert.deepEqual(await store.read('me/b'), EMPTY_TRIAGE);
   });
@@ -40,6 +46,7 @@ describe('triageStateFrom', () => {
       seen: { '1': 'a' },
       dismissed: {},
       snoozed: {},
+      changed: {},
     });
     assert.deepEqual(triageStateFrom(null), EMPTY_TRIAGE);
     assert.deepEqual(triageStateFrom([1]), EMPTY_TRIAGE);

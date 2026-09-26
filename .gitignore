@@ -42,3 +42,7 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Local environment and Vercel's project link: secrets stay out of git
+.env*
+.vercel

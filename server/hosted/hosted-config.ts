@@ -10,6 +10,8 @@ export const REQUIRED_ENV = [
   'GITHUB_CLIENT_SECRET',
   'ALLOWED_LOGINS',
   'SESSION_SECRET',
+  'CRON_SECRET',
+  'PUSH_TOKEN',
 ] as const;
 
 /** `PUBLIC_PREVIEW`: off, public repositories only, or private ones too. */
@@ -23,6 +25,8 @@ export interface HostedConfig {
   readonly oauth: { readonly clientId: string; readonly clientSecret: string };
   readonly allowedLogins: readonly string[];
   readonly sessionSecret: string;
+  /** Vercel's scheduler sends this with the cron; the push command sends the other. */
+  readonly machineSecrets: { readonly cron: string; readonly push: string };
   readonly siteUrl: string | null;
   readonly preview: PreviewSetting;
   readonly previewLogs: boolean;
@@ -61,6 +65,7 @@ export function hostedConfigFrom(env: Env): ConfigResult {
       },
       allowedLogins: value('ALLOWED_LOGINS').split(','),
       sessionSecret: value('SESSION_SECRET'),
+      machineSecrets: { cron: value('CRON_SECRET'), push: value('PUSH_TOKEN') },
       siteUrl: env['SITE_URL']?.replace(/\/$/, '') || null,
       preview: previewOf(env['PUBLIC_PREVIEW']),
       previewLogs: env['PREVIEW_LOGS'] === 'on',

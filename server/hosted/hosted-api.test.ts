@@ -18,6 +18,8 @@ const ENV = {
   GITHUB_CLIENT_SECRET: 'client-secret',
   ALLOWED_LOGINS: 'me',
   SESSION_SECRET: SECRET,
+  CRON_SECRET: 'c'.repeat(32),
+  PUSH_TOKEN: 'p'.repeat(32),
 };
 
 const pull = (number: number): QueuePull => ({

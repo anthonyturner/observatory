@@ -249,6 +249,37 @@ describe('hostedApi', () => {
     assert.equal((await get(handle, '/api/route')).status, 403);
   });
 
+  it('gives the owner the ElevenLabs voice, off with no key and making no call', async () => {
+    const { handle } = site();
+
+    const status = await get(handle, '/api/voice', ownerCookie);
+    const spoken = await handle(
+      new Request(`${SITE}/api/voice/speak`, {
+        method: 'POST',
+        headers: { 'x-observatory': '1', 'content-type': 'application/json', cookie: ownerCookie },
+        body: JSON.stringify({ text: 'Hello.', voice: 'abc123' }),
+      }),
+    );
+
+    assert.deepEqual(await status.json(), { elevenlabs: 'off', voices: [], defaultVoice: null });
+    assert.equal(spoken.status, 503);
+  });
+
+  it('refuses a visitor the ElevenLabs voice, since every sentence costs money', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+
+    const spoken = await handle(
+      new Request(`${SITE}/api/voice/speak`, {
+        method: 'POST',
+        headers: { 'x-observatory': '1', 'content-type': 'application/json' },
+        body: JSON.stringify({ text: 'Hello.', voice: 'abc123' }),
+      }),
+    );
+
+    assert.equal(spoken.status, 403);
+    assert.equal((await get(handle, '/api/voice')).status, 403);
+  });
+
   it('shows a visitor private repositories too with PUBLIC_PREVIEW=all, still read-only', async () => {
     const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
 

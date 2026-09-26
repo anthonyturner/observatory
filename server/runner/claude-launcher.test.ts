@@ -28,7 +28,13 @@ function recordingSpawner(): { spawn: Spawner; calls: Spawned[] } {
   return { spawn, calls };
 }
 
-const ENV = { PATH: 'C:/bin', OPENROUTER_API_KEY: 'k', Observatory_Push_Token: 't', HOME: 'h' };
+const ENV = {
+  PATH: 'C:/bin',
+  OPENROUTER_API_KEY: 'k',
+  ELEVENLABS_API_KEY: 'x',
+  Observatory_Push_Token: 't',
+  HOME: 'h',
+};
 
 describe('claudeLauncher', () => {
   it('is null without a claude to start', () => {

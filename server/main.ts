@@ -27,6 +27,9 @@ import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { fileHandoffStore } from './agents/handoff-store.ts';
 import { usageReport } from './usage/usage-report.ts';
+import { elevenLabs } from './voice/eleven-labs.ts';
+import { localElevenLabs } from './voice/eleven-labs-settings.ts';
+import { withVoiceRoutes } from './voice/voice-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -74,6 +77,12 @@ const assistant = assistantRouter({
   runner,
 });
 
+const voiceSettings = localElevenLabs();
+const voice = {
+  voice: elevenLabs({ key: voiceSettings.key }),
+  preferredVoice: voiceSettings.preferredVoice,
+};
+
 // Loopback only: the API reads files from this machine's home folder, acts as
 // the account `gh` is signed in with, and runs Claude Code once the owner
 // confirms a proposal.
@@ -81,7 +90,10 @@ const server = createApiServer(
   guardRuns(
     createApiHandler(
       withLocalSession(
-        withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
+        withVoiceRoutes(
+          withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
+          voice,
+        ),
       ),
     ),
   ),
@@ -104,5 +116,10 @@ server.listen(port, '127.0.0.1', () => {
     claude
       ? `Tier-3 runs are on: ${claude.file}`
       : 'Tier-3 runs are off: claude is not on the PATH.',
+  );
+  console.log(
+    voiceSettings.key
+      ? 'The ElevenLabs voice is on.'
+      : 'The ElevenLabs voice is off: no ELEVENLABS_API_KEY.',
   );
 });

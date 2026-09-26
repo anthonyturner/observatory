@@ -1,0 +1,23 @@
+:host {
+  display: block;
+  padding: 12px 14px 14px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Words over the sky sit on glass, so they stay legible over any trail. */
+.status {
+  align-self: flex-start;
+  margin: 0;
+  padding: 4px 12px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}

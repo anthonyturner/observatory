@@ -1,0 +1,154 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: stretch;
+}
+
+.title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Repeat the talk button's state once it has one: lit, blinking, red. */
+.dots {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  /* Level with the heading, whose label keeps a gap below it. */
+  margin-bottom: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+}
+
+.dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+/* Flat while nothing listens; each dash takes its own share (--k) of the
+   level once the microphone is live. */
+.level {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  align-self: stretch;
+  height: 16px;
+  margin: 14px 0 12px;
+}
+
+.level i {
+  flex: 1 1 0;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--flow-dash);
+  transform: scaleY(min(1, calc(0.12 + var(--level, 0) * var(--k, 1))));
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
+}
+
+/* Held to talk: a long press must not select text or scroll the page. */
+.mic {
+  padding: 0 13px;
+  border: 1px solid var(--flow-edge);
+  background: var(--flow-soft);
+  color: var(--ink);
+  font-weight: 500;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.mic:hover {
+  border-color: var(--flow);
+  background: var(--flow-tint-strong);
+}
+
+/* A setting, not an act, so it sits beside the talk button, quieter. */
+.speak {
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--muted);
+}
+
+.speak:hover {
+  border-color: var(--flow);
+  color: var(--ink);
+}
+
+.speak svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+}
+
+.caption,
+.hint {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
+.caption {
+  margin-top: 10px;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.touch {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  button {
+    min-height: 44px;
+  }
+
+  .wide {
+    display: none;
+  }
+
+  .touch {
+    display: inline;
+  }
+}

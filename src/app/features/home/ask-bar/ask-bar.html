@@ -1,0 +1,14 @@
+<form (submit)="holdSubmission($event)">
+  <div class="box">
+    <label class="visually-hidden" for="ask-input">Ask Home</label>
+    <textarea
+      id="ask-input"
+      rows="1"
+      maxlength="2000"
+      autocomplete="off"
+      enterkeyhint="send"
+      placeholder="Ask, or name a page to open"
+    ></textarea>
+  </div>
+  <button type="submit">Send</button>
+</form>

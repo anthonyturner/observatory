@@ -158,6 +158,20 @@ describe('ReviewQueuePage', () => {
     http.expectOne('/api/queue?repo=me/a');
   });
 
+  it('offers a visitor to the hosted preview no triage to change', () => {
+    const { fixture, element } = render();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/session').flush({ access: 'visitor', signIn: '/api/auth/login' });
+
+    element.querySelector<HTMLButtonElement>('li .open')?.click();
+    fixture.detectChanges();
+    http.expectOne('/api/pull?repo=me/a&number=7');
+    const panel = fixture.debugElement.query(By.directive(PullPanel))
+      .componentInstance as PullPanel;
+
+    expect(panel.triage()).toBeNull();
+  });
+
   it('shows what changed since you last looked, and clears it on Got it', () => {
     localStorage.setItem('observatory.lastSeen.me/a', String(Date.parse('2026-09-24T12:00:00Z')));
     const { fixture, element } = render();

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { CloneFinder } from './clone-finder.ts';
-import { collisionsReport } from './collisions-report.ts';
+import { collisionsReport, uncheckedCollisions } from './collisions-report.ts';
 import type { PairMerger } from './pair-merger.ts';
 
 const github = {
@@ -61,5 +61,21 @@ describe('collisionsReport', () => {
     assert.equal(offline.check, 'unreachable');
     assert.ok(noClone.pairs.every((pair) => pair.conflicts === null));
     assert.equal(offline.pairs.length, 2);
+  });
+});
+
+describe('uncheckedCollisions', () => {
+  it('lists every pair that shares a file, none of them called safe', async () => {
+    const report = await uncheckedCollisions(github, 'me/a', Date.parse('2026-09-26T00:00:00Z'));
+
+    assert.deepEqual(report, {
+      generatedAt: '2026-09-26T00:00:00.000Z',
+      repo: 'me/a',
+      check: 'no-clone',
+      pairs: [
+        { a: 1, b: 2, files: ['a.ts'], conflicts: null },
+        { a: 2, b: 3, files: ['b.ts'], conflicts: null },
+      ],
+    });
   });
 });

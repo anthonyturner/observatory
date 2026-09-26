@@ -30,6 +30,7 @@ import { ChangesCard } from '../changes-card/changes-card';
 import { QueueList } from '../queue-list/queue-list';
 import { OrreryTools } from '../../orrery/orrery-tools/orrery-tools';
 import { PullPanel } from '../pull-panel/pull-panel';
+import { ViewerSession } from '../../../core/session/viewer-session';
 import {
   QueueFilter,
   hiddenCount,
@@ -75,6 +76,7 @@ export class ReviewQueuePage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly triage = inject(TriageClient);
+  private readonly session = inject(ViewerSession);
   private readonly now = inject(Clock).now;
 
   protected readonly repo = toSignal(
@@ -111,6 +113,8 @@ export class ReviewQueuePage {
   protected readonly sections = computed(() => queueSections(this.visible(), this.filter()));
   /** The open pull request's triage, for its panel. */
   protected readonly openTriage = computed(() => {
+    // A visitor to the hosted preview cannot change anything, so has no triage to show.
+    if (!this.session.canWrite()) return null;
     const item = this.items().find((each) => each.number === this.openPull());
     return item ? { isSeen: item.isSeen, hidden: item.hidden } : null;
   });

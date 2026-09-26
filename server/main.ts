@@ -7,6 +7,7 @@ import { ghCliReader } from './github/gh-cli-reader.ts';
 import { fileHistoryStore } from './history/history-store.ts';
 import { createApiHandler } from './http/api-handler.ts';
 import { createApiServer } from './http/api-server.ts';
+import { withLocalSession } from './http/session.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { usageReport } from './usage/usage-report.ts';
@@ -28,7 +29,7 @@ const triage = storeTriageStore(fileStore());
 
 // Loopback only: the API reads files from this machine's home folder and acts
 // as the account `gh` is signed in with.
-const server = createApiServer(createApiHandler(ownerRoutes(reads, triage)));
+const server = createApiServer(createApiHandler(withLocalSession(ownerRoutes(reads, triage))));
 
 // Another copy already on the port would answer the page with its own, older
 // code; say so and stop rather than sit idle behind it.

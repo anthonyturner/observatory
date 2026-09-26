@@ -1,0 +1,38 @@
+/* Bottom right is clear of the pages' controls on a wide screen; on a phone the
+   controls take the bottom row, so it moves to the top corner. */
+.preview {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 1000;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(10, 14, 30, 0.82);
+  border: 1px solid var(--flow-glow);
+  color: var(--ink-soft);
+  font:
+    12px/1.4 system-ui,
+    sans-serif;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+}
+
+.preview b {
+  color: var(--flow);
+  font-weight: 400;
+}
+
+.preview:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .preview {
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}

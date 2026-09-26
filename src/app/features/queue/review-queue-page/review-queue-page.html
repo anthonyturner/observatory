@@ -5,6 +5,7 @@
     [filter]="filter()"
     [selected]="openPull()"
     [marks]="marks()"
+    [threads]="threads()"
     (picked)="openPull.set($event)"
   />
 }
@@ -41,7 +42,12 @@
 @if (tab() === 'issues') {
   <app-issues-tab [repo]="repo()" />
 } @else {
-  <p class="pulls-stamp">{{ stamp() }}</p>
+  <p class="pulls-stamp">
+    {{ stamp() }}
+    @if (collisionNote(); as note) {
+      <span class="collisions">· {{ note }}</span>
+    }
+  </p>
   <div class="legend" role="group" aria-label="Show only">
     @for (entry of legend(); track entry.filter) {
       <button
@@ -99,6 +105,9 @@
     [repo]="repo()"
     [number]="number"
     [triage]="openTriage()"
+    [collisions]="openCollisions()"
+    [collisionCheck]="collisionCheck()"
+    (picked)="openPull.set($event)"
     (triaged)="recordTriage(number, $event)"
     (closed)="openPull.set(null)"
   />

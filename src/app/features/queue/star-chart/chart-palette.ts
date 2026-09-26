@@ -17,6 +17,10 @@ export function readChartPalette(element: HTMLElement): ChartPalette {
     quick: token('queue-quick'),
     core: token('orrery-world-light'),
     select: token('orrery-select'),
+    threads: {
+      conflict: token('chart-thread-conflict'),
+      unchecked: token('chart-thread-unchecked'),
+    },
     marks: {
       opened: token('chart-mark-opened'),
       blocked: token('chart-mark-blocked'),

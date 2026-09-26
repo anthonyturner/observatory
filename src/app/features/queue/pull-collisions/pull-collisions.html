@@ -1,0 +1,12 @@
+@if (why(); as reason) {
+  <p class="why">{{ reason }}</p>
+}
+<ul>
+  @for (row of rows(); track row.other) {
+    <li [attr.data-kind]="row.kind">
+      <span class="label">{{ row.label }}</span>
+      <button type="button" (click)="picked.emit(row.other)">#{{ row.other }}</button>
+      <span class="files">{{ row.files }}</span>
+    </li>
+  }
+</ul>

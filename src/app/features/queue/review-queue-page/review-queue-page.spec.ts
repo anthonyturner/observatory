@@ -191,6 +191,29 @@ describe('ReviewQueuePage', () => {
     );
   });
 
+  it('shows which pull requests collide, in the stamp and the open panel', () => {
+    const { fixture, element } = render();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/collisions?repo=me/a').flush({
+      repo: 'me/a',
+      check: 'checked',
+      pairs: [{ a: 7, b: 9, files: ['src/a.ts'], conflicts: ['src/a.ts'] }],
+    });
+    fixture.detectChanges();
+    expect(element.querySelector('.pulls-stamp')?.textContent).toContain('1 pair would conflict');
+
+    element.querySelector<HTMLButtonElement>('li .open')?.click();
+    fixture.detectChanges();
+    http.expectOne('/api/pull?repo=me/a&number=7');
+    const panel = fixture.debugElement.query(By.directive(PullPanel))
+      .componentInstance as PullPanel;
+    expect(panel.collisions()).toEqual([{ other: 9, kind: 'conflict', files: ['src/a.ts'] }]);
+
+    panel.picked.emit(9);
+    fixture.detectChanges();
+    http.expectOne('/api/pull?repo=me/a&number=9');
+  });
+
   it('leads back to Home and the Orrery', () => {
     const hrefs = Array.from(render().element.querySelectorAll('.links a')).map((a) =>
       a.getAttribute('href'),

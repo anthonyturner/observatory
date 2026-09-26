@@ -43,6 +43,10 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.pulls-stamp .collisions {
+  color: var(--ink-soft);
+}
+
 .pulls-stamp {
   position: relative;
   z-index: 2;

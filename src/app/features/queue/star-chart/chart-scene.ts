@@ -3,6 +3,7 @@ import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld } from '../../../core/orrery/pick-world';
 import { FieldStar, starField } from '../../../core/orrery/star-field';
 import { ChangeMark } from '../../../core/queue/changes';
+import { Thread } from '../../../core/queue/collisions-report';
 import {
   ChartStar,
   StarChartLayout,
@@ -25,6 +26,7 @@ import {
   paintConstellationLine,
   paintStar,
   paintStarLabel,
+  paintThread,
 } from './chart-painter';
 
 /** A filtered-out star stays, faint, so the shape of the queue still reads. */
@@ -50,6 +52,7 @@ export interface ChartFrame {
   readonly filter: QueueFilter;
   readonly selected: number | null;
   readonly marks: ReadonlyMap<number, ChangeMark>;
+  readonly threads: readonly Thread[];
 }
 
 const passes = (star: ChartStar, filter: QueueFilter): boolean =>
@@ -92,6 +95,8 @@ export class ChartScene {
     }));
 
     this.paintBloom(ctx, view, (glow) => {
+      // Threads first, so the stars they join sit on top of them.
+      this.paintThreads(glow, constellations, frame);
       for (const { constellation, color, stars } of constellations) {
         const breath = 0.42 + Math.sin(time * 0.62 + constellation.centreX * 0.004) * 0.13;
         const anyShown = stars.some(({ star }) => passes(star, frame.filter));
@@ -144,6 +149,30 @@ export class ChartScene {
           radius: placed.radius,
         })),
     );
+  }
+
+  /** Collision threads between stars both on the chart, as faint as the fainter end. */
+  private paintThreads(
+    glow: CanvasRenderingContext2D,
+    constellations: readonly {
+      readonly stars: readonly { readonly star: ChartStar; readonly placed: PlacedStar }[];
+    }[],
+    frame: ChartFrame,
+  ): void {
+    const placed = new Map(
+      constellations.flatMap(({ stars }) =>
+        stars.map(({ star, placed }) => [star.item.number, placed] as const),
+      ),
+    );
+    for (const thread of frame.threads) {
+      const [from, to] = [placed.get(thread.a), placed.get(thread.b)];
+      if (!from || !to) continue;
+      paintThread(glow, from, to, thread.kind, {
+        alpha: Math.min(from.alpha, to.alpha),
+        time: frame.isStill ? 0 : frame.time,
+        palette: this.palette,
+      });
+    }
   }
 
   private place(star: ChartStar, frame: ChartFrame): PlacedStar {

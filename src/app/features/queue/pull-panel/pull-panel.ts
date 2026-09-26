@@ -9,6 +9,8 @@ import {
   output,
 } from '@angular/core';
 import { PullDetailFeed } from '../../../core/queue/pull-detail-feed';
+import { PullCollisions } from '../pull-collisions/pull-collisions';
+import { CollisionCheck, PullCollision } from '../../../core/queue/collisions-report';
 import { Hidden } from '../../../core/queue/queue-report';
 import { TriageChoice } from '../../../core/queue/triage-client';
 import { Clock } from '../../../core/time/clock';
@@ -22,7 +24,7 @@ const SNOOZE_DAYS = [1, 7] as const;
  *  its checks, its review, what it closes, and its description. */
 @Component({
   selector: 'app-pull-panel',
-  imports: [A11yModule],
+  imports: [A11yModule, PullCollisions],
   providers: [PullDetailFeed],
   templateUrl: './pull-panel.html',
   styleUrl: './pull-panel.css',
@@ -36,7 +38,12 @@ export class PullPanel {
   readonly triage = input<{ readonly isSeen: boolean; readonly hidden: Hidden | null } | null>(
     null,
   );
+  /** The pull requests it shares files with, and whether they were merged to check. */
+  readonly collisions = input<readonly PullCollision[]>([]);
+  readonly collisionCheck = input<CollisionCheck | null>(null);
   readonly closed = output<void>();
+  /** Asks to open another pull request's panel. */
+  readonly picked = output<number>();
   /** Asks to record a triage action. */
   readonly triaged = output<TriageChoice>();
 

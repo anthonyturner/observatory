@@ -12,6 +12,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { changeCount, changeMarks, changesSince } from '../../../core/queue/changes';
+import { CollisionsFeed } from '../../../core/queue/collisions-feed';
+import {
+  collisionSummary,
+  collisionThreads,
+  collisionsOf,
+} from '../../../core/queue/collisions-report';
 import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LastSeen } from '../../../core/queue/last-seen';
 import { QueueFeed } from '../../../core/queue/queue-feed';
@@ -41,7 +47,7 @@ const ISSUES_FRAGMENT = 'issues';
 @Component({
   selector: 'app-review-queue-page',
   imports: [RouterLink, PullPanel, StarChart, OrreryTools, IssuesTab, ChangesCard, QueueList],
-  providers: [QueueFeed, HistoryFeed],
+  providers: [QueueFeed, HistoryFeed, CollisionsFeed],
   templateUrl: './review-queue-page.html',
   styleUrl: './review-queue-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +55,7 @@ const ISSUES_FRAGMENT = 'issues';
 export class ReviewQueuePage {
   private readonly feed = inject(QueueFeed);
   private readonly history = inject(HistoryFeed);
+  private readonly collisions = inject(CollisionsFeed);
   private readonly lastSeenStore = inject(LastSeen);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -104,6 +111,14 @@ export class ReviewQueuePage {
   });
   protected readonly hasChanges = computed(() => changeCount(this.changes()) > 0);
   protected readonly marks = computed(() => changeMarks(this.changes()));
+  protected readonly threads = computed(() => collisionThreads(this.collisions.report()));
+  protected readonly collisionNote = computed(() => collisionSummary(this.collisions.report()));
+  protected readonly collisionCheck = computed(() => this.collisions.report()?.check ?? null);
+  /** The open pull request's collisions, for its panel. */
+  protected readonly openCollisions = computed(() => {
+    const number = this.openPull();
+    return number === null ? [] : collisionsOf(this.collisions.report(), number);
+  });
   protected readonly stamp = computed(() => queueStamp(this.state(), this.now().getTime()));
   protected readonly waiting = computed(() => {
     const { status } = this.state();
@@ -124,9 +139,13 @@ export class ReviewQueuePage {
       this.lastSeen.set(this.lastSeenStore.read(repo));
       this.feed.watch(repo);
     });
-    // Each read from GitHub may have added a frame, so the history follows the queue.
+    // Each read from GitHub may have added a frame or moved a branch, so both follow the queue.
     effect(() => {
-      if (this.readAt()) untracked(() => this.history.load(this.repo()));
+      if (!this.readAt()) return;
+      untracked(() => {
+        this.history.load(this.repo());
+        this.collisions.load(this.repo());
+      });
     });
   }
 

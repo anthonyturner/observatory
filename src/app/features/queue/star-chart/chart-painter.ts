@@ -1,4 +1,5 @@
 import { ChangeMark } from '../../../core/queue/changes';
+import { ThreadKind } from '../../../core/queue/collisions-report';
 import { Viewport } from '../../../core/orrery/orrery-camera';
 import { rgba } from '../../../shared/night-sky/night-sky';
 
@@ -14,6 +15,8 @@ export interface ChartPalette {
   readonly select: string;
   /** What changed since you last looked: new, became blocked, unblocked. */
   readonly marks: Readonly<Record<ChangeMark, string>>;
+  /** Collision threads: pairs that would conflict, and pairs never checked. */
+  readonly threads: Readonly<Record<ThreadKind, string>>;
   readonly vignette: string;
   readonly stars: readonly string[];
   readonly fontSans: string;
@@ -82,6 +85,67 @@ export function paintConstellationLine(
     index === 0 ? c.moveTo(point.x, point.y) : c.lineTo(point.x, point.y),
   );
   c.stroke();
+  c.restore();
+}
+
+/** How far a conflict thread bows from the straight line, as a share of its length. */
+const THREAD_BOW = 0.12;
+
+/** Two stars that would conflict, joined by a bowed red thread with a spark
+ *  where they meet; a pair never checked, by a faint dashed line. */
+export function paintThread(
+  c: CanvasRenderingContext2D,
+  from: { readonly x: number; readonly y: number },
+  to: { readonly x: number; readonly y: number },
+  kind: ThreadKind,
+  look: { readonly alpha: number; readonly time: number; readonly palette: ChartPalette },
+): void {
+  const { alpha, time, palette } = look;
+  const color = rgba(palette.threads[kind]);
+  c.save();
+  c.strokeStyle = color;
+  if (kind === 'unchecked') {
+    c.globalAlpha = alpha * 0.4;
+    c.lineWidth = 1;
+    c.setLineDash([3, 6]);
+    c.beginPath();
+    c.moveTo(from.x, from.y);
+    c.lineTo(to.x, to.y);
+    c.stroke();
+    c.restore();
+    return;
+  }
+  const [dx, dy] = [to.x - from.x, to.y - from.y];
+  const control = {
+    x: (from.x + to.x) / 2 - dy * THREAD_BOW,
+    y: (from.y + to.y) / 2 + dx * THREAD_BOW,
+  };
+  c.globalAlpha = alpha * 0.85;
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(from.x, from.y);
+  c.quadraticCurveTo(control.x, control.y, to.x, to.y);
+  c.stroke();
+
+  // The spark sits where a quadratic curve is halfway: a quarter each end, half the control.
+  const spark = {
+    x: 0.25 * from.x + 0.5 * control.x + 0.25 * to.x,
+    y: 0.25 * from.y + 0.5 * control.y + 0.25 * to.y,
+  };
+  const radius = 11 + Math.sin(time * 3.1) * 3;
+  const glow = c.createRadialGradient(spark.x, spark.y, 0, spark.x, spark.y, radius);
+  glow.addColorStop(0, color);
+  glow.addColorStop(1, rgba(palette.threads[kind], 0));
+  c.globalAlpha = alpha;
+  c.fillStyle = glow;
+  c.beginPath();
+  c.arc(spark.x, spark.y, radius, 0, Math.PI * 2);
+  c.fill();
+  c.globalAlpha = alpha * 0.9;
+  c.fillStyle = rgba(palette.core);
+  c.beginPath();
+  c.arc(spark.x, spark.y, 1.8, 0, Math.PI * 2);
+  c.fill();
   c.restore();
 }
 

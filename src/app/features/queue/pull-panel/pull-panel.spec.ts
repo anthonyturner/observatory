@@ -13,7 +13,7 @@ const detail = {
   author: 'anthony',
   head: 'refactor/57',
   base: 'main',
-  labels: ['area:dashboard'],
+  labels: [{ name: 'area:dashboard', color: '1d76db' }],
   closes: [57],
   checks: [
     { name: 'CI / Test', outcome: 'failed', url: 'https://github.com/x/2' },

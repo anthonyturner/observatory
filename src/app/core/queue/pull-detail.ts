@@ -1,11 +1,31 @@
 import { PULL_BUCKETS, PullBucket } from '../projects/projects-report';
+import {
+  CommitLine,
+  FileLine,
+  LabelLine,
+  isCount,
+  isObject,
+  isString,
+  listOf,
+  parseCommit,
+  parseFile,
+  parseLabel,
+  strings,
+} from './pull-detail-parts';
+
+export type { CommitLine, FileLine, LabelLine } from './pull-detail-parts';
 
 export type CheckOutcome = 'passed' | 'failed' | 'pending' | 'skipped';
 export type ReviewDecision = 'approved' | 'changes-requested' | 'review-required' | 'none';
 
 export interface CheckLine {
+  /** As specific as GitHub gives it: `CI / Build`. */
   readonly name: string;
+  /** The run's own name, as pr-starmap's PR screen lists it: `Build`. */
+  readonly run: string;
   readonly outcome: CheckOutcome;
+  /** GitHub's own word for it, upper case: `SUCCESS`, `FAILURE`, `IN_PROGRESS`... */
+  readonly result: string;
   readonly url: string | null;
 }
 
@@ -14,13 +34,20 @@ export interface PullDetail {
   readonly number: number;
   readonly title: string;
   readonly body: string;
+  /** Cut to fit: the rest is on GitHub, so it must not be edited here. */
+  readonly bodyTruncated: boolean;
   readonly url: string;
   readonly isDraft: boolean;
+  /** `MERGEABLE`, `CONFLICTING` or `UNKNOWN`. */
+  readonly mergeable: string;
   readonly bucket: PullBucket;
   readonly author: string | null;
   readonly head: string;
   readonly base: string;
-  readonly labels: readonly string[];
+  /** The commit a merge is pinned to. */
+  readonly headOid: string;
+  readonly labels: readonly LabelLine[];
+  readonly assignees: readonly string[];
   readonly closes: readonly number[];
   readonly checks: readonly CheckLine[];
   readonly reviewDecision: ReviewDecision;
@@ -29,8 +56,15 @@ export interface PullDetail {
   readonly additions: number;
   readonly deletions: number;
   readonly changedFiles: number;
+  readonly files: readonly FileLine[];
+  readonly commits: readonly CommitLine[];
+  readonly commitsTotal: number;
+  readonly diff: string;
+  readonly diffBytes: number;
+  readonly diffTruncated: boolean;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly fetchedAt: string;
 }
 
 type Json = Record<string, unknown>;
@@ -43,12 +77,6 @@ const DECISIONS: readonly ReviewDecision[] = [
   'none',
 ];
 
-const isObject = (value: unknown): value is Json =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-const isString = (value: unknown): value is string => typeof value === 'string';
-const isCount = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isInteger(value) && value >= 0;
-const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter(isString) : []);
 /** Only links out over https are followed; the pull request itself must be on GitHub. */
 const isHttps = (value: unknown): value is string =>
   isString(value) && value.startsWith('https://');
@@ -61,7 +89,9 @@ function parseCheck(value: unknown): CheckLine | null {
   if (!(OUTCOMES as readonly unknown[]).includes(outcome)) return null;
   return {
     name: value['name'],
+    run: isString(value['run']) ? value['run'] : value['name'],
     outcome: outcome as CheckOutcome,
+    result: isString(value['result']) ? value['result'] : 'PENDING',
     url: isHttps(value['url']) ? value['url'] : null,
   };
 }
@@ -71,9 +101,10 @@ function parseReview(value: unknown): { reviewer: string; state: string } | null
   return { reviewer: value['reviewer'], state: value['state'] };
 }
 
-/** Reads the details defensively; anything that does not parse is left out. */
-export function parsePullDetail(value: unknown): PullDetail | null {
-  if (!isObject(value)) return null;
+/** The fields a detail cannot be shown without, or null. */
+function coreOf(
+  value: Json,
+): Pick<PullDetail, 'number' | 'title' | 'url' | 'head' | 'base' | 'bucket'> | null {
   const { number, title, url, bucket, head, base } = value;
   if (
     !isCount(number) ||
@@ -85,34 +116,46 @@ export function parsePullDetail(value: unknown): PullDetail | null {
     return null;
   }
   if (!(PULL_BUCKETS as readonly unknown[]).includes(bucket)) return null;
+  return { number, title, url, head, base, bucket: bucket as PullBucket };
+}
+
+/** Reads the details defensively; anything that does not parse is left out. */
+export function parsePullDetail(value: unknown): PullDetail | null {
+  if (!isObject(value)) return null;
+  const core = coreOf(value);
+  if (!core) return null;
   const decision = value['reviewDecision'];
   const count = (key: string): number => (isCount(value[key]) ? (value[key] as number) : 0);
+  const text = (key: string, fallback = ''): string =>
+    isString(value[key]) ? (value[key] as string) : fallback;
   return {
-    number,
-    title,
-    body: isString(value['body']) ? value['body'] : '',
-    url,
+    ...core,
+    body: text('body'),
+    bodyTruncated: value['bodyTruncated'] === true,
     isDraft: value['isDraft'] === true,
-    bucket: bucket as PullBucket,
+    mergeable: text('mergeable', 'UNKNOWN'),
     author: isString(value['author']) ? value['author'] : null,
-    head,
-    base,
-    labels: strings(value['labels']),
+    headOid: text('headOid'),
+    labels: listOf(value['labels'], parseLabel),
+    assignees: strings(value['assignees']),
     closes: Array.isArray(value['closes']) ? value['closes'].filter(isCount) : [],
-    checks: (Array.isArray(value['checks']) ? value['checks'] : [])
-      .map(parseCheck)
-      .filter((check): check is CheckLine => check !== null),
+    checks: listOf(value['checks'], parseCheck),
     reviewDecision: (DECISIONS as readonly unknown[]).includes(decision)
       ? (decision as ReviewDecision)
       : 'none',
     requestedReviewers: strings(value['requestedReviewers']),
-    reviews: (Array.isArray(value['reviews']) ? value['reviews'] : [])
-      .map(parseReview)
-      .filter((review): review is { reviewer: string; state: string } => review !== null),
+    reviews: listOf(value['reviews'], parseReview),
     additions: count('additions'),
     deletions: count('deletions'),
     changedFiles: count('changedFiles'),
-    createdAt: isString(value['createdAt']) ? value['createdAt'] : '',
-    updatedAt: isString(value['updatedAt']) ? value['updatedAt'] : '',
+    files: listOf(value['files'], parseFile),
+    commits: listOf(value['commits'], parseCommit),
+    commitsTotal: count('commitsTotal'),
+    diff: text('diff'),
+    diffBytes: count('diffBytes'),
+    diffTruncated: value['diffTruncated'] === true,
+    createdAt: text('createdAt'),
+    updatedAt: text('updatedAt'),
+    fetchedAt: text('fetchedAt'),
   };
 }

@@ -67,6 +67,9 @@ export class PullPanel {
     () => DECISION_LABEL[this.detail()?.reviewDecision ?? 'none'],
   );
   protected readonly issueBase = computed(() => `https://github.com/${this.repo()}/issues/`);
+  protected readonly labelNames = computed(() =>
+    (this.detail()?.labels ?? []).map((label) => label.name).join(', '),
+  );
 
   constructor() {
     effect(() => this.feed.load(this.repo(), this.number()));

@@ -17,7 +17,9 @@ describe('createApiHandler', () => {
     },
     post: {
       '/api/write': async (body) => ({ got: body }),
+      '/api/large': async () => ({ ok: true }),
     },
+    bodyLimits: { '/api/large': 64 * 1024 },
   });
   const base = 'http://localhost';
   const get = (path: string) => handle(new Request(`${base}${path}`));
@@ -75,6 +77,17 @@ describe('createApiHandler', () => {
     assert.equal((await write({ headers: json, body: '{nope' })).status, 400);
     const huge = JSON.stringify({ text: 'x'.repeat(20_000) });
     assert.equal((await write({ headers: json, body: huge })).status, 400);
+  });
+
+  it('takes a larger body on a route allowed one', async () => {
+    const response = await handle(
+      new Request(`${base}/api/large`, {
+        method: 'POST',
+        headers: { 'x-observatory': '1', 'content-type': 'application/json' },
+        body: JSON.stringify({ text: 'x'.repeat(20_000) }),
+      }),
+    );
+    assert.equal(response.status, 200);
   });
 
   it('turns a failing route into a server error, not a crash', async () => {

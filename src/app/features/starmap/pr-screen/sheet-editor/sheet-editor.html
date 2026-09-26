@@ -1,0 +1,94 @@
+@let pull = detail();
+@let typed = form();
+<p class="note">
+  Save sends these changes to GitHub straight away. The badge under the title says how it went.
+</p>
+<div class="field" [class.changed]="titleChanged()">
+  <label for="ed-title">Title</label>
+  <input
+    id="ed-title"
+    type="text"
+    maxlength="256"
+    [value]="typed.title"
+    (input)="change({ title: titleBox.value })"
+    #titleBox
+  />
+</div>
+<div class="field" [class.changed]="bodyChanged()">
+  <label for="ed-body">Description</label>
+  <textarea
+    id="ed-body"
+    spellcheck="true"
+    [value]="typed.body"
+    [readOnly]="pull.bodyTruncated"
+    (input)="change({ body: bodyBox.value })"
+    #bodyBox
+  ></textarea>
+  @if (pull.bodyTruncated) {
+    <span class="hint2 warn">
+      This description was shortened to fit the page. Editing it here would cut the rest — edit it
+      on GitHub instead.
+    </span>
+  }
+</div>
+<div class="field">
+  <span class="lbl">Labels</span>
+  <div class="chips">
+    @for (chip of chips(); track chip.name) {
+      <button
+        type="button"
+        class="chip"
+        [style.--lc]="chip.colour"
+        [attr.aria-pressed]="chip.pressed"
+        (click)="toggleLabel(chip.name)"
+      >
+        <span class="sw"></span>{{ chip.name }}
+      </button>
+    }
+  </div>
+</div>
+<div class="field">
+  <label for="ed-assignees">Assignees</label>
+  <input
+    id="ed-assignees"
+    type="text"
+    placeholder="login, login"
+    [value]="typed.assignees"
+    (input)="change({ assignees: assigneesBox.value })"
+    #assigneesBox
+  />
+  <span class="hint2">GitHub logins, comma separated. <code>&#64;me</code> is you.</span>
+</div>
+<div class="field">
+  <label for="ed-reviewers">Reviewers</label>
+  <input
+    id="ed-reviewers"
+    type="text"
+    placeholder="login, login"
+    [value]="typed.reviewers"
+    (input)="change({ reviewers: reviewersBox.value })"
+    #reviewersBox
+  />
+</div>
+
+<app-sheet-decisions
+  [number]="pull.number"
+  [isDraft]="pull.isDraft"
+  [mergeable]="pull.mergeable"
+  [headOid]="pull.headOid"
+  [ready]="typed.ready"
+  (readyChange)="change({ ready: $event })"
+  [method]="typed.mergeMethod"
+  (methodChange)="change({ mergeMethod: $event })"
+  [confirm]="typed.confirm"
+  (confirmChange)="change({ confirm: $event })"
+/>
+
+<app-sheet-savebar
+  [summary]="summary()"
+  [canSave]="canSave()"
+  [canClear]="hasRecord()"
+  [saveState]="saveState()"
+  (save)="save()"
+  (clear)="clear()"
+/>

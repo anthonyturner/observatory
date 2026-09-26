@@ -3,7 +3,9 @@ import { checkTally, checksToName, shortDate } from './pull-view';
 
 const check = (outcome: CheckLine['outcome'], name = outcome): CheckLine => ({
   name,
+  run: name,
   outcome,
+  result: outcome.toUpperCase(),
   url: null,
 });
 
@@ -22,7 +24,7 @@ describe('checkTally', () => {
 describe('checksToName', () => {
   it('names only the checks that failed or have not finished', () => {
     expect(
-      checksToName([check('passed'), check('failed'), check('skipped'), check('pending')]).map(
+      checksToName([check('passed'), check('pending'), check('skipped'), check('failed')]).map(
         (c) => c.outcome,
       ),
     ).toEqual(['failed', 'pending']);

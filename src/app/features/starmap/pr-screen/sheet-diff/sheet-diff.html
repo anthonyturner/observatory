@@ -1,0 +1,26 @@
+@if (!diff()) {
+  <p class="note warn">
+    This diff is too large to carry here{{ diffBytes() ? ' (' + sizeKb() + ' KB)' : '' }}. Open it
+    on GitHub.
+  </p>
+} @else {
+  @if (truncated()) {
+    <p class="note warn">
+      Shortened to fit — the full diff is on GitHub. Files near the end may be missing.
+    </p>
+  }
+  @for (view of views(); track view.file) {
+    <div class="dfile">
+      <button type="button" [attr.aria-expanded]="view.expanded" (click)="toggle(view.file)">
+        <span class="p">{{ view.file.path }}</span>
+        <span>+{{ view.file.additions }}</span>
+        <span>−{{ view.file.deletions }}</span>
+      </button>
+      @if (view.lines; as lines) {
+        <pre
+          [hidden]="!view.expanded"
+        >@for (line of lines; track $index) {<span [class]="line.kind">{{ line.text }}</span>}</pre>
+      }
+    </div>
+  }
+}

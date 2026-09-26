@@ -1,0 +1,54 @@
+@let shown = state();
+<header class="grab" data-handle title="Drag to move · double-click to reset">
+  <div class="grip" aria-hidden="true"></div>
+  <div class="toprow">
+    <div class="who">
+      <div class="kicker">{{ kicker() }}</div>
+      <h2>
+        <span class="num">#{{ number() }}</span
+        ><span>{{ title() }}</span>
+      </h2>
+    </div>
+    <div class="winbtns">
+      <button
+        type="button"
+        [disabled]="shown.fetching"
+        [title]="shown.fetching ? 'Fetching from GitHub' : 'Fetch this pull request again'"
+        (click)="refresh.emit()"
+      >
+        {{ shown.fetching ? 'Fetching…' : 'Refresh' }}
+      </button>
+      <a [href]="url()" target="_blank" rel="noopener">GitHub ↗</a>
+      <button type="button" aria-label="Close" (click)="closed.emit()">✕</button>
+    </div>
+  </div>
+  <div class="route">
+    @if (shown.route; as route) {
+      <code>{{ route.base }}</code> ← <code>{{ route.head }}</code>
+      <span>{{ route.state }}</span>
+      <span [class]="route.mergeClass">{{ route.mergeable }}</span>
+      <span class="plus">{{ route.additions }}</span
+      ><span class="minus">{{ route.deletions }}</span>
+      <span>{{ route.fetched }}</span>
+    } @else if (shown.loading) {
+      <span class="note">loading…</span>
+    }
+  </div>
+  <app-sheet-status
+    [badge]="shown.badge"
+    [hasNewer]="shown.hasNewer"
+    (showNewer)="showNewer.emit()"
+  />
+  <nav class="tabs" role="tablist">
+    @for (name of tabs; track name) {
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="name === tab()"
+        (click)="tabChange.emit(name)"
+      >
+        {{ tabLabel[name] }}<span class="count">{{ shown.counts[name] }}</span>
+      </button>
+    }
+  </nav>
+</header>

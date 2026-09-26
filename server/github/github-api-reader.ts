@@ -1,10 +1,12 @@
 import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
+import { githubApiWriter } from './github-api-writer.ts';
 import { type GraphQl, type GraphQlConfig, githubGraphQl } from './github-graphql.ts';
+import { githubRest } from './github-rest.ts';
 import { ISSUE_GRAPHQL, PULL_GRAPHQL, nodesOf, selectionOf } from './graphql-fields.ts';
 import { type ClosingPull, RAW_ISSUE_FIELDS, type RawIssue } from './issue-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
-import { PULL_DETAIL_FIELDS, type RawPull } from './pull-reader.ts';
+import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
 
 /** The same limits the `gh` reader asks for, so both see the same lists. */
@@ -12,6 +14,8 @@ const PULL_LIMIT = 100;
 const ISSUE_LIMIT = 1000;
 const REPO_LIMIT = 1000;
 const PAGE_SIZE = 100;
+const LABEL_LIMIT = 100;
+const DIFF_MEDIA_TYPE = 'application/vnd.github.diff';
 
 type Node = Readonly<Record<string, unknown>>;
 
@@ -60,6 +64,7 @@ async function allPages(load: (after: string | null) => Promise<Page>, limit: nu
  *  hosted site uses where this machine uses `gh`. */
 export function githubApiReader(config: GraphQlConfig): GitHub {
   const graphql = githubGraphQl(config);
+  const rest = githubRest(config);
   const repositoryOf = async (query: string, variables: Node): Promise<Node> =>
     asNode(asNode(await graphql(query, variables))['repository']);
 
@@ -115,6 +120,7 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
   }
 
   return {
+    ...githubApiWriter(graphql, rest),
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),
@@ -126,6 +132,17 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
       pullFilesOf(shaped<ListedFiles>(await openPulls(repo, ['number', 'files']))),
     pullDetail: async (repo, number) =>
       shaped<RawPull>([await onePull(repo, number, PULL_DETAIL_FIELDS)])[0],
+    pullDiff: (repo, number) =>
+      rest({ method: 'GET', path: `/repos/${repo}/pulls/${number}`, accept: DIFF_MEDIA_TYPE }),
+    repoLabels: async (repo) => {
+      const repository = await repositoryOf(
+        `query($owner: String!, $name: String!, $first: Int!) {
+          repository(owner: $owner, name: $name) { labels(first: $first) { nodes { name color } } }
+        }`,
+        { ...repoVariables(repo), first: LABEL_LIMIT },
+      );
+      return shaped<RawLabel>(nodesOf(repository['labels']));
+    },
     pullState: async (repo, pull) => String((await onePull(repo, pull, ['state']))['state']),
     mergeableOf: async (repo, pull) =>
       String((await onePull(repo, pull, ['mergeable']))['mergeable']),

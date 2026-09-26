@@ -26,7 +26,10 @@ export interface RawPull {
   readonly author: { readonly login: string } | null;
   readonly headRefName: string;
   readonly baseRefName: string;
-  readonly labels: readonly { readonly name: string }[];
+  /** The commit the pull request's branch points at: what a merge is pinned to. */
+  readonly headRefOid: string;
+  readonly labels: readonly RawLabel[];
+  readonly assignees: readonly { readonly login: string }[];
   readonly reviewDecision: string;
   readonly reviewRequests: readonly { readonly login?: string; readonly name?: string }[];
   readonly latestReviews: readonly {
@@ -38,13 +41,41 @@ export interface RawPull {
   readonly additions: number;
   readonly deletions: number;
   readonly changedFiles: number;
+  readonly files: readonly RawFile[] | null;
+  readonly commits: readonly RawCommit[] | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+/** A label as GitHub gives it: its colour is six hex digits, no `#`. */
+export interface RawLabel {
+  readonly name: string;
+  readonly color: string;
+}
+
+/** One changed file; `changeType` is `ADDED`, `MODIFIED`, `DELETED`, `RENAMED`... */
+export interface RawFile {
+  readonly path: string;
+  readonly additions: number;
+  readonly deletions: number;
+  readonly changeType: string;
+}
+
+export interface RawCommit {
+  readonly oid: string;
+  readonly messageHeadline: string;
+  readonly committedDate: string | null;
+  readonly authoredDate: string;
+  readonly authors: readonly { readonly login: string; readonly name: string }[];
 }
 
 /** Everything the PR screen needs from GitHub. */
 export interface PullReader {
   pullDetail(repo: string, number: number): Promise<RawPull>;
+  /** The unified diff. GitHub refuses one that is too large, and this throws. */
+  pullDiff(repo: string, number: number): Promise<string>;
+  /** The labels a repository has, so an edit can only pick one that exists. */
+  repoLabels(repo: string): Promise<RawLabel[]>;
 }
 
 /** The `gh --json` fields RawPull holds. */
@@ -58,7 +89,9 @@ export const PULL_DETAIL_FIELDS: readonly string[] = [
   'author',
   'headRefName',
   'baseRefName',
+  'headRefOid',
   'labels',
+  'assignees',
   'reviewDecision',
   'reviewRequests',
   'latestReviews',
@@ -67,6 +100,8 @@ export const PULL_DETAIL_FIELDS: readonly string[] = [
   'additions',
   'deletions',
   'changedFiles',
+  'files',
+  'commits',
   'createdAt',
   'updatedAt',
 ];

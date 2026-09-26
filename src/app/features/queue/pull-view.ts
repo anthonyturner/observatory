@@ -13,9 +13,11 @@ export function checkTally(checks: readonly CheckLine[]): string {
     .join(' · ');
 }
 
-/** The checks worth naming: the ones that failed or have not finished. */
-export const checksToName = (checks: readonly CheckLine[]): CheckLine[] =>
-  checks.filter((check) => check.outcome === 'failed' || check.outcome === 'pending');
+/** The checks worth naming: the ones that failed, then the ones that have not finished. */
+export const checksToName = (checks: readonly CheckLine[]): CheckLine[] => [
+  ...checks.filter((check) => check.outcome === 'failed'),
+  ...checks.filter((check) => check.outcome === 'pending'),
+];
 
 export const DECISION_LABEL: Record<ReviewDecision, string> = {
   approved: 'Approved',

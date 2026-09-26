@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import type { EditRequest, EditTarget } from '../edits/edit-request.ts';
+import type { PullEditor } from '../edits/pull-editor.ts';
 import { createApiHandler } from '../http/api-handler.ts';
 import type { QueueReport } from '../queue/queue-report.ts';
 import { EMPTY_TRIAGE, type TriageState } from '../triage/triage.ts';
@@ -28,10 +30,30 @@ const queue: QueueReport = {
   ],
 };
 
+const forgotten: string[] = [];
 const reads = {
   queue: async () => queue,
   pull: async (repo: string, number: number) => ({ repo, number }),
+  forgetPull: (repo: string, number: number) => forgotten.push(`${repo}#${number}`),
+  labels: async () => [{ name: 'bug', color: 'd73a4a' }],
 } as unknown as ApiReads;
+
+/** An editor that remembers what it was asked, and changes nothing. */
+function recordingEditor(): PullEditor & { asked: (EditRequest | EditTarget)[] } {
+  const asked: (EditRequest | EditTarget)[] = [];
+  return {
+    asked,
+    apply: async (request) => {
+      asked.push(request);
+      return { pr: request.number, status: 'applied' } as never;
+    },
+    read: async (target) => {
+      asked.push(target);
+      return null;
+    },
+    clear: async (target) => void asked.push(target),
+  };
+}
 
 function memoryTriage(): TriageStore {
   let state: TriageState = EMPTY_TRIAGE;
@@ -44,11 +66,57 @@ function memoryTriage(): TriageStore {
 }
 
 describe('ownerRoutes', () => {
-  const handle = createApiHandler(ownerRoutes(reads, memoryTriage()));
+  const editor = recordingEditor();
+  const handle = createApiHandler(ownerRoutes(reads, memoryTriage(), editor));
   const get = async (path: string) => (await handle(new Request(`http://x${path}`))).json();
+  const post = (path: string, body: unknown) =>
+    handle(
+      new Request(`http://x${path}`, {
+        method: 'POST',
+        headers: { 'x-observatory': '1', 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+    );
 
   it('reads a pull request by repository and number', async () => {
     assert.deepEqual(await get('/api/pull?repo=me/app&number=7'), { repo: 'me/app', number: 7 });
+  });
+
+  it('reads a pull request afresh when asked to', async () => {
+    forgotten.length = 0;
+    await get('/api/pull?repo=me/app&number=7');
+    await get('/api/pull?repo=me/app&number=7&fresh=1');
+    assert.deepEqual(forgotten, ['me/app#7']);
+  });
+
+  it('lists a repository’s labels', async () => {
+    assert.deepEqual(await get('/api/labels?repo=me/app'), [{ name: 'bug', color: 'd73a4a' }]);
+  });
+
+  it('applies an edit, reads its record, and clears it', async () => {
+    editor.asked.length = 0;
+    const edit = { repo: 'me/app', number: 7, changes: { title: 'T' } };
+
+    assert.deepEqual(await (await post('/api/edit', edit)).json(), { pr: 7, status: 'applied' });
+    assert.equal(await get('/api/edit?repo=me/app&number=7'), null);
+    assert.equal((await post('/api/edit/clear', { repo: 'me/app', number: 7 })).status, 200);
+    assert.deepEqual(editor.asked, [
+      edit,
+      { repo: 'me/app', number: 7 },
+      { repo: 'me/app', number: 7 },
+    ]);
+  });
+
+  it('refuses an edit without the header, or not in shape', async () => {
+    const bare = await handle(
+      new Request('http://x/api/edit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      }),
+    );
+    assert.equal(bare.status, 403);
+    assert.equal((await post('/api/edit', { repo: 'me/app', number: 7, changes: {} })).status, 400);
   });
 
   it('records triage and shows it in the next queue read', async () => {

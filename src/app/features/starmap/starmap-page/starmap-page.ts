@@ -20,6 +20,7 @@ import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LastSeen } from '../../../core/queue/last-seen';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { queueFog } from '../../../core/queue/queue-fog';
+import { shownBucket } from '../../../core/queue/queue-report';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { Clock } from '../../../core/time/clock';
 import { HelpCard } from '../../../shared/help/help-card';
@@ -28,6 +29,7 @@ import { IssuesTab } from '../../issues/issues-tab/issues-tab';
 import { ChangesCard } from '../../queue/changes-card/changes-card';
 import { PullPanel } from '../../queue/pull-panel/pull-panel';
 import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../../queue/queue-help';
+import { PrScreen } from '../pr-screen/pr-screen';
 import { skyItemOf, skyPairOf } from '../sky-items';
 import { StarmapHeader } from '../starmap-header/starmap-header';
 import { StarmapPrList } from '../starmap-pr-list/starmap-pr-list';
@@ -71,6 +73,7 @@ export interface SkyState {
     IssuesTab,
     ChangesCard,
     PullPanel,
+    PrScreen,
     HelpCard,
   ],
   hostDirectives: [HelpShortcuts],
@@ -109,6 +112,8 @@ export class StarmapPage {
   protected readonly folded = signal(false);
   protected readonly refreshing = signal(false);
   protected readonly openPull = signal<number | null>(null);
+  /** The pull request whose full screen is open. */
+  readonly sheetPull = signal<number | null>(null);
   protected readonly sky = viewChild<StarmapSky>('sky');
   protected readonly helpEntries = QUEUE_HELP_ENTRIES;
   protected readonly helpKeys = QUEUE_HELP_KEYS;
@@ -202,6 +207,14 @@ export class StarmapPage {
     return number === null ? [] : collisionsOf(this.collisions.report(), number);
   });
   protected readonly collisionCheck = computed(() => this.collisions.report()?.check ?? null);
+  private readonly sheetItem = computed(
+    () => this.items().find((each) => each.number === this.sheetPull()) ?? null,
+  );
+  protected readonly sheetBucket = computed(() => {
+    const item = this.sheetItem();
+    return item ? shownBucket(item) : null;
+  });
+  protected readonly sheetTitle = computed(() => this.sheetItem()?.title ?? null);
   protected readonly insets = computed((): SkyInsets => {
     const wide = (this.window?.innerWidth ?? 0) > SIDE_PANEL_MIN_WIDTH;
     return {
@@ -217,6 +230,7 @@ export class StarmapPage {
       untracked(() => {
         this.filter.set(null);
         this.openPull.set(null);
+        this.sheetPull.set(null);
       });
       if (repo === '/') return;
       untracked(() => {
@@ -271,6 +285,11 @@ export class StarmapPage {
     const now = Date.now();
     this.lastSeenStore.record(this.repo(), now);
     this.lastSeen.set(now);
+  }
+
+  /** Opens a pull request's full screen, from its card or another screen. */
+  openSheet(number: number): void {
+    this.sheetPull.set(number);
   }
 
   protected recordTriage(number: number, choice: TriageChoice): void {

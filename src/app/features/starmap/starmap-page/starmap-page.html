@@ -85,3 +85,13 @@
     (closed)="openPull.set(null)"
   />
 }
+
+@if (sheetPull(); as number) {
+  <app-pr-screen
+    [repo]="repo()"
+    [number]="number"
+    [bucket]="sheetBucket()"
+    [title]="sheetTitle()"
+    (closed)="sheetPull.set(null)"
+  />
+}

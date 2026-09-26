@@ -8,6 +8,8 @@ const noWait = async () => undefined;
 
 const pull = (number: number, mergeable: string, closes: number[] = [1]): PullRequest => ({
   number,
+  title: `Change ${number}`,
+  url: `https://github.com/me/alpha/pull/${number}`,
   mergeable,
   statusCheckRollup: [],
   closingIssuesReferences: closes.map((issue) => ({ number: issue })),
@@ -74,5 +76,18 @@ describe('projectsReport', () => {
 
     assert.equal(projects[1].error, 'HTTP 403: rate limit exceeded');
     assert.equal(projects[1].open, 0);
+  });
+
+  it('names the most urgent pull requests across every project', async () => {
+    const { directives } = await projectsReport(fakeGitHub(), NOW, noWait);
+
+    assert.deepEqual(
+      directives.map((each) => [each.project, each.number, each.bucket]),
+      [
+        ['alpha', 1, 'conflicted'],
+        ['alpha', 2, 'unlinked'],
+      ],
+    );
+    assert.equal(directives[0].url, 'https://github.com/me/alpha/pull/1');
   });
 });

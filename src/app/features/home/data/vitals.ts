@@ -87,29 +87,7 @@ export const SAMPLE_VITALS_COLUMN: VitalsColumn = {
     },
   ],
   weekly: { percentUsed: 62, note: 'resets Mon 09:00 · on pace for 88%' },
-  directives: {
-    items: [
-      {
-        title: 'Split the pages into small files',
-        href: 'https://github.com/anthonyturner/pr-starmap/pull/81',
-        detail: 'pr-starmap #81 · cannot merge',
-        color: 'var(--count-conflicted)',
-      },
-      {
-        title: 'Read tier-3 runs as a transcript',
-        href: 'https://github.com/anthonyturner/pr-starmap/pull/79',
-        detail: 'pr-starmap #79 · checks failing',
-        color: 'var(--count-failing)',
-      },
-      {
-        title: 'Install the playbook from a template',
-        href: 'https://github.com/anthonyturner/agent-playbook/pull/12',
-        detail: 'agent-playbook #12 · mergeability unknown',
-        color: 'var(--count-unknown)',
-      },
-    ],
-    note: 'Blocked first · on GitHub',
-  },
+  directives: { items: [], note: '' },
   docs: {
     project: 'pr-starmap',
     links: [

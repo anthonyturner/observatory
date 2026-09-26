@@ -15,7 +15,7 @@ const project = (name: string, failing = 0): ProjectSnapshot => ({
 });
 const ready = (projects: readonly ProjectSnapshot[]): ProjectsState => ({
   status: 'ready',
-  report: { generatedAt: '2026-09-26T12:00:00Z', projects },
+  report: { generatedAt: '2026-09-26T12:00:00Z', projects, directives: [] },
 });
 
 function render(state: ProjectsState): HTMLElement {

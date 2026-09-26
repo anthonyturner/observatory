@@ -1,0 +1,28 @@
+<a class="up" routerLink="/orrery"><span aria-hidden="true">&lsaquo;</span> All projects</a>
+<div class="brand">
+  <h1>{{ title() }}</h1>
+  <span class="stamp" [class.replaying]="replaying()">{{ stamp() }}</span>
+  @if (stale(); as words) {
+    <span
+      class="stale"
+      title="The data has not been refreshed for a while. Press Refresh to clear the fog."
+      >{{ words }}</span
+    >
+  }
+</div>
+@if (chips().length) {
+  <div class="legend">
+    @for (chip of chips(); track chip.id) {
+      <button
+        type="button"
+        class="lg"
+        [style.--sev]="chip.colour"
+        [attr.data-empty]="chip.live ? '0' : '1'"
+        [attr.aria-pressed]="filter() === chip.id"
+        (click)="chip.live && toggled.emit(chip.id)"
+      >
+        <span class="dot"></span><b>{{ fmtN(chip.count) }}</b> {{ chip.text }}
+      </button>
+    }
+  </div>
+}

@@ -1,0 +1,21 @@
+@for (section of sections(); track section.id) {
+  <section [style.--sev]="section.colour">
+    <h3>
+      {{ section.label }}<small>{{ section.sub }} · {{ section.items.length }}</small>
+    </h3>
+    <ul>
+      @for (item of section.items; track item.pr) {
+        <li
+          tabindex="0"
+          role="button"
+          (click)="go.emit(item.pr)"
+          (keydown)="onKey($event, item.pr)"
+        >
+          <span class="n">#{{ item.pr }}</span
+          ><span class="t">{{ item.title }}</span
+          ><span class="i">{{ detail(item) }}</span>
+        </li>
+      }
+    </ul>
+  </section>
+}

@@ -1,0 +1,78 @@
+/* pr-starmap's page: the sky fills the window, the chrome floats over it. */
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+.hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  padding-inline: 20px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hud.top {
+  top: 0;
+  padding-top: calc(18px + env(safe-area-inset-top, 0px));
+}
+
+.hud.bottom {
+  bottom: 0;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.listview {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--queue-sky);
+  padding-inline: 20px;
+  padding-block: calc(150px + env(safe-area-inset-top, 0px)) 100px;
+  z-index: 4;
+}
+
+.listwrap {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.state {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 28px;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.state strong {
+  color: var(--ink);
+  font-weight: 400;
+  font-size: 17px;
+}
+
+@media (max-width: 720px) {
+  .hud {
+    padding-inline: 16px;
+  }
+}
+
+@media (max-width: 720px), (max-height: 500px) {
+  .hud.bottom[data-folded] {
+    pointer-events: none;
+  }
+}

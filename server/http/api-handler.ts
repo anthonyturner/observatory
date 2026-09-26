@@ -1,7 +1,10 @@
-/** Answers one GET route, given its query string, with a value to send as JSON. */
+/**
+ * Answers one GET or DELETE route, given its query string, with a value to send
+ * as JSON, or with a Response of its own for a status other than 200 or a stream.
+ */
 export type RouteHandler = (query: URLSearchParams) => Promise<unknown>;
 
-/** Answers one POST route, given its parsed JSON body. */
+/** Answers one POST route, given its parsed JSON body, as a RouteHandler does. */
 export type PostHandler = (body: unknown) => Promise<unknown>;
 
 export type Routes = Readonly<Record<string, RouteHandler>>;
@@ -11,6 +14,8 @@ export type PostRoutes = Readonly<Record<string, PostHandler>>;
 export interface RouteTable {
   readonly get: Routes;
   readonly post: PostRoutes;
+  /** Guarded by WRITE_HEADER like a POST, but with no body. */
+  readonly delete?: Routes;
   /** A larger body than MAX_BODY_BYTES, for the POST routes that need one. */
   readonly bodyLimits?: Readonly<Record<string, number>>;
 }
@@ -69,7 +74,8 @@ export async function readJson(request: Request, maxBytes = MAX_BODY_BYTES): Pro
 /** Runs a route, turning what it throws into the status it stands for. */
 export async function answer(produce: () => Promise<unknown>): Promise<Response> {
   try {
-    return json(HTTP_OK, await produce());
+    const value = await produce();
+    return value instanceof Response ? value : json(HTTP_OK, value);
   } catch (error) {
     if (error instanceof BadRequest) return json(HTTP_BAD_REQUEST, { error: error.message });
     if (error instanceof NotFound) return json(HTTP_NOT_FOUND, { error: error.message });
@@ -82,21 +88,30 @@ export async function answer(produce: () => Promise<unknown>): Promise<Response>
 const isJson = (request: Request): boolean =>
   (request.headers.get('content-type') ?? '').startsWith('application/json');
 
-/** JSON over HTTP: GET routes by path, and POST routes guarded by WRITE_HEADER. */
+/** `respond()`, when `request` carries WRITE_HEADER; otherwise 403. */
+const asWrite = (request: Request, respond: () => Promise<Response>): Promise<Response> =>
+  request.headers.get(WRITE_HEADER) === '1'
+    ? respond()
+    : Promise.resolve(json(HTTP_FORBIDDEN, { error: 'forbidden' }));
+
+async function answerPost(post: PostHandler, request: Request, limit: number): Promise<Response> {
+  if (!isJson(request)) {
+    return json(HTTP_UNSUPPORTED_MEDIA, { error: 'body must be application/json' });
+  }
+  return answer(async () => post(await readJson(request, limit)));
+}
+
+/** JSON over HTTP: GET routes by path, and POST and DELETE routes guarded by WRITE_HEADER. */
 export function createApiHandler(table: RouteTable): ApiHandler {
   return async (request) => {
     const url = new URL(request.url);
     const get = request.method === 'GET' ? table.get[url.pathname] : undefined;
     const post = request.method === 'POST' ? table.post[url.pathname] : undefined;
+    const remove = request.method === 'DELETE' ? table.delete?.[url.pathname] : undefined;
     if (get) return answer(() => get(url.searchParams));
+    if (remove) return asWrite(request, () => answer(() => remove(url.searchParams)));
     if (!post) return json(HTTP_NOT_FOUND, { error: 'not found' });
-    if (request.headers.get(WRITE_HEADER) !== '1') {
-      return json(HTTP_FORBIDDEN, { error: 'forbidden' });
-    }
-    if (!isJson(request)) {
-      return json(HTTP_UNSUPPORTED_MEDIA, { error: 'body must be application/json' });
-    }
     const limit = table.bodyLimits?.[url.pathname] ?? MAX_BODY_BYTES;
-    return answer(async () => post(await readJson(request, limit)));
+    return asWrite(request, () => answerPost(post, request, limit));
   };
 }

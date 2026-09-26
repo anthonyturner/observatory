@@ -19,6 +19,7 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { LitProject } from '../../../core/projects/lit-project';
 import { PROJECTS, PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { BeadBurst } from './bead-burst';
+import { DataFog } from './data-fog';
 import { BeadLabel } from './bead-label';
 
 /** The backdrop's budget: speech models will share the graphics card with it. */
@@ -31,8 +32,8 @@ const FPS_TOUCHED = 60;
 /** Draws the core behind the HUD, at the anchor's place, following it as the page scrolls. */
 @Component({
   selector: 'app-core-canvas',
-  imports: [BeadLabel, BeadBurst],
-  template: '<app-bead-burst /><app-bead-label />',
+  imports: [BeadLabel, BeadBurst, DataFog],
+  template: '<app-data-fog /><app-bead-burst /><app-bead-label />',
   styleUrl: './core-canvas.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { 'aria-hidden': 'true' },

@@ -40,6 +40,6 @@ describe('HelpCard', () => {
 
     const terms = Array.from(element.querySelectorAll('dt')).map((dt) => dt.textContent?.trim());
     expect(terms).toContain('Comets');
-    expect(terms).not.toContain('Fog');
+    expect(terms).toContain('Fog');
   });
 });

@@ -3,3 +3,6 @@
 <p class="name" aria-hidden="true">Claude</p>
 <p class="caption">Observatory core · one bead per project, blocked first</p>
 <p class="mood" [attr.data-mood]="mood().name">Mood · {{ mood().name }} — {{ mood().reason }}</p>
+@if (fog().age; as age) {
+  <p class="fogged">Data fogged · {{ age }} old</p>
+}

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CORE_MOOD } from '../../../core/instrument/core-tokens';
+import { DataAge } from '../../../core/projects/data-age';
 import { CoreCanvas } from '../core-canvas/core-canvas';
 import { CoreTouch } from '../core-touch/core-touch';
 
@@ -13,4 +14,5 @@ import { CoreTouch } from '../core-touch/core-touch';
 })
 export class CorePanel {
   protected readonly mood = inject(CORE_MOOD);
+  protected readonly fog = inject(DataAge).fog;
 }

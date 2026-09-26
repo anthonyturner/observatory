@@ -1,3 +1,4 @@
+import { CoreChip } from '../../../core/core-state/core-chips';
 import { ProjectsState } from '../../../core/projects/projects-feed';
 import { severityOf } from '../../../core/projects/severity';
 import { hoursMinutes, localDayKey } from '../../../core/usage/usage-format';
@@ -17,19 +18,24 @@ export interface HomeSummary {
   readonly statuses: readonly StatusItem[];
 }
 
-/** Nothing moves the core off idle until the assistant exists. */
-const CORE_STATUS: StatusItem = { label: 'Core · Idle', state: 'idle' };
+/** The core's reading: its lit chip, with a dot that is quiet at rest and
+ *  red on an error. */
+export function coreStatusOf(chip: CoreChip): StatusItem {
+  const state: StatusState = chip.id === 'idle' || chip.id === 'error' ? chip.id : 'active';
+  return { label: `Core · ${chip.label}`, state };
+}
+
 /** Observatory's API reads this machine's files, so it always runs here. */
 const WHERE_STATUS: StatusItem = { label: 'Local' };
 
 const UNREAD: Record<Exclude<ProjectsState['status'], 'ready'>, HomeSummary> = {
   reading: {
     stamp: 'reading the projects',
-    statuses: [CORE_STATUS, WHERE_STATUS, { label: 'Projects · reading' }],
+    statuses: [WHERE_STATUS, { label: 'Projects · reading' }],
   },
   unreachable: {
     stamp: 'API out of reach',
-    statuses: [CORE_STATUS, WHERE_STATUS, { label: 'Projects · out of reach', state: 'error' }],
+    statuses: [WHERE_STATUS, { label: 'Projects · out of reach', state: 'error' }],
   },
 };
 
@@ -56,10 +62,6 @@ export function homeSummaryFrom(state: ProjectsState, now: number, locale?: stri
       `${open} open`,
       `refreshed ${refreshedAt(generatedAt, now, locale)}`,
     ].join(' · '),
-    statuses: [
-      CORE_STATUS,
-      WHERE_STATUS,
-      { label: `${plural(projects.length, 'project')} tracked` },
-    ],
+    statuses: [WHERE_STATUS, { label: `${plural(projects.length, 'project')} tracked` }],
   };
 }

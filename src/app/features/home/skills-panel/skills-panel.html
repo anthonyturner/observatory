@@ -4,9 +4,10 @@
       <div class="tiles" id="skill-tiles" role="group" aria-label="Skills">
         @for (skill of visible(); track skill.id) {
           <app-skill-tile
+            #tile
             [skill]="skill"
             [isProposing]="feed.pressedSkill() === skill.id"
-            (pressed)="feed.pressSkill($event)"
+            (pressed)="press($event, tile)"
           />
         }
       </div>
@@ -20,7 +21,13 @@
       @case ('lost') {
         <p class="empty lost" role="status">
           <b>Skills didn’t load</b><span>{{ lostWhy() }}</span>
-          <button type="button" class="abtn" [disabled]="isRetrying()" (click)="retry()">
+          <button
+            #retryButton
+            type="button"
+            class="abtn"
+            [disabled]="isRetrying()"
+            (click)="retry()"
+          >
             {{ isRetrying() ? 'Trying…' : 'Try again' }}
           </button>
         </p>

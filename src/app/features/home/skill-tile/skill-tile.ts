@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  ElementRef,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { Skill } from '../../../core/assistant/assistant.types';
 
 /** One skill as an outlined tile naming its task, with an arrow. A press
@@ -13,4 +21,15 @@ export class SkillTile {
   readonly skill = input.required<Skill>();
   readonly isProposing = input(false);
   readonly pressed = output<Skill>();
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly document = inject(DOCUMENT);
+
+  hasFocus(): boolean {
+    return this.host.nativeElement.contains(this.document.activeElement);
+  }
+
+  focus(): void {
+    this.host.nativeElement.querySelector('button')?.focus();
+  }
 }

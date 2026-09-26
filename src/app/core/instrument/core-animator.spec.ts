@@ -16,6 +16,7 @@ function frame(overrides: Partial<CoreFrame> = {}): CoreFrame {
     wall: 100,
     state: 'idle',
     stateAge: 0,
+    spokenTier: 0,
     isStill: false,
     hand: { yaw: 0, pitch: 0, x: 0, y: 0, glow: 0 },
     litKey: null,
@@ -68,6 +69,15 @@ describe('CoreAnimator', () => {
     const animator = new CoreAnimator();
     animator.advance(frame({ state: 'answered-3', isStill: true }), INKS);
     expect(animator.pose?.tierLevels[2]).toBe(1);
+  });
+
+  it('lights the arc of the reply being read aloud', () => {
+    const animator = new CoreAnimator();
+    animator.advance(frame({ state: 'speaking', spokenTier: 1, isStill: true }), INKS);
+    const [first, second, third] = animator.pose?.tierLevels ?? [];
+    expect(second).toBe(1);
+    expect(first).toBeLessThan(1);
+    expect(third).toBeLessThan(1);
   });
 });
 

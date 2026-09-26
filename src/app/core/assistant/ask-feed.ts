@@ -1,6 +1,8 @@
 import { Injectable, Provider, computed, inject, signal } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import { ASK_CHANNEL, AskChannel } from './ask-channel';
 import { AskBoxFocus } from './ask-box-focus';
+import { AskOutcome, FAILED, outcomeOf } from './ask-outcome';
 import { ASSISTANT_API, AssistantRefused } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { RouteReply, RouteRequest, Skill } from './assistant.types';
@@ -30,6 +32,7 @@ export class AskFeed implements AskChannel {
   private readonly focus = inject(AskBoxFocus);
   private readonly asking = signal(false);
   private readonly skillAsking = signal<string | null>(null);
+  private readonly ended = new Subject<AskOutcome>();
   /** Whether the last request cut a reply off, for "stop" to say so. */
   private cutSpeech = false;
   /** A spoken request keeps what the press that recorded it cut off. */
@@ -40,6 +43,8 @@ export class AskFeed implements AskChannel {
   readonly hasPendingJump = computed(() => this.jump.pending() !== null);
   /** The skill whose press is being worked out. */
   readonly pressedSkill = this.skillAsking.asReadonly();
+  /** How each request ended, as it ends. */
+  readonly outcomes: Observable<AskOutcome> = this.ended.asObservable();
 
   submit(text: string, options?: { readonly spoken?: boolean }): void {
     const asked = text.trim();
@@ -50,13 +55,18 @@ export class AskFeed implements AskChannel {
   }
 
   /** Sends only the skill's id: the router keeps its words, so a press can
-   *  only ever propose what the skill says. */
-  pressSkill(skill: Skill): void {
-    if (this.asking()) return;
+   *  only ever propose what the skill says. Settles with its reply's id once
+   *  the reply is shown, or null when a request was already on its way. */
+  async pressSkill(skill: Skill): Promise<number | null> {
+    if (this.asking()) return null;
     this.skillAsking.set(skill.id);
-    void this.send({ skill: skill.id }, this.open(skill.label, 'skill')).finally(() =>
-      this.skillAsking.set(null),
-    );
+    const entryId = this.open(skill.label, 'skill');
+    try {
+      await this.send({ skill: skill.id }, entryId);
+    } finally {
+      this.skillAsking.set(null);
+    }
+    return entryId;
   }
 
   press(entryId: number, action: EntryAction): void {
@@ -97,8 +107,10 @@ export class AskFeed implements AskChannel {
     try {
       const reply = await this.api.route(request);
       if (reply.jev) this.info.noteJev(reply.jev);
+      this.ended.next(outcomeOf(reply));
       this.show(entryId, reply, request, Math.round(performance.now() - startedAt));
     } catch (error: unknown) {
+      this.ended.next(FAILED);
       if (error instanceof AssistantRefused) this.showRefused(entryId);
       else this.showNoAnswer(entryId, request);
     } finally {

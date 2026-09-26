@@ -6,6 +6,7 @@ import { HelpState } from '../../shared/help/help-state';
 import { REPLY_VOICE, ReplyVoice } from '../voice/reply-voice';
 import { ASK_CHANNEL } from './ask-channel';
 import { ASK_FEED_CHANNEL, AskFeed } from './ask-feed';
+import { AskOutcome } from './ask-outcome';
 import { ASSISTANT_API, AssistantApi, AssistantRefused } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { RouteReply, RouteRequest } from './assistant.types';
@@ -315,13 +316,30 @@ describe('AskFeed', () => {
       ),
     ]);
 
-    feed.pressSkill({ id: 'stale', label: 'Find stale PRs' });
+    const pressed = feed.pressSkill({ id: 'stale', label: 'Find stale PRs' });
 
     expect(route).toHaveBeenCalledWith({ skill: 'stale' });
     expect(feed.pressedSkill()).toBe('stale');
     expect(latest()).toEqual(expect.objectContaining({ asked: 'Find stale PRs', how: 'skill' }));
     await settle();
     expect(feed.pressedSkill()).toBeNull();
+    await expect(pressed).resolves.toBe(latest().id);
+  });
+
+  it('tells how each request ended: at its tier, or failed', async () => {
+    const { feed } = setUp([
+      answer(reply({ tier: 2, text: 'Yes.' })),
+      () => Promise.reject(new Error('offline')),
+    ]);
+    const ended: AskOutcome[] = [];
+    feed.outcomes.subscribe((outcome) => ended.push(outcome));
+
+    feed.submit('is it up?');
+    await settle();
+    feed.submit('and now?');
+    await settle();
+
+    expect(ended).toEqual([{ kind: 'answered', tier: 2 }, { kind: 'failed' }]);
   });
 
   it('notes Jev’s state from every reply', async () => {

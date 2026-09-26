@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { MotionPreference } from '../../../core/motion/motion-preference';
 import { HelpState } from '../help/help-state';
 import { TopNav } from './top-nav';
 
@@ -15,5 +16,22 @@ describe('TopNav', () => {
 
     expect(TestBed.inject(HelpState).isOpen()).toBe(true);
     expect(button?.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('switches motion from the Motion button and says which way it is', () => {
+    localStorage.clear();
+    const fixture = TestBed.createComponent(TopNav);
+    fixture.detectChanges();
+    const button = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
+    ).find((b) => b.textContent?.includes('Motion'));
+    const wasStill = TestBed.inject(MotionPreference).isStill();
+
+    button?.click();
+    fixture.detectChanges();
+
+    expect(TestBed.inject(MotionPreference).isStill()).toBe(!wasStill);
+    expect(button?.textContent?.trim()).toBe(wasStill ? 'Motion on' : 'Motion off');
+    expect(button?.getAttribute('aria-pressed')).toBe(String(wasStill));
   });
 });

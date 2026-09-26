@@ -1,7 +1,14 @@
 <a class="link" href="/orrery">Orrery <span aria-hidden="true">&rsaquo;</span></a>
 <div class="group" role="group" aria-label="Tools">
   <button type="button" title="Rebuild every project's counts from GitHub now">Refresh</button>
-  <button type="button" aria-pressed="false">Motion</button>
+  <button
+    type="button"
+    [attr.aria-pressed]="!motion.isStill()"
+    [title]="motionHint()"
+    (click)="motion.toggle()"
+  >
+    {{ motion.isStill() ? 'Motion off' : 'Motion on' }}
+  </button>
 </div>
 <div class="group">
   <button

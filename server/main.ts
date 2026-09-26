@@ -1,5 +1,11 @@
 import { cachedReads } from './app/api-reads.ts';
-import { ownerRoutes } from './app/api-routes.ts';
+import { ownerRoutes, withAssistant } from './app/api-routes.ts';
+import { assistantRouter } from './assistant/assistant-router.ts';
+import { openRouter } from './assistant/open-router.ts';
+import { localKey } from './assistant/open-router-key.ts';
+import { projectsOf } from './assistant/projects-of.ts';
+import { localShells } from './assistant/shell-commands.ts';
+import { fileSkills } from './assistant/skills-file.ts';
 import { fileCloneFinder } from './collisions/clone-finder.ts';
 import { collisionsReport } from './collisions/collisions-report.ts';
 import { gitPairMerger } from './collisions/pair-merger.ts';
@@ -45,11 +51,20 @@ const editor = pullEditor({
   changed: ({ repo, number }) => reads.forgetPull(repo, number),
   now: Date.now,
 });
+const assistant = assistantRouter({
+  models: openRouter({ key: localKey() }),
+  projects: async () => projectsOf(await reads.projects()),
+  skills: fileSkills(),
+  where: 'local',
+  shells: localShells(process.platform),
+  // Nothing runs a proposal here yet: each is only its command.
+  runner: null,
+});
 
 // Loopback only: the API reads files from this machine's home folder and acts
 // as the account `gh` is signed in with.
 const server = createApiServer(
-  createApiHandler(withLocalSession(ownerRoutes(reads, triage, editor))),
+  createApiHandler(withLocalSession(withAssistant(ownerRoutes(reads, triage, editor), assistant))),
 );
 
 // Another copy already on the port would answer the page with its own, older

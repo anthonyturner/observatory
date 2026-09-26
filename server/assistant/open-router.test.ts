@@ -1,0 +1,136 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { OpenRouterError } from './open-router-error.ts';
+import { openRouter } from './open-router.ts';
+
+const KEY = 'sk-or-v1-test-key';
+
+interface Sent {
+  readonly url: string;
+  readonly init: RequestInit;
+}
+
+/** A fetch that answers each call with the next response, remembering what was sent. */
+function fakeFetch(...responses: (() => Response)[]) {
+  const sent: Sent[] = [];
+  const send = async (url: string | URL | Request, init?: RequestInit) => {
+    sent.push({ url: String(url), init: init ?? {} });
+    const next = responses.shift();
+    if (!next) throw new Error('no more responses');
+    return next();
+  };
+  return { sent, fetch: send as typeof fetch };
+}
+
+const failing = (error: Error) =>
+  (async () => {
+    throw error;
+  }) as typeof fetch;
+
+const noSleep = async () => undefined;
+
+const decideWith = (send: typeof fetch) =>
+  openRouter({ key: KEY, fetch: send, sleep: noSleep }).decide({ request: 'x' }, {});
+
+const hasReason = (reason: string) => (error: OpenRouterError) => error.reason === reason;
+
+describe('openRouter', () => {
+  it('asks Jev with the key, the model and the questions, as Observatory', async () => {
+    const { sent, fetch } = fakeFetch(() =>
+      Response.json({ answers: { tier: { choice: 'tier2' } } }),
+    );
+
+    const answers = await decideWith(fetch);
+
+    assert.deepEqual(answers, { tier: { choice: 'tier2' } });
+    assert.equal(sent[0].url, 'https://openrouter.ai/api/v1/systemone');
+    const headers = new Headers(sent[0].init.headers);
+    assert.equal(headers.get('authorization'), `Bearer ${KEY}`);
+    assert.equal(headers.get('x-title'), 'Observatory');
+    assert.deepEqual(JSON.parse(String(sent[0].init.body)), {
+      state: { request: 'x' },
+      model: 'typesafe/jev-1.13',
+      questions: {},
+    });
+  });
+
+  it('gives a quick answer trimmed, and says when it was cut off', async () => {
+    const { sent, fetch } = fakeFetch(() =>
+      Response.json({
+        choices: [{ message: { content: '  Use git rebase.  ' }, finish_reason: 'length' }],
+      }),
+    );
+
+    const answer = await openRouter({ key: KEY, fetch }).answer('how do I rebase?');
+
+    assert.deepEqual(answer, { text: 'Use git rebase.', isCut: true });
+    const body = JSON.parse(String(sent[0].init.body));
+    assert.equal(body.model, 'anthropic/claude-haiku-4.5');
+    assert.equal(body.messages[1].content, 'how do I rebase?');
+  });
+
+  it('is off with no key, and fails every call with the reason key, sending nothing', async () => {
+    const { sent, fetch } = fakeFetch();
+    const models = openRouter({ key: null, fetch });
+
+    assert.equal(models.isOn, false);
+    await assert.rejects(models.answer('hi'), hasReason('key'));
+    assert.equal(sent.length, 0);
+  });
+
+  it('tries a rate limit twice more, waiting at most a second and a half each time', async () => {
+    const waits: number[] = [];
+    const busy = () => new Response('', { status: 429, headers: { 'retry-after': '30' } });
+    const { sent, fetch } = fakeFetch(busy, busy, () => Response.json({ answers: {} }));
+
+    const models = openRouter({ key: KEY, fetch, sleep: async (ms) => void waits.push(ms) });
+
+    assert.deepEqual(await models.decide({}, {}), {});
+    assert.equal(sent.length, 3);
+    assert.deepEqual(waits, [1500, 1500]);
+  });
+
+  it('gives up after two retries with the reason busy', async () => {
+    const busy = () => new Response('', { status: 429 });
+    const { fetch } = fakeFetch(busy, busy, busy);
+
+    await assert.rejects(decideWith(fetch), hasReason('busy'));
+  });
+
+  it('names the reason from the status, and never echoes the key', async () => {
+    const said = { error: { message: `Invalid key ${KEY}, header Bearer ${KEY}` } };
+    const { fetch } = fakeFetch(() => Response.json(said, { status: 401 }));
+
+    await assert.rejects(decideWith(fetch), (error: OpenRouterError) => {
+      assert.equal(error.reason, 'key');
+      assert.equal(error.words, 'the key was refused');
+      assert.equal(error.status, 401);
+      assert.ok(!error.message.includes(KEY), error.message);
+      assert.match(error.message, /\[key\]/);
+      return true;
+    });
+  });
+
+  it('scrubs a network failure that carries the key', async () => {
+    const fetch = failing(new Error(`connect failed for Bearer ${KEY}`));
+
+    await assert.rejects(decideWith(fetch), (error: OpenRouterError) => {
+      assert.equal(error.reason, 'network');
+      assert.ok(!error.message.includes(KEY), error.message);
+      return true;
+    });
+  });
+
+  it('reads a timeout as one', async () => {
+    await assert.rejects(
+      decideWith(failing(new DOMException('timed out', 'TimeoutError'))),
+      hasReason('timeout'),
+    );
+  });
+
+  it('refuses an answer it cannot read', async () => {
+    const { fetch } = fakeFetch(() => Response.json({ nothing: true }));
+
+    await assert.rejects(decideWith(fetch), hasReason('shape'));
+  });
+});

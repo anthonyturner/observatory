@@ -22,9 +22,29 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
       'On your own machine a card can differ for a few minutes from the project’s star map. Refresh brings them level.',
   },
   {
-    term: 'Fog',
+    term: 'Comets',
     meaning:
-      'The page fogs over as its data ages: nothing for six hours, full by three days. Refresh clears it.',
+      'Each comet falling behind the core is one open issue, in its project’s colour. More issues make a heavier rain; closing one takes its comet away.',
+  },
+  {
+    term: 'Dots',
+    meaning:
+      'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name.',
+  },
+  {
+    term: 'Core',
+    meaning:
+      'Drag the ball to turn it; flick it and it coasts. The points near your pointer light up. With the core focused, the arrow keys turn it.',
+  },
+  {
+    term: 'Motion',
+    meaning:
+      'Follows your system’s reduced-motion setting until you press it; then it remembers your choice. Off, everything holds still.',
+  },
+  {
+    term: 'Sound',
+    meaning:
+      'An ambient score made in this browser as you listen, with a hum that pulses with the core. Off until you turn it on, and remembered.',
   },
   {
     term: 'Ask',
@@ -65,4 +85,5 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
 export const HOME_HELP_KEYS: readonly HelpKey[] = [
   { key: '?', action: 'help' },
   { key: 'Esc', action: 'close' },
+  { key: '← → ↑ ↓', action: 'turn the core' },
 ];

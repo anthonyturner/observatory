@@ -1,0 +1,270 @@
+{
+  "replies": [
+    {
+      "data": {
+        "search": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "Y3Vyc29yOjM="
+          },
+          "nodes": [
+            {
+              "number": 10,
+              "title": "Add an Approve-and-fill one-click action",
+              "url": "https://github.com/anthonyturner/jobpilot/issues/10",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDOUo7qUM8AAAAC37xwUg",
+                    "name": "enhancement",
+                    "description": "New feature or request",
+                    "color": "a2eeef"
+                  }
+                ]
+              },
+              "assignees": {
+                "nodes": []
+              },
+              "author": {
+                "__typename": "User",
+                "login": "anthonyturner",
+                "id": "MDQ6VXNlcjUyMTAwNDE=",
+                "name": "Anthony Turner"
+              },
+              "createdAt": "2026-09-24T12:30:13Z",
+              "updatedAt": "2026-09-26T08:31:22Z",
+              "closedAt": "2026-09-26T08:31:22Z",
+              "stateReason": "COMPLETED",
+              "closedByPullRequestsReferences": {
+                "nodes": [
+                  {
+                    "id": "PR_kwDOUo7qUM8AAAABFF1Y0g",
+                    "number": 13,
+                    "url": "https://github.com/anthonyturner/jobpilot/pull/13",
+                    "repository": {
+                      "id": "R_kgDOUo7qUA",
+                      "name": "jobpilot",
+                      "owner": {
+                        "id": "MDQ6VXNlcjUyMTAwNDE=",
+                        "login": "anthonyturner"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "number": 9,
+              "title": "Prepare applications unattended, up to review, for top-scoring jobs",
+              "url": "https://github.com/anthonyturner/jobpilot/issues/9",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDOUo7qUM8AAAAC37xwUg",
+                    "name": "enhancement",
+                    "description": "New feature or request",
+                    "color": "a2eeef"
+                  }
+                ]
+              },
+              "assignees": {
+                "nodes": []
+              },
+              "author": {
+                "__typename": "User",
+                "login": "anthonyturner",
+                "id": "MDQ6VXNlcjUyMTAwNDE=",
+                "name": "Anthony Turner"
+              },
+              "createdAt": "2026-09-24T12:30:09Z",
+              "updatedAt": "2026-09-24T13:04:18Z",
+              "closedAt": "2026-09-24T13:04:18Z",
+              "stateReason": "COMPLETED",
+              "closedByPullRequestsReferences": {
+                "nodes": [
+                  {
+                    "id": "PR_kwDOUo7qUM8AAAABE7lO8A",
+                    "number": 12,
+                    "url": "https://github.com/anthonyturner/jobpilot/pull/12",
+                    "repository": {
+                      "id": "R_kgDOUo7qUA",
+                      "name": "jobpilot",
+                      "owner": {
+                        "id": "MDQ6VXNlcjUyMTAwNDE=",
+                        "login": "anthonyturner"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "number": 1,
+              "title": "Install the agent playbook and merge AGENTS.md into it",
+              "url": "https://github.com/anthonyturner/jobpilot/issues/1",
+              "labels": {
+                "nodes": [
+                  {
+                    "id": "LA_kwDOUo7qUM8AAAAC37xwCQ",
+                    "name": "documentation",
+                    "description": "Improvements or additions to documentation",
+                    "color": "0075ca"
+                  }
+                ]
+              },
+              "assignees": {
+                "nodes": []
+              },
+              "author": {
+                "__typename": "User",
+                "login": "anthonyturner",
+                "id": "MDQ6VXNlcjUyMTAwNDE=",
+                "name": "Anthony Turner"
+              },
+              "createdAt": "2026-09-24T09:41:25Z",
+              "updatedAt": "2026-09-24T09:51:46Z",
+              "closedAt": "2026-09-24T09:51:46Z",
+              "stateReason": "COMPLETED",
+              "closedByPullRequestsReferences": {
+                "nodes": [
+                  {
+                    "id": "PR_kwDOUo7qUM8AAAABE6AuLQ",
+                    "number": 2,
+                    "url": "https://github.com/anthonyturner/jobpilot/pull/2",
+                    "repository": {
+                      "id": "R_kgDOUo7qUA",
+                      "name": "jobpilot",
+                      "owner": {
+                        "id": "MDQ6VXNlcjUyMTAwNDE=",
+                        "login": "anthonyturner"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "expected": [
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUyMTAwNDE=",
+        "is_bot": false,
+        "login": "anthonyturner",
+        "name": "Anthony Turner"
+      },
+      "closedAt": "2026-09-26T08:31:22Z",
+      "closedByPullRequestsReferences": [
+        {
+          "id": "PR_kwDOUo7qUM8AAAABFF1Y0g",
+          "number": 13,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/pull/13"
+        }
+      ],
+      "createdAt": "2026-09-24T12:30:13Z",
+      "labels": [
+        {
+          "id": "LA_kwDOUo7qUM8AAAAC37xwUg",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        }
+      ],
+      "number": 10,
+      "stateReason": "COMPLETED",
+      "title": "Add an Approve-and-fill one-click action",
+      "updatedAt": "2026-09-26T08:31:22Z",
+      "url": "https://github.com/anthonyturner/jobpilot/issues/10"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUyMTAwNDE=",
+        "is_bot": false,
+        "login": "anthonyturner",
+        "name": "Anthony Turner"
+      },
+      "closedAt": "2026-09-24T13:04:18Z",
+      "closedByPullRequestsReferences": [
+        {
+          "id": "PR_kwDOUo7qUM8AAAABE7lO8A",
+          "number": 12,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/pull/12"
+        }
+      ],
+      "createdAt": "2026-09-24T12:30:09Z",
+      "labels": [
+        {
+          "id": "LA_kwDOUo7qUM8AAAAC37xwUg",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        }
+      ],
+      "number": 9,
+      "stateReason": "COMPLETED",
+      "title": "Prepare applications unattended, up to review, for top-scoring jobs",
+      "updatedAt": "2026-09-24T13:04:18Z",
+      "url": "https://github.com/anthonyturner/jobpilot/issues/9"
+    },
+    {
+      "assignees": [],
+      "author": {
+        "id": "MDQ6VXNlcjUyMTAwNDE=",
+        "is_bot": false,
+        "login": "anthonyturner",
+        "name": "Anthony Turner"
+      },
+      "closedAt": "2026-09-24T09:51:46Z",
+      "closedByPullRequestsReferences": [
+        {
+          "id": "PR_kwDOUo7qUM8AAAABE6AuLQ",
+          "number": 2,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/pull/2"
+        }
+      ],
+      "createdAt": "2026-09-24T09:41:25Z",
+      "labels": [
+        {
+          "id": "LA_kwDOUo7qUM8AAAAC37xwCQ",
+          "name": "documentation",
+          "description": "Improvements or additions to documentation",
+          "color": "0075ca"
+        }
+      ],
+      "number": 1,
+      "stateReason": "COMPLETED",
+      "title": "Install the agent playbook and merge AGENTS.md into it",
+      "updatedAt": "2026-09-24T09:51:46Z",
+      "url": "https://github.com/anthonyturner/jobpilot/issues/1"
+    }
+  ]
+}

@@ -109,6 +109,9 @@ function commitOf(node: Node): Node {
   };
 }
 
+/** A pull request or issue GitHub links to, with its repository, as `gh` lists it. */
+const LINKED = 'id number url repository { id name owner { id login } }';
+
 const scalars = (names: readonly string[]): Record<string, Field> =>
   Object.fromEntries(names.map((name) => [name, { select: name, shape: asIs }]));
 
@@ -135,11 +138,7 @@ export const PULL_GRAPHQL: Readonly<Record<string, Field>> = {
   reviewDecision: { select: 'reviewDecision', shape: orEmpty },
   author: { select: `author ${ACTOR}`, shape: actorOf },
   labels: { ...LABELS, shape: labelsOf },
-  closingIssuesReferences: connection(
-    'closingIssuesReferences',
-    100,
-    'id number url repository { id name owner { id login } }',
-  ),
+  closingIssuesReferences: connection('closingIssuesReferences', 100, LINKED),
   statusCheckRollup: {
     select: `commits(last: 1) { nodes { commit { statusCheckRollup {
       contexts(first: 100) { nodes { ${CHECKS} } } } } } }`,
@@ -169,7 +168,10 @@ export const PULL_GRAPHQL: Readonly<Record<string, Field>> = {
 };
 
 export const ISSUE_GRAPHQL: Readonly<Record<string, Field>> = {
-  ...scalars(['number', 'title', 'url', 'createdAt', 'updatedAt']),
+  ...scalars(['number', 'title', 'url', 'createdAt', 'updatedAt', 'closedAt']),
+  stateReason: { select: 'stateReason', shape: orEmpty },
+  author: { select: `author ${ACTOR}`, shape: actorOf },
+  closedByPullRequestsReferences: connection('closedByPullRequestsReferences', 100, LINKED),
   labels: { ...LABELS, shape: labelsOf },
   assignees: ASSIGNEES,
 };

@@ -8,7 +8,12 @@ import {
   REPO_FIELDS,
   type RepoRef,
 } from './github-reader.ts';
-import { type ClosingPull, RAW_ISSUE_FIELDS, type RawIssue } from './issue-reader.ts';
+import {
+  CLOSING_PULL_FIELDS,
+  type ClosingPull,
+  RAW_ISSUE_FIELDS,
+  type RawIssue,
+} from './issue-reader.ts';
 import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -90,25 +95,23 @@ export function ghCliReader(): GitHub {
         '--limit',
         PULL_LIMIT,
         '--json',
-        'number,closingIssuesReferences',
+        CLOSING_PULL_FIELDS.join(','),
       ]),
-    closedSinceCount: async (repo, sinceDay) =>
-      (
-        await ghJson<unknown[]>([
-          'issue',
-          'list',
-          '--repo',
-          repo,
-          '--state',
-          'closed',
-          '--limit',
-          ISSUE_LIMIT,
-          '--search',
-          `closed:>=${sinceDay}`,
-          '--json',
-          'number',
-        ])
-      ).length,
+    closedIssues: (repo, sinceDay) =>
+      ghJson<RawIssue[]>([
+        'issue',
+        'list',
+        '--repo',
+        repo,
+        '--state',
+        'closed',
+        '--limit',
+        ISSUE_LIMIT,
+        '--search',
+        `closed:>=${sinceDay}`,
+        '--json',
+        RAW_ISSUE_FIELDS.join(','),
+      ]),
     pullDetail: (repo, number) =>
       ghJson<RawPull>([
         'pr',

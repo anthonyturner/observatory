@@ -1,0 +1,89 @@
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A setting, like Speak: quiet until chosen. */
+.engines {
+  display: inline-flex;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  min-width: 0;
+}
+
+.engine {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.engine + .engine {
+  border-left: 1px solid var(--edge);
+}
+
+.engine:hover {
+  color: var(--ink);
+}
+
+.engine:has(input:checked) {
+  background: var(--flow-soft);
+  color: var(--ink);
+}
+
+.engine:has(input:focus-visible) {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.engine.blocked {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
+/* The radio itself is the label's box; the input stays for the keyboard and
+   screen readers. */
+.engine input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+select {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+select option {
+  background: var(--issue-option);
+}
+
+select:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .engine,
+  select {
+    min-height: 44px;
+  }
+}

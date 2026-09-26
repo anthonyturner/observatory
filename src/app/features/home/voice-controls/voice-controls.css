@@ -200,6 +200,10 @@ button.loading::after {
   border: 1px dashed var(--flow);
 }
 
+.picker {
+  margin-top: 10px;
+}
+
 .caption,
 .hint {
   margin: 0;

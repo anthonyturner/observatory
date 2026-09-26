@@ -24,14 +24,28 @@ export function* sessionLogFiles(dir: string): Generator<string> {
 const count = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : 0;
 
+const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+
 interface LogLine {
   readonly type?: unknown;
   readonly timestamp?: unknown;
+  readonly sessionId?: unknown;
+  readonly cwd?: unknown;
   readonly message?: {
     readonly id?: unknown;
     readonly model?: unknown;
     readonly usage?: Record<string, unknown>;
+    readonly content?: unknown;
   };
+}
+
+/** The name of each tool a reply's content calls. */
+function toolsOf(content: unknown): string[] {
+  if (!Array.isArray(content)) return [];
+  return content.flatMap((part: unknown) => {
+    const { type, name } = (part ?? {}) as { type?: unknown; name?: unknown };
+    return type === 'tool_use' && typeof name === 'string' && name ? [name] : [];
+  });
 }
 
 /** The assistant message a log line carries, or null for any other line. */
@@ -58,11 +72,15 @@ export function messageOf(line: string): AssistantMessage | null {
     output: count(usage['output_tokens']),
     cacheRead: count(usage['cache_read_input_tokens']),
     cacheWrite: count(usage['cache_creation_input_tokens']),
+    session: text(entry.sessionId),
+    cwd: text(entry.cwd),
+    tools: toolsOf(message?.content),
   };
 }
 
 /** Of two reports of one reply, each count at its largest: a streamed reply
- *  repeats its usage, growing as it goes. */
+ *  repeats its usage, growing as it goes, and each chunk carries its own
+ *  tool calls. */
 export function mergeReports(a: AssistantMessage, b: AssistantMessage): AssistantMessage {
   return {
     ...a,
@@ -70,6 +88,7 @@ export function mergeReports(a: AssistantMessage, b: AssistantMessage): Assistan
     output: Math.max(a.output, b.output),
     cacheRead: Math.max(a.cacheRead, b.cacheRead),
     cacheWrite: Math.max(a.cacheWrite, b.cacheWrite),
+    tools: [...a.tools, ...b.tools],
   };
 }
 

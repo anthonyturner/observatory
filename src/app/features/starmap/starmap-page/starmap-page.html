@@ -28,6 +28,9 @@
         @case ('issues') {
           <app-issues-panel [pulls]="openPulls()" (pull)="openSheet($event)" />
         }
+        @case ('usage') {
+          <app-starmap-usage [repo]="repo()" />
+        }
       }
     </div>
   </div>
@@ -65,7 +68,7 @@
     [chart]="chart()"
     [view]="view()"
     [showCollisions]="showCollisions()"
-    [refreshing]="refreshing()"
+    [refreshing]="refreshing() || usage.isRefreshing()"
     [(folded)]="folded"
     (chartChange)="setChart($event)"
     (viewChange)="setView($event)"

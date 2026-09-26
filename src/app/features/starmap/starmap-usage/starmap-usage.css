@@ -1,0 +1,8 @@
+:host {
+  display: block;
+}
+
+.none {
+  padding: 18px 14px;
+  color: var(--muted);
+}

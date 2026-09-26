@@ -1,3 +1,25 @@
+import {
+  Json,
+  isObject,
+  isString,
+  listOf,
+  parseLimits,
+  parseModel,
+  parseProject,
+  parseTokenDay,
+  parseTool,
+  parseTotals,
+} from './usage-parse';
+
+/** Where the week will stand at its reset if the recent pace holds. */
+export interface WeekProjection {
+  readonly atReset: number;
+  /** Percent an hour, over the last two days. */
+  readonly perHour?: number;
+  /** When the week runs out at this pace, if before its reset. */
+  readonly fullAt?: string;
+}
+
 /** One limit window: the five-hour or the weekly. */
 export interface LimitWindow {
   readonly pct: number;
@@ -5,64 +27,103 @@ export interface LimitWindow {
   readonly expired?: boolean;
   /** [epoch ms, percent] readings, oldest first. */
   readonly points: readonly (readonly [number, number])[];
-  readonly projection?: { readonly atReset: number };
+  readonly projection?: WeekProjection;
+  /** When the window began; the report gives it for the week. */
+  readonly startsAt?: string;
 }
 
-/** One day of tokens, split by model family. */
+/** An earlier week, as far as it got before its reset. */
+export interface PastWeek {
+  readonly resetsAt: string;
+  readonly peak: number;
+}
+
+export interface UsageLimits {
+  readonly at?: string;
+  readonly five?: LimitWindow;
+  readonly week?: LimitWindow;
+  /** The weeks before this one, oldest first. */
+  readonly weeks: readonly PastWeek[];
+}
+
+/** One day of use: work tokens split by model family, and what lay behind them. */
 export interface TokenDay {
   readonly day: string;
   readonly families: Readonly<Record<string, number>>;
+  readonly cacheRead: number;
+  readonly messages: number;
+  readonly sessions: number;
+  readonly toolCalls: number;
+  readonly subagents: number;
 }
 
-/** The parts of the usage report (`GET /api/usage`) the meters read. */
+export interface TokenTotals {
+  readonly tokens: number;
+  readonly cacheRead: number;
+  readonly messages: number;
+  readonly sessions: number;
+  readonly toolCalls: number;
+  readonly subagents: number;
+}
+
+/** One model's use over the report's days. */
+export interface ModelUsage {
+  readonly model: string;
+  readonly family: string;
+  readonly input: number;
+  readonly output: number;
+  readonly cacheRead: number;
+  readonly cacheWrite: number;
+  readonly messages: number;
+}
+
+export interface ToolCount {
+  readonly name: string;
+  readonly count: number;
+}
+
+/** One project's use over the report's days. */
+export interface ProjectUsage {
+  readonly name: string;
+  /** "owner/name" on GitHub, or null for a folder that is no repository. */
+  readonly repo: string | null;
+  readonly tokens: number;
+  readonly cacheRead: number;
+  readonly messages: number;
+  readonly sessions: number;
+}
+
+export interface TokenReport {
+  readonly days: number;
+  /** The first day, "2026-08-28". */
+  readonly from: string;
+  readonly rows: readonly TokenDay[];
+  readonly totals: TokenTotals;
+  /** Busiest first. */
+  readonly models: readonly ModelUsage[];
+}
+
+/** The usage report (`GET /api/usage`), as far as it could be read. */
 export interface UsageDocument {
   readonly generatedAt: string;
-  readonly limits?: {
-    readonly at?: string;
-    readonly five?: LimitWindow;
-    readonly week?: LimitWindow;
-  };
-  readonly tokens?: { readonly rows: readonly TokenDay[] };
+  readonly limits?: UsageLimits;
+  readonly tokens?: TokenReport;
+  /** The most-called tools, most first. */
+  readonly tools: readonly ToolCount[];
+  /** Busiest first. */
+  readonly projects: readonly ProjectUsage[];
 }
 
-type Json = Record<string, unknown>;
-
-const isObject = (value: unknown): value is Json =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-const isFiniteNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value);
-const isString = (value: unknown): value is string => typeof value === 'string';
-
-function parseWindow(value: unknown): LimitWindow | undefined {
-  if (!isObject(value) || !isFiniteNumber(value['pct']) || !isString(value['resetsAt'])) {
-    return undefined;
-  }
-  const points = Array.isArray(value['points'])
-    ? value['points'].filter(
-        (point): point is [number, number] =>
-          Array.isArray(point) && isFiniteNumber(point[0]) && isFiniteNumber(point[1]),
-      )
-    : [];
-  const projection = isObject(value['projection']) ? value['projection'] : undefined;
+function parseTokens(tokens: Json): TokenReport {
+  const rows = listOf(tokens['rows'], parseTokenDay);
+  const days = tokens['days'];
   return {
-    pct: value['pct'],
-    resetsAt: value['resetsAt'],
-    expired: value['expired'] === true,
-    points,
-    projection:
-      projection && isFiniteNumber(projection['atReset'])
-        ? { atReset: projection['atReset'] }
-        : undefined,
+    days: typeof days === 'number' && Number.isInteger(days) && days > 0 ? days : rows.length,
+    from: isString(tokens['from']) ? tokens['from'] : (rows[0]?.day ?? ''),
+    rows,
+    totals: parseTotals(tokens['totals']),
+    models: listOf(tokens['models'], parseModel),
   };
-}
-
-function parseTokenDay(value: unknown): TokenDay | null {
-  if (!isObject(value) || !isString(value['day'])) return null;
-  const families = isObject(value['families']) ? value['families'] : {};
-  const counts = Object.fromEntries(
-    Object.entries(families).filter((entry): entry is [string, number] => isFiniteNumber(entry[1])),
-  );
-  return { day: value['day'], families: counts };
 }
 
 /** Reads the report defensively: Claude Code calls its session-log format
@@ -70,19 +131,13 @@ function parseTokenDay(value: unknown): TokenDay | null {
  *  is left out, to show as unknown rather than as a wrong number. */
 export function parseUsageDocument(value: unknown): UsageDocument | null {
   if (!isObject(value) || !isString(value['generatedAt'])) return null;
-  const limits = isObject(value['limits']) ? value['limits'] : undefined;
-  const tokens = isObject(value['tokens']) ? value['tokens'] : undefined;
+  const limits = value['limits'];
+  const tokens = value['tokens'];
   return {
     generatedAt: value['generatedAt'],
-    limits: limits && {
-      at: isString(limits['at']) ? limits['at'] : undefined,
-      five: parseWindow(limits['five']),
-      week: parseWindow(limits['week']),
-    },
-    tokens: tokens && {
-      rows: Array.isArray(tokens['rows'])
-        ? tokens['rows'].map(parseTokenDay).filter((row): row is TokenDay => row !== null)
-        : [],
-    },
+    limits: isObject(limits) ? parseLimits(limits) : undefined,
+    tokens: isObject(tokens) ? parseTokens(tokens) : undefined,
+    tools: listOf(value['tools'], parseTool),
+    projects: listOf(value['projects'], parseProject),
   };
 }

@@ -1,10 +1,20 @@
-import { UsageDocument } from '../../../core/usage/usage-document';
+import { TokenDay, UsageDocument } from '../../../core/usage/usage-document';
 import { localDayKey } from '../../../core/usage/usage-format';
 import { usageMeters } from './usage-meters';
 
 const NOW = new Date(2026, 8, 26, 8, 0).getTime();
 const HOUR = 3_600_000;
 const iso = (ms: number) => new Date(ms).toISOString();
+const day = (at: number, families: Record<string, number>): TokenDay => ({
+  day: localDayKey(at),
+  families,
+  cacheRead: 0,
+  messages: 0,
+  sessions: 0,
+  toolCalls: 0,
+  subagents: 0,
+});
+const NO_TOTALS = { tokens: 0, cacheRead: 0, messages: 0, sessions: 0, toolCalls: 0, subagents: 0 };
 
 const document: UsageDocument = {
   generatedAt: iso(NOW - 4 * 60_000),
@@ -19,13 +29,17 @@ const document: UsageDocument = {
       ],
     },
     week: { pct: 62, resetsAt: iso(NOW + 72 * HOUR), points: [], projection: { atReset: 88 } },
+    weeks: [],
   },
   tokens: {
-    rows: [
-      { day: localDayKey(NOW - 24 * HOUR), families: { opus: 800_000 } },
-      { day: localDayKey(NOW), families: { opus: 1_000_000, sonnet: 200_000 } },
-    ],
+    days: 2,
+    from: localDayKey(NOW - 24 * HOUR),
+    rows: [day(NOW - 24 * HOUR, { opus: 800_000 }), day(NOW, { opus: 1_000_000, sonnet: 200_000 })],
+    totals: NO_TOTALS,
+    models: [],
   },
+  tools: [],
+  projects: [],
 };
 const ready = { status: 'ready', document } as const;
 
@@ -63,7 +77,7 @@ describe('usageMeters', () => {
       document: {
         ...document,
         limits: {
-          ...document.limits,
+          ...document.limits!,
           five: { ...document.limits!.five!, resetsAt: iso(NOW - HOUR) },
         },
       },
@@ -79,7 +93,10 @@ describe('usageMeters', () => {
   it('says today has not been read rather than showing zero', () => {
     const stale = {
       status: 'ready',
-      document: { ...document, tokens: { rows: document.tokens!.rows.slice(0, 1) } },
+      document: {
+        ...document,
+        tokens: { ...document.tokens!, rows: document.tokens!.rows.slice(0, 1) },
+      },
     } as const;
 
     expect(usageMeters(stale, NOW).tokens).toMatchObject({ value: null, note: 'not read today' });

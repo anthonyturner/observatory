@@ -23,6 +23,7 @@ import { queueFog } from '../../../core/queue/queue-fog';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
+import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { IssuesFeed } from '../../../core/issues/issues-feed';
@@ -47,6 +48,8 @@ import { StarmapHeader } from '../starmap-header/starmap-header';
 import { StarmapPrList } from '../starmap-pr-list/starmap-pr-list';
 import { SkyInsets, StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapTools } from '../starmap-tools/starmap-tools';
+import { StarmapUsage } from '../starmap-usage/starmap-usage';
+import { usageStamp } from '../starmap-usage/usage-text';
 import {
   Chart,
   SkyView,
@@ -87,6 +90,7 @@ export interface SkyState {
     StarmapTools,
     StarmapPrList,
     IssuesPanel,
+    StarmapUsage,
     ChangesCard,
     PullPanel,
     StarCard,
@@ -103,6 +107,7 @@ export interface SkyState {
     CollisionsFeed,
     LogsFeed,
     LogSkyView,
+    UsageWatch,
     IssuesFeed,
     IssuesScreen,
   ],
@@ -114,6 +119,7 @@ export class StarmapPage {
   private readonly feed = inject(QueueFeed);
   private readonly history = inject(HistoryFeed);
   private readonly collisions = inject(CollisionsFeed);
+  protected readonly usage = inject(UsageWatch);
   private readonly lastSeenStore = inject(LastSeen);
   private readonly triage = inject(TriageClient);
   protected readonly session = inject(ViewerSession);
@@ -175,8 +181,13 @@ export class StarmapPage {
   );
   /** The open pull requests the queue knows, for the issues' chips. */
   protected readonly openPulls = computed(() => openPullsOf(this.report()?.items ?? []));
+  private readonly usageDocument = computed(() => {
+    const state = this.usage.state();
+    return state.status === 'ready' ? state.document : null;
+  });
   protected readonly stamp = computed(() => {
     const report = this.report();
+    if (this.chart() === 'usage') return usageStamp(this.usageDocument());
     if (this.chart() === 'issues') return this.issues.stamp();
     if (this.chart() !== 'prs') return '';
     return queueStamp(
@@ -193,6 +204,7 @@ export class StarmapPage {
     return Math.max(fogLevel(report.generatedAt, now), queueFog(this.state(), now.getTime()));
   });
   protected readonly stale = computed(() => {
+    if (this.chart() === 'usage') return this.usageFog();
     if (this.chart() === 'issues') return this.issues.stale();
     const state = this.state();
     const report = this.report();
@@ -203,10 +215,17 @@ export class StarmapPage {
       ? `fogged · ${ageWords(report.generatedAt, now)} old`
       : null;
   });
+  /** Usage fogs by its own age, as the queue does by the queue's. */
+  private readonly usageFog = computed(() => {
+    const generatedAt = this.usageDocument()?.generatedAt;
+    const now = this.now();
+    return generatedAt && fogLevel(generatedAt, now) > 0
+      ? `fogged · ${ageWords(generatedAt, now)} old`
+      : null;
+  });
   protected readonly skyState = computed((): SkyState | null => {
     const chart = this.chart();
     if (chart === 'logs') return this.view() === 'map' ? this.logs.message() : null;
-    if (chart === 'usage') return { headline: 'No usage read yet.' };
     if (chart !== 'prs' || this.view() === 'list') return null;
     const { status } = this.state();
     if (status === 'reading') return { headline: 'Reading the sky…' };
@@ -362,6 +381,10 @@ export class StarmapPage {
   }
 
   protected refresh(): void {
+    if (this.chart() === 'usage') {
+      this.usage.refresh();
+      return;
+    }
     this.refreshing.set(true);
     this.feed.refresh(this.repo());
     this.issues.refresh(this.repo());

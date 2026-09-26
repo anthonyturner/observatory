@@ -167,13 +167,45 @@ ul {
 
 li {
   display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
-  gap: 5px 14px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding-right: 14px;
   border-left: 2px solid var(--sev);
   border-bottom: 1px solid var(--edge-soft);
   background: var(--queue-row);
+}
+
+/* The whole row opens the pull request; GitHub sits apart at its end. */
+.open {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 14px;
+  min-width: 0;
+  padding: 12px 0 12px 14px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.open:focus-visible {
+  outline-offset: -2px;
+}
+
+.github {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.github:hover {
+  color: var(--ink);
 }
 
 li:hover {
@@ -190,10 +222,9 @@ li:hover {
 .title {
   flex: 1 1 260px;
   color: var(--ink-soft);
-  text-decoration: none;
 }
 
-.title:hover {
+.open:hover .title {
   color: var(--ink);
   text-decoration: underline;
   text-decoration-color: var(--flow);

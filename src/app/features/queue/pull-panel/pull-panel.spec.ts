@@ -1,0 +1,77 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { PullPanel } from './pull-panel';
+
+const detail = {
+  number: 58,
+  title: 'Replace the facade',
+  body: '<b>not bold</b>',
+  url: 'https://github.com/me/a/pull/58',
+  isDraft: true,
+  bucket: 'failing',
+  author: 'anthony',
+  head: 'refactor/57',
+  base: 'main',
+  labels: ['area:dashboard'],
+  closes: [57],
+  checks: [
+    { name: 'CI / Test', outcome: 'failed', url: 'https://github.com/x/2' },
+    { name: 'CI / Build', outcome: 'passed', url: null },
+  ],
+  reviewDecision: 'review-required',
+  requestedReviewers: ['sam'],
+  reviews: [],
+  additions: 96,
+  deletions: 95,
+  changedFiles: 4,
+  createdAt: '2026-07-30T05:16:37Z',
+  updatedAt: '2026-07-30T05:16:46Z',
+};
+
+function render() {
+  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+  const fixture = TestBed.createComponent(PullPanel);
+  fixture.componentRef.setInput('repo', 'me/a');
+  fixture.componentRef.setInput('number', 58);
+  fixture.detectChanges();
+  const http = TestBed.inject(HttpTestingController);
+  return { fixture, http, element: fixture.nativeElement as HTMLElement };
+}
+
+describe('PullPanel', () => {
+  it('says it is reading, then shows the pull request', () => {
+    const { fixture, http, element } = render();
+    expect(element.querySelector('.state')?.textContent).toContain('Reading #58');
+
+    http.expectOne('/api/pull?repo=me/a&number=58').flush(detail);
+    fixture.detectChanges();
+
+    expect(element.querySelector('h2')?.textContent).toContain('Replace the facade');
+    expect(element.querySelector('.why')?.textContent).toContain('failure');
+    expect(element.querySelector('#checks-title small')?.textContent).toBe('1 failed · 1 passed');
+    expect(element.querySelectorAll('.checks li').length).toBe(1);
+    expect(element.querySelector('#review-title small')?.textContent).toBe('Review required');
+    expect(element.querySelector('.facts')?.textContent).toContain('#57');
+  });
+
+  it('shows the description as text, never as HTML', () => {
+    const { fixture, http, element } = render();
+    http.expectOne('/api/pull?repo=me/a&number=58').flush(detail);
+    fixture.detectChanges();
+
+    const body = element.querySelector('.body');
+    expect(body?.textContent).toBe('<b>not bold</b>');
+    expect(body?.querySelector('b')).toBeNull();
+  });
+
+  it('closes from its button', () => {
+    const { fixture, element } = render();
+    let closed = 0;
+    fixture.componentInstance.closed.subscribe(() => closed++);
+
+    element.querySelector<HTMLButtonElement>('.close')?.click();
+
+    expect(closed).toBe(1);
+  });
+});

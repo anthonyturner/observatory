@@ -11,12 +11,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { Clock } from '../../../core/time/clock';
+import { PullPanel } from '../pull-panel/pull-panel';
 import { QueueFilter, queueLegend, queueSections, queueStamp } from '../queue-view';
 
 /** A project's review queue: its open pull requests, blocked first. */
 @Component({
   selector: 'app-review-queue-page',
-  imports: [RouterLink],
+  imports: [RouterLink, PullPanel],
   providers: [QueueFeed],
   templateUrl: './review-queue-page.html',
   styleUrl: './review-queue-page.css',
@@ -33,6 +34,8 @@ export class ReviewQueuePage {
     { initialValue: '' },
   );
   protected readonly filter = signal<QueueFilter>(null);
+  /** The pull request whose panel is open, if any. */
+  protected readonly openPull = signal<number | null>(null);
   protected readonly state = this.feed.state;
   private readonly items = computed(() => {
     const state = this.state();
@@ -54,6 +57,7 @@ export class ReviewQueuePage {
     effect(() => {
       const repo = this.repo();
       this.filter.set(null);
+      this.openPull.set(null);
       if (repo !== '/') this.feed.watch(repo);
     });
   }

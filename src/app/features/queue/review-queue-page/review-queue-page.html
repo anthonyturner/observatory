@@ -35,17 +35,25 @@
       <ul>
         @for (row of section.rows; track row.number) {
           <li>
-            <span class="number">#{{ row.number }}</span>
-            <a class="title" [href]="row.url" target="_blank" rel="noopener"
-              >{{ row.title }}<span class="visually-hidden">, on GitHub, in a new tab</span></a
+            <button type="button" class="open" (click)="openPull.set(row.number)">
+              <span class="number">#{{ row.number }}</span>
+              <span class="title">{{ row.title }}</span>
+              @if (row.isDraft) {
+                <span class="draft">draft</span>
+              }
+              <span class="detail">{{ row.detail }}</span>
+            </button>
+            <a class="github" [href]="row.url" target="_blank" rel="noopener"
+              >GitHub <span aria-hidden="true">&#8599;</span
+              ><span class="visually-hidden">: #{{ row.number }}, in a new tab</span></a
             >
-            @if (row.isDraft) {
-              <span class="draft">draft</span>
-            }
-            <span class="detail">{{ row.detail }}</span>
           </li>
         }
       </ul>
     </section>
   }
 </main>
+
+@if (openPull(); as number) {
+  <app-pull-panel [repo]="repo()" [number]="number" (closed)="openPull.set(null)" />
+}

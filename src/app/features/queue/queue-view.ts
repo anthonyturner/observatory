@@ -4,12 +4,40 @@ import { QueueItem } from '../../core/queue/queue-report';
 import { hoursMinutes, localDayKey } from '../../core/usage/usage-format';
 
 /** How each bucket reads on the page: pr-starmap's star names, what they mean, their colour. */
-export const BUCKET_LOOK: Record<PullBucket, { name: string; meaning: string; color: string }> = {
-  conflicted: { name: 'Aporia', meaning: 'Cannot merge', color: 'var(--count-conflicted)' },
-  failing: { name: 'Ruina', meaning: 'Checks failing', color: 'var(--count-failing)' },
-  unknown: { name: 'Nebulosa', meaning: 'Mergeability unknown', color: 'var(--count-unknown)' },
-  unlinked: { name: 'Vagrans', meaning: 'No issue linked', color: 'var(--count-unlinked)' },
-  unreviewed: { name: 'Vigilia', meaning: 'Waiting on you', color: 'var(--count-unreviewed)' },
+export const BUCKET_LOOK: Record<
+  PullBucket,
+  { name: string; meaning: string; why: string; color: string }
+> = {
+  conflicted: {
+    name: 'Aporia',
+    meaning: 'Cannot merge',
+    why: 'Every merge into the base widens the gap.',
+    color: 'var(--count-conflicted)',
+  },
+  failing: {
+    name: 'Ruina',
+    meaning: 'Checks failing',
+    why: 'A check reported failure, error or timeout.',
+    color: 'var(--count-failing)',
+  },
+  unknown: {
+    name: 'Nebulosa',
+    meaning: 'Mergeability unknown',
+    why: 'GitHub has not settled whether this still merges.',
+    color: 'var(--count-unknown)',
+  },
+  unlinked: {
+    name: 'Vagrans',
+    meaning: 'No issue linked',
+    why: 'Merging it closes no issue, so the work reads as unfinished.',
+    color: 'var(--count-unlinked)',
+  },
+  unreviewed: {
+    name: 'Vigilia',
+    meaning: 'Waiting on you',
+    why: 'Ready for a review: oldest first.',
+    color: 'var(--count-unreviewed)',
+  },
 };
 
 /** A quick win is waiting on you and small enough to read in one sitting. */
@@ -74,7 +102,9 @@ export function queueSections(items: readonly QueueItem[], filter: QueueFilter):
   return PULL_BUCKETS.filter((bucket) => !filter || filter === QUICK_FILTER || filter === bucket)
     .map((bucket) => ({
       bucket,
-      ...BUCKET_LOOK[bucket],
+      name: BUCKET_LOOK[bucket].name,
+      meaning: BUCKET_LOOK[bucket].meaning,
+      color: BUCKET_LOOK[bucket].color,
       rows: items
         .filter((item) => item.bucket === bucket && (filter !== QUICK_FILTER || isQuickWin(item)))
         .map(rowOf),

@@ -2,9 +2,6 @@ import { PullBucket } from '../projects/projects-report';
 import { Frame } from './history-report';
 import { QueueItem } from './queue-report';
 
-/** What a star is marked with, for having changed. */
-export type ChangeMark = 'opened' | 'blocked' | 'unblocked';
-
 export interface ChangedPull {
   readonly number: number;
   readonly title: string;
@@ -83,13 +80,3 @@ export const changeCount = (changes: Changes | null): number =>
       changes.merged.length +
       changes.closed.length
     : 0;
-
-/** Each open pull request that changed, with its mark for the star map. */
-export function changeMarks(changes: Changes | null): ReadonlyMap<number, ChangeMark> {
-  const marks = new Map<number, ChangeMark>();
-  if (!changes) return marks;
-  for (const pull of changes.opened) marks.set(pull.number, 'opened');
-  for (const pull of changes.blocked) marks.set(pull.number, 'blocked');
-  for (const pull of changes.unblocked) marks.set(pull.number, 'unblocked');
-  return marks;
-}

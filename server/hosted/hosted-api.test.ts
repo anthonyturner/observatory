@@ -156,6 +156,26 @@ describe('hostedApi', () => {
     assert.equal((await get(handle, '/api/usage', ownerCookie)).status, 200);
   });
 
+  it('has no runs routes, even for the owner: tier 3 runs on the local server only', async () => {
+    const { handle } = site();
+    const asOwner = (method: string) =>
+      handle(
+        new Request(`${SITE}/api/runs?id=x`, {
+          method,
+          headers: {
+            cookie: ownerCookie,
+            'x-observatory': '1',
+            'content-type': 'application/json',
+          },
+          ...(method === 'POST' ? { body: '{}' } : {}),
+        }),
+      );
+
+    for (const method of ['GET', 'POST', 'DELETE']) {
+      assert.equal((await asOwner(method)).status, 404, method);
+    }
+  });
+
   it('shows a visitor public repositories only, read-only, with no triage', async () => {
     const { handle, store } = site({ ...ENV, PUBLIC_PREVIEW: 'on' });
     await triage(handle, ownerCookie);

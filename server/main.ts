@@ -13,6 +13,10 @@ import { withLocalSession } from './http/session.ts';
 import { fsLogFolder } from './logs/log-folder.ts';
 import { fileLogsConfig } from './logs/logs-config.ts';
 import { logsReport } from './logs/logs-report.ts';
+import { findClaude } from './runner/claude-command.ts';
+import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
+import { guardRuns } from './runner/runs-guard.ts';
+import { withRunsRoutes } from './runner/runs-routes.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { fileHandoffStore } from './agents/handoff-store.ts';
@@ -46,10 +50,22 @@ const editor = pullEditor({
   now: Date.now,
 });
 
-// Loopback only: the API reads files from this machine's home folder and acts
-// as the account `gh` is signed in with.
+const claude = findClaude();
+// Only this server has a runner; the hosted API never does (ADR-0005).
+const runner = localRunner({
+  claude,
+  projects: async () => (await reads.projects()).projects,
+  clones,
+});
+shutDownWithProcess(runner);
+
+// Loopback only: the API reads files from this machine's home folder, acts as
+// the account `gh` is signed in with, and runs Claude Code once the owner
+// confirms a proposal.
 const server = createApiServer(
-  createApiHandler(withLocalSession(ownerRoutes(reads, triage, editor))),
+  guardRuns(
+    createApiHandler(withLocalSession(withRunsRoutes(ownerRoutes(reads, triage, editor), runner))),
+  ),
 );
 
 // Another copy already on the port would answer the page with its own, older
@@ -65,4 +81,9 @@ server.on('error', (error: NodeJS.ErrnoException) => {
 
 server.listen(port, '127.0.0.1', () => {
   console.log(`Observatory API on http://127.0.0.1:${port}`);
+  console.log(
+    claude
+      ? `Tier-3 runs are on: ${claude.file}`
+      : 'Tier-3 runs are off: claude is not on the PATH.',
+  );
 });

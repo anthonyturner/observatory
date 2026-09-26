@@ -15,6 +15,9 @@ const item = (number: number, bucket: PullBucket): QueueItem => ({
   deletions: 1,
   idleDays: 0,
   ageDays: 0,
+  branch: '',
+  mergeable: 'UNKNOWN',
+  changedFiles: null,
   isSeen: false,
   hidden: null,
 });

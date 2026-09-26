@@ -6,6 +6,8 @@ export interface QueuePull extends PullRequest {
   readonly additions: number | null;
   readonly deletions: number | null;
   readonly createdAt: string;
+  readonly headRefName: string;
+  readonly changedFiles: number;
 }
 
 /** The `gh --json` fields QueuePull holds. */
@@ -15,6 +17,8 @@ export const QUEUE_PULL_FIELDS: readonly string[] = [
   'additions',
   'deletions',
   'createdAt',
+  'headRefName',
+  'changedFiles',
 ];
 
 /** What the review queue needs from GitHub, and nothing else. */

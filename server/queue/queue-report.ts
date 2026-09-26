@@ -17,6 +17,10 @@ export interface QueueItem {
   readonly additions: number | null;
   readonly deletions: number | null;
   readonly updatedAt: string;
+  /** The head branch, and GitHub's own word on whether it merges. */
+  readonly branch: string;
+  readonly mergeable: string;
+  readonly changedFiles: number | null;
   readonly idleDays: number;
   readonly ageDays: number;
 }
@@ -43,6 +47,9 @@ export function queueItemOf(pull: QueuePull, now: number): QueueItem {
     additions: pull.additions ?? null,
     deletions: pull.deletions ?? null,
     updatedAt: pull.updatedAt,
+    branch: pull.headRefName,
+    mergeable: pull.mergeable,
+    changedFiles: pull.changedFiles ?? null,
     idleDays: daysSince(pull.updatedAt, now),
     ageDays: daysSince(pull.createdAt, now),
   };

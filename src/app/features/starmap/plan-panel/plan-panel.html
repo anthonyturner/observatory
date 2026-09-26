@@ -1,0 +1,18 @@
+<aside class="plan" aria-labelledby="plantitle">
+  <div>
+    <h2 id="plantitle">Merge plan</h2>
+    <div class="sub">The order that needs the fewest rebases. {{ how() }}</div>
+  </div>
+  <ol>
+    @for (row of rows(); track row.pr) {
+      <li tabindex="0" role="button" (click)="go.emit(row.pr)" (keydown.enter)="go.emit(row.pr)">
+        <span class="i">{{ row.step }}</span
+        ><span class="n">#{{ row.pr }}</span
+        ><span class="t">{{ row.title }}</span
+        ><span class="w" [class.hot]="row.tone === 'hot'" [class.ok]="row.tone === 'ok'">{{
+          row.why
+        }}</span>
+      </li>
+    }
+  </ol>
+</aside>

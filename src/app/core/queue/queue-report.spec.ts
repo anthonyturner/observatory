@@ -13,6 +13,7 @@ const item = {
   idleDays: 4,
   ageDays: 9,
   branch: 'feat/12',
+  base: 'main',
   mergeable: 'CONFLICTING',
   changedFiles: 4,
   isSeen: true,
@@ -28,6 +29,7 @@ describe('parseQueueReport', () => {
     expect(report?.items[0]).toEqual({
       ...item,
       branch: '',
+      base: 'main',
       mergeable: 'UNKNOWN',
       changedFiles: null,
     });

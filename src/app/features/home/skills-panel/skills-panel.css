@@ -1,0 +1,89 @@
+:host {
+  display: block;
+  padding: 12px 14px 14px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.empty {
+  margin: 0;
+  padding: 9px 12px 10px;
+  border: 1px dashed var(--edge);
+  border-radius: 4px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.empty b {
+  display: block;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.browse {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.browse b {
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.browse button {
+  min-height: 32px;
+  margin: -8px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.browse button:hover {
+  color: var(--flow);
+}
+
+/* Nothing to browse: the row keeps its place, muted and inert. */
+.browse.none {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.note {
+  margin: 8px 0 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .browse {
+    margin-top: 16px;
+  }
+
+  .browse button {
+    min-height: 44px;
+    margin: -14px 0;
+  }
+}

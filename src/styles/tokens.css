@@ -37,6 +37,7 @@
   --flow-tint: rgba(142, 162, 255, 0.14);
   --flow-tint-strong: rgba(142, 162, 255, 0.2);
   --panel: rgba(9, 14, 30, 0.72);
+  --panel-soft: rgba(9, 14, 30, 0.6);
 
   /* Gradients, not blurs: a blurred panel over a live sky costs a phone its
      frame rate. */

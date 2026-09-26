@@ -34,6 +34,7 @@
         </button>
       </div>
     }
+    <app-help-button />
     <a routerLink="/orrery">Orrery</a>
     <a routerLink="/"><span aria-hidden="true">&lsaquo;</span> Home</a>
   </nav>
@@ -99,6 +100,8 @@
     </footer>
   }
 }
+
+<app-help-card title="Review queue" [entries]="helpEntries" [keys]="helpKeys" />
 
 @if (openPull(); as number) {
   <app-pull-panel

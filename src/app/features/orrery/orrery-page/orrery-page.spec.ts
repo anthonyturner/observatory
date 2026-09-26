@@ -36,6 +36,18 @@ function render(state: ProjectsState) {
 }
 
 describe('OrreryPage', () => {
+  it('explains the system from its Help button and ?', () => {
+    const { fixture, element } = render(ready([project('a', 2)]));
+
+    element.querySelector<HTMLButtonElement>('app-help-button button')?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('#help-title')?.textContent).toBe('Orrery');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
+    fixture.detectChanges();
+    expect(element.querySelector('#help-title')).toBeNull();
+  });
+
   it('names the system and links back to Home', () => {
     const { element } = render(ready([project('a', 2), project('b', 3)]));
 

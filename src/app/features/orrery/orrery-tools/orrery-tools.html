@@ -9,5 +9,13 @@
   <button type="button" [attr.aria-pressed]="isMoving()" (click)="motion.toggle()">
     Motion {{ isMoving() ? 'on' : 'off' }}
   </button>
+  <button
+    type="button"
+    [attr.aria-pressed]="sound.isOn()"
+    [title]="sound.isOn() ? 'Ambient score playing: click to fade it out' : 'Play an ambient score'"
+    (click)="sound.toggle()"
+  >
+    Sound {{ sound.isOn() ? 'on' : 'off' }}
+  </button>
 </div>
 <span class="hint">{{ hint() }}</span>

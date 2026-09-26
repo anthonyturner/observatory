@@ -1,14 +1,4 @@
-/** One line of the help card: a short term and what it means on Home. */
-export interface HelpEntry {
-  readonly term: string;
-  readonly meaning: string;
-}
-
-/** A key and what it does, for the card's foot. */
-export interface HelpKey {
-  readonly key: string;
-  readonly action: string;
-}
+import { HelpEntry, HelpKey } from '../../../shared/help/help-entry';
 
 export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {

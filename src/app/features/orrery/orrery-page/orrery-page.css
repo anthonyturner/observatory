@@ -60,6 +60,12 @@ h1 {
   color: var(--muted);
 }
 
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .home {
   display: inline-flex;
   align-items: center;

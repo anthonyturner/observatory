@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { CORE_RENDERER } from '../../../core/instrument/core-tokens';
 import { CoreRenderer } from '../../../core/instrument/core-renderer';
 import { SKY_CANVAS, SkyCanvas } from '../../../core/sky/sky-painter';
+import { HelpState } from '../../../shared/help/help-state';
 import { HomePage } from './home-page';
 
 const NO_SKY: SkyCanvas = {
@@ -53,6 +54,19 @@ describe('HomePage', () => {
       'app-vitals-panel',
       'app-skills-panel',
     ]);
+  });
+
+  it('explains Home, comets and fog included, in its help card', () => {
+    const element = render();
+    TestBed.inject(HelpState).toggle();
+    TestBed.tick();
+
+    const terms = Array.from(element.querySelectorAll('app-help-card dt')).map((dt) =>
+      dt.textContent?.trim(),
+    );
+    expect(element.querySelector('#help-title')?.textContent).toBe('Home');
+    expect(terms).toContain('Comets');
+    expect(terms).toContain('Fog');
   });
 
   it('puts the projects below the HUD, in the main landmark', () => {

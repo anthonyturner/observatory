@@ -85,6 +85,14 @@ export function labelOptions(list: readonly Issue[], chosen: string): LabelOptio
 export const labelInk = (color: string): string =>
   LABEL_HEX.test(color) ? `#${color}` : 'var(--faint)';
 
+/** An issue's labels as the chips paint them. */
+export const labelChips = (issue: Issue): { name: string; ink: string }[] =>
+  issue.labels.map((label) => ({ name: label.name, ink: labelInk(label.color) }));
+
+/** A plain left click stays on the page; any other opens a link as usual. */
+export const isPlainClick = (event: MouseEvent): boolean =>
+  event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey;
+
 export const daysSince = (iso: string, now: number): number =>
   Math.max(0, Math.floor((now - Date.parse(iso)) / DAY_MS));
 
@@ -147,6 +155,8 @@ export interface IssueRowView {
   readonly when: string;
   readonly labels: readonly { readonly name: string; readonly ink: string }[];
   readonly chips: readonly PullChip[];
+  /** Whether the row has a line of marks under its title. */
+  readonly hasMeta: boolean;
 }
 
 function rowSev(issue: Issue): string {
@@ -169,8 +179,9 @@ export function issueRowView(
     issue,
     sev: rowSev(issue),
     when: rowWhen(issue, now),
-    labels: issue.labels.map((label) => ({ name: label.name, ink: labelInk(label.color) })),
+    labels: labelChips(issue),
     chips: pullChips(issue.prs, issue.url, pulls),
+    hasMeta: issue.comet || !!(issue.labels.length || issue.assignees.length || issue.prs.length),
   };
 }
 

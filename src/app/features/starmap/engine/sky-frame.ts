@@ -58,10 +58,15 @@ export interface NewsEffect3D {
  * merge plan, the changes. Each hook runs at the point pr-starmap drew it.
  */
 export interface SkyLayer {
+  /** Each frame before the stars drift, to move stars a sky turns itself. */
+  move?(t: number, frozen: boolean): void;
   /** Into the glow layer, before the constellations. */
   beneath?(c: CanvasRenderingContext2D, frame: SkyFrame): void;
   /** Into the glow layer, after the stars. */
   above?(c: CanvasRenderingContext2D, frame: SkyFrame): void;
+  /** Into the flat layer both renderers share, before the constellations' words:
+   *  after the glow is composited in 2D, over the 3D scene in 3D. */
+  flat?(ctx: CanvasRenderingContext2D, frame: SkyFrame): void;
   /** Words, after the glow is composited. */
   labels?(ctx: CanvasRenderingContext2D, frame: SkyFrame): void;
   /** Bursts for the 3D scene to play, where the 2D sky would draw them itself. */

@@ -1,0 +1,8 @@
+/* pr-starmap's card, with the issue's labels, assignees and pull requests. */
+.cardmeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 4px 0 12px;
+}

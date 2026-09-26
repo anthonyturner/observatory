@@ -46,13 +46,33 @@ describe('IssuesScreen', () => {
     expect([issues.tab(), issues.filter()]).toEqual(['closed', null]);
   });
 
-  it('opens on the tab the address names, and names it back', () => {
+  it('opens on the tab and view the address names, and names them back', () => {
     const { issues } = screen(ready());
 
-    issues.openAt('issues/closed');
-    expect(issues.fragment()).toBe('issues/closed');
+    issues.openAt('issues/closed/map');
+    expect(issues.fragment()).toBe('issues/closed/map');
     issues.openAt('issues');
-    expect(issues.fragment()).toBe('issues');
+    expect([issues.tab(), issues.view()]).toEqual(['open', 'map']);
+  });
+
+  it('remembers Starmap or List for an address that names neither', () => {
+    localStorage.clear();
+    const { issues } = screen(ready());
+
+    issues.openAt(null);
+    expect(issues.view()).toBe('list');
+    issues.setView('map');
+    issues.view.set('list');
+    issues.openAt('logs');
+    expect(issues.view()).toBe('map');
+    localStorage.clear();
+  });
+
+  it('says an empty tab is empty in place of the nursery', () => {
+    const { issues } = screen({ status: 'ready', report: aReport([anIssue(1)]) });
+
+    issues.setTab('closed');
+    expect(issues.skyMessage()?.headline).toBe('Nothing closed in the last 60 days.');
   });
 
   it('starts a new repository afresh', () => {

@@ -13,7 +13,10 @@ const owner: RouteTable = {
   post: { '/api/triage': async () => ({}), '/api/another-write': async () => ({}) },
 };
 
-const reads = { history: async (repo: string) => ({ repo, frames: [] }) } as unknown as ApiReads;
+const reads = {
+  history: async (repo: string) => ({ repo, frames: [] }),
+  issue: async (repo: string, number: number) => ({ repo, number }),
+} as unknown as ApiReads;
 const visible = async () => new Set(['me/app']);
 
 function visitor(logs: boolean) {
@@ -60,6 +63,8 @@ describe('visitorRoutes', () => {
 
     assert.equal((await get(handle, '/api/history?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/history?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/issue?repo=me/app&number=3')).status, 200);
+    assert.equal((await get(handle, '/api/issue?repo=me/secret&number=3')).status, 404);
   });
 
   it('shows the logs through the second scrub when the owner chose to', async () => {

@@ -11,8 +11,10 @@ import {
 import {
   CLOSING_PULL_FIELDS,
   type ClosingPull,
+  RAW_ISSUE_DETAIL_FIELDS,
   RAW_ISSUE_FIELDS,
   type RawIssue,
+  type RawIssueDetail,
 } from './issue-reader.ts';
 import { PULL_DETAIL_FIELDS, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
@@ -120,6 +122,16 @@ export function ghCliReader(): GitHub {
         `closed:>=${sinceDay}`,
         '--json',
         RAW_ISSUE_FIELDS.join(','),
+      ]),
+    issueDetail: (repo, number) =>
+      ghJson<RawIssueDetail>([
+        'issue',
+        'view',
+        String(number),
+        '--repo',
+        repo,
+        '--json',
+        RAW_ISSUE_DETAIL_FIELDS.join(','),
       ]),
     pullDetail: (repo, number) =>
       ghJson<RawPull>([

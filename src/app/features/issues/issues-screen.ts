@@ -3,12 +3,17 @@ import { IssuesFeed } from '../../core/issues/issues-feed';
 import { formatRefreshed } from '../../core/logs/log-format';
 import { ageWords, fogLevel } from '../../core/projects/data-age';
 import { Clock } from '../../core/time/clock';
-import { LegendChip, fmtN } from '../starmap/starmap-view';
+import { LegendChip, SkyView, fmtN } from '../starmap/starmap-view';
 import { COMET_COLOUR } from './issue-inks';
-import { COMET_FILTER, IssueNarrowing, IssueTab, labelOptions } from './issue-list';
+import { IssueStar } from './issue-look';
+import { COMET_FILTER, IssueNarrowing, IssueTab, labelOptions, tabInfo } from './issue-list';
 
 const MINUTE_MS = 60_000;
 const CLOSED_FRAGMENT = /^issues\/closed/;
+const MAP_FRAGMENT = /^issues(\/closed)?\/map$/;
+const ISSUES_FRAGMENT = /^issues/;
+/** The view the Issues screen opened on last, per viewer. */
+const VIEW_KEY = 'observatory.issueView';
 
 /** A message in place of the Issues screen's content. */
 export interface IssuesMessage {
@@ -31,6 +36,12 @@ export class IssuesScreen {
   readonly query = signal('');
   /** The legend's filter: comets only, or none. */
   readonly filter = signal<string | null>(null);
+  /** Issues keep their own Starmap or List, remembered per viewer; a list by default. */
+  readonly view = signal<SkyView>('list');
+  /** The issue whose card is open on the nursery. */
+  readonly picked = signal<IssueStar | null>(null);
+  /** The issue read in the issue window. */
+  readonly windowIssue = signal<number | null>(null);
 
   readonly state = this.feed.state;
   readonly report = computed(() => {
@@ -50,7 +61,11 @@ export class IssuesScreen {
     return total ? { open: fmtN(total.open), closed: fmtN(total.closed) } : null;
   });
   readonly labels = computed(() => labelOptions(this.report()?.[this.tab()] ?? [], this.label()));
-  readonly fragment = computed(() => (this.tab() === 'closed' ? 'issues/closed' : 'issues'));
+  /** `#issues`, `#issues/closed`, and `/map` for the nursery. */
+  readonly fragment = computed(
+    () =>
+      `issues${this.tab() === 'closed' ? '/closed' : ''}${this.view() === 'map' ? '/map' : ''}`,
+  );
 
   readonly chips = computed((): LegendChip[] => {
     const report = this.report();
@@ -97,16 +112,39 @@ export class IssuesScreen {
         };
   });
 
-  /** The tab an address opens on: `#issues/closed` is the Closed tab. */
+  /** What the nursery says in place of a disk. */
+  readonly skyMessage = computed((): IssuesMessage | null => {
+    const report = this.report();
+    if (!report) return this.message();
+    return report[this.tab()].length ? null : { headline: tabInfo(this.tab()).none };
+  });
+
+  /** The tab and view an address opens on: `#issues/closed/map` is the Closed
+   *  tab's nursery. An address that names no view opens the one last chosen. */
   openAt(fragment: string | null): void {
-    this.tab.set(CLOSED_FRAGMENT.test(fragment ?? '') ? 'closed' : 'open');
+    const at = fragment ?? '';
+    this.tab.set(CLOSED_FRAGMENT.test(at) ? 'closed' : 'open');
+    if (MAP_FRAGMENT.test(at)) this.view.set('map');
+    else if (!ISSUES_FRAGMENT.test(at)) this.view.set(readView());
   }
 
   watch(repo: string): void {
     this.label.set('');
     this.query.set('');
     this.filter.set(null);
+    this.picked.set(null);
+    this.windowIssue.set(null);
     this.feed.watch(repo);
+  }
+
+  /** Starmap or List, remembered for next time. */
+  setView(view: SkyView): void {
+    this.view.set(view);
+    try {
+      localStorage.setItem(VIEW_KEY, view);
+    } catch {
+      // The list is the default.
+    }
   }
 
   refresh(repo: string): void {
@@ -117,6 +155,7 @@ export class IssuesScreen {
   setTab(tab: IssueTab): void {
     if (tab === 'closed' && this.filter() === COMET_FILTER) this.filter.set(null);
     this.tab.set(tab);
+    this.picked.set(null);
   }
 
   /** The comet count can be pressed from either tab, and brings the Open list up. */
@@ -124,10 +163,22 @@ export class IssuesScreen {
     const next = this.filter() === COMET_FILTER ? null : COMET_FILTER;
     this.filter.set(next);
     if (next) this.tab.set('open');
+    this.picked.set(null);
   }
 
-  /** Leaving the screen drops the legend's filter, as pr-starmap's does. */
-  clearFilter(): void {
+  /** Leaving the screen drops the legend's filter, the card and the window. */
+  leave(): void {
     this.filter.set(null);
+    this.picked.set(null);
+    this.windowIssue.set(null);
+  }
+}
+
+/** The view last chosen, or the list when storage is blocked. */
+function readView(): SkyView {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'map' ? 'map' : 'list';
+  } catch {
+    return 'list';
   }
 }

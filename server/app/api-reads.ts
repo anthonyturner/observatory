@@ -4,6 +4,7 @@ import type { Frame } from '../history/frames.ts';
 import type { HistoryStore } from '../history/history-store.ts';
 import { type Ledger, ledgerReport } from '../history/ledger.ts';
 import { recordFrame } from '../history/record-frame.ts';
+import { type IssueDetail, issueDetail } from '../issues/issue-detail.ts';
 import { type IssuesReport, issuesReport } from '../issues/issues-report.ts';
 import type { LogSnapshot, LogsUnconfigured } from '../logs/log-types.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
@@ -51,6 +52,8 @@ export interface ApiReads {
   /** Also records a frame of the star map's memory when one is due. */
   queue(repo: string): Promise<QueueReport>;
   issues(repo: string): Promise<IssuesReport>;
+  /** One issue with its description, for the issue window. */
+  issue(repo: string, number: number): Promise<IssueDetail>;
   pull(repo: string, number: number): Promise<PullDetail>;
   collisions(repo: string): Promise<CollisionsReport>;
   history(repo: string): Promise<HistoryReport>;
@@ -71,6 +74,10 @@ export function cachedReads(sources: ReadSources): ApiReads {
     );
     return report;
   }, QUEUE_TTL_MS);
+  const issueOf = cachedByKey(async (key) => {
+    const [repo, number] = key.split('#');
+    return issueDetail(github, repo, Number(number));
+  }, PULL_TTL_MS);
   const pullOf = cachedByKey(async (key) => {
     const [repo, number] = key.split('#');
     return pullDetailOf(await github.pullDetail(repo, Number(number)));
@@ -79,6 +86,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     projects: cached(() => projectsReport(github), PROJECTS_TTL_MS),
     queue: queueOf,
     issues: cachedByKey((repo) => issuesReport(github, repo), QUEUE_TTL_MS),
+    issue: (repo, number) => issueOf(`${repo}#${number}`),
     pull: (repo, number) => pullOf(`${repo}#${number}`),
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),
     history: async (repo) => ({ repo, frames: await history.read(repo) }),

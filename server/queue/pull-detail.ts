@@ -1,5 +1,5 @@
 import type { RawCheck, RawPull } from '../github/pull-reader.ts';
-import { BadRequest } from '../http/api-handler.ts';
+import { numberFrom } from '../http/number-from.ts';
 import { type PullBucket, bucketOf } from '../projects/pull-counts.ts';
 
 export type CheckOutcome = 'passed' | 'failed' | 'pending' | 'skipped';
@@ -112,10 +112,5 @@ export function pullDetailOf(raw: RawPull): PullDetail {
 }
 
 /** A pull request number from a request, or a BadRequest. */
-export function pullNumberFrom(value: string | null): number {
-  const number = Number(value);
-  if (!value || !/^\d{1,9}$/.test(value) || number < 1) {
-    throw new BadRequest('number must be a pull request number');
-  }
-  return number;
-}
+export const pullNumberFrom = (value: string | null): number =>
+  numberFrom(value, 'a pull request number');

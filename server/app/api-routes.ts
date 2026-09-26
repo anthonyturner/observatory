@@ -1,4 +1,5 @@
 import type { RouteTable } from '../http/api-handler.ts';
+import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { triageRequestFrom } from '../triage/triage.ts';
@@ -21,6 +22,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore): RouteTable {
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/ledger': (query) => reads.ledger(repoOf(query)),
       '/api/issues': (query) => reads.issues(repoOf(query)),
+      '/api/issue': (query) => reads.issue(repoOf(query), issueNumberFrom(query.get('number'))),
       '/api/logs': (query) => reads.logs(repoOf(query)),
       '/api/pull': (query) => reads.pull(repoOf(query), pullNumberFrom(query.get('number'))),
     },

@@ -34,6 +34,7 @@ const queue: QueueReport = {
 const reads = {
   queue: async () => queue,
   pull: async (repo: string, number: number) => ({ repo, number }),
+  issue: async (repo: string, number: number) => ({ repo, issue: number }),
   logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
 } as unknown as ApiReads;
 
@@ -53,6 +54,13 @@ describe('ownerRoutes', () => {
 
   it('reads a pull request by repository and number', async () => {
     assert.deepEqual(await get('/api/pull?repo=me/app&number=7'), { repo: 'me/app', number: 7 });
+  });
+
+  it('reads one issue by repository and number, and refuses a bad number', async () => {
+    assert.deepEqual(await get('/api/issue?repo=me/app&number=12'), { repo: 'me/app', issue: 12 });
+    assert.deepEqual(await get('/api/issue?repo=me/app&number=x'), {
+      error: 'number must be an issue number',
+    });
   });
 
   it('records triage and shows it in the next queue read', async () => {

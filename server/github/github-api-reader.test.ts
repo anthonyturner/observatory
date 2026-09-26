@@ -49,6 +49,7 @@ const RECORDED: readonly [string, (reader: GitHub) => Promise<unknown>][] = [
   ['open-issues', (reader) => reader.openIssues(REPO)],
   ['open-issue-numbers', (reader) => reader.openIssueNumbers(REPO)],
   ['closed-issues', (reader) => reader.closedIssues(REPO, '2026-07-28')],
+  ['issue-detail', (reader) => reader.issueDetail(REPO, 14)],
   ['viewer', (reader) => reader.viewer()],
 ];
 
@@ -183,6 +184,12 @@ describe('githubApiReader where GitHub has no recording to replay', () => {
         workflowName: '',
       },
     ]);
+  });
+
+  it('refuses an issue that is not there', async () => {
+    const { reader } = replaying([{ data: { repository: { issue: null } } }]);
+
+    await assert.rejects(reader.issueDetail(REPO, 404), /has no issue 404/);
   });
 
   it('refuses a pull request that is not there', async () => {

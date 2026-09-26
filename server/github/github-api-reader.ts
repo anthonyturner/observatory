@@ -5,8 +5,10 @@ import { ISSUE_GRAPHQL, PULL_GRAPHQL, nodesOf, selectionOf } from './graphql-fie
 import {
   CLOSING_PULL_FIELDS,
   type ClosingPull,
+  RAW_ISSUE_DETAIL_FIELDS,
   RAW_ISSUE_FIELDS,
   type RawIssue,
+  type RawIssueDetail,
 } from './issue-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import { PULL_DETAIL_FIELDS, type RawPull } from './pull-reader.ts';
@@ -117,6 +119,18 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     return nodes.map(shape);
   }
 
+  async function oneIssue(repo: string, number: number, fields: readonly string[]): Promise<Node> {
+    const { select, shape } = selectionOf(ISSUE_GRAPHQL, fields);
+    const repository = await repositoryOf(
+      `query($owner: String!, $name: String!, $number: Int!) {
+        repository(owner: $owner, name: $name) { issue(number: $number) { ${select} } }
+      }`,
+      { ...repoVariables(repo), number },
+    );
+    if (!repository['issue']) throw new Error(`GitHub: ${repo} has no issue ${number}`);
+    return shape(repository['issue']);
+  }
+
   /** Open issues with `fields`, or null when the repository has issues switched off. */
   async function openIssues(repo: string, fields: readonly string[]): Promise<Node[] | null> {
     const { select, shape } = selectionOf(ISSUE_GRAPHQL, fields);
@@ -190,6 +204,8 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
       if (!issues) throw new Error(`GitHub: the repository ${repo} has disabled issues`);
       return shaped<RawIssue>(issues);
     },
+    issueDetail: async (repo, number) =>
+      shaped<RawIssueDetail>([await oneIssue(repo, number, RAW_ISSUE_DETAIL_FIELDS)])[0],
     closedIssues: async (repo, sinceDay) =>
       shaped<RawIssue>(await closedIssues(repo, sinceDay, RAW_ISSUE_FIELDS)),
   };

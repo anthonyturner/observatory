@@ -84,7 +84,8 @@ export const isQuick = (i: SkyItem): boolean => {
 
 /** A constellation: one bucket, or one log window. */
 export interface SkyCluster {
-  readonly cx: number;
+  /** Moves as a turning sky carries its label round. */
+  cx: number;
   readonly cy: number;
   readonly z: number;
   labelY: number;
@@ -117,9 +118,14 @@ export interface StarFields {
   readonly quick?: boolean;
   /** Anything a layout carries for its own sky: a log fault, a window, an issue. */
   readonly data?: unknown;
+  /** Drawn by its own sky's code, not as a star. */
+  readonly custom?: boolean;
 }
 
 export interface SkyStar extends StarFields {
+  /** Where it rests; a turning sky moves it. */
+  x: number;
+  y: number;
   readonly twinkle: number;
   readonly twinkleRate: number;
   readonly driftA: number;
@@ -139,8 +145,6 @@ export interface SkyStar extends StarFields {
   fromY?: number;
   fromZ?: number;
   moveAt?: number | null;
-  /** Drawn by its own sky's code, not as a star. */
-  readonly custom?: boolean;
 }
 
 /** One background star. */

@@ -134,7 +134,7 @@ export const PULL_GRAPHQL: Readonly<Record<string, Field>> = {
 };
 
 export const ISSUE_GRAPHQL: Readonly<Record<string, Field>> = {
-  ...scalars(['number', 'title', 'url', 'createdAt', 'updatedAt', 'closedAt']),
+  ...scalars(['number', 'title', 'body', 'url', 'createdAt', 'updatedAt', 'closedAt']),
   stateReason: { select: 'stateReason', shape: orEmpty },
   author: { select: `author ${ACTOR}`, shape: actorOf },
   closedByPullRequestsReferences: connection('closedByPullRequestsReferences', 100, LINKED),

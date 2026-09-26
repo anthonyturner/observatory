@@ -20,6 +20,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore): RouteTable {
       '/api/collisions': (query) => reads.collisions(repoOf(query)),
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/issues': (query) => reads.issues(repoOf(query)),
+      '/api/logs': (query) => reads.logs(repoOf(query)),
       '/api/pull': (query) => reads.pull(repoOf(query), pullNumberFrom(query.get('number'))),
     },
     post: {

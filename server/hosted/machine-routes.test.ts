@@ -52,13 +52,13 @@ const github = {
   ],
 } as unknown as GitHub;
 
-function site() {
+function site(env: Record<string, string> = ENV) {
   const data = new Map<string, unknown>();
   const store: Store = {
     get: async (key) => data.get(key) ?? null,
     set: async (key, value) => void data.set(key, structuredClone(value)),
   };
-  return { data, handle: hostedApi(ENV, () => ({ store, github })) };
+  return { data, handle: hostedApi(env, () => ({ store, github })) };
 }
 
 const bearer = (secret: string) => ({ authorization: `Bearer ${secret}` });
@@ -163,5 +163,45 @@ describe('the push routes', () => {
     assert.equal((await push(handle, { repo: 'someone/else', frames: [] })).status, 404);
     assert.equal((await push(handle, { repo: 'me/app', collisions: { check: 'x' } })).status, 400);
     assert.equal((await push(handle, { usage: 'lots' })).status, 400);
+  });
+});
+
+describe('pushed logs', () => {
+  const logs = {
+    generatedAt: '2026-09-26T00:00:00Z',
+    source: 'App',
+    span: { from: null, to: null },
+    totals: { lines: 1, files: 1, error: 1, warn: 0, info: 0, faults: 1, omitted: 0 },
+    windows: [],
+    faults: [
+      { id: 1, level: 'error', window: 'api', service: null, text: 'mail bob@example.com bounced' },
+    ],
+    timeline: [],
+  };
+  const visitorLogs = async (handle: ReturnType<typeof site>['handle']) =>
+    handle(new Request(`${SITE}/api/logs?repo=me/app`));
+
+  it('read as not set until a push brings them, then as pushed, to the owner', async () => {
+    const { handle } = site();
+    assert.deepEqual(await read(handle, '/api/logs?repo=me/app'), {
+      configured: false,
+      reason: 'not-set',
+    });
+
+    await push(handle, { repo: 'me/app', logs });
+
+    assert.deepEqual(await read(handle, '/api/logs?repo=me/app'), logs);
+    assert.equal((await push(handle, { repo: 'me/app', logs: { source: 1 } })).status, 400);
+  });
+
+  it('reach a visitor only with PREVIEW_LOGS on, and then through the second scrub', async () => {
+    const closed = site({ ...ENV, PUBLIC_PREVIEW: 'on' });
+    const open = site({ ...ENV, PUBLIC_PREVIEW: 'on', PREVIEW_LOGS: 'on' });
+    await push(closed.handle, { repo: 'me/app', logs });
+    await push(open.handle, { repo: 'me/app', logs });
+
+    assert.equal((await visitorLogs(closed.handle)).status, 403);
+    const shown = (await (await visitorLogs(open.handle)).json()) as typeof logs;
+    assert.equal(shown.faults[0].text, 'mail [hidden] bounced');
   });
 });

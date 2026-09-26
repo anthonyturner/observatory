@@ -9,6 +9,9 @@ import { collisionsReport } from './collisions/collisions-report.ts';
 import { gitPairMerger } from './collisions/pair-merger.ts';
 import { ghCliReader } from './github/gh-cli-reader.ts';
 import { fileHistoryStore } from './history/history-store.ts';
+import { fsLogFolder } from './logs/log-folder.ts';
+import { fileLogsConfig } from './logs/logs-config.ts';
+import { logsReport } from './logs/logs-report.ts';
 import { pushClient } from './push/push-client.ts';
 import { pushAll } from './push/push-run.ts';
 import { PUSH_TARGET_KEY, argOf, namesTarget, pushTargetFrom } from './push/push-target.ts';
@@ -31,6 +34,8 @@ if (namesTarget(args)) await local.set(PUSH_TARGET_KEY, target);
 const github = ghCliReader();
 const clones = fileCloneFinder();
 const merger = gitPairMerger();
+const logsConfig = fileLogsConfig();
+const logFolder = fsLogFolder();
 const only = argOf(args, 'repo');
 const results = await pushAll(
   {
@@ -40,6 +45,7 @@ const results = await pushAll(
     triage: storeTriageStore(local),
     history: fileHistoryStore(),
     collisions: (repo) => collisionsReport(github, clones, merger, repo),
+    logs: (repo) => logsReport(logsConfig, logFolder, repo, new Date()),
     usage: () => usageReport(),
   },
   only ? repoNameFrom(only) : null,

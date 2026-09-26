@@ -1,5 +1,6 @@
 import type { CollisionsReport } from '../collisions/collisions-report.ts';
 import type { HistoryStore } from '../history/history-store.ts';
+import type { LogSnapshot, LogsUnconfigured } from '../logs/log-types.ts';
 import { mergeTriage } from '../triage/triage-merge.ts';
 import type { TriageStore } from '../triage/triage-store.ts';
 import type { UsageReport } from '../usage/usage-types.ts';
@@ -14,6 +15,8 @@ export interface PushSources {
   readonly history: HistoryStore;
   /** Real merge checks between branches, which need a clone here. */
   readonly collisions: (repo: string) => Promise<CollisionsReport>;
+  /** The app's folded logs, where a folder is set for the repository here. */
+  readonly logs: (repo: string) => Promise<LogSnapshot | LogsUnconfigured>;
   readonly usage: () => Promise<UsageReport>;
 }
 
@@ -42,6 +45,7 @@ async function pushRepo(sources: PushSources, repo: string): Promise<PushResult>
   if (broughtHome) await sources.triage.write(repo, merged);
   const frames = await sources.history.read(repo);
   const collisions = await sources.collisions(repo);
+  const logs = await sources.logs(repo);
   const body: PushBody = {
     repo,
     triage: merged,
@@ -49,6 +53,7 @@ async function pushRepo(sources: PushSources, repo: string): Promise<PushResult>
     // The site works out which files pull requests share by itself; only a
     // real merge check is worth sending.
     ...(collisions.check === 'checked' ? { collisions } : {}),
+    ...('configured' in logs ? {} : { logs }),
   };
   return { target: repo, wrote: await sources.client.send(body), broughtHome };
 }

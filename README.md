@@ -91,6 +91,23 @@ files on this machine, so it listens on loopback only:
   scanning `OBSERVATORY_CLONES_ROOT` (by default the folder holding this
   checkout). Without one, the pairs are shown as unchecked, never as safe.
 
+- **Log sky**: an app's own log folder, read by `GET /api/logs?repo=owner/name`
+  at most every five minutes. It understands Overwolf's log format
+  (`2026-09-23 01:43:37,307 (INFO) <source> (:1) - message`), one window per
+  file. The page never sees raw lines: numbers, JSON payloads and URL paths are
+  stripped first (they carry most of a log's personal data, such as player ids
+  and names inside match payloads), and repeats fold into one fault per window.
+  The 160 loudest faults are kept, errors first; the totals still count
+  everything. Point a repository at its folder once:
+
+  ```
+  node server/logs/set-dir.ts owner/repo "C:\Users\you\AppData\Local\Overwolf\Log\Apps\Your App"
+  ```
+
+  The folder is kept in `~/.claude/observatory/logs.json`
+  (`{"owner/repo": "<folder>"}`). Without one, the API answers
+  `{"configured": false}`.
+
 Skills are still sample data.
 
 ## Host it on Vercel
@@ -145,17 +162,17 @@ day (for example `0 6 * * *`) and `maxDuration` to 300.
    push to `main`, or a redeploy).
 6. Open the site, sign in, and run the first push from this machine.
 
-| Variable | What it is |
-| --- | --- |
-| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | The Redis store. Adding Upstash for Redis from the Vercel Marketplace sets both. |
-| `GITHUB_TOKEN` | A fine-grained token with read access to metadata, contents, pull requests and issues. |
-| `GITHUB_OWNER` | The account whose repositories are charted. |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | A GitHub OAuth app whose callback is `https://<your site>/api/auth/callback`. |
-| `ALLOWED_LOGINS` | GitHub logins let in, comma separated. |
-| `SESSION_SECRET`, `CRON_SECRET`, `PUSH_TOKEN` | Random strings of 32 or more characters. |
-| `SITE_URL` | Optional: your site's address, if sign-in should always return there. |
-| `PUBLIC_PREVIEW` | Optional: `on` lets anyone see your public repositories, read-only; `all` the private ones too. Off unless set. |
-| `PREVIEW_LOGS` | Optional: `on` shows visitors the Log Sky, redacted. Off unless set. |
+| Variable                                      | What it is                                                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN`        | The Redis store. Adding Upstash for Redis from the Vercel Marketplace sets both.                                |
+| `GITHUB_TOKEN`                                | A fine-grained token with read access to metadata, contents, pull requests and issues.                          |
+| `GITHUB_OWNER`                                | The account whose repositories are charted.                                                                     |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`    | A GitHub OAuth app whose callback is `https://<your site>/api/auth/callback`.                                   |
+| `ALLOWED_LOGINS`                              | GitHub logins let in, comma separated.                                                                          |
+| `SESSION_SECRET`, `CRON_SECRET`, `PUSH_TOKEN` | Random strings of 32 or more characters.                                                                        |
+| `SITE_URL`                                    | Optional: your site's address, if sign-in should always return there.                                           |
+| `PUBLIC_PREVIEW`                              | Optional: `on` lets anyone see your public repositories, read-only; `all` the private ones too. Off unless set. |
+| `PREVIEW_LOGS`                                | Optional: `on` shows visitors the Log Sky, redacted. Off unless set.                                            |
 
 A site missing one of the required variables answers every request saying
 which. Generate the secrets with, for example,
@@ -165,7 +182,8 @@ which. Generate the secrets with, for example,
 
 Some of what Observatory shows exists only here: the history frames recorded
 while you worked locally, real merge checks between branches (they need a local
-clone and `git`), your triage, and your Claude Code usage. Push it up whenever
+clone and `git`), each Log Sky whose folder is set here, your triage, and your
+Claude Code usage. Push it up whenever
 you like; it also brings a snooze or dismissal made on the hosted page home
 into your local triage. For each pull request, whichever side changed its
 triage last wins, so both end up the same.
@@ -179,7 +197,8 @@ npm run push -- --repo=<owner/name>                               # one reposito
 The site and token are remembered in `~/.claude/observatory/push.json` (or set
 `OBSERVATORY_SITE` and `OBSERVATORY_PUSH_TOKEN`). Without a push the hosted site
 still works: collisions are then shown from the files pull requests share,
-unchecked, and the usage meters say there are no readings.
+unchecked, the Log Sky says no folder is set, and the usage meters say there
+are no readings. What a push brings shows at once.
 
 ## Working on it
 

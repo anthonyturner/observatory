@@ -1,0 +1,190 @@
+/* pr-starmap's detail card, as a log star opens it. */
+.card {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  width: min(352px, calc(100vw - 40px));
+  max-height: min(580px, calc(100vh - 40px));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--detail-glass);
+  backdrop-filter: blur(22px) saturate(150%);
+  box-shadow:
+    var(--sheen-inset),
+    var(--shadow-card),
+    0 0 60px -30px var(--sev, var(--flow));
+  overflow-y: auto;
+  z-index: 6;
+  transform: translateY(-50%);
+  animation: cardin 0.38s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+@keyframes cardin {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* The level reads as a light source along the card's leading edge. */
+.card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, transparent, var(--sev) 18%, var(--sev) 82%, transparent);
+  box-shadow: 0 0 14px var(--sev);
+}
+
+.bucketname {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.15;
+  color: var(--sev);
+}
+
+.prno {
+  font-family: var(--font-mono);
+  font-size: 27px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--detail-heading);
+  overflow-wrap: anywhere;
+}
+
+.excerpt {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--detail-well);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--detail-heading);
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 16px;
+  margin: 0;
+  font-size: 12.5px;
+  font-family: var(--font-mono);
+}
+
+.facts dt {
+  color: var(--faint);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+}
+
+.facts dd.hot {
+  color: var(--sev);
+}
+
+/* Each control sits in the flow of its own row, never over the text. */
+.cardacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--edge-soft);
+}
+
+.cardacts a,
+.cardacts button {
+  flex: 1 1 auto;
+  min-width: 96px;
+  padding: 9px 13px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 9px;
+  background: var(--detail-action);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.15s;
+}
+
+.cardacts a:hover,
+.cardacts button:hover {
+  border-color: var(--flow);
+  background: var(--detail-action-hover);
+  transform: translateY(-1px);
+}
+
+.close {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid var(--edge-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--ink);
+  border-color: var(--edge);
+}
+
+@media (max-width: 720px) {
+  .card {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    top: auto;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    transform: none;
+    max-height: 52vh;
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+
+  .cardacts a,
+  .cardacts button {
+    transition: none;
+  }
+}

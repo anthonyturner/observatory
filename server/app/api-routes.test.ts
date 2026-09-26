@@ -31,6 +31,7 @@ const queue: QueueReport = {
 const reads = {
   queue: async () => queue,
   pull: async (repo: string, number: number) => ({ repo, number }),
+  logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
 } as unknown as ApiReads;
 
 function memoryTriage(): TriageStore {
@@ -63,6 +64,14 @@ describe('ownerRoutes', () => {
     assert.equal(response.status, 200);
     const read = (await get('/api/queue?repo=me/app')) as { items: { isSeen: boolean }[] };
     assert.equal(read.items[0].isSeen, true);
+  });
+
+  it('reads a repository’s Log Sky', async () => {
+    assert.deepEqual(await get('/api/logs?repo=me/app'), {
+      configured: false,
+      reason: 'not-set',
+      repo: 'me/app',
+    });
   });
 
   it('refuses a malformed repository name', async () => {

@@ -1,4 +1,4 @@
-import { cachedReads } from '../app/api-reads.ts';
+import { type ApiReads, cachedReads } from '../app/api-reads.ts';
 import { ownerRoutes } from '../app/api-routes.ts';
 import { uncheckedCollisions } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
@@ -11,9 +11,12 @@ import { upstashStore } from '../store/upstash-store.ts';
 import { storeTriageStore } from '../triage/triage-store.ts';
 import { machineRoutes } from './machine-routes.ts';
 import {
+  LOGS_NOT_PUSHED,
   USAGE_KEY,
   collisionsFrom,
   collisionsKey,
+  logsFrom,
+  logsKey,
   usageFrom,
   withPushedConflicts,
 } from './pushed-data.ts';
@@ -50,6 +53,23 @@ function visibleRepos(repos: () => Promise<RepoRef[]>, config: HostedConfig): Vi
   };
 }
 
+/**
+ * `live` with what a push from the owner's machine brought: merge checks laid
+ * over the shared-file pairs, and the Log Sky. Read from the store on every
+ * request, so a push shows at once; only what comes from GitHub stays cached.
+ */
+function pushedReads(live: ApiReads, store: Store): ApiReads {
+  return {
+    ...live,
+    collisions: async (repo) =>
+      withPushedConflicts(
+        await live.collisions(repo),
+        collisionsFrom(await store.get(collisionsKey(repo))),
+      ),
+    logs: async (repo) => logsFrom(await store.get(logsKey(repo))) ?? LOGS_NOT_PUSHED,
+  };
+}
+
 /** The API as it runs on Vercel, from the environment. */
 function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): ApiHandler {
   const { store } = dependencies;
@@ -58,18 +78,17 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
   const history = storeHistoryStore(store);
   const triage = storeTriageStore(store);
   const repos = ownedRepos(github, config);
-  const reads = cachedReads({
-    github,
-    history,
-    // No clone here: the pairs are worked out from shared files, with whatever
-    // merge checks a push from the owner's machine last brought.
-    collisions: async (repo) =>
-      withPushedConflicts(
-        await uncheckedCollisions(github, repo),
-        collisionsFrom(await store.get(collisionsKey(repo))),
-      ),
-    usage: async () => usageFrom(await store.get(USAGE_KEY)),
-  });
+  const reads = pushedReads(
+    cachedReads({
+      github,
+      history,
+      // No clone here: the pairs are worked out from the files pull requests share.
+      collisions: (repo) => uncheckedCollisions(github, repo),
+      usage: async () => usageFrom(await store.get(USAGE_KEY)),
+      logs: async () => LOGS_NOT_PUSHED,
+    }),
+    store,
+  );
   const owner = ownerRoutes(reads, triage);
   const machines = machineRoutes({
     reads,

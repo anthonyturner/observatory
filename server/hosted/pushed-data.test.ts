@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { CollisionsReport } from '../collisions/collisions-report.ts';
-import { collisionsFrom, usageFrom, withPushedConflicts } from './pushed-data.ts';
+import { collisionsFrom, logsFrom, usageFrom, withPushedConflicts } from './pushed-data.ts';
 
 const live: CollisionsReport = {
   generatedAt: '2026-09-26T12:00:00Z',
@@ -73,5 +73,22 @@ describe('usageFrom', () => {
     assert.deepEqual(usageFrom(usage), usage);
     assert.equal(usageFrom({ generatedAt: 'x' }), null);
     assert.equal(usageFrom('usage'), null);
+  });
+});
+
+describe('logsFrom', () => {
+  it('reads a Log Sky snapshot and refuses anything else', () => {
+    const logs = {
+      generatedAt: 'x',
+      source: 'App',
+      totals: {},
+      windows: [],
+      faults: [],
+      timeline: [],
+    };
+
+    assert.deepEqual(logsFrom(logs), logs);
+    assert.equal(logsFrom({ ...logs, faults: 'many' }), null);
+    assert.equal(logsFrom({ configured: false, reason: 'not-set' }), null);
   });
 });

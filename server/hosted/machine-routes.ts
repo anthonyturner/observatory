@@ -9,7 +9,14 @@ import type { TriageStore } from '../triage/triage-store.ts';
 import { triageStateFrom } from '../triage/triage-store.ts';
 import { mergeTriage } from '../triage/triage-merge.ts';
 import type { OpenRoutes } from './gated-handler.ts';
-import { USAGE_KEY, collisionsFrom, collisionsKey, usageFrom } from './pushed-data.ts';
+import {
+  USAGE_KEY,
+  collisionsFrom,
+  collisionsKey,
+  logsFrom,
+  logsKey,
+  usageFrom,
+} from './pushed-data.ts';
 
 /** What the scheduler and the push command reach, each with its own secret. */
 export interface MachineSources {
@@ -50,6 +57,7 @@ interface PushBody {
   readonly triage?: unknown;
   readonly frames?: unknown;
   readonly collisions?: unknown;
+  readonly logs?: unknown;
   readonly usage?: unknown;
 }
 
@@ -95,6 +103,12 @@ export function machineRoutes(sources: MachineSources): OpenRoutes {
       if (!collisions) throw new BadRequest('collisions is not a collisions report');
       await store.set(collisionsKey(repo), collisions);
       wrote.push('collisions');
+    }
+    if (body.logs !== undefined) {
+      const logs = logsFrom(body.logs);
+      if (!logs) throw new BadRequest('logs is not a Log Sky snapshot');
+      await store.set(logsKey(repo), logs);
+      wrote.push('logs');
     }
     return { wrote };
   }

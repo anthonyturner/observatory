@@ -1,5 +1,6 @@
 import type { CollisionsReport } from '../collisions/collisions-report.ts';
 import type { Frame } from '../history/frames.ts';
+import type { LogSnapshot } from '../logs/log-types.ts';
 import { type TriageState } from '../triage/triage.ts';
 import { triageStateFrom } from '../triage/triage-store.ts';
 import type { UsageReport } from '../usage/usage-types.ts';
@@ -11,6 +12,7 @@ export interface PushBody {
   readonly triage?: TriageState;
   readonly frames?: readonly Frame[];
   readonly collisions?: CollisionsReport;
+  readonly logs?: LogSnapshot;
   readonly usage?: UsageReport;
 }
 

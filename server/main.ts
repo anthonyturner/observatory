@@ -8,6 +8,9 @@ import { fileHistoryStore } from './history/history-store.ts';
 import { createApiHandler } from './http/api-handler.ts';
 import { createApiServer } from './http/api-server.ts';
 import { withLocalSession } from './http/session.ts';
+import { fsLogFolder } from './logs/log-folder.ts';
+import { fileLogsConfig } from './logs/logs-config.ts';
+import { logsReport } from './logs/logs-report.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { usageReport } from './usage/usage-report.ts';
@@ -19,11 +22,14 @@ const port = Number(process.env['OBSERVATORY_API_PORT'] ?? DEFAULT_PORT);
 const github = ghCliReader();
 const clones = fileCloneFinder();
 const merger = gitPairMerger();
+const logsConfig = fileLogsConfig();
+const logFolder = fsLogFolder();
 const reads = cachedReads({
   github,
   history: fileHistoryStore(),
   collisions: (repo) => collisionsReport(github, clones, merger, repo),
   usage: () => usageReport(),
+  logs: (repo) => logsReport(logsConfig, logFolder, repo, new Date()),
 });
 const triage = storeTriageStore(fileStore());
 

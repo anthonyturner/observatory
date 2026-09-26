@@ -4,6 +4,7 @@ import type { CollisionsReport } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
 import type { Frame } from '../history/frames.ts';
 import type { HistoryStore } from '../history/history-store.ts';
+import type { LogSnapshot } from '../logs/log-types.ts';
 import { hostedApi } from '../hosted/hosted-api.ts';
 import type { Store } from '../store/store.ts';
 import { EMPTY_TRIAGE, type TriageState, applyTriage } from '../triage/triage.ts';
@@ -62,6 +63,15 @@ function memoryTriage(state: TriageState): TriageStore & { current: () => Triage
 
 const frame: Frame = { at: '2026-09-24T00:00:00.000Z', items: [], departed: [] };
 const usage: UsageReport = { generatedAt: 'x', limits: null, tokens: { days: 30, rows: [] } };
+const logs: LogSnapshot = {
+  generatedAt: 'x',
+  source: 'App',
+  span: { from: null, to: null },
+  totals: { lines: 0, files: 0, error: 0, warn: 0, info: 0, faults: 0, omitted: 0 },
+  windows: [],
+  faults: [],
+  timeline: [],
+};
 const checked: CollisionsReport = {
   generatedAt: 'x',
   repo: 'me/app',
@@ -76,6 +86,7 @@ function sourcesFor(fetch: typeof globalThis.fetch, triage: TriageStore): PushSo
     triage,
     history: { read: async () => [frame] } as unknown as HistoryStore,
     collisions: async () => checked,
+    logs: async () => logs,
     usage: async () => usage,
   };
 }
@@ -99,7 +110,11 @@ describe('pushAll against the hosted API', () => {
     const results = await pushAll(sourcesFor(site.fetch, local), null);
 
     assert.deepEqual(results, [
-      { target: 'me/app', wrote: ['triage', '1 frames', 'collisions'], broughtHome: true },
+      {
+        target: 'me/app',
+        wrote: ['triage', '1 frames', 'collisions', 'logs'],
+        broughtHome: true,
+      },
       { target: 'usage', wrote: ['usage'], broughtHome: false },
     ]);
     assert.equal(local.current().snoozed['3'], '2026-09-28T00:00:00.000Z');
@@ -108,6 +123,7 @@ describe('pushAll against the hosted API', () => {
     assert.equal(hosted.snoozed['3'], '2026-09-28T00:00:00.000Z');
     assert.deepEqual(site.data.get('history/me__app'), { frames: [frame] });
     assert.deepEqual(site.data.get('usage/current'), usage);
+    assert.deepEqual(site.data.get('logs/me__app'), logs);
   });
 
   it('pushes one repository without the usage, and reports a refusal without stopping', async () => {
@@ -130,11 +146,12 @@ describe('pushAll against the hosted API', () => {
     assert.equal(refused.length, 3);
   });
 
-  it('sends no collisions when this machine could not check them', async () => {
+  it('sends no collisions it could not check, and no logs without a folder', async () => {
     const site = hostedSite();
     const sources = {
       ...sourcesFor(site.fetch, memoryTriage(EMPTY_TRIAGE)),
       collisions: async () => ({ ...checked, check: 'no-clone' as const }),
+      logs: async () => ({ configured: false as const, reason: 'not-set' as const }),
     };
 
     const [result] = await pushAll(sources, 'me/app');

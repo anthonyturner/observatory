@@ -29,7 +29,7 @@ export const ORRERY_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Sound',
     meaning:
-      'An ambient score made in this browser as you listen, uneasy as your projects strain. Off until you turn it on, and remembered.',
+      'The system plays itself. Each world is an instrument with its own rhythm, busier with more open work; its sound says its state: harsh when blocked, a bell when clear. Each plays from where it sits, the sun keeps the beat, and a scanner sweep rises with blocked worlds. Pointing at a world plays its motif.',
   },
 ];
 

@@ -44,6 +44,7 @@ function render(fragment: string | null = null) {
         useValue: () => ({
           start: async () => undefined,
           stop: () => undefined,
+          dispose: () => undefined,
           setUnease: () => undefined,
         }),
       },

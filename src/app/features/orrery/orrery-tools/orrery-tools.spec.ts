@@ -6,7 +6,12 @@ describe('OrreryTools', () => {
   beforeEach(() => localStorage.clear());
 
   it('turns the ambient score on and off, and says which', async () => {
-    const player = { start: vi.fn(async () => undefined), stop: vi.fn(), setUnease: vi.fn() };
+    const player = {
+      start: vi.fn(async () => undefined),
+      stop: vi.fn(),
+      dispose: vi.fn(),
+      setUnease: vi.fn(),
+    };
     TestBed.configureTestingModule({
       providers: [{ provide: AMBIENT_PLAYER, useValue: () => player }],
     });

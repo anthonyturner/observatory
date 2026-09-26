@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { orreryStamp } from '../../../core/orrery/orrery-stamp';
 import { layoutWorlds } from '../../../core/orrery/world-layout';
@@ -11,6 +11,7 @@ import { ORRERY_HELP_ENTRIES, ORRERY_HELP_KEYS } from '../orrery-help';
 import { OrreryCanvas } from '../orrery-canvas/orrery-canvas';
 import { OrreryTools } from '../orrery-tools/orrery-tools';
 import { WorldCard } from '../world-card/world-card';
+import { OrreryFocus, provideOrrerySound } from '../orrery-sound';
 
 /** What the page says in place of the system, by where the projects stand. */
 const WAITING_MESSAGE = {
@@ -23,6 +24,7 @@ const WAITING_MESSAGE = {
   selector: 'app-orrery-page',
   imports: [RouterLink, OrreryCanvas, OrreryTools, WorldCard, HelpButton, HelpCard],
   hostDirectives: [HelpShortcuts],
+  providers: [provideOrrerySound()],
   templateUrl: './orrery-page.html',
   styleUrl: './orrery-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,7 +38,7 @@ export class OrreryPage {
 
   protected readonly helpEntries = ORRERY_HELP_ENTRIES;
   protected readonly helpKeys = ORRERY_HELP_KEYS;
-  protected readonly selected = signal<string | null>(null);
+  protected readonly selected = inject(OrreryFocus).selected;
   protected readonly worlds = computed(() => layoutWorlds(this.projects()));
   protected readonly selectedWorld = computed(
     () => this.worlds().find((world) => world.project.repo === this.selected()) ?? null,

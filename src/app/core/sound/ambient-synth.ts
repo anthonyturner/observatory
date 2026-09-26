@@ -1,4 +1,5 @@
 import { BAR_S, BREATH_S, Bar, Ping, barAt, hz } from './ambient-score';
+import { Rig, RoomShape, buildRig, envelope, fadeTo, playFor } from './sound-rig';
 
 /** Plays the ambient score. Behind an interface so the preference can be
  *  tested without an audio device. */
@@ -6,8 +7,11 @@ export interface AmbientPlayer {
   /** Resolves once audio is running; browsers allow that only after a gesture. */
   start(): Promise<void>;
   stop(): void;
-  /** How uneasy to sound, 0 calm to 1 strained; glides there. */
-  setUnease(level: number): void;
+  /** Stops at once and frees the audio device: the page is going. */
+  dispose(): void;
+  /** How uneasy to sound, 0 calm to 1 strained; glides there. A score with
+   *  no unease of its own leaves this out. */
+  setUnease?(level: number): void;
 }
 
 /** Bars are written this far ahead on the audio clock, so a busy page or a
@@ -19,11 +23,17 @@ const FADE_OUT_S = 0.8;
 /** How long after fading out the audio device is released. */
 const SUSPEND_AFTER_MS = 4000;
 const MASTER_LEVEL = 0.9;
-const REVERB_S = 5;
-const WET = 0.55;
-/** A dotted-eighth echo at a slow pulse: pings travel rather than repeat. */
-const ECHO_S = 0.75;
-const ECHO_FEEDBACK = 0.42;
+/** A long room, and a dotted-eighth echo at a slow pulse: pings travel rather than repeat. */
+const HOME_ROOM: RoomShape = {
+  reverbS: 5,
+  reverbDecay: 2.4,
+  wet: 0.55,
+  echoS: 0.75,
+  echoFeedback: 0.42,
+  echoFloorHz: 600,
+  echoLevel: 1,
+  outLevel: 1,
+};
 const PAD_LEVEL = 0.03;
 const PAD_DETUNE_CENTS = 8;
 const PAD_CUTOFF_HZ = 700;
@@ -34,7 +44,6 @@ const DRONE_BREATH_HZ = 140;
 const BELL_PARTIAL = 2.76;
 const PING_DECAY_S = 3.2;
 const SWEEP_LEVEL = 0.012;
-const SILENT = 0.0001;
 /* The uneasy layer: a tritone and a minor ninth over the root, low and
    filtered, wavering. Quiet at its loudest: it should be felt more than heard. */
 const UNEASE_INTERVALS = [6, 13] as const;
@@ -43,17 +52,6 @@ const UNEASE_CUTOFF_HZ = 520;
 const UNEASE_WAVER_HZ = 0.25;
 const UNEASE_WAVER_SPREAD_HZ = 1.5;
 const UNEASE_GLIDE_S = 3;
-
-/** The audio graph every note plays into. */
-interface Rig {
-  readonly context: AudioContext;
-  readonly master: GainNode;
-  /** Dry and into the reverb. */
-  readonly bus: AudioNode;
-  /** Into the echo, for the pings. */
-  readonly echo: AudioNode;
-  readonly noise: AudioBuffer;
-}
 
 interface Drone {
   stop(): void;
@@ -76,7 +74,7 @@ export class AmbientSynth implements AmbientPlayer {
   private barIndex = 0;
 
   async start(): Promise<void> {
-    const rig = (this.rig ??= buildRig());
+    const rig = (this.rig ??= buildRig(HOME_ROOM));
     if (this.suspendTimer) clearTimeout(this.suspendTimer);
     if (rig.context.state === 'suspended') await rig.context.resume();
     this.fadeTo(MASTER_LEVEL, FADE_IN_S);
@@ -112,11 +110,16 @@ export class AmbientSynth implements AmbientPlayer {
     this.rig?.context.suspend().catch(() => undefined);
   }
 
+  dispose(): void {
+    if (this.suspendTimer) clearTimeout(this.suspendTimer);
+    this.release();
+    // Closing only frees the audio device sooner; if it fails, it idles silent.
+    this.rig?.context.close().catch(() => undefined);
+    this.rig = null;
+  }
+
   private fadeTo(level: number, seconds: number): void {
-    if (!this.rig) return;
-    const { context, master } = this.rig;
-    master.gain.cancelScheduledValues(context.currentTime);
-    master.gain.setTargetAtTime(level, context.currentTime, seconds / 3);
+    if (this.rig) fadeTo(this.rig, level, seconds);
   }
 
   private schedule(): void {
@@ -139,38 +142,6 @@ export class AmbientSynth implements AmbientPlayer {
     bar.pings.forEach((ping) => playPing(rig, ping, at + ping.offsetS));
     if (bar.hasSweep) sweep(rig, at);
   }
-}
-
-/** The room: reverb for everything, an echo for the pings, a limiter last. */
-function buildRig(): Rig {
-  const context = new AudioContext();
-  const master = context.createGain();
-  master.gain.value = 0;
-  const limiter = context.createDynamicsCompressor();
-  limiter.threshold.value = -14;
-  limiter.ratio.value = 8;
-  master.connect(limiter).connect(context.destination);
-
-  const reverb = context.createConvolver();
-  reverb.buffer = decayingNoise(context, REVERB_S);
-  const wet = context.createGain();
-  wet.gain.value = WET;
-  reverb.connect(wet).connect(master);
-  const bus = context.createGain();
-  bus.connect(master);
-  bus.connect(reverb);
-
-  const delay = context.createDelay(2);
-  delay.delayTime.value = ECHO_S;
-  const feedback = context.createGain();
-  feedback.gain.value = ECHO_FEEDBACK;
-  const airy = context.createBiquadFilter();
-  airy.type = 'highpass';
-  airy.frequency.value = 600;
-  delay.connect(airy).connect(feedback).connect(delay);
-  delay.connect(bus);
-
-  return { context, master, bus, echo: delay, noise: whiteNoise(context) };
 }
 
 /** Two sines an octave apart through a filter that opens and closes with the core's breath. */
@@ -309,57 +280,4 @@ function sweep({ context, bus, noise }: Rig, at: number): void {
   });
   source.connect(filter).connect(gain).connect(bus);
   playFor([source], [filter, gain], { at, end: at + BAR_S * 0.9 });
-}
-
-interface Envelope {
-  readonly at: number;
-  readonly attack: number;
-  readonly level: number;
-  readonly end: number;
-}
-
-function envelope(context: AudioContext, { at, attack, level, end }: Envelope): GainNode {
-  const gain = context.createGain();
-  gain.gain.setValueAtTime(SILENT, at);
-  gain.gain.exponentialRampToValueAtTime(level, at + attack);
-  gain.gain.exponentialRampToValueAtTime(SILENT, end);
-  return gain;
-}
-
-/** Starts the sources and unhooks everything once the last one ends. Left
- *  connected, finished notes pile up in the graph and the audio thread keeps
- *  working through them until the score crackles. */
-function playFor(
-  sources: readonly AudioScheduledSourceNode[],
-  nodes: readonly AudioNode[],
-  { at, end }: { at: number; end: number },
-): void {
-  let playing = sources.length;
-  sources.forEach((source) => {
-    source.onended = () => {
-      playing--;
-      if (playing === 0) [...sources, ...nodes].forEach((node) => node.disconnect());
-    };
-    source.start(at);
-    source.stop(end);
-  });
-}
-
-/** A room made of decaying noise: a few seconds of it reads as space. */
-function decayingNoise(context: AudioContext, seconds: number): AudioBuffer {
-  const length = Math.floor(context.sampleRate * seconds);
-  const buffer = context.createBuffer(2, length, context.sampleRate);
-  for (let channel = 0; channel < 2; channel++) {
-    const data = buffer.getChannelData(channel);
-    for (let i = 0; i < length; i++)
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.4);
-  }
-  return buffer;
-}
-
-function whiteNoise(context: AudioContext): AudioBuffer {
-  const buffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-  return buffer;
 }

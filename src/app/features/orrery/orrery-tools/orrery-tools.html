@@ -12,7 +12,9 @@
   <button
     type="button"
     [attr.aria-pressed]="sound.isOn()"
-    [title]="sound.isOn() ? 'Ambient score playing: click to fade it out' : 'Play an ambient score'"
+    [title]="
+      sound.isOn() ? 'The system is playing: click to silence' : 'Hear the system play itself'
+    "
     (click)="sound.toggle()"
   >
     Sound {{ sound.isOn() ? 'on' : 'off' }}

@@ -4,6 +4,7 @@ import { CoreHand } from '../../../core/instrument/core-hand';
 import { NudgeDirection, PointerKind, PointerSample } from '../../../core/instrument/hand';
 import { BALL, TIER_RING } from '../../../core/instrument/proportions';
 import { LitProject } from '../../../core/projects/lit-project';
+import { ProjectJump } from '../../../core/projects/project-jump';
 
 const ARROWS: Readonly<Record<string, NudgeDirection>> = {
   ArrowLeft: 'left',
@@ -22,6 +23,7 @@ const ARROWS: Readonly<Record<string, NudgeDirection>> = {
       type="button"
       class="surface"
       [class.held]="isHeld()"
+      [class.on-bead]="isOnBead()"
       aria-label="Core"
       aria-describedby="core-touch-hint"
       title="Drag to turn"
@@ -32,9 +34,11 @@ const ARROWS: Readonly<Record<string, NudgeDirection>> = {
       (lostpointercapture)="letGo($event)"
       (pointerleave)="leave()"
       (keydown)="nudge($event)"
+      (click)="jump($event)"
     ></button>
     <span class="visually-hidden" id="core-touch-hint"
-      >Drag it, or use the arrow keys, to turn it. Point at a project's bead to name it.</span
+      >Drag it, or use the arrow keys, to turn it. Point at a project's bead to name it, and click
+      it to go to its card.</span
     >`,
   styleUrl: './core-touch.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,8 +48,10 @@ export class CoreTouch {
   private readonly geometry = inject(CoreGeometry);
   private readonly hand = inject(CoreHand);
   private readonly lit = inject(LitProject);
+  private readonly projectJump = inject(ProjectJump);
   private pointedKey: string | null = null;
   protected readonly isHeld = signal(false);
+  protected readonly isOnBead = signal(false);
 
   /** Wide enough to take the beads on the orbit as well as the ball. */
   protected readonly reachPx = computed(() =>
@@ -88,8 +94,17 @@ export class CoreTouch {
     this.hand.redraw();
   }
 
+  /** A click on a bead goes to its project's card. A drag that ends on one does
+   *  not, and a click from the keyboard is on no bead, so it does nothing. */
+  protected jump(event: MouseEvent): void {
+    if (this.hand.state.hasDragged) return;
+    const key = beadAt(this.geometry.placed(), event.clientX, event.clientY)?.key;
+    if (key) this.projectJump.jumpTo(key);
+  }
+
   private pointAtBead(x: number, y: number): void {
     const key = beadAt(this.geometry.placed(), x, y)?.key ?? null;
+    this.isOnBead.set(key !== null);
     if (key === this.pointedKey) return;
     if (this.pointedKey) this.lit.unlight(this.pointedKey);
     if (key) this.lit.light(key);

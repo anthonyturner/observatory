@@ -33,6 +33,27 @@
   transform: translateY(-2px);
 }
 
+/* Arrived at from its dot on the core: lit in its own colour for a moment. */
+:host(.flash) .card {
+  border-color: var(--sev);
+  box-shadow:
+    var(--sheen-inset),
+    var(--shadow-lift),
+    0 0 0 2px color-mix(in srgb, var(--sev) 45%, transparent),
+    0 0 80px -16px var(--sev);
+  animation: arrive 0.9s ease-out;
+}
+
+@keyframes arrive {
+  from {
+    box-shadow:
+      var(--sheen-inset),
+      var(--shadow-lift),
+      0 0 0 10px color-mix(in srgb, var(--sev) 30%, transparent),
+      0 0 120px -8px var(--sev);
+  }
+}
+
 /* The rail down the left edge, in the card's colour. */
 .card::before {
   content: '';
@@ -238,5 +259,9 @@
   .card:hover,
   .card:focus-within {
     transform: none;
+  }
+
+  :host(.flash) .card {
+    animation: none;
   }
 }

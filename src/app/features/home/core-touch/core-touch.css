@@ -26,6 +26,10 @@
   cursor: grabbing;
 }
 
+.surface.on-bead:not(.held) {
+  cursor: pointer;
+}
+
 .surface:focus-visible {
   outline-offset: -6px;
 }

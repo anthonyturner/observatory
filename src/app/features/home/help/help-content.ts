@@ -34,7 +34,7 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Dots',
     meaning:
-      'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name.',
+      'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name; click a dot to go to its card.',
   },
   {
     term: 'Core',

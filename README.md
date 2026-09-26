@@ -208,6 +208,13 @@ voice beside the one the page runs itself (Kokoro), picked on the page.
 ten minutes), and `POST /api/voice/speak` turns one sentence of up to 1,000
 characters into MP3 audio in a chosen voice, with the `eleven_flash_v2_5` model.
 
+**Picking the voice.** Under Speak in Home's voice block, choose "Kokoro · in
+this browser" or ElevenLabs and one of the account's voices. The choice is kept
+per browser, in local storage (`observatory.voice`), and starts as Kokoro. A
+voice no longer on the account falls back to the default; when ElevenLabs is
+off, not available or fails, the option says why, the status line says so once,
+and Kokoro speaks for the rest of the visit.
+
 **Turning it on.** Locally, put the key in `~/.claude/observatory/.env` or set
 it in the environment, with the voice to start in if you like (a voice id from
 your ElevenLabs account; otherwise the first one listed):

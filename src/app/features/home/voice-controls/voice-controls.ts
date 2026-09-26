@@ -9,6 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { HudSection } from '../../../shared/hud-section/hud-section';
+import { ActiveVoice } from '../../../core/voice/active-voice';
 import { ModelLoaders } from '../../../core/voice/model-loaders';
 import { PushToTalk } from '../../../core/voice/push-to-talk';
 import { REPLY_VOICE } from '../../../core/voice/reply-voice';
@@ -17,17 +18,19 @@ import { SpeakSwitch } from '../../../core/voice/speak-switch';
 import { VoiceLevel } from '../../../core/voice/voice-level';
 import { VoiceNarration } from '../../../core/voice/voice-narration';
 import { StatusAction, VoiceControlId, VoiceStatus } from '../../../core/voice/voice-status';
+import { captionFor } from './voice-caption';
 import { levelWeights } from './voice-level';
 import { VoiceKeys } from './voice-keys';
+import { VoicePicker } from './voice-picker/voice-picker';
 import { VoiceStatusLine } from './voice-status-line/voice-status-line';
 
 const PRIMARY_BUTTON = 0;
 
-/** The voice block: its state dots, the level line, Tap to talk, Speak, and
- *  what voice is doing. The dots repeat the talk button's state. */
+/** The voice block: its state dots, the level line, Tap to talk, Speak, the
+ *  reply voice, and what voice is doing. The dots repeat the talk button's state. */
 @Component({
   selector: 'app-voice-controls',
-  imports: [HudSection, VoiceStatusLine],
+  imports: [HudSection, VoicePicker, VoiceStatusLine],
   hostDirectives: [VoiceKeys],
   templateUrl: './voice-controls.html',
   styleUrl: './voice-controls.css',
@@ -53,6 +56,8 @@ export class VoiceControls {
   protected readonly restingLine = this.loaders.restingLine;
   protected readonly said = inject(VoiceNarration).said;
   protected readonly isSpeakOn = inject(SpeakPreference).isOn;
+  private readonly speaker = inject(ActiveVoice).speaker;
+  protected readonly caption = computed(() => captionFor(this.speaker()));
   protected readonly micProgress = this.loaders.progressOf('mic');
   protected readonly speakProgress = this.loaders.progressOf('speak');
   protected readonly isLoading = computed(

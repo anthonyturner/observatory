@@ -1,0 +1,36 @@
+<fieldset class="engines">
+  <legend class="visually-hidden">Reply voice</legend>
+  <label class="engine" title="Replies are read by Kokoro, in this browser">
+    <input
+      type="radio"
+      name="reply-voice"
+      [checked]="!isElevenLabs()"
+      (change)="onEngine('kokoro')"
+    />
+    Kokoro · in this browser
+  </label>
+  <label class="engine" [class.blocked]="blocker() !== null" [title]="elevenLabsTitle()">
+    <input
+      type="radio"
+      name="reply-voice"
+      [checked]="isElevenLabs()"
+      [disabled]="blocker() !== null"
+      [attr.aria-describedby]="blocker() !== null ? 'voice-blocker' : null"
+      (change)="onEngine('elevenlabs')"
+    />
+    ElevenLabs
+  </label>
+  @if (blocker(); as reason) {
+    <span id="voice-blocker" class="visually-hidden">{{ reason }}</span>
+  }
+</fieldset>
+@if (voices().length) {
+  <label class="voice">
+    <span class="visually-hidden">ElevenLabs voice</span>
+    <select (change)="onVoice($event)">
+      @for (voice of voices(); track voice.id) {
+        <option [value]="voice.id" [selected]="voice.id === voiceId()">{{ voice.name }}</option>
+      }
+    </select>
+  </label>
+}

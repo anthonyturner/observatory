@@ -38,11 +38,7 @@
     [style.--p]="speakProgress()"
     [attr.aria-pressed]="isSpeakOn()"
     aria-describedby="voice-status"
-    [title]="
-      isSpeakOn()
-        ? 'Replies are read aloud, in this browser: press to stop'
-        : 'Read replies aloud, in this browser'
-    "
+    [title]="isSpeakOn() ? 'Replies are read aloud: press to stop' : 'Read replies aloud'"
     (click)="onSpeak()"
   >
     <svg
@@ -65,7 +61,8 @@
   </button>
 </div>
 
-<p class="caption">Whisper hears · Kokoro speaks · both local</p>
+<app-voice-picker class="picker" />
+<p class="caption">{{ caption() }}</p>
 <p class="hint">
   <span class="wide">Tap to talk, then tap again to send, or hold M and let go. Esc cancels.</span>
   <span class="touch">Tap to talk, then tap again to send, or hold it and let go.</span>

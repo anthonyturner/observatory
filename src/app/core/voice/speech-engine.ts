@@ -1,5 +1,5 @@
 import { InjectionToken, inject } from '@angular/core';
-import { KokoroEngine } from './kokoro-engine';
+import { ChosenEngine } from './chosen-engine';
 import { SpokenClip } from './voice-protocol';
 
 export interface WarmUpRequest {
@@ -27,8 +27,8 @@ export interface SpeechEngine {
   release(): void;
 }
 
-/** Kokoro, in this browser, until there is a choice of voice. */
+/** The voice the viewer picked: Kokoro in this browser, or ElevenLabs. */
 export const SPEECH_ENGINE = new InjectionToken<SpeechEngine>('SpeechEngine', {
   providedIn: 'root',
-  factory: () => inject(KokoroEngine),
+  factory: () => inject(ChosenEngine),
 });

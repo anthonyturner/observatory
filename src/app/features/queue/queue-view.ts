@@ -175,5 +175,6 @@ export function queueStamp(state: QueueState, now: number, locale?: string): str
     localDayKey(at) === localDayKey(now)
       ? hoursMinutes(at)
       : `${new Date(at).toLocaleDateString(locale, { day: 'numeric', month: 'short' })} ${hoursMinutes(at)}`;
-  return `${repo} · ${items.length} open · refreshed ${when}`;
+  const read = `${repo} · ${items.length} open · refreshed ${when}`;
+  return state.isStale ? `${read} · refresh failing: is the API running?` : read;
 }

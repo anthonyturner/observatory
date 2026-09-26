@@ -118,6 +118,9 @@ describe('queueStamp', () => {
     } as const;
 
     expect(queueStamp(state, now)).toBe('me/a · 4 open · refreshed 09:42');
+    expect(queueStamp({ ...state, isStale: true }, now)).toBe(
+      'me/a · 4 open · refreshed 09:42 · refresh failing: is the API running?',
+    );
   });
 
   it('says it is reading, out of reach, or why it was refused', () => {

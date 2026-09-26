@@ -5,6 +5,11 @@
   background: var(--queue-sky);
 }
 
+/* Over the sky, under the words: fixed, as the chart is. */
+app-fog-veil {
+  position: fixed;
+}
+
 .hud {
   position: relative;
   z-index: 2;

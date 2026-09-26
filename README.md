@@ -8,9 +8,10 @@ Observatory is a rebuild of [pr-starmap](https://github.com/anthonyturner/pr-sta
 whose pages grew into single HTML files thousands of lines long. It is being
 migrated one small piece at a time into typed, tested Angular components.
 
-> **Status:** Home and the Orrery are built. Home's project cards, usage meters,
-> directives and top bar, and every world on the Orrery, show live data from
-> GitHub and Claude Code; the assistant panel and the skills are there to look
+> **Status:** Home, the Orrery and each project's review queue are built. Home's
+> project cards, usage meters, directives and top bar, every world on the
+> Orrery, and the review queue's star map show live data from GitHub and
+> Claude Code; the assistant panel and the skills are there to look
 > at but not connected yet.
 
 ## Stack
@@ -63,11 +64,23 @@ files on this machine, so it listens on loopback only:
 
   Readings are kept in `~/.claude/observatory/usage/`. Without them the limit
   meters say so rather than showing a number.
+
 - **Projects** (the cards, Open issues, Directives, the Documents tabs and the top bar) are every repository the account signed in to the
   [GitHub CLI](https://cli.github.com/) owns (no forks or archives), read
   through `gh` and cached for five minutes. Each open pull request is counted
   in its most urgent state: cannot merge, checks failing, mergeability
   unknown, no issue linked, or waiting on you.
+
+- **Review queue** (`/p/<owner>/<repo>`, reached from an Orrery world): the
+  open pull requests as a star map or a list, blocked first, with a panel per
+  pull request and the Issues tab.
+- **Triage**: mark a pull request seen, snooze it or dismiss it until it
+  changes. Kept in `~/.claude/observatory/triage/`; nothing is written to
+  GitHub.
+- **Since you last looked**: each read of a queue from GitHub may record a
+  frame (every open pull request's bucket) in `~/.claude/observatory/history/`,
+  and the review queue lists and marks what changed since your last visit.
+  GitHub keeps no history of mergeability, so this starts from the first frame.
 
 Skills are still sample data.
 

@@ -1,6 +1,8 @@
 import { ghCliReader } from './github/gh-cli-reader.ts';
 import { createApiServer } from './http/api-server.ts';
 import { projectsReport } from './projects/projects-report.ts';
+import { fileHistoryStore } from './history/history-store.ts';
+import { recordFrame } from './history/record-frame.ts';
 import { issuesReport } from './issues/issues-report.ts';
 import { pullDetailOf, pullNumberFrom } from './queue/pull-detail.ts';
 import { queueReport } from './queue/queue-report.ts';
@@ -24,7 +26,16 @@ const PULL_TTL_MS = 60_000;
 const port = Number(process.env['OBSERVATORY_API_PORT'] ?? DEFAULT_PORT);
 const github = ghCliReader();
 const triage = fileTriageStore();
-const queueOf = cachedByKey((repo) => queueReport(github, repo), QUEUE_TTL_MS);
+const history = fileHistoryStore();
+// Each read from GitHub may add a frame to the star map's memory. A failure to
+// record is logged, never passed on: the queue itself was read.
+const queueOf = cachedByKey(async (repo) => {
+  const report = await queueReport(github, repo);
+  await recordFrame(report, history, github, Date.now()).catch((error: unknown) =>
+    console.error(`Could not record ${repo}'s history:`, error),
+  );
+  return report;
+}, QUEUE_TTL_MS);
 const issuesOf = cachedByKey((repo) => issuesReport(github, repo), QUEUE_TTL_MS);
 const pullOf = cachedByKey(async (key) => {
   const [repo, number] = key.split('#');
@@ -40,6 +51,10 @@ const server = createApiServer(
     // Triage is merged in on every request, so an action shows at once.
     '/api/queue': async (query) =>
       withTriage(await queueOf(repoNameFrom(query.get('repo'))), triage, Date.now()),
+    '/api/history': async (query) => {
+      const repo = repoNameFrom(query.get('repo'));
+      return { repo, frames: history.read(repo) };
+    },
     '/api/issues': (query) => issuesOf(repoNameFrom(query.get('repo'))),
     '/api/pull': (query) =>
       pullOf(`${repoNameFrom(query.get('repo'))}#${pullNumberFrom(query.get('number'))}`),

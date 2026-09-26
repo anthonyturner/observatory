@@ -87,6 +87,8 @@ function render(view: 'map' | 'list' = 'list') {
 }
 
 describe('ReviewQueuePage', () => {
+  beforeEach(() => localStorage.clear());
+
   it('opens on the star map, with the camera’s tools', () => {
     const { element } = render('map');
 
@@ -154,6 +156,39 @@ describe('ReviewQueuePage', () => {
     expect(post.request.body).toEqual({ repo: 'me/a', number: 7, action: 'snooze', days: 7 });
     post.flush({ number: 7, isSeen: false, hidden: null });
     http.expectOne('/api/queue?repo=me/a');
+  });
+
+  it('shows what changed since you last looked, and clears it on Got it', () => {
+    localStorage.setItem('observatory.lastSeen.me/a', String(Date.parse('2026-09-24T12:00:00Z')));
+    const { fixture, element } = render();
+
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/history?repo=me/a')
+      .flush({
+        repo: 'me/a',
+        frames: [
+          {
+            at: '2026-09-24T10:00:00Z',
+            items: [
+              { number: 7, title: 'Fix the build', bucket: 'unreviewed' },
+              { number: 9, title: 'Tidy the docs', bucket: 'unreviewed' },
+              { number: 11, title: 'Old idea', bucket: 'unreviewed' },
+            ],
+            departed: [],
+          },
+        ],
+      });
+    fixture.detectChanges();
+    const card = element.querySelector('app-changes-card');
+    expect(card?.textContent).toContain('1 change');
+    expect(card?.textContent).toContain('Became blocked');
+
+    card?.querySelector<HTMLButtonElement>('.ack')?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-changes-card')).toBeNull();
+    expect(Number(localStorage.getItem('observatory.lastSeen.me/a'))).toBeGreaterThan(
+      Date.parse('2026-09-24T12:00:00Z'),
+    );
   });
 
   it('leads back to Home and the Orrery', () => {

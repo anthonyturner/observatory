@@ -1,0 +1,28 @@
+<section class="card" aria-labelledby="changes-title">
+  <header>
+    <h2 id="changes-title">
+      {{ count() }} {{ count() === 1 ? 'change' : 'changes' }}<small>{{ heading() }}</small>
+    </h2>
+    <button type="button" class="ack" (click)="acknowledged.emit()">Got it</button>
+  </header>
+  @for (group of groups(); track group.kind) {
+    <div class="group" [attr.data-kind]="group.kind">
+      <h3><span class="dot" aria-hidden="true"></span>{{ group.label }}</h3>
+      <ul>
+        @for (pull of group.pulls; track pull.number) {
+          <li>
+            @if (group.isOpen) {
+              <button type="button" (click)="picked.emit(pull.number)">
+                <span class="number">#{{ pull.number }}</span> {{ pull.title }}
+              </button>
+            } @else {
+              <span class="gone"
+                ><span class="number">#{{ pull.number }}</span> {{ pull.title }}</span
+              >
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</section>

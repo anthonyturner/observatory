@@ -4,6 +4,7 @@
     [items]="visible()"
     [filter]="filter()"
     [selected]="openPull()"
+    [marks]="marks()"
     (picked)="openPull.set($event)"
   />
 }
@@ -65,40 +66,21 @@
     }
   </div>
 
+  @if (hasChanges() && changes(); as changed) {
+    <app-changes-card
+      [changes]="changed"
+      (picked)="openPull.set($event)"
+      (acknowledged)="acknowledgeChanges()"
+    />
+  }
+
   @if (waiting(); as message) {
     <p class="state" role="status">{{ message }}</p>
   }
 
   @if (view() === 'list') {
     <main class="list">
-      @for (section of sections(); track section.bucket) {
-        <section [style.--sev]="section.color" [attr.aria-labelledby]="'bucket-' + section.bucket">
-          <h2 [id]="'bucket-' + section.bucket">
-            {{ section.name }}<small>{{ section.meaning }} · {{ section.rows.length }}</small>
-          </h2>
-          <ul>
-            @for (row of section.rows; track row.number) {
-              <li>
-                <button type="button" class="open" (click)="openPull.set(row.number)">
-                  <span class="number">#{{ row.number }}</span>
-                  <span class="title">{{ row.title }}</span>
-                  @if (row.isDraft) {
-                    <span class="draft">draft</span>
-                  }
-                  <span class="detail">{{ row.detail }}</span>
-                  @if (row.hiddenNote) {
-                    <span class="note">{{ row.hiddenNote }}</span>
-                  }
-                </button>
-                <a class="github" [href]="row.url" target="_blank" rel="noopener"
-                  >GitHub <span aria-hidden="true">&#8599;</span
-                  ><span class="visually-hidden">: #{{ row.number }}, in a new tab</span></a
-                >
-              </li>
-            }
-          </ul>
-        </section>
-      }
+      <app-queue-list [sections]="sections()" (picked)="openPull.set($event)" />
     </main>
   } @else if (chart(); as starChart) {
     <footer class="tools">

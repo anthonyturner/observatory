@@ -24,6 +24,10 @@ import { QueueFeed } from '../../../core/queue/queue-feed';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { Clock } from '../../../core/time/clock';
 import { IssuesTab } from '../../issues/issues-tab/issues-tab';
+import { HelpButton } from '../../../shared/help/help-button';
+import { HelpCard } from '../../../shared/help/help-card';
+import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
+import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../queue-help';
 import { ChangesCard } from '../changes-card/changes-card';
 import { QueueList } from '../queue-list/queue-list';
 import { OrreryTools } from '../../orrery/orrery-tools/orrery-tools';
@@ -46,7 +50,18 @@ const ISSUES_FRAGMENT = 'issues';
 /** A project's review queue: its open pull requests, blocked first. */
 @Component({
   selector: 'app-review-queue-page',
-  imports: [RouterLink, PullPanel, StarChart, OrreryTools, IssuesTab, ChangesCard, QueueList],
+  imports: [
+    RouterLink,
+    PullPanel,
+    StarChart,
+    OrreryTools,
+    IssuesTab,
+    ChangesCard,
+    QueueList,
+    HelpButton,
+    HelpCard,
+  ],
+  hostDirectives: [HelpShortcuts],
   providers: [QueueFeed, HistoryFeed, CollisionsFeed],
   templateUrl: './review-queue-page.html',
   styleUrl: './review-queue-page.css',
@@ -74,6 +89,8 @@ export class ReviewQueuePage {
     ),
     { initialValue: 'pulls' as ProjectTab },
   );
+  protected readonly helpEntries = QUEUE_HELP_ENTRIES;
+  protected readonly helpKeys = QUEUE_HELP_KEYS;
   protected readonly filter = signal<QueueFilter>(null);
   /** The star map, or the list: the map first, as pr-starmap opens. */
   protected readonly view = signal<QueueView>('map');

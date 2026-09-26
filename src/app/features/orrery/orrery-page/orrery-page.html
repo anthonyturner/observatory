@@ -5,7 +5,10 @@
     <h1>Orrery</h1>
     <span class="stamp">{{ stamp() }}</span>
   </div>
-  <a class="home" routerLink="/"><span aria-hidden="true">&lsaquo;</span> Home</a>
+  <nav class="links" aria-label="Page">
+    <app-help-button />
+    <a class="home" routerLink="/"><span aria-hidden="true">&lsaquo;</span> Home</a>
+  </nav>
 </header>
 
 @if (waiting(); as message) {
@@ -22,6 +25,8 @@
     (pointerleave)="canvas.releaseCard()"
   />
 }
+
+<app-help-card title="Orrery" [entries]="helpEntries" [keys]="helpKeys" />
 
 <footer class="hud bottom">
   <app-orrery-tools (zoomOut)="canvas.zoomOut()" (zoomIn)="canvas.zoomIn()" (fit)="canvas.fit()" />

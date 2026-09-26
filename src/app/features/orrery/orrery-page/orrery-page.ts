@@ -4,6 +4,10 @@ import { orreryStamp } from '../../../core/orrery/orrery-stamp';
 import { layoutWorlds } from '../../../core/orrery/world-layout';
 import { PROJECTS, PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { Clock } from '../../../core/time/clock';
+import { HelpButton } from '../../../shared/help/help-button';
+import { HelpCard } from '../../../shared/help/help-card';
+import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
+import { ORRERY_HELP_ENTRIES, ORRERY_HELP_KEYS } from '../orrery-help';
 import { OrreryCanvas } from '../orrery-canvas/orrery-canvas';
 import { OrreryTools } from '../orrery-tools/orrery-tools';
 import { WorldCard } from '../world-card/world-card';
@@ -17,7 +21,8 @@ const WAITING_MESSAGE = {
 /** The orrery: every project as a world in one system, round a sun of open work. */
 @Component({
   selector: 'app-orrery-page',
-  imports: [RouterLink, OrreryCanvas, OrreryTools, WorldCard],
+  imports: [RouterLink, OrreryCanvas, OrreryTools, WorldCard, HelpButton, HelpCard],
+  hostDirectives: [HelpShortcuts],
   templateUrl: './orrery-page.html',
   styleUrl: './orrery-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +34,8 @@ export class OrreryPage {
   private readonly now = inject(Clock).now;
   private readonly projects = inject(PROJECTS);
 
+  protected readonly helpEntries = ORRERY_HELP_ENTRIES;
+  protected readonly helpKeys = ORRERY_HELP_KEYS;
   protected readonly selected = signal<string | null>(null);
   protected readonly worlds = computed(() => layoutWorlds(this.projects()));
   protected readonly selectedWorld = computed(

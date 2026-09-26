@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { SoundPreference } from '../../../core/sound/sound-preference';
-import { HelpState } from '../help/help-state';
+import { HelpState } from '../../../shared/help/help-state';
 
 /** The way to the orrery and the page's tools. */
 @Component({

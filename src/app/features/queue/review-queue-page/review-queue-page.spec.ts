@@ -214,6 +214,16 @@ describe('ReviewQueuePage', () => {
     http.expectOne('/api/pull?repo=me/a&number=9');
   });
 
+  it('explains the star map from its Help button', () => {
+    const { fixture, element } = render();
+
+    element.querySelector<HTMLButtonElement>('app-help-button button')?.click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('#help-title')?.textContent).toBe('Review queue');
+    expect(element.querySelector('app-help-card')?.textContent).toContain('Threads');
+  });
+
   it('leads back to Home and the Orrery', () => {
     const hrefs = Array.from(render().element.querySelectorAll('.links a')).map((a) =>
       a.getAttribute('href'),

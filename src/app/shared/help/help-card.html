@@ -9,9 +9,9 @@
     <button class="close" type="button" aria-label="Close help" (click)="help.close()">
       &times;
     </button>
-    <h2 id="help-title">Home</h2>
+    <h2 id="help-title">{{ title() }}</h2>
     <dl>
-      @for (entry of entries; track entry.term) {
+      @for (entry of entries(); track entry.term) {
         <div class="entry">
           <dt>{{ entry.term }}</dt>
           <dd>{{ entry.meaning }}</dd>
@@ -20,7 +20,7 @@
     </dl>
     <p class="foot">
       Keys:
-      @for (item of keys; track item.key; let last = $last) {
+      @for (item of keys(); track item.key; let last = $last) {
         <kbd>{{ item.key }}</kbd> {{ item.action }}{{ last ? '.' : ' · ' }}
       }
     </p>

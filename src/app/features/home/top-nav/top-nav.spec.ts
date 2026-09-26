@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { MotionPreference } from '../../../core/motion/motion-preference';
-import { HelpState } from '../help/help-state';
+import { HelpState } from '../../../shared/help/help-state';
 import { TopNav } from './top-nav';
 
 describe('TopNav', () => {

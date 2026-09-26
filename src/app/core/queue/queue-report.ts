@@ -3,7 +3,6 @@ import { PULL_BUCKETS, PullBucket } from '../projects/projects-report';
 /** The queue's groups: GitHub's buckets, and Seen recently for a waiting
  *  pull request you have marked seen. */
 export type QueueBucket = PullBucket | 'fresh';
-export const QUEUE_BUCKETS: readonly QueueBucket[] = [...PULL_BUCKETS, 'fresh'];
 
 /** Why a pull request is out of the queue for now. */
 export type Hidden =

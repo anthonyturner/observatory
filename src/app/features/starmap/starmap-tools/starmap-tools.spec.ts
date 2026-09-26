@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AMBIENT_PLAYER } from '../../../core/sound/sound-preference';
+import { STARMAP_SCORE } from '../sound/starmap-sound';
 import { HelpState } from '../../../shared/help/help-state';
 import { Chart } from '../starmap-view';
 import { StarmapTools } from './starmap-tools';
@@ -8,11 +8,13 @@ function render(chart: Chart = 'prs') {
   TestBed.configureTestingModule({
     providers: [
       {
-        provide: AMBIENT_PLAYER,
+        provide: STARMAP_SCORE,
         useValue: () => ({
           start: async () => undefined,
           stop: () => undefined,
-          setUnease: () => undefined,
+          setTension: () => undefined,
+          setVolume: () => undefined,
+          ping: () => undefined,
         }),
       },
     ],
@@ -67,6 +69,17 @@ describe('StarmapTools', () => {
     const { button } = render('issues');
     expect(button('Merge plan')).toBeUndefined();
     expect(button('Fit')).toBeDefined();
+  });
+
+  it('shows the volume slider only while the sound is on', () => {
+    const { fixture, element, button } = render();
+    expect(element.querySelector('.vol')).toBeNull();
+
+    button('Sound off')?.click();
+    fixture.detectChanges();
+
+    expect(button('Sound on')).toBeDefined();
+    expect(element.querySelector<HTMLInputElement>('.vol input')?.value).toBe('70');
   });
 
   it('opens help, and folds away, remembering the fold', () => {

@@ -1,0 +1,24 @@
+@if (help.isOpen()) {
+  <aside class="help" role="dialog" aria-labelledby="helptitle">
+    <button class="close" type="button" aria-label="Close help" (click)="help.close()">
+      &times;
+    </button>
+    <h2 id="helptitle">{{ card().title }}</h2>
+    <ul>
+      @for (row of card().rows; track row[0]) {
+        <li>
+          <b>{{ row[0] }}</b
+          ><span>{{ row[1] }}</span>
+        </li>
+      }
+    </ul>
+    <p class="foot">
+      Refreshed from GitHub every few minutes; the line under the title says when.
+      <code>Refresh</code> does it now. <code>Pull requests</code> / <code>Logs</code> /
+      <code>Issues</code> / <code>Usage</code> switch views. On a phone, <code>Controls</code> folds
+      the tools away.<br />
+      Keys: <code>?</code> help · <code>Esc</code> close · <code>+</code> <code>−</code> zoom ·
+      arrows pan · <code>[</code> <code>]</code> step through time.
+    </p>
+  </aside>
+}

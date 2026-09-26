@@ -20,6 +20,8 @@ export interface CardContext {
   readonly binaries: readonly { readonly issue: number; readonly others: readonly number[] }[];
   /** While a past refresh is on screen: when it was, and where the pull request stands now. */
   readonly replay?: { readonly at: string; readonly now: string; readonly live: boolean };
+  /** Where it falls in the merge plan: step and of how many. */
+  readonly planStep?: { readonly step: number; readonly of: number };
   /** The news the sky carries about it, if any. */
   readonly change?: { readonly noun: string; readonly label: string; readonly colour: string };
 }
@@ -66,6 +68,12 @@ export function cardFacts(item: QueueItem, context: CardContext): CardFact[] {
     });
   }
   if (!replay) facts.push(...collisionFacts(item.number, context.pairs));
+  if (!replay && context.planStep) {
+    facts.push({
+      term: 'merge order',
+      value: `${context.planStep.step} of ${context.planStep.of}`,
+    });
+  }
   for (const binary of context.binaries) {
     facts.push({
       term: 'binary',

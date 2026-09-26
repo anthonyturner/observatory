@@ -27,6 +27,7 @@ const queue: QueueReport = {
       idleDays: 1,
       ageDays: 1,
       branch: 'feat/x',
+      base: 'main',
       mergeable: 'MERGEABLE',
       changedFiles: 1,
     },

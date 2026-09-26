@@ -13,17 +13,19 @@
   [fog]="chart() === 'logs' ? logs.fog() : fog()"
   [hidden]="view() !== 'map'"
   [insets]="insets()"
+  [plan]="planMarks()"
+  [planOn]="planOn()"
   [comets]="comets()"
   [showComets]="showComets()"
   [selectedComet]="selectedComet()"
   [replaying]="!!memory.replay()"
   (picked)="pick($event)"
   (pickedComet)="pickComet($event)"
-  (pickedLog)="logs.pick($event)"
+  (pickedLog)="pickLog($event)"
   [nursery]="nurseryInput()"
   [issueNarrowing]="issues.narrowing()"
   [selectedIssue]="issues.picked()?.issue?.number ?? null"
-  (pickedIssue)="issues.picked.set($event)"
+  (pickedIssue)="pickIssue($event)"
 />
 
 @if (view() === 'list' && chart() === 'logs') {
@@ -98,6 +100,7 @@
     [chart]="chart()"
     [view]="view()"
     [showCollisions]="showCollisions()"
+    [planOn]="planOn()"
     [refreshing]="refreshing() || usage.isRefreshing()"
     [(folded)]="folded"
     (chartChange)="setChart($event)"
@@ -106,9 +109,19 @@
     (zoomOut)="sky.zoomOut()"
     (fit)="sky.fit()"
     (collisions)="showCollisions.set(!showCollisions())"
+    (plan)="togglePlan()"
     (refresh)="refresh()"
   />
 </div>
+
+@if (showPlan()) {
+  <app-plan-panel
+    [steps]="planSteps()"
+    [check]="collisions.report()?.check ?? null"
+    [conflicting]="conflicting()"
+    (go)="goTo($event)"
+  />
+}
 
 @if (showChanges()) {
   <app-changes-panel
@@ -120,7 +133,7 @@
   />
 }
 
-<app-help-card title="Review queue" [entries]="helpEntries" [keys]="helpKeys" />
+<app-starmap-help [screen]="helpScreen()" />
 
 @if (chart() === 'prs' && openItem(); as item) {
   <app-star-card

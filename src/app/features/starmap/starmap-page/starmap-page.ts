@@ -24,10 +24,10 @@ import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UsageWatch } from '../../../core/usage/usage-watch';
-import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { IssueBar } from '../../issues/issue-bar/issue-bar';
 import { IssueCard } from '../../issues/issue-card/issue-card';
+import { IssueStar } from '../../issues/issue-look';
 import { openPullsOf } from '../../issues/issue-list';
 import { IssueWindow } from '../../issues/issue-window/issue-window';
 import { IssuesPanel } from '../../issues/issues-panel/issues-panel';
@@ -41,6 +41,9 @@ import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
 import { CometCard } from '../comet-card/comet-card';
+import { StarmapSound } from '../sound/starmap-sound';
+import { mergePlan } from '../merge-plan';
+import { PlanPanel } from '../plan-panel/plan-panel';
 import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
 import { IssuesFeed } from '../../../core/issues/issues-feed';
 import { LogsFeed } from '../../../core/logs/logs-feed';
@@ -50,7 +53,8 @@ import { LogCard } from '../../logs/log-card/log-card';
 import { LogList } from '../../logs/log-list/log-list';
 import { MeteorRecord } from '../../logs/meteor-record/meteor-record';
 import { LogSkyView } from '../log-sky-view';
-import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../../queue/queue-help';
+import { StarmapHelp } from '../starmap-help/starmap-help';
+import { HelpKey } from '../starmap-help/help-content';
 import { PrScreen } from '../pr-screen/pr-screen';
 import { skyItemOf, skyPairOf } from '../sky-items';
 import { StarmapHeader } from '../starmap-header/starmap-header';
@@ -82,8 +86,13 @@ const BOTTOM_INSET_WITH_STRIP = 200;
 const SIDE_PANEL_MIN_WIDTH = 900;
 /** The changes panel's width and the gap beside it. */
 const SIDE_PANEL_WIDTH = 380;
+/** The merge plan's panel and the gap beside it. */
+const PLAN_PANEL_WIDTH = 400;
 /** The card's Snooze, as pr-starmap's: a week. */
 const SNOOZE_DAYS = 7;
+
+/** Blocked buckets: the tension voice counts them. */
+const BLOCKED: ReadonlySet<string> = new Set(['conflicted', 'failing']);
 
 /** The comets' legend chip, which shows and hides them rather than filtering. */
 const COMETS = 'comets';
@@ -126,10 +135,11 @@ export interface SkyState {
     PrScreen,
     StarCard,
     CometCard,
+    PlanPanel,
     LogCard,
     LogList,
     MeteorRecord,
-    HelpCard,
+    StarmapHelp,
   ],
   hostDirectives: [HelpShortcuts],
   host: {
@@ -155,9 +165,10 @@ export interface SkyState {
 export class StarmapPage {
   private readonly feed = inject(QueueFeed);
   private readonly history = inject(HistoryFeed);
-  private readonly collisions = inject(CollisionsFeed);
+  protected readonly collisions = inject(CollisionsFeed);
   private readonly ledger = inject(LedgerFeed);
   protected readonly memory = inject(MemoryView);
+  private readonly sound = inject(StarmapSound);
   protected readonly usage = inject(UsageWatch);
   private readonly triage = inject(TriageClient);
   protected readonly session = inject(ViewerSession);
@@ -192,6 +203,8 @@ export class StarmapPage {
   protected readonly docked = computed(() => this.chart() === 'issues' && this.view() === 'map');
   protected readonly filter = signal<string | null>(null);
   protected readonly showCollisions = signal(true);
+  /** Whether the merge plan is drawn and listed. */
+  protected readonly planOn = signal(false);
   /** The unclaimed issues passing through, and whether they are shown. */
   protected readonly showComets = signal(true);
   protected readonly selectedComet = signal<Comet | null>(null);
@@ -204,8 +217,10 @@ export class StarmapPage {
   readonly sheetPull = signal<number | null>(null);
   protected readonly SNOOZE_DAYS = SNOOZE_DAYS;
   protected readonly sky = viewChild<StarmapSky>('sky');
-  protected readonly helpEntries = QUEUE_HELP_ENTRIES;
-  protected readonly helpKeys = QUEUE_HELP_KEYS;
+  /** The help that fits the screen and view on show, as pr-starmap keys it. */
+  protected readonly helpScreen = computed((): HelpKey =>
+    isListOnly(this.chart()) ? 'usage-list' : (`${this.chart()}-${this.view()}` as HelpKey),
+  );
 
   protected readonly state = this.feed.state;
   private readonly report = computed(() => {
@@ -332,9 +347,46 @@ export class StarmapPage {
 
   private readonly readAt = computed(() => this.report()?.generatedAt ?? null);
   /** pr-starmap's changes panel: while there is unseen news on the queue's map. */
+  /** pr-starmap's merge plan, over every open pull request and every pair. */
+  protected readonly plan = computed(() =>
+    mergePlan(
+      this.items().map((item) => ({
+        number: item.number,
+        title: item.title,
+        head: item.branch,
+        base: item.base,
+        mergeable: item.mergeable,
+        additions: item.additions,
+        deletions: item.deletions,
+      })),
+      (this.collisions.report()?.pairs ?? []).map(skyPairOf),
+    ),
+  );
+  /** The plan's steps that still have a star to point at. */
+  protected readonly planSteps = computed(() => {
+    const shown = new Set(this.skyItems().map((item) => item.pr));
+    return this.plan().filter((step) => shown.has(step.pr));
+  });
+  protected readonly planMarks = computed(() =>
+    this.planSteps().map((step) => ({ pr: step.pr, needsRebase: step.reason === 'needs-rebase' })),
+  );
+  protected readonly conflicting = computed(
+    () =>
+      (this.collisions.report()?.pairs ?? []).filter((p) => (p.conflicts ?? []).length > 0).length,
+  );
+  /** The plan's panel takes the right edge while it is on, over the queue's map. */
+  protected readonly showPlan = computed(
+    () =>
+      this.planOn() &&
+      this.chart() === 'prs' &&
+      this.view() === 'map' &&
+      !this.memory.replay() &&
+      this.collisions.report() !== null,
+  );
   protected readonly showChanges = computed(() => {
     const news = this.memory.news();
     return (
+      !this.showPlan() &&
       this.chart() === 'prs' &&
       this.view() === 'map' &&
       news.events.length > 0 &&
@@ -366,6 +418,7 @@ export class StarmapPage {
       change: event
         ? { noun: EFFECTS[event.kind].noun, label: news.label, colour: EFFECTS[event.kind].colour }
         : undefined,
+      planStep: this.planStepOf(number),
       pairs: this.skyPairs(),
       binaries: groups
         .filter((g) => g.members.some((item) => item.pr === number))
@@ -392,7 +445,13 @@ export class StarmapPage {
     return {
       top: this.docked() ? TOP_INSET_WITH_DOCK : TOP_INSET,
       bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
-      side: this.showChanges() && wide ? SIDE_PANEL_WIDTH : 0,
+      side: !wide
+        ? 0
+        : this.showPlan()
+          ? PLAN_PANEL_WIDTH
+          : this.showChanges()
+            ? SIDE_PANEL_WIDTH
+            : 0,
     };
   });
 
@@ -419,6 +478,18 @@ export class StarmapPage {
       const fragment = this.issues.fragment();
       if (this.chart() !== 'issues') return;
       untracked(() => this.navigateTo(fragment));
+    });
+    // The drone measures the sky on show: blocked pull requests, or faults still
+    // burning; the issues leave it where it was.
+    effect(() => {
+      const chart = this.chart();
+      const blocked =
+        chart === 'prs'
+          ? this.skyItems().filter((item) => BLOCKED.has(item.bucket)).length
+          : chart === 'logs'
+            ? this.logs.layout().stars.filter((star) => star.urgent).length
+            : null;
+      if (blocked !== null) untracked(() => this.sound.setTension(blocked));
     });
     // A refresh lays the Log Sky out again; the card and threads follow their fault.
     effect(() => {
@@ -509,6 +580,19 @@ export class StarmapPage {
   protected pick(number: number | null): void {
     this.selectedComet.set(null);
     this.openPull.set(number);
+    const item = this.skyItems().find((each) => each.pr === number);
+    if (item) this.sound.ping(BLOCKED.has(item.bucket), item.pr);
+  }
+
+  protected pickLog(star: LogStar | null): void {
+    this.logs.pick(star);
+    if (star) this.sound.ping(star.urgent);
+  }
+
+  /** A click on the nursery: an issue's body opens its card, as a star does. */
+  protected pickIssue(star: IssueStar | null): void {
+    this.issues.picked.set(star);
+    if (star) this.sound.ping(false);
   }
 
   protected pickComet(comet: Comet): void {
@@ -576,6 +660,7 @@ export class StarmapPage {
       idleDays: item.idleDays,
       ageDays: 0,
       branch: '',
+      base: '',
       mergeable: 'UNKNOWN',
       changedFiles: null,
       isSeen: false,
@@ -589,6 +674,19 @@ export class StarmapPage {
       isSeen: item.bucket === 'fresh',
       idleDays: item.idleDays,
     };
+  }
+
+  /** Where a pull request falls in the merge plan, as its card says. */
+  private planStepOf(number: number | null): { step: number; of: number } | undefined {
+    const plan = this.plan();
+    const index = plan.findIndex((step) => step.pr === number);
+    return index < 0 ? undefined : { step: index + 1, of: plan.length };
+  }
+
+  /** Merge plan: on, the panel takes the right edge and the numbered stars are framed beside it. */
+  protected togglePlan(): void {
+    this.planOn.update((on) => !on);
+    setTimeout(() => this.sky()?.fit());
   }
 
   /** Esc closes the full screen first, then the card, as on pr-starmap. */

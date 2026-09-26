@@ -74,9 +74,27 @@
     >
       {{ motion.isStill() ? 'Motion off' : 'Motion on' }}
     </button>
-    <button type="button" [attr.aria-pressed]="sound.isOn()" (click)="sound.toggle()">
+    <button
+      type="button"
+      [attr.aria-pressed]="sound.isOn()"
+      [title]="sound.isOn() ? 'Ambient sound is on — click to silence' : 'Play ambient sound'"
+      (click)="sound.toggle()"
+    >
       {{ sound.isOn() ? 'Sound on' : 'Sound off' }}
     </button>
+    @if (sound.isOn()) {
+      <label class="vol" title="Volume"
+        ><span aria-hidden="true">vol</span
+        ><input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          aria-label="Volume"
+          [value]="volumePercent()"
+          (input)="onVolume($event)"
+      /></label>
+    }
     <button
       type="button"
       title="What am I looking at? (?)"

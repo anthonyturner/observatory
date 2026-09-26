@@ -16,6 +16,7 @@ const item: QueueItem = {
   idleDays: 5,
   ageDays: 9,
   branch: 'feat/7',
+  base: 'main',
   mergeable: 'MERGEABLE',
   changedFiles: 2,
   isSeen: true,

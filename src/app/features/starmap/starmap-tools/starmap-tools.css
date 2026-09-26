@@ -58,6 +58,34 @@
   cursor: default;
 }
 
+.vol {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-right: 1px solid var(--edge-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.vol:last-child {
+  border-right: 0;
+}
+
+.vol input {
+  width: 96px;
+  accent-color: var(--flow);
+  cursor: pointer;
+}
+
+.vol input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
 .hint {
   font-size: 11px;
   letter-spacing: 0.05em;

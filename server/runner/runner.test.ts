@@ -123,6 +123,24 @@ describe('Runner.start', () => {
     });
   });
 
+  it('logs standard error, and keeps only the head of a line over lineBytes', async () => {
+    const { runner, started, token } = setUp({ limits: { ...LIMITS, lineBytes: 1_000 } });
+    const run = await startWith(runner, await token());
+
+    started[0]?.stderr.write('hook warning\n\n');
+    started[0]?.print(`{"huge":"${'x'.repeat(2_000)}"}`);
+    started[0]?.end(0);
+    const events = (await ended(runner, run.id)).map(
+      (line) => JSON.parse(line) as { kind: string; data: { size?: number } },
+    );
+
+    assert.deepEqual(
+      events.filter((event) => event.kind === 'stderr').map((event) => event.data),
+      ['hook warning'],
+    );
+    assert.equal(events.find((event) => event.kind === 'cut')?.data.size, 2_011);
+  });
+
   it('refuses a used token, and starts nothing more', async () => {
     const { runner, started, token } = setUp();
     const run = await token();

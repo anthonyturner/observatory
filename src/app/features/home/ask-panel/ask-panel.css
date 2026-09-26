@@ -3,21 +3,90 @@
   padding: 12px 14px 14px;
 }
 
-.stack {
+.stack,
+.feed {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* Words over the sky sit on glass, so they stay legible over any trail. */
-.status {
-  align-self: flex-start;
+/* Words straight over the sky sit on glass, so they stay legible over the
+   brightest trail. */
+.jev-off,
+.assistant-status,
+.preview-note {
   margin: 0;
-  padding: 4px 12px;
+  padding: 8px 14px;
   border: 1px solid var(--edge-soft);
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--panel-strong);
   color: var(--muted);
   font-size: 12.5px;
   line-height: 1.5;
+}
+
+.assistant-status {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+/* Kept in the page while empty, so a screen reader hears it when it speaks;
+   it only gives back the gap it would leave. */
+.assistant-status:empty {
+  margin-top: -12px;
+  padding: 0;
+  border: 0;
+}
+
+.preview-note {
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.preview-note a {
+  color: var(--flow);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--ink);
+}
+
+/* Kept in the page while empty, as the status line is, so the first reply
+   is announced like the rest. */
+.replies:not(:has(li)) {
+  margin-top: -12px;
+}
+
+.earlier summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.earlier summary::-webkit-details-marker {
+  display: none;
+}
+
+.earlier summary::before {
+  content: '\25B8';
+  color: var(--flow);
+  transition: transform 0.2s;
+}
+
+.earlier[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.earlier app-reply-list {
+  margin-top: 10px;
 }

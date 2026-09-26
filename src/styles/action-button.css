@@ -1,0 +1,44 @@
+/* pr-starmap's assistant buttons on Home: under a reply, on a proposal, and
+   Try again for the skills. `quiet` steps back; `go` is the one to press. */
+.abtn {
+  flex: none;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--act-wash);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.abtn:hover {
+  border-color: var(--flow);
+  background: var(--flow-tint);
+}
+
+.abtn:disabled {
+  color: var(--muted);
+  cursor: default;
+  border-color: var(--edge-soft);
+  background: transparent;
+}
+
+.abtn.quiet {
+  color: var(--muted);
+}
+
+.abtn.go {
+  border-color: var(--flow-edge);
+  background: var(--act-go-wash);
+}
+
+@media (max-width: 720px) {
+  .abtn {
+    min-height: 44px;
+  }
+}

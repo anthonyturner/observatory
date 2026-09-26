@@ -1,0 +1,50 @@
+<p class="you">
+  <b>You</b><span>{{ entry().asked }}</span>
+  @if (entry().how !== 'typed') {
+    <span class="how">{{ entry().how }}</span>
+  }
+</p>
+<app-reply-chip [chip]="entry().chip" />
+<p class="said" #said [class.note]="entry().said.isNote">
+  @if (entry().said.isAnswer) {
+    <span class="words">
+      @for (span of spans(); track $index) {
+        @if (span.isCode) {
+          <code>{{ span.text }}</code>
+        } @else {
+          <ng-container>{{ span.text }}</ng-container>
+        }
+      }
+    </span>
+  } @else {
+    <span class="words">{{ entry().said.text }}</span>
+  }
+  @if (entry().said.openHref; as url) {
+    <a [href]="url" (click)="follow($event, url)">Open it</a>
+  }
+</p>
+<div class="acts">
+  @for (action of entry().actions; track $index) {
+    @switch (action.kind) {
+      @case ('send') {
+        <button type="button" class="abtn" (click)="pressed.emit(action)">
+          {{ action.label }}
+        </button>
+      }
+      @case ('neither') {
+        <button type="button" class="abtn quiet" (click)="pressed.emit(action)">Neither</button>
+      }
+      @case ('stay') {
+        <button type="button" class="abtn" appFocusOnArrival (click)="pressed.emit(action)">
+          Stay here
+        </button>
+      }
+    }
+  }
+  @if (entry().said.isAnswer) {
+    <app-copy-button [text]="entry().said.text" [selectTarget]="said" />
+  }
+  @if (isSpeaking()) {
+    <button type="button" class="abtn quiet" (click)="stopSpeaking.emit()">Stop speaking</button>
+  }
+</div>

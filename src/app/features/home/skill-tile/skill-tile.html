@@ -1,6 +1,11 @@
-<button type="button" [title]="skill().description ?? ''">
+<button
+  type="button"
+  [title]="skill().description ?? ''"
+  [attr.aria-busy]="isProposing() ? 'true' : null"
+  (click)="pressed.emit(skill())"
+>
   <span class="text">
-    <span class="name">{{ skill().label }}</span>
+    <span class="name">{{ isProposing() ? 'Proposing…' : skill().label }}</span>
     @if (skill().project; as project) {
       <span class="where">in {{ project }}</span>
     }

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, interval, map, of, startWith, switchMap } from 'rxjs';
+import { catchError, firstValueFrom, interval, map, of, startWith, switchMap } from 'rxjs';
 import { ProjectsReport, parseProjectsReport } from './projects-report';
 
 /** Where the projects stand. Only `ready` carries them. */
@@ -31,6 +31,13 @@ export class ProjectsFeed {
         takeUntilDestroyed(),
       )
       .subscribe((state) => this.current.set(state));
+  }
+
+  /** Reads them again now, between the regular reads; true when they were read. */
+  async readNow(): Promise<boolean> {
+    const state = await firstValueFrom(this.fetch());
+    this.current.set(state);
+    return state.status === 'ready';
   }
 
   private fetch() {

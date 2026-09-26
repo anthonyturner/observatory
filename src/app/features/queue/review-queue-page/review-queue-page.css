@@ -43,6 +43,18 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.pulls-stamp {
+  position: relative;
+  z-index: 2;
+  max-width: 920px;
+  margin: 14px auto -8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .links {
   display: flex;
   flex-wrap: wrap;

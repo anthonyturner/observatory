@@ -8,21 +8,25 @@ import {
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { Clock } from '../../../core/time/clock';
+import { IssuesTab } from '../../issues/issues-tab/issues-tab';
 import { OrreryTools } from '../../orrery/orrery-tools/orrery-tools';
 import { PullPanel } from '../pull-panel/pull-panel';
 import { QueueFilter, queueLegend, queueSections, queueStamp } from '../queue-view';
 import { StarChart } from '../star-chart/star-chart';
 
 export type QueueView = 'map' | 'list';
+/** The project page's tabs; the address fragment picks one (`#issues`). */
+export type ProjectTab = 'pulls' | 'issues';
+const ISSUES_FRAGMENT = 'issues';
 
 /** A project's review queue: its open pull requests, blocked first. */
 @Component({
   selector: 'app-review-queue-page',
-  imports: [RouterLink, PullPanel, StarChart, OrreryTools],
+  imports: [RouterLink, PullPanel, StarChart, OrreryTools, IssuesTab],
   providers: [QueueFeed],
   templateUrl: './review-queue-page.html',
   styleUrl: './review-queue-page.css',
@@ -30,13 +34,21 @@ export type QueueView = 'map' | 'list';
 })
 export class ReviewQueuePage {
   private readonly feed = inject(QueueFeed);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
 
   protected readonly repo = toSignal(
-    inject(ActivatedRoute).paramMap.pipe(
+    this.route.paramMap.pipe(
       map((params) => `${params.get('owner') ?? ''}/${params.get('repo') ?? ''}`),
     ),
     { initialValue: '' },
+  );
+  protected readonly tab = toSignal(
+    this.route.fragment.pipe(
+      map((fragment): ProjectTab => (fragment === ISSUES_FRAGMENT ? 'issues' : 'pulls')),
+    ),
+    { initialValue: 'pulls' as ProjectTab },
   );
   protected readonly filter = signal<QueueFilter>(null);
   /** The star map, or the list: the map first, as pr-starmap opens. */
@@ -67,6 +79,15 @@ export class ReviewQueuePage {
       this.filter.set(null);
       this.openPull.set(null);
       if (repo !== '/') this.feed.watch(repo);
+    });
+  }
+
+  /** Switches tab by the address, so Back and a shared link keep it. */
+  protected showTab(tab: ProjectTab): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      fragment: tab === 'issues' ? ISSUES_FRAGMENT : undefined,
+      replaceUrl: true,
     });
   }
 

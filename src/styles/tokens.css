@@ -16,6 +16,21 @@
   --meh: #ffc24d;
   --warm: #ffd98a;
 
+  /* A project's colour is its worst problem. */
+  --sev-blocked: var(--bad);
+  --sev-unsettled: #c08cff;
+  --sev-unreadable: var(--muted);
+  --sev-untracked: var(--meh);
+  --sev-waiting: #6fd4ff;
+  --sev-clear: var(--ok);
+
+  --count-conflicted: var(--bad);
+  --count-failing: #ff9a3d;
+  --count-unknown: var(--sev-unsettled);
+  --count-unlinked: var(--meh);
+  --count-unreviewed: var(--sev-waiting);
+  --count-unclaimed: #9fe8ff;
+
   --edge: rgba(120, 150, 220, 0.22);
   --edge-soft: rgba(120, 150, 220, 0.12);
   --flow-glow: rgba(142, 162, 255, 0.45);
@@ -29,6 +44,10 @@
   --glass-strong: linear-gradient(165deg, rgba(12, 18, 38, 0.86), rgba(9, 14, 30, 0.84));
   --glass-card: linear-gradient(165deg, rgba(18, 26, 52, 0.95), rgba(7, 11, 24, 0.97));
   --shadow-card: 0 30px 70px -20px rgba(0, 0, 0, 0.85);
+  --glass-card-soft: linear-gradient(165deg, rgba(18, 26, 52, 0.9), rgba(7, 11, 24, 0.92));
+  --shadow-lift: 0 24px 60px -28px rgba(0, 0, 0, 0.9);
+  --sheen-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --flow-wash: rgba(142, 162, 255, 0.04);
   --sky-night: radial-gradient(ellipse at 50% 38%, #0b1230 0%, #060a1a 45%, var(--void) 80%);
 
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;

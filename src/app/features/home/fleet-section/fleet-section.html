@@ -2,5 +2,13 @@
   <div class="head">
     <h2 id="fleet-title">Projects</h2>
     <span class="sub">blocked first</span>
+    <span class="sub sum">{{ summary() }}</span>
+  </div>
+  <div class="grid">
+    @for (project of ordered(); track project.repo) {
+      <app-project-card [project]="project" />
+    } @empty {
+      <p class="empty">No projects charted yet.</p>
+    }
   </div>
 </section>

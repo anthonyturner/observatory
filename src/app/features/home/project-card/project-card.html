@@ -1,0 +1,50 @@
+@let snapshot = project();
+<article class="card" [attr.aria-labelledby]="nameId">
+  <span class="kind">{{ severity().kind }}</span>
+  <h3 class="name" [id]="nameId">
+    <a [href]="snapshot.dashboardUrl">{{ snapshot.name }}</a>
+  </h3>
+  <div class="repo">{{ snapshot.repo }}</div>
+
+  @if (snapshot.error; as error) {
+    <p class="error" [title]="error">{{ error }}</p>
+    <p class="unknown">Counts unknown, not zero.</p>
+  } @else {
+    <div class="counts">
+      @for (bar of bars(); track bar.label) {
+        <div class="count">
+          <span class="number">{{ bar.count }}</span>
+          <span
+            class="bar"
+            aria-hidden="true"
+            [style.--c]="bar.color"
+            [style.width.%]="bar.widthPercent"
+          ></span>
+          <span class="label" [title]="bar.label">{{ bar.label }}</span>
+        </div>
+      } @empty {
+        <span class="none">nothing waiting</span>
+      }
+    </div>
+    <div class="totals">
+      @for (total of totals(); track total; let last = $last) {
+        <span>{{ total }}</span
+        >{{ last ? '' : ' · ' }}
+      }
+    </div>
+  }
+
+  <nav class="links" [attr.aria-label]="snapshot.name + ': parts of its star map'">
+    @for (part of parts; track part.label) {
+      <a [href]="snapshot.dashboardUrl + part.hash">{{ part.label }}</a>
+    }
+  </nav>
+  <a
+    class="github"
+    target="_blank"
+    rel="noopener"
+    [href]="gitHubUrl()"
+    [attr.aria-label]="snapshot.name + ' on GitHub, in a new tab'"
+    >GitHub <span aria-hidden="true">&#8599;</span></a
+  >
+</article>

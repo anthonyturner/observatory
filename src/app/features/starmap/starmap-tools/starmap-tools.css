@@ -1,0 +1,118 @@
+/* pr-starmap's tools, rule for rule. */
+:host {
+  display: block;
+}
+
+.tools {
+  display: flex;
+  gap: 9px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.toolgroup {
+  display: flex;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+  overflow: hidden;
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.toolgroup button {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 13px;
+  min-width: 42px;
+  border: 0;
+  border-right: 1px solid var(--edge-soft);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.toolgroup button:last-child {
+  border-right: 0;
+}
+
+.toolgroup button:hover {
+  color: var(--ink);
+  background: var(--starmap-hover);
+}
+
+.toolgroup button:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+.toolgroup button[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--starmap-press);
+}
+
+.toolgroup button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hint {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  align-self: center;
+}
+
+/* On a phone the tools wrap into rows and cover the lower sky; Controls folds
+   them down to itself. Only on a small screen, narrow or short. */
+.fold {
+  display: none;
+}
+
+@media (max-width: 720px), (max-height: 500px) {
+  .fold {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 15px;
+    border: 1px solid var(--edge-soft);
+    border-radius: 10px;
+    background: var(--panel);
+    backdrop-filter: blur(14px) saturate(140%);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .fold:focus-visible {
+    outline: 2px solid var(--flow);
+    outline-offset: 2px;
+  }
+
+  .fold span {
+    color: var(--flow);
+    transition: transform 0.2s;
+  }
+
+  .fold[aria-expanded='false'] span {
+    transform: rotate(180deg);
+  }
+
+  :host([data-folded]) .tools > :not(.fold) {
+    display: none;
+  }
+
+  :host([data-folded]) .tools {
+    pointer-events: none;
+  }
+
+  :host([data-folded]) .fold {
+    pointer-events: auto;
+  }
+}

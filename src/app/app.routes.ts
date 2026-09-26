@@ -16,7 +16,7 @@ export const routes: Routes = [
     path: 'p/:owner/:repo',
     title: 'Review Queue · Observatory',
     loadComponent: () =>
-      import('./features/queue/review-queue-page/review-queue-page').then((m) => m.ReviewQueuePage),
+      import('./features/starmap/starmap-page/starmap-page').then((m) => m.StarmapPage),
   },
   { path: '**', redirectTo: '' },
 ];

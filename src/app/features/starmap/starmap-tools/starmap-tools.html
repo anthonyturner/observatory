@@ -1,0 +1,95 @@
+<div class="tools">
+  <div class="toolgroup" role="group" aria-label="Which sky">
+    @for (each of charts; track each.id) {
+      <button
+        type="button"
+        [attr.aria-pressed]="chart() === each.id"
+        (click)="chart() !== each.id && chartChange.emit(each.id)"
+      >
+        {{ each.label }}
+      </button>
+    }
+  </div>
+  @if (!skyHidden()) {
+    <div class="toolgroup">
+      <button type="button" title="Zoom out" (click)="zoomOut.emit()">&minus;</button>
+      <button type="button" title="Zoom in" (click)="zoomIn.emit()">+</button>
+      <button type="button" title="Fit everything on screen" (click)="fit.emit()">Fit</button>
+    </div>
+    <div class="toolgroup">
+      <button type="button" [attr.aria-pressed]="view() === 'map'" (click)="viewChange.emit('map')">
+        Starmap
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="view() === 'list'"
+        (click)="viewChange.emit('list')"
+      >
+        List
+      </button>
+    </div>
+  }
+  @if (!queueHidden()) {
+    <div class="toolgroup">
+      <button
+        type="button"
+        title="Threads between pull requests that would conflict with each other"
+        [attr.aria-pressed]="showCollisions()"
+        (click)="collisions.emit()"
+      >
+        Collisions
+      </button>
+      <button
+        type="button"
+        title="The order to merge in that needs the fewest rebases"
+        [attr.aria-pressed]="planOn()"
+        (click)="plan.emit()"
+      >
+        Merge plan
+      </button>
+      <button
+        type="button"
+        title="How each agent's pull requests fare"
+        [attr.aria-pressed]="agentsOn()"
+        (click)="agents.emit()"
+      >
+        Agents
+      </button>
+    </div>
+  }
+  <div class="toolgroup">
+    <button
+      type="button"
+      title="Rebuild this sky from GitHub now"
+      [disabled]="refreshing()"
+      (click)="refresh.emit()"
+    >
+      {{ refreshing() ? 'Refreshing…' : refreshFailed() ? 'Refresh failed — retry' : 'Refresh' }}
+    </button>
+    <button
+      type="button"
+      [attr.aria-pressed]="!motion.isStill()"
+      [title]="motionTitle()"
+      (click)="motion.toggle()"
+    >
+      {{ motion.isStill() ? 'Motion off' : 'Motion on' }}
+    </button>
+    <button type="button" [attr.aria-pressed]="sound.isOn()" (click)="sound.toggle()">
+      {{ sound.isOn() ? 'Sound on' : 'Sound off' }}
+    </button>
+    <button
+      type="button"
+      title="What am I looking at? (?)"
+      [attr.aria-pressed]="help.isOpen()"
+      (click)="help.toggle()"
+    >
+      ?
+    </button>
+  </div>
+  @if (!skyHidden()) {
+    <span class="hint">drag · scroll · click a star</span>
+  }
+  <button type="button" class="fold" [attr.aria-expanded]="!folded()" (click)="toggleFold()">
+    Controls <span aria-hidden="true">&#9662;</span>
+  </button>
+</div>

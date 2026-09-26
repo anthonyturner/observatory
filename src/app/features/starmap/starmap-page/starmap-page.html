@@ -1,0 +1,87 @@
+<app-starmap-sky
+  #sky
+  [items]="skyItems()"
+  [filter]="filter()"
+  [selected]="openPull()"
+  [pairs]="skyPairs()"
+  [showCollisions]="showCollisions()"
+  [fog]="fog()"
+  [hidden]="chart() !== 'prs' || view() !== 'map'"
+  [insets]="insets()"
+  (picked)="openPull.set($event)"
+/>
+
+@if (view() === 'list') {
+  <div class="listview">
+    <div class="listwrap">
+      @switch (chart()) {
+        @case ('prs') {
+          <app-starmap-pr-list [items]="skyItems()" [filter]="filter()" (go)="goTo($event)" />
+        }
+        @case ('issues') {
+          <app-issues-tab [repo]="repo()" />
+        }
+      }
+    </div>
+  </div>
+}
+
+@if (skyState(); as message) {
+  <div class="state" role="status">
+    <strong>{{ message.headline }}</strong>
+    @if (message.detail) {
+      <span>{{ message.detail }}</span>
+    }
+  </div>
+}
+
+<div class="hud top">
+  <app-starmap-header
+    [title]="title()"
+    [stamp]="stamp()"
+    [stale]="stale()"
+    [chips]="chips()"
+    [filter]="filter()"
+    (toggled)="toggleFilter($event)"
+  />
+</div>
+
+<div class="hud bottom" [attr.data-folded]="folded() ? '' : null">
+  <app-starmap-tools
+    [chart]="chart()"
+    [view]="view()"
+    [showCollisions]="showCollisions()"
+    [refreshing]="refreshing()"
+    [(folded)]="folded"
+    (chartChange)="setChart($event)"
+    (viewChange)="setView($event)"
+    (zoomIn)="sky.zoomIn()"
+    (zoomOut)="sky.zoomOut()"
+    (fit)="sky.fit()"
+    (collisions)="showCollisions.set(!showCollisions())"
+    (refresh)="refresh()"
+  />
+</div>
+
+@if (hasChanges() && changes(); as changed) {
+  <app-changes-card
+    [changes]="changed"
+    (picked)="goTo($event)"
+    (acknowledged)="acknowledgeChanges()"
+  />
+}
+
+<app-help-card title="Review queue" [entries]="helpEntries" [keys]="helpKeys" />
+
+@if (openPull(); as number) {
+  <app-pull-panel
+    [repo]="repo()"
+    [number]="number"
+    [triage]="openTriage()"
+    [collisions]="openCollisions()"
+    [collisionCheck]="collisionCheck()"
+    (picked)="openPull.set($event)"
+    (triaged)="recordTriage(number, $event)"
+    (closed)="openPull.set(null)"
+  />
+}

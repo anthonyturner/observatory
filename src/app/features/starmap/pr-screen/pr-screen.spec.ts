@@ -151,6 +151,21 @@ describe('PrScreen', () => {
     expect(closed).toBe(1);
   });
 
+  it('opens another pull request on its description, with its own badge', () => {
+    const { fixture, http, open, tab, visible, settle } = render();
+    open();
+    tab('Files');
+    fixture.componentRef.setInput('number', 58);
+    settle();
+
+    http.expectOne('/api/pull?repo=me/app&number=58');
+    http.expectOne('/api/edit?repo=me/app&number=58').flush({ status: 'failed', message: 'x' });
+    http.expectOne('/api/labels?repo=me/app');
+    settle();
+    expect(visible()?.textContent).toContain('Loading…');
+    expect(fixture.nativeElement.querySelector('.pending')?.textContent).toContain('edit failed');
+  });
+
   it('offers to fetch again when the details cannot be read', () => {
     const { http, element, settle } = render();
     http.expectOne('/api/pull?repo=me/app&number=572').flush('down', {

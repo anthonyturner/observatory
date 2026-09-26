@@ -5,8 +5,8 @@ import {
   effect,
   inject,
   input,
+  linkedSignal,
   output,
-  signal,
 } from '@angular/core';
 import { PullEdits } from '../../../core/edits/pull-edits';
 import { PullDetailFeed } from '../../../core/queue/pull-detail-feed';
@@ -56,7 +56,11 @@ export class PrScreen {
 
   protected readonly placeKey = PLACE_KEY;
   protected readonly tabs = SHEET_TABS;
-  protected readonly tab = signal<SheetTab>('overview');
+  /** Each pull request opens on its description, as pr-starmap's screen does. */
+  protected readonly tab = linkedSignal<number, SheetTab>({
+    source: this.number,
+    computation: () => 'overview',
+  });
   protected readonly detail = computed(() => {
     const state = this.feed.state();
     return state.status === 'ready' ? state.detail : null;

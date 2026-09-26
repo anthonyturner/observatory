@@ -15,6 +15,8 @@ export class PullEdits {
   private readonly known = signal<readonly LabelLine[]>([]);
   private target: { repo: string; number: number } | null = null;
   private readonly reads = new Subscription();
+  /** The read for the pull request shown now; a newer load cancels it. */
+  private current = new Subscription();
 
   /** The badge under the title, or null. */
   readonly badge = computed(() => editBadgeOf(this.sending(), this.record()));
@@ -22,7 +24,10 @@ export class PullEdits {
   readonly labels = this.known.asReadonly();
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.reads.unsubscribe());
+    inject(DestroyRef).onDestroy(() => {
+      this.reads.unsubscribe();
+      this.current.unsubscribe();
+    });
   }
 
   /** Reads this pull request's last edit, and its repository's labels. */
@@ -30,13 +35,15 @@ export class PullEdits {
     this.target = { repo, number };
     this.record.set(null);
     this.sending.set(null);
-    this.reads.add(
+    this.current.unsubscribe();
+    this.current = new Subscription();
+    this.current.add(
       this.client
         .record(repo, number)
         .pipe(catchError(() => of(null)))
         .subscribe((record) => this.record.set(record)),
     );
-    this.reads.add(
+    this.current.add(
       this.client
         .labels(repo)
         .pipe(catchError(() => of([])))

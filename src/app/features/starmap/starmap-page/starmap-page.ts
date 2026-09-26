@@ -21,6 +21,7 @@ import { LastSeen } from '../../../core/queue/last-seen';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { queueFog } from '../../../core/queue/queue-fog';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
+import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
@@ -85,6 +86,7 @@ export class StarmapPage {
   private readonly collisions = inject(CollisionsFeed);
   private readonly lastSeenStore = inject(LastSeen);
   private readonly triage = inject(TriageClient);
+  private readonly session = inject(ViewerSession);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
@@ -194,6 +196,8 @@ export class StarmapPage {
     () => this.chart() === 'prs' && this.view() === 'map' && changeCount(this.changes()) > 0,
   );
   protected readonly openTriage = computed(() => {
+    // A visitor to the hosted preview cannot change anything, so has no triage to show.
+    if (!this.session.canWrite()) return null;
     const item = this.items().find((each) => each.number === this.openPull());
     return item ? { isSeen: item.isSeen, hidden: item.hidden } : null;
   });

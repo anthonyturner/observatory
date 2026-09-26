@@ -30,8 +30,8 @@ export interface ReadSources {
   readonly history: HistoryStore;
   /** Which open pull requests would conflict with each other. */
   readonly collisions: (repo: string) => Promise<CollisionsReport>;
-  /** Claude Code usage. */
-  readonly usage: () => Promise<UsageReport>;
+  /** Claude Code usage, or null where none has been read (hosted, before a push). */
+  readonly usage: () => Promise<UsageReport | null>;
   /** An app's log folder, folded, for the Log Sky. */
   readonly logs: (repo: string) => Promise<LogSnapshot | LogsUnconfigured>;
 }
@@ -51,7 +51,7 @@ export interface ApiReads {
   pull(repo: string, number: number): Promise<PullDetail>;
   collisions(repo: string): Promise<CollisionsReport>;
   history(repo: string): Promise<HistoryReport>;
-  usage(): Promise<UsageReport>;
+  usage(): Promise<UsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
 }
 

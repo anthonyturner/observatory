@@ -42,8 +42,8 @@ npm run build
 
 ## Live data
 
-The usage meters (tokens today, the 5-hour window and the weekly limit) are
-live. `npm start` runs Observatory's own API (`server/`, on port 4319) next to
+The usage meters (tokens today, the 5-hour window and the weekly limit), the
+project cards and Open issues are live. `npm start` runs Observatory's own API (`server/`, on port 4319) next to
 the Angular dev server, which proxies `/api` to it. The API reads Claude Code's
 files on this machine, so it listens on loopback only:
 
@@ -61,8 +61,13 @@ files on this machine, so it listens on loopback only:
 
   Readings are kept in `~/.claude/observatory/usage/`. Without them the limit
   meters say so rather than showing a number.
+- **Projects** are every repository the account signed in to the
+  [GitHub CLI](https://cli.github.com/) owns (no forks or archives), read
+  through `gh` and cached for five minutes. Each open pull request is counted
+  in its most urgent state: cannot merge, checks failing, mergeability
+  unknown, no issue linked, or waiting on you.
 
-Everything else on Home is still sample data.
+Directives, documents, skills and the top bar are still sample data.
 
 ## Working on it
 

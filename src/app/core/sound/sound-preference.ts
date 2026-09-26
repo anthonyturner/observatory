@@ -4,19 +4,34 @@ import {
   ErrorHandler,
   Injectable,
   InjectionToken,
+  Injector,
   Signal,
+  computed,
   effect,
   inject,
   signal,
 } from '@angular/core';
 import { CORE_MOOD } from '../instrument/core-tokens';
 import { uneaseOf } from './ambient-score';
+import { LitProject } from '../projects/lit-project';
+import { PROJECTS } from '../projects/projects-source';
 import { AmbientPlayer, AmbientSynth } from './ambient-synth';
+import { homeVoicesOf } from './home-chimes';
 
 /** Makes the player the Sound button drives. */
 export const AMBIENT_PLAYER = new InjectionToken<() => AmbientPlayer>('AMBIENT_PLAYER', {
   providedIn: 'root',
-  factory: () => () => new AmbientSynth(),
+  factory: () => {
+    // Read the projects only when a score is made, so a page that shows the
+    // Sound button without ever playing never starts the projects feed.
+    const injector = inject(Injector);
+    return () => {
+      const projects = injector.get(PROJECTS);
+      const lit = injector.get(LitProject);
+      const voices = computed(() => homeVoicesOf(projects()));
+      return new AmbientSynth({ voices: () => voices(), lit: () => lit.key() });
+    };
+  },
 });
 
 const STORAGE_KEY = 'observatory.sound';

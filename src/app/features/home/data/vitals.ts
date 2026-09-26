@@ -1,5 +1,3 @@
-import { InjectionToken, Signal, signal } from '@angular/core';
-
 /** At or above this share of a limit, a reading turns amber. */
 export const HOT_PERCENT = 80;
 
@@ -12,6 +10,8 @@ export interface VitalReading {
   /** How old the reading is, as a short age ("4m"). */
   readonly age?: string;
   readonly note?: string;
+  /** Where readings come from, for an unknown one that could have them. */
+  readonly how?: string;
   readonly series?: readonly number[];
   /** Fixes the sparkline's scale, for readings with a ceiling such as a percent. */
   readonly max?: number;
@@ -56,7 +56,7 @@ export interface VitalsColumn {
   readonly docs: DocTabs;
 }
 
-const SAMPLE_VITALS_COLUMN: VitalsColumn = {
+export const SAMPLE_VITALS_COLUMN: VitalsColumn = {
   vitals: [
     {
       id: 'tokens',
@@ -121,9 +121,3 @@ const SAMPLE_VITALS_COLUMN: VitalsColumn = {
     ],
   },
 };
-
-/** Where Home's left column reads from: sample data until the live source lands. */
-export const VITALS_COLUMN = new InjectionToken<Signal<VitalsColumn>>('VITALS_COLUMN', {
-  providedIn: 'root',
-  factory: () => signal(SAMPLE_VITALS_COLUMN).asReadonly(),
-});

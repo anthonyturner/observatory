@@ -12,9 +12,10 @@ so a missing line costs more than a long one.
   Angular CDK for behaviour (overlays, focus, a11y, breakpoints) with no
   component library: the look is the project's own design tokens and
   per-component CSS. Three.js for the 3D core, with a Canvas 2D fallback.
-- Data: none yet; pages use sample data. Live data will come from
-  pr-starmap's existing HTTP API (`/api/watch`, `/api/doc`), proxied in
-  development. No secrets live in this repository.
+- Data: Claude Code usage is live, read from pr-starmap's local site
+  (`GET /api/doc`, header `x-starmap: 1`), which `ng serve` proxies at `/api`
+  (`proxy.conf.json`) to `http://localhost:4317`. Everything else is still
+  sample data. No secrets live in this repository.
 - Build: Angular CLI (`ng build`, esbuild). Tests: Vitest through `ng test`.
   Lint: angular-eslint. Format: Prettier. Deployment: not yet decided.
 - CI: none yet.

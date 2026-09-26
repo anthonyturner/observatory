@@ -1,8 +1,13 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { HomePage } from './home-page';
 
 describe('HomePage', () => {
   function render(): HTMLElement {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;

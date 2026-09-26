@@ -1,5 +1,10 @@
 import { type ApiReads, cachedReads } from '../app/api-reads.ts';
-import { ownerRoutes } from '../app/api-routes.ts';
+import { ownerRoutes, withAssistant } from '../app/api-routes.ts';
+import { assistantRouter } from '../assistant/assistant-router.ts';
+import { openRouter } from '../assistant/open-router.ts';
+import { projectsOf } from '../assistant/projects-of.ts';
+import { ALL_SHELLS } from '../assistant/shell-commands.ts';
+import { SKILLS } from '../assistant/skills-table.ts';
 import { uncheckedCollisions } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
 import type { RepoRef } from '../github/github-reader.ts';
@@ -116,7 +121,17 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
     changed: ({ repo, number }) => reads.forgetPull(repo, number),
     now: Date.now,
   });
-  const owner = ownerRoutes(reads, triage, editor);
+  const assistant = assistantRouter({
+    models: openRouter({ key: config.openRouterKey }),
+    projects: async () => projectsOf(await reads.projects()),
+    // No skills.json here: the starters only.
+    skills: async () => SKILLS,
+    where: 'hosted',
+    shells: ALL_SHELLS,
+    runner: null,
+  });
+  // Built into the owner's table so visitorRoutes refuses it with every other owner route.
+  const owner = withAssistant(ownerRoutes(reads, triage, editor), assistant);
   const machines = machineRoutes({
     reads,
     store,

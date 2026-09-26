@@ -139,6 +139,95 @@ files on this machine, so it listens on loopback only:
 
 Skills are still sample data.
 
+### Home's assistant (Jev)
+
+`POST /api/route` sorts a request typed or spoken on Home into how much effort
+it needs, and `GET /api/route` says whether Jev is on, where the site runs
+(`local` or `hosted`), and which skills there are.
+
+- **Tier 1, an app action**: open the Orrery, Home, or a project's pull
+  requests, issues, Log Sky or usage; refresh; help; stop speaking. The page
+  carries it out. A request that names an action in so many words ("open the
+  logs for observatory") is matched by keyword, with no model call, so it is
+  instant, free, and works with no key.
+- **Tier 2, a quick answer**: a few sentences from Claude Haiku, labelled as
+  one, for a general question that needs no files.
+- **Tier 3, work in a project**: proposed, as a `claude -p` command to paste,
+  quoted for PowerShell or bash (the local site writes it for this machine's
+  shell; the hosted one, for both). Locally, the proposal also carries a
+  one-use token for **Run** (see below); nothing runs until you confirm it.
+
+Everything else goes to Jev (`typesafe/jev-1.13`) through
+OpenRouter, which answers which tier, which action and which project, each with
+a confidence. Below the bar, Home asks rather than acts, with a button for each
+likely reading.
+
+**Turning Jev on.** Jev and the quick answers need an
+[OpenRouter](https://openrouter.ai/) key, which pays for both. Locally, put it
+in `~/.claude/observatory/.env` (outside the checkout, so no commit can carry
+it) or set it in the environment:
+
+```
+OPENROUTER_API_KEY=<your key>
+```
+
+On Vercel, set `OPENROUTER_API_KEY` on the project. Without a key, Jev is off
+and says so: only keyword matches work, and locally a request can still be
+proposed as a command. The key is sent to OpenRouter only, and scrubbed from
+every error and log line.
+
+**Skills** are fixed requests, one tile each on Home, each proposed as tier-3
+work. The starters (triage the review queue, what's blocked, stale pull
+requests, today's failures) only read, through named read-only `gh` commands.
+Add, replace or remove them in `~/.claude/observatory/skills.json`, which is
+read on every request (up to 64 KiB):
+
+```json
+{
+  "deploys": {
+    "label": "Check the deploys",
+    "description": "Whether the last deploy of each app went out.",
+    "prompt": "List the last deployment of each app in this repository ... Change nothing.",
+    "project": "observatory"
+  },
+  "failures": null
+}
+```
+
+An id is lower-case words joined by dashes; a label is up to 40 characters;
+`project` pins a skill to one project; `null` removes a starter; there are at
+most 24 skills in all. The hosted site offers the starters only. On the hosted
+site the assistant is the owner's alone: a visitor to the public preview is
+refused, since every request can cost money.
+
+## Run: tier-3 work on this machine
+
+A request that means work in a project, such as reading or changing code, can
+become a proposal with a **Run** button. Once you confirm it, the local API
+starts `claude -p --output-format stream-json --verbose` in that project's
+clone and streams the output to the page, with Cancel and a list of recent
+runs.
+
+- **Where it runs.** Only the local API (`npm run api`, which `npm start`
+  includes) can run anything. The hosted site has no runner: there `/api/runs`
+  does not exist, and a proposal shows only the command to copy.
+- **What it needs.** `claude` on the PATH, and a clone of the project, found
+  the same way as for collision courses. Without either, the proposal says why
+  and shows only the command.
+- **What limits it.** A run needs a proposal token that works once, lasts five
+  minutes, and only for the exact prompt and folder the proposal showed. The
+  folder must be a known clone both when the token is made and when it is
+  used. Only one run goes at a time, and each stops after 30 minutes. Cancel,
+  or stopping the API, kills Claude Code and everything it started.
+- **What it never does.** It never passes `--dangerously-skip-permissions` or
+  any other permission flag: your own Claude Code allow rules and hooks apply,
+  and `-p` refuses a tool they do not allow. It never puts the prompt on the
+  command line, and never hands the server's own keys to the run. A cancelled
+  run keeps whatever it already changed, so check `git status` in that folder.
+
+[ADR-0005](docs/decisions/0005-run-tier-3-tasks-on-the-local-site-only.md)
+records the decision and what any change to it must keep.
+
 ## Host it on Vercel
 
 The same app runs on Vercel, for when you want Observatory away from this
@@ -202,6 +291,7 @@ day (for example `0 6 * * *`) and `maxDuration` to 300.
 | `SITE_URL`                                    | Optional: your site's address, if sign-in should always return there.                                           |
 | `PUBLIC_PREVIEW`                              | Optional: `on` lets anyone see your public repositories, read-only; `all` the private ones too. Off unless set. |
 | `PREVIEW_LOGS`                                | Optional: `on` shows visitors the Log Sky, redacted. Off unless set.                                            |
+| `OPENROUTER_API_KEY`                          | Optional: an OpenRouter key, which turns on Jev and quick answers on Home. Off unless set.                      |
 
 A site missing one of the required variables answers every request saying
 which. Generate the secrets with, for example,

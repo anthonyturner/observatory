@@ -4,6 +4,18 @@ import { after, before, describe, it } from 'node:test';
 import { json } from './api-handler.ts';
 import { createApiServer } from './api-server.ts';
 
+const FIRST_LINE = 'first\n';
+const streamCancelled = Promise.withResolvers<void>();
+
+/** A body that sends one line and then holds the response open until the caller leaves. */
+const streaming = (): Response =>
+  new Response(
+    new ReadableStream<Uint8Array>({
+      start: (controller) => controller.enqueue(new TextEncoder().encode(FIRST_LINE)),
+      cancel: () => streamCancelled.resolve(),
+    }),
+  );
+
 describe('createApiServer', () => {
   const seen: { method: string; path: string; header: string | null; body: string }[] = [];
   const server = createApiServer(async (request) => {
@@ -15,6 +27,7 @@ describe('createApiServer', () => {
       body: await request.text(),
     });
     if (url.pathname === '/throws') throw new Error('boom');
+    if (url.pathname === '/stream') return streaming();
     const headers = new Headers({ 'x-reply': 'yes' });
     headers.append('set-cookie', 'a=1; Path=/');
     headers.append('set-cookie', 'b=2; Path=/');
@@ -41,6 +54,18 @@ describe('createApiServer', () => {
     assert.equal(response.headers.get('x-reply'), 'yes');
     assert.deepEqual(response.headers.getSetCookie(), ['a=1; Path=/', 'b=2; Path=/']);
     assert.deepEqual(await response.json(), { ok: true });
+  });
+
+  it('sends a streamed body as it comes, and stops the stream when the caller leaves', async () => {
+    const leave = new AbortController();
+    const response = await fetch(`${base}/stream`, { signal: leave.signal });
+    const reader = response.body?.getReader();
+
+    const first = await reader?.read();
+    leave.abort();
+
+    assert.equal(new TextDecoder().decode(first?.value), FIRST_LINE);
+    await streamCancelled.promise;
   });
 
   it('answers 500 when the handler throws, and keeps serving', async () => {

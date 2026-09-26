@@ -27,7 +27,22 @@ async function send(outgoing: ServerResponse, response: Response): Promise<void>
     ...Object.fromEntries(headers),
     ...(cookies.length ? { 'set-cookie': cookies } : {}),
   });
-  outgoing.end(Buffer.from(await response.arrayBuffer()));
+  await sendBody(outgoing, response.body);
+}
+
+/** Writes `body` as it arrives, so a streamed response reaches the page line by line. */
+async function sendBody(
+  outgoing: ServerResponse,
+  body: ReadableStream<Uint8Array> | null,
+): Promise<void> {
+  if (!body) return void outgoing.end();
+  const reader = body.getReader();
+  // A caller that goes away ends the stream, which tells its source to stop.
+  outgoing.on('close', () => reader.cancel().catch((error: unknown) => console.error(error)));
+  for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+    outgoing.write(chunk.value);
+  }
+  outgoing.end();
 }
 
 /** `handle` behind Node's own HTTP server. Nothing it throws stops the server. */

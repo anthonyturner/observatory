@@ -156,6 +156,26 @@ describe('hostedApi', () => {
     assert.equal((await get(handle, '/api/usage', ownerCookie)).status, 200);
   });
 
+  it('has no runs routes, even for the owner: tier 3 runs on the local server only', async () => {
+    const { handle } = site();
+    const asOwner = (method: string) =>
+      handle(
+        new Request(`${SITE}/api/runs?id=x`, {
+          method,
+          headers: {
+            cookie: ownerCookie,
+            'x-observatory': '1',
+            'content-type': 'application/json',
+          },
+          ...(method === 'POST' ? { body: '{}' } : {}),
+        }),
+      );
+
+    for (const method of ['GET', 'POST', 'DELETE']) {
+      assert.equal((await asOwner(method)).status, 404, method);
+    }
+  });
+
   it('shows a visitor public repositories only, read-only, with no triage', async () => {
     const { handle, store } = site({ ...ENV, PUBLIC_PREVIEW: 'on' });
     await triage(handle, ownerCookie);
@@ -182,6 +202,51 @@ describe('hostedApi', () => {
     assert.equal((await triage(handle)).status, 403);
     assert.equal(await (await get(handle, '/api/usage')).json(), null);
     assert.equal(JSON.stringify([...store.data]), before);
+  });
+
+  it('gives the owner Home’s assistant, with Jev off when no OpenRouter key is set', async () => {
+    const { handle } = site();
+
+    const status = (await (await get(handle, '/api/route', ownerCookie)).json()) as {
+      jev: string;
+      where: string;
+    };
+    const routed = await handle(
+      new Request(`${SITE}/api/route`, {
+        method: 'POST',
+        headers: {
+          'x-observatory': '1',
+          'content-type': 'application/json',
+          cookie: ownerCookie,
+        },
+        body: JSON.stringify({ text: 'open the orrery' }),
+      }),
+    );
+
+    assert.deepEqual([status.jev, status.where], ['off', 'hosted']);
+    assert.deepEqual(await routed.json(), {
+      via: 'keyword',
+      tier: 1,
+      action: 'open-orrery',
+      href: '/orrery',
+      says: 'Opening the orrery',
+      jev: 'off',
+    });
+  });
+
+  it('refuses a visitor Home’s assistant, since every request can cost money', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all', OPENROUTER_API_KEY: 'sk-or-test' });
+
+    const routed = await handle(
+      new Request(`${SITE}/api/route`, {
+        method: 'POST',
+        headers: { 'x-observatory': '1', 'content-type': 'application/json' },
+        body: JSON.stringify({ text: 'what is a rebase' }),
+      }),
+    );
+
+    assert.equal(routed.status, 403);
+    assert.equal((await get(handle, '/api/route')).status, 403);
   });
 
   it('shows a visitor private repositories too with PUBLIC_PREVIEW=all, still read-only', async () => {

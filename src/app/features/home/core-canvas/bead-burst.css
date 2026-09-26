@@ -1,0 +1,35 @@
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Work got done here: a green ring grows out of the dot and fades. */
+.burst {
+  position: absolute;
+  width: calc(var(--burst) * 2);
+  height: calc(var(--burst) * 2);
+  border: 2px solid var(--ok);
+  border-radius: 50%;
+  box-shadow: 0 0 18px var(--ok);
+  transform: translate(-50%, -50%);
+  animation: burst 2.6s ease-out forwards;
+}
+
+@keyframes burst {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3.2);
+  }
+}
+
+/* With motion off, a steady ring says the same thing without moving. */
+:host(.still) .burst {
+  animation: none;
+  opacity: 0.9;
+}

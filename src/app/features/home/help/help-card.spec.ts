@@ -32,4 +32,14 @@ describe('HelpCard', () => {
     expect(help.isOpen()).toBe(false);
     expect(element.querySelector('[role="dialog"]')).toBeNull();
   });
+
+  it('explains what the comets mean', () => {
+    const { fixture, help, element } = render();
+    help.toggle();
+    fixture.detectChanges();
+
+    const terms = Array.from(element.querySelectorAll('dt')).map((dt) => dt.textContent?.trim());
+    expect(terms).toContain('Comets');
+    expect(terms).not.toContain('Fog');
+  });
 });

@@ -25,6 +25,23 @@ const MERGE_CONCURRENCY = 4;
 const unchecked = (pairs: ReturnType<typeof sharedPairs>): Collision[] =>
   pairs.map((pair) => ({ ...pair, conflicts: null }));
 
+const reportOf = (
+  repo: string,
+  now: number,
+  check: CollisionCheck,
+  pairs: Collision[],
+): CollisionsReport => ({ generatedAt: new Date(now).toISOString(), repo, check, pairs });
+
+/** Every pair of open pull requests that change a file in common, unchecked:
+ *  where there is no clone to merge them in, such as the hosted site. */
+export async function uncheckedCollisions(
+  github: FilesReader,
+  repo: string,
+  now = Date.now(),
+): Promise<CollisionsReport> {
+  return reportOf(repo, now, 'no-clone', unchecked(sharedPairs(await github.pullFiles(repo))));
+}
+
 /**
  * Every pair of open pull requests that change a file in common, merged in a
  * local clone to see which would conflict. Without a clone they are unchecked,
@@ -38,12 +55,8 @@ export async function collisionsReport(
   now = Date.now(),
 ): Promise<CollisionsReport> {
   const pairs = sharedPairs(await github.pullFiles(repo));
-  const report = (check: CollisionCheck, collisions: Collision[]): CollisionsReport => ({
-    generatedAt: new Date(now).toISOString(),
-    repo,
-    check,
-    pairs: collisions,
-  });
+  const report = (check: CollisionCheck, collisions: Collision[]): CollisionsReport =>
+    reportOf(repo, now, check, collisions);
   const clone = await clones.cloneOf(repo);
   if (!clone) return report('no-clone', unchecked(pairs));
   if (!pairs.length) return report('checked', []);

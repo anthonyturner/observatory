@@ -109,6 +109,10 @@
   --chart-mark-blocked: var(--bad);
   --chart-mark-unblocked: var(--ok);
 
+  /* Collision threads: a pair that would conflict, and one never checked. */
+  --chart-thread-conflict: var(--bad);
+  --chart-thread-unchecked: var(--muted);
+
   /* The orrery's night: indigo warmed by its sun toward the middle. */
   --orrery-sky-centre: #15122c;
   --orrery-sky-mid: #070b1c;

@@ -19,6 +19,7 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld, pickWorld } from '../../../core/orrery/pick-world';
 import { ChangeMark } from '../../../core/queue/changes';
+import { Thread } from '../../../core/queue/collisions-report';
 import { QueueItem } from '../../../core/queue/queue-report';
 import { layoutStars } from '../../../core/queue/star-layout';
 import { QueueFilter } from '../queue-view';
@@ -56,6 +57,8 @@ export class StarChart {
   readonly selected = input<number | null>(null);
   /** Stars that changed since you last looked. */
   readonly marks = input<ReadonlyMap<number, ChangeMark>>(new Map());
+  /** Pull requests that would conflict with each other, or were never checked. */
+  readonly threads = input<readonly Thread[]>([]);
   readonly picked = output<number>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -91,6 +94,7 @@ export class StarChart {
       this.filter();
       this.selected();
       this.marks();
+      this.threads();
       this.motion.isStill();
       this.loop?.kick();
     });
@@ -167,6 +171,7 @@ export class StarChart {
       filter: this.filter(),
       selected: this.selected(),
       marks: this.marks(),
+      threads: this.threads(),
     });
   }
 

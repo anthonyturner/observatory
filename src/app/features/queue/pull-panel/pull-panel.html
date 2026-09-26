@@ -94,6 +94,21 @@
       }
     </dl>
 
+    @if (collisionCheck(); as check) {
+      @if (collisions().length) {
+        <section aria-labelledby="collisions-title">
+          <h3 id="collisions-title">
+            Collisions <small>{{ collisions().length }} sharing files</small>
+          </h3>
+          <app-pull-collisions
+            [collisions]="collisions()"
+            [check]="check"
+            (picked)="picked.emit($event)"
+          />
+        </section>
+      }
+    }
+
     @if (triage(); as mine) {
       <section aria-labelledby="triage-title">
         <h3 id="triage-title">Triage <small>on this machine only</small></h3>

@@ -3,6 +3,9 @@ import { createApiServer } from './http/api-server.ts';
 import { projectsReport } from './projects/projects-report.ts';
 import { fileHistoryStore } from './history/history-store.ts';
 import { recordFrame } from './history/record-frame.ts';
+import { fileCloneFinder } from './collisions/clone-finder.ts';
+import { collisionsReport } from './collisions/collisions-report.ts';
+import { gitPairMerger } from './collisions/pair-merger.ts';
 import { issuesReport } from './issues/issues-report.ts';
 import { pullDetailOf, pullNumberFrom } from './queue/pull-detail.ts';
 import { queueReport } from './queue/queue-report.ts';
@@ -22,11 +25,19 @@ const PROJECTS_TTL_MS = 5 * 60_000;
 const QUEUE_TTL_MS = 2 * 60_000;
 /** One pull request is read when it is opened, and again a minute later at most. */
 const PULL_TTL_MS = 60_000;
+/** Merging every pair in a clone takes a while: at most every ten minutes. */
+const COLLISIONS_TTL_MS = 10 * 60_000;
 
 const port = Number(process.env['OBSERVATORY_API_PORT'] ?? DEFAULT_PORT);
 const github = ghCliReader();
 const triage = fileTriageStore();
 const history = fileHistoryStore();
+const clones = fileCloneFinder();
+const merger = gitPairMerger();
+const collisionsOf = cachedByKey(
+  (repo) => collisionsReport(github, clones, merger, repo),
+  COLLISIONS_TTL_MS,
+);
 // Each read from GitHub may add a frame to the star map's memory. A failure to
 // record is logged, never passed on: the queue itself was read.
 const queueOf = cachedByKey(async (repo) => {
@@ -51,6 +62,7 @@ const server = createApiServer(
     // Triage is merged in on every request, so an action shows at once.
     '/api/queue': async (query) =>
       withTriage(await queueOf(repoNameFrom(query.get('repo'))), triage, Date.now()),
+    '/api/collisions': (query) => collisionsOf(repoNameFrom(query.get('repo'))),
     '/api/history': async (query) => {
       const repo = repoNameFrom(query.get('repo'));
       return { repo, frames: history.read(repo) };

@@ -82,6 +82,15 @@ files on this machine, so it listens on loopback only:
   and the review queue lists and marks what changed since your last visit.
   GitHub keeps no history of mergeability, so this starts from the first frame.
 
+- **Collision courses**: pairs of open pull requests that change the same file
+  are merged in memory with `git merge-tree` in a local clone, to show which
+  would conflict with each other: a red thread on the star map, and a list in
+  each panel. Pull request heads are fetched into `refs/observatory/` and
+  deleted afterwards; branches and files are never touched. The clone is found
+  in `~/.claude/observatory/clones.json` (`{"owner/repo": "path"}`) or by
+  scanning `OBSERVATORY_CLONES_ROOT` (by default the folder holding this
+  checkout). Without one, the pairs are shown as unchecked, never as safe.
+
 Skills are still sample data.
 
 ## Working on it

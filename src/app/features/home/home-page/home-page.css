@@ -1,0 +1,90 @@
+:host {
+  display: block;
+}
+
+.hud {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.hud-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 8px 16px 28px;
+}
+
+/* Side columns sit on a scrim so their words keep contrast over the sky. */
+.column {
+  display: block;
+  min-width: 0;
+  background: var(--scrim-column);
+}
+
+main {
+  position: relative;
+  z-index: 1;
+  padding: 0 20px calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Wide and tall enough: the HUD fits one screen in three columns. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .hud {
+    height: 100vh;
+    height: 100svh;
+  }
+
+  .hud-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns:
+      clamp(260px, 22vw, 330px) minmax(0, 1fr)
+      clamp(300px, 26vw, 380px);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'left core skills'
+      'left core ask';
+    gap: 14px 28px;
+    padding: 2px 28px 10px;
+  }
+
+  app-core-panel {
+    grid-area: core;
+  }
+
+  app-vitals-panel {
+    grid-area: left;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  app-skills-panel {
+    grid-area: skills;
+  }
+
+  app-ask-panel {
+    grid-area: ask;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 721px) and (max-width: 1023px), (min-width: 1024px) and (max-height: 599px) {
+  .hud-body {
+    padding-inline: 28px;
+  }
+
+  .hud-body > * {
+    width: min(720px, 100%);
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  main {
+    padding-inline: 16px;
+  }
+}

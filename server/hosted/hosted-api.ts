@@ -81,7 +81,7 @@ export function hostedApi(
 ): ApiHandler {
   const result = hostedConfigFrom(env);
   if (!result.ok) {
-    const error = `the site is not configured: missing ${result.missing.join(', ')}`;
+    const error = `the site is not configured: ${result.problem}`;
     return async () => json(HTTP_SERVER_ERROR, { error });
   }
   return hostedHandler(result.config, (dependencies ?? defaultDependencies)(result.config));

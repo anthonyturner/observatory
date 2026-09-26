@@ -1,3 +1,5 @@
+import { MIN_SECRET_LENGTH } from './sealed-value.ts';
+
 /** The environment variables the hosted site needs, all set on the Vercel project. */
 export const REQUIRED_ENV = [
   'KV_REST_API_URL',
@@ -28,10 +30,10 @@ export interface HostedConfig {
 
 export type Env = Readonly<Record<string, string | undefined>>;
 
-/** The configuration, or which required variables are missing. */
+/** The configuration, or what is wrong with it. */
 export type ConfigResult =
   | { readonly ok: true; readonly config: HostedConfig }
-  | { readonly ok: false; readonly missing: readonly string[] };
+  | { readonly ok: false; readonly problem: string };
 
 const previewOf = (value: string | undefined): PreviewSetting =>
   value === 'on' || value === 'all' ? value : 'off';
@@ -39,7 +41,13 @@ const previewOf = (value: string | undefined): PreviewSetting =>
 /** The hosted site's configuration from its environment, checked once, at the edge. */
 export function hostedConfigFrom(env: Env): ConfigResult {
   const missing = REQUIRED_ENV.filter((name) => !env[name]);
-  if (missing.length) return { ok: false, missing };
+  if (missing.length) return { ok: false, problem: `missing ${missing.join(', ')}` };
+  if ((env['SESSION_SECRET'] ?? '').length < MIN_SECRET_LENGTH) {
+    return {
+      ok: false,
+      problem: `SESSION_SECRET must be at least ${MIN_SECRET_LENGTH} characters`,
+    };
+  }
   const value = (name: (typeof REQUIRED_ENV)[number]): string => env[name] ?? '';
   return {
     ok: true,

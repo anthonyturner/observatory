@@ -93,6 +93,14 @@ describe('hostedApi', () => {
     });
   });
 
+  it('says plainly when the session secret is too short to be safe', async () => {
+    const { handle } = site({ ...ENV, SESSION_SECRET: 'short' });
+
+    assert.deepEqual(await (await get(handle, '/api/session')).json(), {
+      error: 'the site is not configured: SESSION_SECRET must be at least 32 characters',
+    });
+  });
+
   it('asks anyone without a session to sign in, when there is no preview', async () => {
     const { handle } = site();
 

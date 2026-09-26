@@ -41,6 +41,7 @@ const RECORDED: readonly [string, (reader: GitHub) => Promise<unknown>][] = [
   ['open-pulls', (reader) => reader.openPulls(REPO)],
   ['closing-pulls', (reader) => reader.closingPulls(REPO)],
   ['pull-files', (reader) => reader.pullFiles(REPO)],
+  ['touched-pulls', (reader) => reader.touchedPulls(REPO, '2026-08-01')],
   ['pull-detail', (reader) => reader.pullDetail(REPO, 16)],
   ['pull-detail-bot', (reader) => reader.pullDetail('anthonyturner/observatory', 1)],
   ['pull-state', (reader) => reader.pullState(REPO, 16)],

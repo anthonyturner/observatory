@@ -39,7 +39,7 @@ describe('parseHistory', () => {
     expect(frames).toEqual([
       {
         at: '2026-09-24T00:00:00Z',
-        items: [{ number: 2, title: '', bucket: 'unknown' }],
+        items: [{ number: 2, title: '', bucket: 'unknown', idleDays: 0 }],
         departed: [],
       },
     ]);

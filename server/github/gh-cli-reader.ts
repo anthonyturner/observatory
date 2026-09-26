@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { GitHubReader, PullRequest, RepoRef } from './github-reader.ts';
+import { PULL_DETAIL_FIELDS, type PullReader, type RawPull } from './pull-reader.ts';
 import type { QueuePull, QueueReader } from './queue-reader.ts';
 
 const run = promisify(execFile);
@@ -25,7 +26,7 @@ const ghJson = async <T>(args: readonly string[]): Promise<T> => JSON.parse(awai
 const ISSUES_DISABLED = /has disabled issues/i;
 
 /** GitHub through the `gh` CLI, as the account this machine signed it in with. */
-export function ghCliReader(): GitHubReader & QueueReader {
+export function ghCliReader(): GitHubReader & QueueReader & PullReader {
   return {
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
@@ -66,6 +67,8 @@ export function ghCliReader(): GitHubReader & QueueReader {
         '--json',
         QUEUE_FIELDS,
       ]),
+    pullDetail: (repo, number) =>
+      ghJson<RawPull>(['pr', 'view', String(number), '--repo', repo, '--json', PULL_DETAIL_FIELDS]),
     mergeableOf: async (repo, pull) =>
       (
         await ghJson<{ mergeable: string }>([

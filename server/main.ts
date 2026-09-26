@@ -1,6 +1,7 @@
 import { ghCliReader } from './github/gh-cli-reader.ts';
 import { createApiServer } from './http/api-server.ts';
 import { projectsReport } from './projects/projects-report.ts';
+import { pullDetailOf, pullNumberFrom } from './queue/pull-detail.ts';
 import { queueReport } from './queue/queue-report.ts';
 import { repoNameFrom } from './queue/repo-name.ts';
 import { usageReport } from './usage/usage-report.ts';
@@ -13,10 +14,16 @@ const DEFAULT_PORT = 4319;
 const PROJECTS_TTL_MS = 5 * 60_000;
 /** A queue is looked at closely, so it is read more often. */
 const QUEUE_TTL_MS = 2 * 60_000;
+/** One pull request is read when it is opened, and again a minute later at most. */
+const PULL_TTL_MS = 60_000;
 
 const port = Number(process.env['OBSERVATORY_API_PORT'] ?? DEFAULT_PORT);
 const github = ghCliReader();
 const queueOf = cachedByKey((repo) => queueReport(github, repo), QUEUE_TTL_MS);
+const pullOf = cachedByKey(async (key) => {
+  const [repo, number] = key.split('#');
+  return pullDetailOf(await github.pullDetail(repo, Number(number)));
+}, PULL_TTL_MS);
 
 // Loopback only: the API reads files from this machine's home folder and acts
 // as the account `gh` is signed in with.
@@ -24,6 +31,8 @@ const server = createApiServer({
   '/api/usage': () => usageReport(),
   '/api/projects': cached(() => projectsReport(github), PROJECTS_TTL_MS),
   '/api/queue': (query) => queueOf(repoNameFrom(query.get('repo'))),
+  '/api/pull': (query) =>
+    pullOf(`${repoNameFrom(query.get('repo'))}#${pullNumberFrom(query.get('number'))}`),
 });
 
 // Another copy already on the port would answer the page with its own, older

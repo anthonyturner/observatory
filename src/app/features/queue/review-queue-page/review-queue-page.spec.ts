@@ -64,7 +64,7 @@ describe('ReviewQueuePage', () => {
       'RuinaChecks failing · 1',
       'VigiliaWaiting on you · 1',
     ]);
-    expect(element.querySelector('.title')?.getAttribute('href')).toBe(
+    expect(element.querySelector('.github')?.getAttribute('href')).toBe(
       'https://github.com/me/a/pull/7',
     );
     expect(element.querySelector('.draft')?.textContent).toBe('draft');
@@ -92,5 +92,18 @@ describe('ReviewQueuePage', () => {
     );
 
     expect(hrefs).toEqual(['/orrery', '/']);
+  });
+
+  it('opens a pull request’s panel from its row, and closes it', () => {
+    const { fixture, element } = render();
+
+    element.querySelector<HTMLButtonElement>('li .open')?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-pull-panel')).not.toBeNull();
+    TestBed.inject(HttpTestingController).expectOne('/api/pull?repo=me/a&number=7');
+
+    element.querySelector<HTMLButtonElement>('app-pull-panel .close')?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-pull-panel')).toBeNull();
   });
 });

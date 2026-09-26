@@ -1,6 +1,7 @@
 import { ghCliReader } from './github/gh-cli-reader.ts';
 import { createApiServer } from './http/api-server.ts';
 import { projectsReport } from './projects/projects-report.ts';
+import { issuesReport } from './issues/issues-report.ts';
 import { pullDetailOf, pullNumberFrom } from './queue/pull-detail.ts';
 import { queueReport } from './queue/queue-report.ts';
 import { repoNameFrom } from './queue/repo-name.ts';
@@ -20,6 +21,7 @@ const PULL_TTL_MS = 60_000;
 const port = Number(process.env['OBSERVATORY_API_PORT'] ?? DEFAULT_PORT);
 const github = ghCliReader();
 const queueOf = cachedByKey((repo) => queueReport(github, repo), QUEUE_TTL_MS);
+const issuesOf = cachedByKey((repo) => issuesReport(github, repo), QUEUE_TTL_MS);
 const pullOf = cachedByKey(async (key) => {
   const [repo, number] = key.split('#');
   return pullDetailOf(await github.pullDetail(repo, Number(number)));
@@ -31,6 +33,7 @@ const server = createApiServer({
   '/api/usage': () => usageReport(),
   '/api/projects': cached(() => projectsReport(github), PROJECTS_TTL_MS),
   '/api/queue': (query) => queueOf(repoNameFrom(query.get('repo'))),
+  '/api/issues': (query) => issuesOf(repoNameFrom(query.get('repo'))),
   '/api/pull': (query) =>
     pullOf(`${repoNameFrom(query.get('repo'))}#${pullNumberFrom(query.get('number'))}`),
 });

@@ -42,7 +42,10 @@ function render(view: 'map' | 'list' = 'list') {
       provideHttpClientTesting(),
       {
         provide: ActivatedRoute,
-        useValue: { paramMap: of(convertToParamMap({ owner: 'me', repo: 'a' })) },
+        useValue: {
+          paramMap: of(convertToParamMap({ owner: 'me', repo: 'a' })),
+          fragment: of(null),
+        },
       },
     ],
   });
@@ -74,7 +77,7 @@ describe('ReviewQueuePage', () => {
   it('reads the queue of the repository in the address, blocked first', () => {
     const { element } = render();
 
-    expect(element.querySelector('.stamp')?.textContent).toContain('me/a · 2 open');
+    expect(element.querySelector('.pulls-stamp')?.textContent).toContain('me/a · 2 open');
     expect(Array.from(element.querySelectorAll('h2')).map((h) => h.textContent?.trim())).toEqual([
       'RuinaChecks failing · 1',
       'VigiliaWaiting on you · 1',

@@ -33,6 +33,18 @@ function replaying(replies: readonly unknown[]): { reader: GitHub; sent: Sent[] 
   return { reader: githubApiReader({ token: 'test-token', fetch }), sent };
 }
 
+/** What `gh` answered, less each check's `workflowName`: the token reader does not ask for a
+ *  check's suite, which GitHub refuses to a fine-grained token. */
+function withoutWorkflowNames(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutWorkflowNames);
+  if (typeof value !== 'object' || value === null) return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key !== 'workflowName')
+      .map(([key, each]) => [key, withoutWorkflowNames(each)]),
+  );
+}
+
 const REPO = 'anthonyturner/jobpilot';
 
 /** Each case replays one recording and must answer what `gh` answered. */
@@ -56,11 +68,11 @@ const RECORDED: readonly [string, (reader: GitHub) => Promise<unknown>][] = [
 
 describe('githubApiReader against recorded GitHub replies', () => {
   for (const [name, call] of RECORDED) {
-    it(`answers ${name} exactly as gh did`, async () => {
+    it(`answers ${name} as gh did`, async () => {
       const { replies, expected } = recording(name);
       const { reader, sent } = replaying(replies);
 
-      assert.deepEqual(await call(reader), expected);
+      assert.deepEqual(await call(reader), withoutWorkflowNames(expected));
       assert.equal(sent[0].authorization, 'Bearer test-token');
     });
   }
@@ -147,7 +159,6 @@ describe('githubApiReader where GitHub has no recording to replay', () => {
                               startedAt: '2026-09-01T00:00:00Z',
                               completedAt: null,
                               detailsUrl: 'https://ci.example/1',
-                              checkSuite: { workflowRun: null },
                             },
                           ],
                         },
@@ -182,7 +193,6 @@ describe('githubApiReader where GitHub has no recording to replay', () => {
         name: 'build',
         startedAt: '2026-09-01T00:00:00Z',
         status: 'IN_PROGRESS',
-        workflowName: '',
       },
     ]);
   });

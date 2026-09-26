@@ -17,9 +17,10 @@ export interface CoreFrame {
 /** Draws the core. The 2D and 3D renderers both implement it, so choosing
  *  one never edits the other. */
 export interface CoreRenderer {
-  /** Takes the canvas it draws on. */
-  mount(canvas: HTMLCanvasElement): void;
-  /** False when the canvas gave no context to draw with, as in a test's DOM. */
+  /** Puts its own canvas in `host`. `redraw` asks for a frame when the
+   *  renderer changes on its own, as when a better one finishes loading. */
+  mount(host: HTMLElement, redraw: () => void): void;
+  /** False when there is nothing to draw with, as in a test's DOM. */
   canDraw(): boolean;
   setProjects(projects: readonly ProjectSnapshot[]): void;
   setView(view: CoreView): void;

@@ -1,5 +1,5 @@
-import { CORE_INKS, CoreInk } from '../core-states';
-import { Rgb } from '../core-look';
+import { CORE_INKS, CoreInk } from './core-states';
+import { Rgb } from './core-look';
 
 /** The core's colours, resolved from tokens.css, since a canvas cannot read a CSS variable. */
 export interface CorePalette {

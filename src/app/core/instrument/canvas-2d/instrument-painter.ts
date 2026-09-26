@@ -1,8 +1,8 @@
 import { BeadOverflow } from '../beads';
 import { TierLevels } from '../core-states';
-import { FloorGrid } from '../floor-grid';
+import { FloorGrid, floorBatches } from '../floor-grid';
 import { Lens } from '../lens';
-import { CorePalette } from './palette';
+import { CorePalette } from '../palette';
 
 export type StrokeMode = 'line' | 'loop';
 
@@ -10,7 +10,7 @@ const ORBIT_ALPHA = 0.22;
 
 /** The floor's batches as paths, built once per grid. */
 export function floorPaths(grid: FloorGrid): { alpha: number; path: Path2D }[] {
-  return grid.batches.map(({ alpha, segments }) => {
+  return floorBatches(grid).map(({ alpha, segments }) => {
     const path = new Path2D();
     for (let i = 0; i < segments.length; i += 4) {
       path.moveTo(segments[i], segments[i + 1]);

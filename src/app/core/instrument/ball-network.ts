@@ -6,6 +6,8 @@ export interface BallNetwork {
   readonly count: number;
   /** xyz per point, inside the unit sphere. */
   readonly points: Float32Array;
+  /** 0 to 1 per point: where in its twinkle it starts. */
+  readonly phases: Float32Array;
   /** 0 to 1 per point: how large and bright it draws. */
   readonly weights: Float32Array;
   /** a, b, strength per line; a short line is a strong one. */
@@ -24,22 +26,31 @@ const LINKS_PER_POINT = 2;
 const CELL_OFFSET = 64;
 const CELL_SPAN = 128;
 
-/** How many points a core of this radius takes in 2D: it follows the core's area. */
-export function ballCount2D(radius: number): number {
-  const full = Math.min(
-    MAX_POINTS,
-    Math.max(MIN_POINTS, radius * radius * POINTS_PER_SQUARE_PIXEL),
+/** How many points a core of this radius takes: it follows the core's area. */
+export function ballCount3D(radius: number): number {
+  return Math.round(
+    Math.min(MAX_POINTS, Math.max(MIN_POINTS, radius * radius * POINTS_PER_SQUARE_PIXEL)),
   );
-  return Math.min(MAX_POINTS_2D, Math.round(full / 2));
 }
 
-let unitBall: { points: Float32Array; weights: Float32Array } | null = null;
+export function ballCount2D(radius: number): number {
+  return Math.min(MAX_POINTS_2D, Math.round(ballCount3D(radius) / 2));
+}
+
+interface UnitBall {
+  readonly points: Float32Array;
+  readonly phases: Float32Array;
+  readonly weights: Float32Array;
+}
+
+let unitBall: UnitBall | null = null;
 const networks = new Map<number, BallNetwork>();
 
 /** Density falls off as one over the radius, which makes the centre read dense and bright. */
-function buildUnitBall(): { points: Float32Array; weights: Float32Array } {
+function buildUnitBall(): UnitBall {
   const random = seededRandom(BALL_SEED);
   const points = new Float32Array(MAX_POINTS * 3);
+  const phases = new Float32Array(MAX_POINTS);
   const weights = new Float32Array(MAX_POINTS);
   for (let i = 0; i < MAX_POINTS; i++) {
     const z = random() * 2 - 1;
@@ -49,9 +60,10 @@ function buildUnitBall(): { points: Float32Array; weights: Float32Array } {
     points[i * 3] = ring * Math.cos(angle) * depth;
     points[i * 3 + 1] = z * depth;
     points[i * 3 + 2] = ring * Math.sin(angle) * depth;
+    phases[i] = random();
     weights[i] = Math.pow(random(), 1.8);
   }
-  return { points, weights };
+  return { points, phases, weights };
 }
 
 /** The first `count` points and their lines. Cached per count; a desktop's
@@ -64,6 +76,7 @@ export function ballNetwork(count: number): BallNetwork {
   const network: BallNetwork = {
     count: clamped,
     points: unitBall.points.subarray(0, clamped * 3),
+    phases: unitBall.phases.subarray(0, clamped),
     weights: unitBall.weights.subarray(0, clamped),
     links: linkNearest(unitBall.points, clamped),
   };

@@ -2,7 +2,7 @@ import { ProjectSnapshot } from '../projects/project.types';
 import { ballCount2D, ballNetwork } from './ball-network';
 import { MAX_BEADS, layoutBeads } from './beads';
 import { coreRadius, coreViewOf } from './core-view';
-import { buildFloorGrid, floorKey } from './floor-grid';
+import { FLOOR_STRIDE, buildFloorGrid, floorBatches, floorKey } from './floor-grid';
 import { ORBIT, TIER_RING } from './proportions';
 import { orbitLoop, tierArcs } from './rings';
 import { tilt } from './tilt';
@@ -155,15 +155,22 @@ describe('buildFloorGrid', () => {
     expect(buildFloorGrid(size).key).toBe(floorKey(size));
   });
 
-  it('batches segments by brightness, all under the horizon, faint to bright', () => {
-    const { batches } = buildFloorGrid(size);
+  it('fades each end on its own, all under the horizon', () => {
+    const { segments } = buildFloorGrid(size);
+    expect(segments.length % FLOOR_STRIDE).toBe(0);
+    for (let i = 0; i < segments.length; i += FLOOR_STRIDE) {
+      expect(segments[i + 1]).toBeGreaterThan(150);
+      expect(segments[i + 3]).toBeGreaterThan(150);
+      expect(segments[i + 4]).toBeLessThanOrEqual(0.45);
+    }
+  });
+
+  it('batches segments by brightness for a canvas, faint to bright', () => {
+    const batches = floorBatches(buildFloorGrid(size));
     expect(batches.length).toBeGreaterThan(1);
     for (let i = 1; i < batches.length; i++) {
       expect(batches[i].alpha).toBeGreaterThan(batches[i - 1].alpha);
     }
-    for (const { segments } of batches) {
-      expect(segments.length % 4).toBe(0);
-      for (let i = 1; i < segments.length; i += 2) expect(segments[i]).toBeGreaterThan(150);
-    }
+    for (const { segments } of batches) expect(segments.length % 4).toBe(0);
   });
 });

@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { HOME_SUMMARY, HomeSummary } from '../data/home-summary';
+import { HomeSummary } from '../data/home-summary';
+import { HOME_SUMMARY } from '../data/home-summary-source';
 import { TopBar } from './top-bar';
 
 describe('TopBar', () => {

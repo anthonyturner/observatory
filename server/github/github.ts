@@ -1,6 +1,7 @@
 import type { FilesReader } from '../collisions/collisions-report.ts';
 import type { FateReader } from './fate-reader.ts';
 import type { GitHubReader } from './github-reader.ts';
+import type { AgentReader } from '../agents/agents-report.ts';
 import type { LedgerReader } from '../history/ledger.ts';
 import type { IssueDetailReader, IssueReader } from './issue-reader.ts';
 import type { PullReader } from './pull-reader.ts';
@@ -16,4 +17,5 @@ export type GitHub = GitHubReader &
   IssueDetailReader &
   FateReader &
   FilesReader &
-  LedgerReader;
+  LedgerReader &
+  AgentReader;

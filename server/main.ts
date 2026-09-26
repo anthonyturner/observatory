@@ -15,6 +15,7 @@ import { fileLogsConfig } from './logs/logs-config.ts';
 import { logsReport } from './logs/logs-report.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
+import { fileHandoffStore } from './agents/handoff-store.ts';
 import { usageReport } from './usage/usage-report.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
@@ -26,12 +27,14 @@ const clones = fileCloneFinder();
 const merger = gitPairMerger();
 const logsConfig = fileLogsConfig();
 const logFolder = fsLogFolder();
+const handoffs = fileHandoffStore();
 const reads = cachedReads({
   github,
   history: fileHistoryStore(),
   collisions: (repo) => collisionsReport(github, clones, merger, repo),
   usage: () => usageReport(),
   logs: (repo) => logsReport(logsConfig, logFolder, repo, new Date()),
+  handoffs: async () => handoffs.read(),
 });
 const store = fileStore();
 const triage = storeTriageStore(store);

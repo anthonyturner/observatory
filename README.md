@@ -112,6 +112,31 @@ files on this machine, so it listens on loopback only:
   (`{"owner/repo": "<folder>"}`). Without one, the API answers
   `{"configured": false}`.
 
+- **Agent report cards** (the star map's **Agents**): how each coding agent's
+  pull requests fare once handed back. They rest on a record of who opened
+  what, made by a Claude Code hook that appends to
+  `~/.claude/observatory/handoffs.jsonl`. Each card says whether its
+  attribution is **named** (the hook recorded the agent), **inferred** (an
+  agent in the same session finished within fifteen minutes) or
+  **unattributed** (credited to the main session, never guessed). Add the hook
+  to your Claude Code settings (`~/.claude/settings.json`), with the path to
+  this checkout:
+
+  ```json
+  "hooks": {
+    "PostToolUse": [
+      { "matcher": "Bash|PowerShell",
+        "hooks": [{ "type": "command", "command": "node /path/to/observatory/server/agents/capture.ts", "timeout": 10 }] }
+    ],
+    "SubagentStop": [
+      { "hooks": [{ "type": "command", "command": "node /path/to/observatory/server/agents/capture.ts", "timeout": 10 }] }
+    ]
+  }
+  ```
+
+  The capture swallows every error, so a hook failure never breaks a tool call.
+  Until it has recorded a pull request, the Agents panel says so.
+
 Skills are still sample data.
 
 ## Host it on Vercel

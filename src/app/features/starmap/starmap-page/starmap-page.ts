@@ -44,6 +44,9 @@ import { CometCard } from '../comet-card/comet-card';
 import { StarmapSound } from '../sound/starmap-sound';
 import { mergePlan } from '../merge-plan';
 import { PlanPanel } from '../plan-panel/plan-panel';
+import { AgentsPanel } from '../agents-panel/agents-panel';
+import { AgentsFeed } from '../../../core/agents/agents-report';
+import { AGENT_FILTER } from '../starmap-sky/starmap-sky';
 import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
 import { IssuesFeed } from '../../../core/issues/issues-feed';
 import { LogsFeed } from '../../../core/logs/logs-feed';
@@ -136,6 +139,7 @@ export interface SkyState {
     StarCard,
     CometCard,
     PlanPanel,
+    AgentsPanel,
     LogCard,
     LogList,
     MeteorRecord,
@@ -150,6 +154,7 @@ export interface SkyState {
     QueueFeed,
     HistoryFeed,
     LedgerFeed,
+    AgentsFeed,
     CollisionsFeed,
     LogsFeed,
     LogSkyView,
@@ -168,6 +173,7 @@ export class StarmapPage {
   protected readonly collisions = inject(CollisionsFeed);
   private readonly ledger = inject(LedgerFeed);
   protected readonly memory = inject(MemoryView);
+  protected readonly agents = inject(AgentsFeed);
   private readonly sound = inject(StarmapSound);
   protected readonly usage = inject(UsageWatch);
   private readonly triage = inject(TriageClient);
@@ -205,6 +211,8 @@ export class StarmapPage {
   protected readonly showCollisions = signal(true);
   /** Whether the merge plan is drawn and listed. */
   protected readonly planOn = signal(false);
+  /** Whether the agent report cards are open; they and the plan never show at once. */
+  protected readonly agentsOn = signal(false);
   /** The unclaimed issues passing through, and whether they are shown. */
   protected readonly showComets = signal(true);
   protected readonly selectedComet = signal<Comet | null>(null);
@@ -375,8 +383,23 @@ export class StarmapPage {
       (this.collisions.report()?.pairs ?? []).filter((p) => (p.conflicts ?? []).length > 0).length,
   );
   /** The plan's panel takes the right edge while it is on, over the queue's map. */
+  /** The report cards take the right edge while they are on, over the queue's map. */
+  protected readonly showAgents = computed(
+    () =>
+      this.agentsOn() && this.chart() === 'prs' && this.view() === 'map' && !this.memory.replay(),
+  );
+  /** The lit agent, from an `agent:` filter. */
+  protected readonly litAgent = computed(() => {
+    const filter = this.filter();
+    return filter?.startsWith(AGENT_FILTER) ? filter.slice(AGENT_FILTER.length) : null;
+  });
+  /** The lit agent's pull requests, for the sky. */
+  protected readonly agentPrs = computed(
+    () => this.agents.report()?.agents.find((a) => a.agent === this.litAgent())?.prs ?? [],
+  );
   protected readonly showPlan = computed(
     () =>
+      !this.agentsOn() &&
       this.planOn() &&
       this.chart() === 'prs' &&
       this.view() === 'map' &&
@@ -387,6 +410,7 @@ export class StarmapPage {
     const news = this.memory.news();
     return (
       !this.showPlan() &&
+      !this.showAgents() &&
       this.chart() === 'prs' &&
       this.view() === 'map' &&
       news.events.length > 0 &&
@@ -447,7 +471,7 @@ export class StarmapPage {
       bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
       side: !wide
         ? 0
-        : this.showPlan()
+        : this.showPlan() || this.showAgents()
           ? PLAN_PANEL_WIDTH
           : this.showChanges()
             ? SIDE_PANEL_WIDTH
@@ -514,6 +538,7 @@ export class StarmapPage {
         this.history.load(this.repo());
         this.ledger.load(this.repo());
         this.collisions.load(this.repo());
+        this.agents.load(this.repo());
         this.refreshing.set(false);
       });
     });
@@ -686,7 +711,31 @@ export class StarmapPage {
   /** Merge plan: on, the panel takes the right edge and the numbered stars are framed beside it. */
   protected togglePlan(): void {
     this.planOn.update((on) => !on);
+    if (this.planOn()) this.closeAgents();
     setTimeout(() => this.sky()?.fit());
+  }
+
+  /** Agents: on, the report cards take the right edge; off, an agent's light goes out. */
+  protected toggleAgents(): void {
+    if (this.agentsOn()) this.closeAgents();
+    else {
+      this.agentsOn.set(true);
+      this.planOn.set(false);
+    }
+    setTimeout(() => this.sky()?.fit());
+  }
+
+  /** A card lights only that agent's stars; pressing it again shows everything. */
+  protected lightAgent(agent: string): void {
+    const id = AGENT_FILTER + agent;
+    this.filter.update((current) => (current === id ? null : id));
+    this.openPull.set(null);
+    setTimeout(() => this.sky()?.fit());
+  }
+
+  private closeAgents(): void {
+    this.agentsOn.set(false);
+    if (this.litAgent()) this.filter.set(null);
   }
 
   /** Esc closes the full screen first, then the card, as on pr-starmap. */

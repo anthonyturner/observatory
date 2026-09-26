@@ -1,0 +1,372 @@
+{
+  "replies": [
+    {
+      "data": {
+        "repository": {
+          "pullRequests": {
+            "pageInfo": {
+              "hasNextPage": false,
+              "endCursor": "Y3Vyc29yOnYyOpK0MjAyNi0wOS0yNFQwOTo0MjoxN1rPAAAAAROgLi0="
+            },
+            "nodes": [
+              {
+                "number": 17,
+                "state": "OPEN",
+                "mergeable": "MERGEABLE",
+                "createdAt": "2026-09-26T09:04:34Z",
+                "mergedAt": null,
+                "closedAt": null,
+                "additions": 630,
+                "deletions": 61,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 16,
+                "state": "OPEN",
+                "mergeable": "MERGEABLE",
+                "createdAt": "2026-09-26T08:56:34Z",
+                "mergedAt": null,
+                "closedAt": null,
+                "additions": 123,
+                "deletions": 1,
+                "closingIssuesReferences": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOUo7qUM8AAAABTKp2fA",
+                      "number": 14,
+                      "url": "https://github.com/anthonyturner/jobpilot/issues/14",
+                      "repository": {
+                        "id": "R_kgDOUo7qUA",
+                        "name": "jobpilot",
+                        "owner": {
+                          "id": "MDQ6VXNlcjUyMTAwNDE=",
+                          "login": "anthonyturner"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 13,
+                "state": "MERGED",
+                "mergeable": "UNKNOWN",
+                "createdAt": "2026-09-25T09:53:38Z",
+                "mergedAt": "2026-09-26T08:31:21Z",
+                "closedAt": "2026-09-26T08:31:21Z",
+                "additions": 160,
+                "deletions": 6,
+                "closingIssuesReferences": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOUo7qUM8AAAABS-XpWQ",
+                      "number": 10,
+                      "url": "https://github.com/anthonyturner/jobpilot/issues/10",
+                      "repository": {
+                        "id": "R_kgDOUo7qUA",
+                        "name": "jobpilot",
+                        "owner": {
+                          "id": "MDQ6VXNlcjUyMTAwNDE=",
+                          "login": "anthonyturner"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 12,
+                "state": "MERGED",
+                "mergeable": "UNKNOWN",
+                "createdAt": "2026-09-24T12:32:47Z",
+                "mergedAt": "2026-09-24T13:04:17Z",
+                "closedAt": "2026-09-24T13:04:17Z",
+                "additions": 736,
+                "deletions": 22,
+                "closingIssuesReferences": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOUo7qUM8AAAABS-XmFA",
+                      "number": 9,
+                      "url": "https://github.com/anthonyturner/jobpilot/issues/9",
+                      "repository": {
+                        "id": "R_kgDOUo7qUA",
+                        "name": "jobpilot",
+                        "owner": {
+                          "id": "MDQ6VXNlcjUyMTAwNDE=",
+                          "login": "anthonyturner"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "number": 7,
+                "state": "OPEN",
+                "mergeable": "MERGEABLE",
+                "createdAt": "2026-09-24T09:54:14Z",
+                "mergedAt": null,
+                "closedAt": null,
+                "additions": 32,
+                "deletions": 183,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 6,
+                "state": "OPEN",
+                "mergeable": "MERGEABLE",
+                "createdAt": "2026-09-24T09:54:10Z",
+                "mergedAt": null,
+                "closedAt": null,
+                "additions": 23,
+                "deletions": 57,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 5,
+                "state": "OPEN",
+                "mergeable": "MERGEABLE",
+                "createdAt": "2026-09-24T09:54:09Z",
+                "mergedAt": null,
+                "closedAt": null,
+                "additions": 25,
+                "deletions": 37,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 4,
+                "state": "OPEN",
+                "mergeable": "MERGEABLE",
+                "createdAt": "2026-09-24T09:53:59Z",
+                "mergedAt": null,
+                "closedAt": null,
+                "additions": 28,
+                "deletions": 37,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 3,
+                "state": "OPEN",
+                "mergeable": "MERGEABLE",
+                "createdAt": "2026-09-24T09:53:52Z",
+                "mergedAt": null,
+                "closedAt": null,
+                "additions": 7088,
+                "deletions": 7548,
+                "closingIssuesReferences": {
+                  "nodes": []
+                }
+              },
+              {
+                "number": 2,
+                "state": "MERGED",
+                "mergeable": "UNKNOWN",
+                "createdAt": "2026-09-24T09:42:17Z",
+                "mergedAt": "2026-09-24T09:51:44Z",
+                "closedAt": "2026-09-24T09:51:44Z",
+                "additions": 4599,
+                "deletions": 186,
+                "closingIssuesReferences": {
+                  "nodes": [
+                    {
+                      "id": "I_kwDOUo7qUM8AAAABS8ggNQ",
+                      "number": 1,
+                      "url": "https://github.com/anthonyturner/jobpilot/issues/1",
+                      "repository": {
+                        "id": "R_kgDOUo7qUA",
+                        "name": "jobpilot",
+                        "owner": {
+                          "id": "MDQ6VXNlcjUyMTAwNDE=",
+                          "login": "anthonyturner"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "expected": [
+    {
+      "additions": 630,
+      "closedAt": null,
+      "closingIssuesReferences": [],
+      "createdAt": "2026-09-26T09:04:34Z",
+      "deletions": 61,
+      "mergeable": "MERGEABLE",
+      "mergedAt": null,
+      "number": 17,
+      "state": "OPEN"
+    },
+    {
+      "additions": 123,
+      "closedAt": null,
+      "closingIssuesReferences": [
+        {
+          "id": "I_kwDOUo7qUM8AAAABTKp2fA",
+          "number": 14,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/issues/14"
+        }
+      ],
+      "createdAt": "2026-09-26T08:56:34Z",
+      "deletions": 1,
+      "mergeable": "MERGEABLE",
+      "mergedAt": null,
+      "number": 16,
+      "state": "OPEN"
+    },
+    {
+      "additions": 160,
+      "closedAt": "2026-09-26T08:31:21Z",
+      "closingIssuesReferences": [
+        {
+          "id": "I_kwDOUo7qUM8AAAABS-XpWQ",
+          "number": 10,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/issues/10"
+        }
+      ],
+      "createdAt": "2026-09-25T09:53:38Z",
+      "deletions": 6,
+      "mergeable": "UNKNOWN",
+      "mergedAt": "2026-09-26T08:31:21Z",
+      "number": 13,
+      "state": "MERGED"
+    },
+    {
+      "additions": 736,
+      "closedAt": "2026-09-24T13:04:17Z",
+      "closingIssuesReferences": [
+        {
+          "id": "I_kwDOUo7qUM8AAAABS-XmFA",
+          "number": 9,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/issues/9"
+        }
+      ],
+      "createdAt": "2026-09-24T12:32:47Z",
+      "deletions": 22,
+      "mergeable": "UNKNOWN",
+      "mergedAt": "2026-09-24T13:04:17Z",
+      "number": 12,
+      "state": "MERGED"
+    },
+    {
+      "additions": 32,
+      "closedAt": null,
+      "closingIssuesReferences": [],
+      "createdAt": "2026-09-24T09:54:14Z",
+      "deletions": 183,
+      "mergeable": "MERGEABLE",
+      "mergedAt": null,
+      "number": 7,
+      "state": "OPEN"
+    },
+    {
+      "additions": 23,
+      "closedAt": null,
+      "closingIssuesReferences": [],
+      "createdAt": "2026-09-24T09:54:10Z",
+      "deletions": 57,
+      "mergeable": "MERGEABLE",
+      "mergedAt": null,
+      "number": 6,
+      "state": "OPEN"
+    },
+    {
+      "additions": 25,
+      "closedAt": null,
+      "closingIssuesReferences": [],
+      "createdAt": "2026-09-24T09:54:09Z",
+      "deletions": 37,
+      "mergeable": "MERGEABLE",
+      "mergedAt": null,
+      "number": 5,
+      "state": "OPEN"
+    },
+    {
+      "additions": 28,
+      "closedAt": null,
+      "closingIssuesReferences": [],
+      "createdAt": "2026-09-24T09:53:59Z",
+      "deletions": 37,
+      "mergeable": "MERGEABLE",
+      "mergedAt": null,
+      "number": 4,
+      "state": "OPEN"
+    },
+    {
+      "additions": 7088,
+      "closedAt": null,
+      "closingIssuesReferences": [],
+      "createdAt": "2026-09-24T09:53:52Z",
+      "deletions": 7548,
+      "mergeable": "MERGEABLE",
+      "mergedAt": null,
+      "number": 3,
+      "state": "OPEN"
+    },
+    {
+      "additions": 4599,
+      "closedAt": "2026-09-24T09:51:44Z",
+      "closingIssuesReferences": [
+        {
+          "id": "I_kwDOUo7qUM8AAAABS8ggNQ",
+          "number": 1,
+          "repository": {
+            "id": "R_kgDOUo7qUA",
+            "name": "jobpilot",
+            "owner": {
+              "id": "MDQ6VXNlcjUyMTAwNDE=",
+              "login": "anthonyturner"
+            }
+          },
+          "url": "https://github.com/anthonyturner/jobpilot/issues/1"
+        }
+      ],
+      "createdAt": "2026-09-24T09:42:17Z",
+      "deletions": 186,
+      "mergeable": "UNKNOWN",
+      "mergedAt": "2026-09-24T09:51:44Z",
+      "number": 2,
+      "state": "MERGED"
+    }
+  ]
+}

@@ -4,6 +4,7 @@
   [items]="skyItems()"
   [logLayout]="logs.layout()"
   [filter]="chart() === 'logs' ? logs.filter() : filter()"
+  [agentPrs]="agentPrs()"
   [selected]="openPull()"
   [selectedLog]="logs.selected()"
   [traced]="logs.traced()"
@@ -101,6 +102,7 @@
     [view]="view()"
     [showCollisions]="showCollisions()"
     [planOn]="planOn()"
+    [agentsOn]="agentsOn()"
     [refreshing]="refreshing() || usage.isRefreshing()"
     [(folded)]="folded"
     (chartChange)="setChart($event)"
@@ -110,9 +112,14 @@
     (fit)="sky.fit()"
     (collisions)="showCollisions.set(!showCollisions())"
     (plan)="togglePlan()"
+    (agents)="toggleAgents()"
     (refresh)="refresh()"
   />
 </div>
+
+@if (showAgents()) {
+  <app-agents-panel [report]="agents.report()" [lit]="litAgent()" (light)="lightAgent($event)" />
+}
 
 @if (showPlan()) {
   <app-plan-panel

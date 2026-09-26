@@ -58,7 +58,11 @@ const daysSince = (iso: string, now: number): number =>
   Math.max(0, Math.floor((now - Date.parse(iso)) / DAY_MS));
 
 /** The card's facts, in pr-starmap's order and words. */
-export function issueFacts(star: IssueStar, now: number, day: (iso: string) => string): IssueFact[] {
+export function issueFacts(
+  star: IssueStar,
+  now: number,
+  day: (iso: string) => string,
+): IssueFact[] {
   const { issue, jets } = star;
   const idle = daysSince(issue.updatedAt, now);
   const facts: IssueFact[] = [

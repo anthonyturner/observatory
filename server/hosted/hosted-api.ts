@@ -104,6 +104,8 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
       collisions: (repo) => uncheckedCollisions(github, repo),
       usage: async () => usageFrom(await store.get(USAGE_KEY)),
       logs: async () => LOGS_NOT_PUSHED,
+      // Handoffs are recorded on the owner's machine; the hosted site has none yet.
+      handoffs: async () => [],
     }),
     store,
   );

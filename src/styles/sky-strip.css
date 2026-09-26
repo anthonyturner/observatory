@@ -1,0 +1,52 @@
+/* pr-starmap's charts along the bottom of a sky: the Log Sky's meteor record
+   and the review queue's timeline share one frame, caption and tip. */
+.meteors {
+  position: relative;
+  width: min(760px, 100%);
+  margin: 0 0 12px;
+  padding: 9px 14px 8px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 12px;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.meteors figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 14px;
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.meteors figcaption b {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.meteors canvas {
+  display: block;
+  width: 100%;
+  height: 58px;
+  cursor: crosshair;
+}
+
+.mtip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  padding: 6px 10px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--tip-glass);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+}

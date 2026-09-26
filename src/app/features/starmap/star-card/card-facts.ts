@@ -18,7 +18,20 @@ export interface CardContext {
   readonly pairs: readonly SkyPair[];
   /** Other shown pull requests closing the same issue, by issue. */
   readonly binaries: readonly { readonly issue: number; readonly others: readonly number[] }[];
+  /** While a past refresh is on screen: when it was, and where the pull request stands now. */
+  readonly replay?: { readonly at: string; readonly now: string; readonly live: boolean };
+  /** The news the sky carries about it, if any. */
+  readonly change?: { readonly noun: string; readonly label: string; readonly colour: string };
 }
+
+/** "Sep 26, 04:16 AM". */
+const fmtAt = (iso: string): string =>
+  new Date(iso).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 const list = (numbers: readonly number[]): string => numbers.map((n) => `#${n}`).join(', ');
 
@@ -39,7 +52,20 @@ export function cardFacts(item: QueueItem, context: CardContext): CardFact[] {
   const cost = costOf(sky);
   const quick = isQuick(sky);
   const files = item.changedFiles ?? 0;
-  const facts: CardFact[] = [...collisionFacts(item.number, context.pairs)];
+  const { replay, change } = context;
+  const facts: CardFact[] = [];
+  if (replay) {
+    facts.push({ term: 'as of', value: fmtAt(replay.at), tone: 'hot' });
+    facts.push({ term: 'now', value: replay.now });
+  }
+  if (change) {
+    facts.push({
+      term: 'change',
+      value: `${change.noun} ${change.label}`,
+      colour: change.colour === '#ffffff' ? undefined : change.colour,
+    });
+  }
+  if (!replay) facts.push(...collisionFacts(item.number, context.pairs));
   for (const binary of context.binaries) {
     facts.push({
       term: 'binary',
@@ -57,11 +83,14 @@ export function cardFacts(item: QueueItem, context: CardContext): CardFact[] {
   facts.push(
     item.closes.length
       ? { term: 'closes', value: item.closes.map((n) => `#${n}`).join(' ') }
-      : { term: 'closes', value: 'nothing', tone: 'bad' },
+      : replay && !replay.live
+        ? { term: 'closes', value: '—' }
+        : { term: 'closes', value: 'nothing', tone: 'bad' },
   );
   facts.push({ term: 'idle', value: `${item.idleDays} days` });
   facts.push({ term: 'age', value: `${item.ageDays} days` });
   if (item.branch) facts.push({ term: 'branch', value: item.branch });
+  if (replay) return facts;
   facts.push({
     term: 'state',
     value: `${item.isDraft ? 'draft' : 'ready'} · ${(item.mergeable || 'unknown').toLowerCase()}`,

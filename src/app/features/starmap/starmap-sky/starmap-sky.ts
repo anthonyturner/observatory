@@ -20,6 +20,8 @@ import { SkyEngine } from '../engine/sky-engine';
 import { SkyLayout, layoutQueue } from '../engine/sky-layout';
 import { SkyItem, SkyStar } from '../engine/sky-model';
 import { ThreadLayer } from '../engine/thread-layer';
+import { NewsEvent, play } from '../memory/news';
+import { News, NewsLayer } from '../memory/news-layer';
 import { LogSkyLayout, LogStar } from '../../../core/logs/log-layout';
 import { twinStars } from '../../../core/logs/log-trace';
 import { feedLogs, logStarOf } from '../sky-logs';
@@ -65,6 +67,8 @@ export class StarmapSky {
   readonly selected = input<number | null>(null);
   readonly pairs = input<readonly SkyPair[]>([]);
   readonly showCollisions = input(true);
+  /** The review queue's news: what changed, and whether it has been seen. */
+  readonly news = input<News>({ events: [], acknowledged: false });
   /** 0 clear to 1 full. */
   readonly fog = input(0);
   readonly hidden = input(false);
@@ -80,6 +84,7 @@ export class StarmapSky {
   private readonly collisions = new CollisionLayer();
   private readonly binaries = new BinaryLayer((star) => star.item?.issues ?? []);
   private readonly threads = new ThreadLayer();
+  private readonly newsLayer = new NewsLayer();
   private engine: SkyEngine | null = null;
   private isFramed = false;
   /** The skies already framed once, so a data refresh keeps the viewer's camera. */
@@ -106,6 +111,10 @@ export class StarmapSky {
       this.selectedLog();
       this.traced();
       untracked(() => this.select());
+    });
+    effect(() => {
+      this.newsLayer.news = this.news();
+      this.engine?.kick();
     });
     effect(() => {
       this.collisions.pairs = this.pairs();
@@ -145,6 +154,18 @@ export class StarmapSky {
   goTo(number: number): void {
     const star = this.engine?.skyStars.find((s) => s.item?.pr === number);
     if (star) this.engine?.goTo(star);
+  }
+
+  /** Plays each change's burst in turn, once the sky has finished arriving. */
+  play(events: readonly NewsEvent[]): void {
+    const engine = this.engine;
+    if (!engine) return;
+    play(events, engine.skyClusters, {
+      now: performance.now() / 1000,
+      entranceEnd: engine.entranceEnd(),
+      frozen: engine.frozen,
+    });
+    engine.kick();
   }
 
   /** Flies to a fault's star, as a log list row does. */
@@ -201,7 +222,7 @@ export class StarmapSky {
       this.errors.handleError(error);
       return;
     }
-    this.engine.layers = [this.collisions, this.binaries, this.threads];
+    this.engine.layers = [this.collisions, this.binaries, this.threads, this.newsLayer];
     this.engine.filter = filterFor(this.filter());
     this.engine.fog = this.fog();
     this.engine.setHidden(this.hidden());

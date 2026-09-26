@@ -1,0 +1,47 @@
+/* The timeline shares the meteor record's frame (styles/sky-strip.css); only its controls differ. */
+:host {
+  display: block;
+}
+
+figcaption {
+  align-items: center;
+}
+
+.tctl {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.tctl button {
+  padding: 2px 10px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tctl button:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--flow);
+}
+
+.tctl button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.tctl button[aria-pressed='true'] {
+  color: var(--ink);
+  border-color: var(--flow);
+  background: var(--timeline-live);
+}
+
+canvas {
+  cursor: ew-resize;
+  touch-action: none;
+}

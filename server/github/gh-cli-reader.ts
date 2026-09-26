@@ -11,6 +11,7 @@ import {
 import { type ClosingPull, RAW_ISSUE_FIELDS, type RawIssue } from './issue-reader.ts';
 import { PULL_DETAIL_FIELDS, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
+import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
 
 const run = promisify(execFile);
 
@@ -18,6 +19,8 @@ const run = promisify(execFile);
 const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 const PULL_LIMIT = '100';
 const ISSUE_LIMIT = '1000';
+/** Enough for sixty days of a busy repository's pull requests. */
+const LEDGER_LIMIT = '400';
 const REPO_LIMIT = '1000';
 
 async function gh(args: readonly string[]): Promise<string> {
@@ -125,6 +128,23 @@ export function ghCliReader(): GitHub {
         '--json',
         PULL_DETAIL_FIELDS.join(','),
       ]),
+    touchedPulls: async (repo, sinceDay) =>
+      byNumberDescending(
+        await ghJson<LedgerPull[]>([
+          'pr',
+          'list',
+          '--repo',
+          repo,
+          '--state',
+          'all',
+          '--limit',
+          LEDGER_LIMIT,
+          '--search',
+          `updated:>=${sinceDay}`,
+          '--json',
+          LEDGER_PULL_FIELDS.join(','),
+        ]),
+      ),
     pullFiles: async (repo) =>
       pullFilesOf(
         await ghJson<ListedFiles[]>([

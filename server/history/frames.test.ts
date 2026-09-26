@@ -15,8 +15,8 @@ const frame = (items: Frame['items'], at = AT): Frame => ({
   items,
   departed: [],
 });
-const a = { number: 1, title: 'One', bucket: 'unreviewed' } as const;
-const b = { number: 2, title: 'Two', bucket: 'conflicted' } as const;
+const a = { number: 1, title: 'One', bucket: 'unreviewed', idleDays: 1 } as const;
+const b = { number: 2, title: 'Two', bucket: 'conflicted', idleDays: 4 } as const;
 
 describe('isWorthRecording', () => {
   it('records the first frame, and any move, in whatever order', () => {
@@ -53,12 +53,15 @@ describe('frameItemsOf', () => {
     const report = {
       generatedAt: 'x',
       repo: 'me/a',
-      items: [{ number: 3, title: 'x'.repeat(200), bucket: 'failing' }],
+      items: [{ number: 3, title: 'x'.repeat(200), bucket: 'failing', idleDays: 6 }],
     } as unknown as Parameters<typeof frameItemsOf>[0];
 
     const [item] = frameItemsOf(report);
 
     assert.equal(item.title.length, 90);
-    assert.deepEqual({ ...item, title: '' }, { number: 3, title: '', bucket: 'failing' });
+    assert.deepEqual(
+      { ...item, title: '' },
+      { number: 3, title: '', bucket: 'failing', idleDays: 6 },
+    );
   });
 });

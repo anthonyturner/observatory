@@ -1,0 +1,44 @@
+<aside class="changes" aria-labelledby="changestitle">
+  <div>
+    <h2 id="changestitle">{{ title() }}</h2>
+    <div class="since">{{ span() }}</div>
+  </div>
+  <div class="tallies">
+    @for (tally of tallies(); track tally.kind) {
+      <span class="tally"
+        ><span class="dot" [style.--c]="effects[tally.kind].colour"></span><b>{{ tally.count }}</b>
+        {{ effects[tally.kind].noun }}</span
+      >
+    }
+  </div>
+  <ul>
+    @for (event of news().events; track event.kind + event.pr) {
+      @if (effects[event.kind].onStar) {
+        <li
+          data-go
+          tabindex="0"
+          role="button"
+          [style.--c]="effects[event.kind].colour"
+          (click)="go.emit(event.pr)"
+          (keydown.enter)="go.emit(event.pr)"
+        >
+          <span class="dot"></span><span class="n">#{{ event.pr }}</span
+          ><span class="t">{{ event.title }}</span>
+          <span class="k">{{ effects[event.kind].noun }}</span>
+        </li>
+      } @else {
+        <li [style.--c]="effects[event.kind].colour">
+          <span class="dot"></span><span class="n">#{{ event.pr }}</span
+          ><span class="t">{{ event.title }}</span>
+          <span class="k">{{ effects[event.kind].noun }}</span>
+        </li>
+      }
+    }
+  </ul>
+  <div class="acts">
+    <button type="button" (click)="playAgain.emit()">Play again</button>
+    <button type="button" (click)="acknowledged.emit()">
+      {{ replayAt() ? 'Hide' : 'Got it' }}
+    </button>
+  </div>
+</aside>

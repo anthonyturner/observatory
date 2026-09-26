@@ -51,6 +51,9 @@ interface Segment {
   readonly toAlpha: number;
 }
 
+/** Where the floor's horizon sits below the core's centre: just under the ball. */
+export const floorHorizon = (coreRadius: number): number => coreRadius * BALL * 0.85;
+
 export const floorKey = ({ coreRadius, windowWidth, depth }: FloorSize): string =>
   `${Math.round(coreRadius)}|${windowWidth}|${depth}`;
 
@@ -59,7 +62,7 @@ export const floorKey = ({ coreRadius, windowWidth, depth }: FloorSize): string 
  *  toward it, toward the page's sides and a little at the bottom edge. The
  *  segments are short so each end can carry its own fade. */
 export function buildFloorGrid(size: FloorSize): FloorGrid {
-  const horizon = size.coreRadius * BALL * 0.85;
+  const horizon = floorHorizon(size.coreRadius);
   const plane: Plane = { horizon, drop: size.depth - horizon, halfWidth: size.windowWidth / 2 };
   const segments = [...columns(plane), ...rows(plane)].filter(
     (s) => s.fromAlpha + s.toAlpha > INVISIBLE * 2,

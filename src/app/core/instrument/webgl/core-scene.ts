@@ -7,6 +7,7 @@ import { CoreFrame } from '../core-renderer';
 import { CoreView } from '../core-view';
 import { buildFloorGrid, floorKey } from '../floor-grid';
 import { CorePalette } from '../palette';
+import { floorLift, rippleEllipses, rippleRings } from '../refresh-ripple';
 import { orbitLoop } from '../rings';
 import { BallObject } from './ball-object';
 import { BeadPoints } from './bead-points';
@@ -96,7 +97,15 @@ export class CoreScene {
     this.group.visible = !view.isAway;
     if (view.isAway) return;
     this.group.position.set(view.centreX, -view.centreY, 0);
-    this.lines.update(pose, view.lift);
+    this.lines.update(pose, {
+      lift: view.lift,
+      brightness: floorLift(frame.sinceRefresh, frame.isStill),
+      rings: rippleEllipses(rippleRings(frame.sinceRefresh, frame.isStill), {
+        coreRadius: view.radius,
+        depth: view.floorDepth,
+        width: view.width,
+      }),
+    });
     this.ball.update({
       pose,
       radius: ballRadiusOf(pose, this.coreRadius),

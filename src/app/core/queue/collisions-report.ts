@@ -17,14 +17,8 @@ export interface CollisionsReport {
   readonly pairs: readonly Collision[];
 }
 
-/** How a thread between two stars is drawn: a pair that would conflict, or one never checked. */
+/** How a pair is shown: one that would conflict, or one never checked. */
 export type ThreadKind = 'conflict' | 'unchecked';
-
-export interface Thread {
-  readonly a: number;
-  readonly b: number;
-  readonly kind: ThreadKind;
-}
 
 /** One other pull request a pull request shares files with, for its panel. */
 export interface PullCollision {
@@ -68,13 +62,6 @@ export function parseCollisions(value: unknown): CollisionsReport | null {
 
 const kindOf = (pair: Collision): ThreadKind | 'clean' =>
   pair.conflicts === null ? 'unchecked' : pair.conflicts.length ? 'conflict' : 'clean';
-
-/** The threads the star map draws: pairs that would conflict, and unchecked ones. */
-export const collisionThreads = (report: CollisionsReport | null): Thread[] =>
-  (report?.pairs ?? []).flatMap((pair) => {
-    const kind = kindOf(pair);
-    return kind === 'clean' ? [] : [{ a: pair.a, b: pair.b, kind }];
-  });
 
 const KIND_ORDER: Record<PullCollision['kind'], number> = { conflict: 0, unchecked: 1, clean: 2 };
 

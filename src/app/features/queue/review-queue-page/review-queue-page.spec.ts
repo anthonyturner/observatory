@@ -92,7 +92,7 @@ describe('ReviewQueuePage', () => {
   it('opens on the star map, with the camera’s tools', () => {
     const { element } = render('map');
 
-    expect(element.querySelector('app-star-chart')).not.toBeNull();
+    expect(element.querySelector('app-starmap-sky')).not.toBeNull();
     expect(element.querySelector('.list')).toBeNull();
     expect(element.querySelector('app-orrery-tools')).not.toBeNull();
   });

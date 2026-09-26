@@ -1,3 +1,4 @@
+import { ChangeMark } from '../../../core/queue/changes';
 import { Viewport } from '../../../core/orrery/orrery-camera';
 import { rgba } from '../../../shared/night-sky/night-sky';
 
@@ -11,6 +12,8 @@ export interface ChartPalette {
   readonly quick: string;
   readonly core: string;
   readonly select: string;
+  /** What changed since you last looked: new, became blocked, unblocked. */
+  readonly marks: Readonly<Record<ChangeMark, string>>;
   readonly vignette: string;
   readonly stars: readonly string[];
   readonly fontSans: string;
@@ -33,6 +36,10 @@ export interface PlacedStar {
   readonly isSelected: boolean;
   /** 0 to 1 through its urgent ring's outward pulse. */
   readonly ringPhase: number;
+  /** How it changed since you last looked, if it did. */
+  readonly mark: ChangeMark | null;
+  /** 0 to 1 through its mark's animation. */
+  readonly markPhase: number;
 }
 
 export function paintChartBackground(
@@ -145,8 +152,59 @@ export function paintStar(
   c.arc(x, y, r * 0.21 * pulse, 0, Math.PI * 2);
   c.fill();
 
+  if (star.mark) paintMark(c, star, star.mark, palette);
   if (star.isSelected) paintSelection(c, star, palette);
   c.restore();
+}
+
+/** Rings each mark sends out, staggered through its phase. */
+const MARK_RINGS = 3;
+
+/** A change since you last looked: a white flash for a new star, a shockwave
+ *  for one that became blocked, green rings falling away from one unblocked. */
+function paintMark(
+  c: CanvasRenderingContext2D,
+  { x, y, radius: r, alpha, markPhase }: PlacedStar,
+  mark: ChangeMark,
+  palette: ChartPalette,
+): void {
+  const color = rgba(palette.marks[mark]);
+  c.strokeStyle = color;
+  for (let ring = 0; ring < MARK_RINGS; ring++) {
+    const phase = (markPhase + ring / MARK_RINGS) % 1;
+    const fade = alpha * (1 - phase);
+    c.beginPath();
+    if (mark === 'blocked') {
+      c.globalAlpha = fade * 0.8;
+      c.lineWidth = 0.6 + 2.4 * (1 - phase);
+      c.arc(x, y, r * (1.3 + phase * 7), 0, Math.PI * 2);
+    } else if (mark === 'unblocked') {
+      c.globalAlpha = fade * 0.75;
+      c.lineWidth = 1.2;
+      c.ellipse(
+        x,
+        y + r * (0.6 + phase * 5),
+        r * (1.3 - phase * 0.6),
+        r * (0.4 - phase * 0.2),
+        0,
+        0,
+        Math.PI * 2,
+      );
+    } else {
+      c.globalAlpha = fade * 0.9;
+      c.lineWidth = 1.6;
+      c.arc(x, y, r * (1.1 + phase * 2.4), 0, Math.PI * 2);
+    }
+    c.stroke();
+  }
+  if (mark === 'opened') {
+    const flash = Math.max(0, 1 - markPhase * 3);
+    c.globalAlpha = alpha * flash * 0.8;
+    c.fillStyle = color;
+    c.beginPath();
+    c.arc(x, y, r * 0.9, 0, Math.PI * 2);
+    c.fill();
+  }
 }
 
 function paintSelection(

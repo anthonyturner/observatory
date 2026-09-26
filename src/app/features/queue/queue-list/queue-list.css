@@ -1,0 +1,126 @@
+:host {
+  display: block;
+}
+
+section {
+  margin-bottom: 30px;
+}
+
+h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--edge-soft);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--sev);
+}
+
+h2 small {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-right: 14px;
+  border-left: 2px solid var(--sev);
+  border-bottom: 1px solid var(--edge-soft);
+  background: var(--queue-row);
+}
+
+/* The whole row opens the pull request; GitHub sits apart at its end. */
+.open {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 14px;
+  min-width: 0;
+  padding: 12px 0 12px 14px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.open:focus-visible {
+  outline-offset: -2px;
+}
+
+.github {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.github:hover {
+  color: var(--ink);
+}
+
+li:hover {
+  background: var(--queue-row-hover);
+}
+
+.number {
+  min-width: 56px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.title {
+  flex: 1 1 260px;
+  color: var(--ink-soft);
+}
+
+.open:hover .title {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--flow);
+  text-underline-offset: 3px;
+}
+
+.draft {
+  padding: 1px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.detail {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* Why a shown row is out of the queue: snoozed or dismissed. */
+.note {
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--muted);
+}

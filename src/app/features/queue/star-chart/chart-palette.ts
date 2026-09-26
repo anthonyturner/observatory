@@ -17,6 +17,11 @@ export function readChartPalette(element: HTMLElement): ChartPalette {
     quick: token('queue-quick'),
     core: token('orrery-world-light'),
     select: token('orrery-select'),
+    marks: {
+      opened: token('chart-mark-opened'),
+      blocked: token('chart-mark-blocked'),
+      unblocked: token('chart-mark-unblocked'),
+    },
     vignette: token('orrery-vignette'),
     stars: Array.from({ length: FIELD_TINT_COUNT }, (_, index) =>
       token(`orrery-star-${index + 1}`),

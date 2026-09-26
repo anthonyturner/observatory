@@ -2,6 +2,7 @@ import { seededRandom } from '../../../core/instrument/seeded-random';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld } from '../../../core/orrery/pick-world';
 import { FieldStar, starField } from '../../../core/orrery/star-field';
+import { ChangeMark } from '../../../core/queue/changes';
 import {
   ChartStar,
   StarChartLayout,
@@ -34,6 +35,9 @@ const LABEL_MIN_GROWTH = 0.6;
 /** Stars never shrink below this share of their size, however far out. */
 const MIN_STAR_SCALE = 0.42;
 const RING_PERIOD = 0.42;
+const MARK_PERIOD = 0.55;
+/** Where a still page shows a mark's rings: part way out, so all can be seen. */
+const STILL_MARK_PHASE = 0.3;
 const LABEL_BELOW = 80;
 const GRAIN_SEED = 20260926;
 
@@ -45,6 +49,7 @@ export interface ChartFrame {
   readonly isStill: boolean;
   readonly filter: QueueFilter;
   readonly selected: number | null;
+  readonly marks: ReadonlyMap<number, ChangeMark>;
 }
 
 const passes = (star: ChartStar, filter: QueueFilter): boolean =>
@@ -155,6 +160,10 @@ export class ChartScene {
       isUrgent: star.isUrgent && !frame.isStill,
       isSelected: star.item.number === frame.selected,
       ringPhase: (frame.time * RING_PERIOD + star.pulsePhase) % 1,
+      mark: frame.marks.get(star.item.number) ?? null,
+      markPhase: frame.isStill
+        ? STILL_MARK_PHASE
+        : (frame.time * MARK_PERIOD + star.pulsePhase) % 1,
     };
   }
 

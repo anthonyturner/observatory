@@ -5,15 +5,21 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
+import { changeCount, changeMarks, changesSince } from '../../../core/queue/changes';
+import { HistoryFeed } from '../../../core/queue/history-feed';
+import { LastSeen } from '../../../core/queue/last-seen';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { Clock } from '../../../core/time/clock';
 import { IssuesTab } from '../../issues/issues-tab/issues-tab';
+import { ChangesCard } from '../changes-card/changes-card';
+import { QueueList } from '../queue-list/queue-list';
 import { OrreryTools } from '../../orrery/orrery-tools/orrery-tools';
 import { PullPanel } from '../pull-panel/pull-panel';
 import {
@@ -34,14 +40,16 @@ const ISSUES_FRAGMENT = 'issues';
 /** A project's review queue: its open pull requests, blocked first. */
 @Component({
   selector: 'app-review-queue-page',
-  imports: [RouterLink, PullPanel, StarChart, OrreryTools, IssuesTab],
-  providers: [QueueFeed],
+  imports: [RouterLink, PullPanel, StarChart, OrreryTools, IssuesTab, ChangesCard, QueueList],
+  providers: [QueueFeed, HistoryFeed],
   templateUrl: './review-queue-page.html',
   styleUrl: './review-queue-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReviewQueuePage {
   private readonly feed = inject(QueueFeed);
+  private readonly history = inject(HistoryFeed);
+  private readonly lastSeenStore = inject(LastSeen);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly triage = inject(TriageClient);
@@ -82,6 +90,20 @@ export class ReviewQueuePage {
     const item = this.items().find((each) => each.number === this.openPull());
     return item ? { isSeen: item.isSeen, hidden: item.hidden } : null;
   });
+  /** When you last looked at this queue, from this browser. */
+  private readonly lastSeen = signal<number | null>(null);
+  private readonly readAt = computed(() => {
+    const state = this.state();
+    return state.status === 'ready' ? state.report.generatedAt : null;
+  });
+  protected readonly changes = computed(() => {
+    const readAt = this.readAt();
+    return readAt
+      ? changesSince(this.history.frames(), this.items(), this.lastSeen(), Date.parse(readAt))
+      : null;
+  });
+  protected readonly hasChanges = computed(() => changeCount(this.changes()) > 0);
+  protected readonly marks = computed(() => changeMarks(this.changes()));
   protected readonly stamp = computed(() => queueStamp(this.state(), this.now().getTime()));
   protected readonly waiting = computed(() => {
     const { status } = this.state();
@@ -98,7 +120,13 @@ export class ReviewQueuePage {
       const repo = this.repo();
       this.filter.set(null);
       this.openPull.set(null);
-      if (repo !== '/') this.feed.watch(repo);
+      if (repo === '/') return;
+      this.lastSeen.set(this.lastSeenStore.read(repo));
+      this.feed.watch(repo);
+    });
+    // Each read from GitHub may have added a frame, so the history follows the queue.
+    effect(() => {
+      if (this.readAt()) untracked(() => this.history.load(this.repo()));
     });
   }
 
@@ -109,6 +137,13 @@ export class ReviewQueuePage {
       fragment: tab === 'issues' ? ISSUES_FRAGMENT : undefined,
       replaceUrl: true,
     });
+  }
+
+  /** Records this visit, which clears what changed before it. */
+  protected acknowledgeChanges(): void {
+    const now = Date.now();
+    this.lastSeenStore.record(this.repo(), now);
+    this.lastSeen.set(now);
   }
 
   /** Records a triage action, then reads the queue again to show it. */

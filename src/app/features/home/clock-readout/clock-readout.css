@@ -1,0 +1,39 @@
+:host {
+  display: block;
+  text-align: right;
+  line-height: 1;
+}
+
+.time {
+  font-family: var(--font-condensed);
+  font-weight: 500;
+  font-size: 52px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.seconds {
+  font-size: 0.5em;
+  color: var(--ink-soft);
+}
+
+.day {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .time {
+    font-size: 34px;
+  }
+
+  .day {
+    letter-spacing: 0.14em;
+  }
+}

@@ -1,0 +1,36 @@
+ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.dot {
+  margin-right: 6px;
+  color: var(--flow);
+}
+
+[data-state='idle'] .dot {
+  color: var(--muted);
+}
+
+[data-state='error'] .dot {
+  color: var(--bad);
+}
+
+@media (max-width: 720px) {
+  ul {
+    justify-content: flex-start;
+    gap: 4px 14px;
+    letter-spacing: 0.1em;
+  }
+}

@@ -1,0 +1,11 @@
+<header>
+  <div class="brand">
+    <h1>Home<small>/ Observatory</small></h1>
+    <p class="stamp">{{ summary().stamp }}</p>
+  </div>
+  <app-clock-readout class="clock" />
+  <div class="middle">
+    <app-top-nav />
+    <app-status-line [items]="summary().statuses" />
+  </div>
+</header>

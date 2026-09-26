@@ -1,0 +1,10 @@
+<ul>
+  @for (item of items(); track item.label) {
+    <li [attr.data-state]="item.state">
+      @if (item.state) {
+        <span class="dot" aria-hidden="true">&#9679;</span>
+      }
+      {{ item.label }}
+    </li>
+  }
+</ul>

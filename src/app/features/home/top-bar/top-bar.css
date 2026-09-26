@@ -1,0 +1,88 @@
+:host {
+  position: relative;
+  z-index: 6;
+  display: block;
+}
+
+header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas: 'brand middle clock';
+  align-items: start;
+  gap: 10px 24px;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 28px 8px;
+}
+
+.brand {
+  grid-area: brand;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-size: 34px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+h1 small {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.stamp {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.clock {
+  grid-area: clock;
+  justify-self: end;
+}
+
+.middle {
+  grid-area: middle;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* On a phone the clock shares the first row with the name, and the tools and
+   status take a row of their own. */
+@media (max-width: 720px) {
+  header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'brand clock'
+      'middle middle';
+    gap: 12px;
+    padding-inline: 16px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .middle {
+    align-items: stretch;
+  }
+}

@@ -12,10 +12,13 @@ so a missing line costs more than a long one.
   Angular CDK for behaviour (overlays, focus, a11y, breakpoints) with no
   component library: the look is the project's own design tokens and
   per-component CSS. Three.js for the 3D core, with a Canvas 2D fallback.
-- Data: Claude Code usage is live, read from pr-starmap's local site
-  (`GET /api/doc`, header `x-starmap: 1`), which `ng serve` proxies at `/api`
-  (`proxy.conf.json`) to `http://localhost:4317`. Everything else is still
-  sample data. No secrets live in this repository.
+- API: `server/`, a small Node server in TypeScript, run by Node directly
+  (type stripping, no build) on loopback port 4319; `ng serve` proxies `/api`
+  to it (`proxy.conf.json`). Node built-ins only. Tests: `node:test`.
+- Data: Claude Code usage is live, read from this machine's session logs
+  (`~/.claude/projects`) and the status line's limit readings
+  (`~/.claude/observatory/usage/`). Everything else is still sample data. No
+  secrets live in this repository.
 - Build: Angular CLI (`ng build`, esbuild). Tests: Vitest through `ng test`.
   Lint: angular-eslint. Format: Prettier. Deployment: not yet decided.
 - CI: none yet.

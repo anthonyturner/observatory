@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, interval, map, of, startWith, switchMap } from 'rxjs';
@@ -11,19 +11,11 @@ export type UsageState =
   | { readonly status: 'missing' }
   | { readonly status: 'ready'; readonly document: UsageDocument };
 
-/** pr-starmap keeps usage in the `orrery` namespace: it belongs to the
- *  account, not to any one project. */
-const USAGE_URL = '/api/doc?ns=orrery&path=usage/current';
-/** pr-starmap's site answers its API only to requests that carry this. */
-const SITE_HEADERS = new HttpHeaders({ 'x-starmap': '1' });
+/** Observatory's own API (server/), which reads Claude Code's files on this machine. */
+const USAGE_URL = '/api/usage';
 const REFRESH_MS = 60_000;
 
-interface StoredDocument {
-  readonly exists?: boolean;
-  readonly data?: unknown;
-}
-
-/** Reads Claude Code usage from pr-starmap's site, now and every minute. */
+/** Reads Claude Code usage from Observatory's API, now and every minute. */
 @Injectable({ providedIn: 'root' })
 export class UsageFeed {
   private readonly http = inject(HttpClient);
@@ -42,9 +34,9 @@ export class UsageFeed {
   }
 
   private fetch() {
-    return this.http.get<StoredDocument>(USAGE_URL, { headers: SITE_HEADERS }).pipe(
-      map((stored): UsageState => {
-        const document = stored.exists ? parseUsageDocument(stored.data) : null;
+    return this.http.get<unknown>(USAGE_URL).pipe(
+      map((body): UsageState => {
+        const document = parseUsageDocument(body);
         return document ? { status: 'ready', document } : { status: 'missing' };
       }),
       catchError(() => of<UsageState>({ status: 'unreachable' })),

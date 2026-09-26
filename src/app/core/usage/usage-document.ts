@@ -1,4 +1,4 @@
-/** One limit window (the five-hour or the weekly), as pr-starmap records it. */
+/** One limit window: the five-hour or the weekly. */
 export interface LimitWindow {
   readonly pct: number;
   readonly resetsAt: string;
@@ -14,7 +14,7 @@ export interface TokenDay {
   readonly families: Readonly<Record<string, number>>;
 }
 
-/** The parts of pr-starmap's `usage/current` document the meters read. */
+/** The parts of the usage report (`GET /api/usage`) the meters read. */
 export interface UsageDocument {
   readonly generatedAt: string;
   readonly limits?: {
@@ -65,7 +65,7 @@ function parseTokenDay(value: unknown): TokenDay | null {
   return { day: value['day'], families: counts };
 }
 
-/** Reads the document defensively: pr-starmap calls the session-log format
+/** Reads the report defensively: Claude Code calls its session-log format
  *  internal, so any field may be missing or change. Whatever does not parse
  *  is left out, to show as unknown rather than as a wrong number. */
 export function parseUsageDocument(value: unknown): UsageDocument | null {

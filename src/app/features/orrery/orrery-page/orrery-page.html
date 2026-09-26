@@ -1,0 +1,27 @@
+<app-orrery-canvas #canvas [worlds]="worlds()" [(selected)]="selected" />
+
+<header class="hud top">
+  <div class="brand">
+    <h1>Orrery</h1>
+    <span class="stamp">{{ stamp() }}</span>
+  </div>
+  <a class="home" routerLink="/"><span aria-hidden="true">&lsaquo;</span> Home</a>
+</header>
+
+@if (waiting(); as message) {
+  <p class="state" role="status">{{ message }}</p>
+}
+
+@if (selectedWorld(); as world) {
+  <app-world-card
+    [world]="world"
+    (closed)="selected.set(null)"
+    (showOnHome)="showOnHome($event)"
+    (pointerenter)="canvas.holdCard()"
+    (pointerleave)="canvas.releaseCard()"
+  />
+}
+
+<footer class="hud bottom">
+  <app-orrery-tools (zoomOut)="canvas.zoomOut()" (zoomIn)="canvas.zoomIn()" (fit)="canvas.fit()" />
+</footer>

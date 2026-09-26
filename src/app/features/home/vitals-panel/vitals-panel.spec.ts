@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { VitalsColumn } from '../data/vitals';
 import { VITALS_COLUMN } from '../data/vitals-column';
 import { VitalsPanel } from './vitals-panel';
@@ -13,13 +14,13 @@ const column: VitalsColumn = {
     ],
     note: 'Blocked first',
   },
-  docs: { links: [{ label: 'Orrery', href: '/orrery' }] },
+  docs: { links: [{ label: 'Orrery', path: '/orrery' }] },
 };
 
 describe('VitalsPanel', () => {
   it('shows every part of the column from the source it is given', () => {
     TestBed.configureTestingModule({
-      providers: [{ provide: VITALS_COLUMN, useValue: signal(column) }],
+      providers: [provideRouter([]), { provide: VITALS_COLUMN, useValue: signal(column) }],
     });
     const fixture = TestBed.createComponent(VitalsPanel);
     fixture.detectChanges();

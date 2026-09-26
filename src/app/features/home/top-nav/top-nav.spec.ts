@@ -1,9 +1,20 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { HelpState } from '../help/help-state';
 import { TopNav } from './top-nav';
 
 describe('TopNav', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
+
+  it('leads to the orrery inside the app', () => {
+    const fixture = TestBed.createComponent(TopNav);
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector('a.link');
+    expect(link?.getAttribute('href')).toBe('/orrery');
+  });
+
   it('opens help from the ? button and shows it pressed', () => {
     const fixture = TestBed.createComponent(TopNav);
     fixture.detectChanges();

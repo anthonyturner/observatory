@@ -1,5 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ProjectJump } from '../../../core/projects/project-jump';
 import { ProjectSnapshot } from '../../../core/projects/project.types';
 import { ProjectsState } from '../../../core/projects/projects-feed';
 import { PROJECTS_STATE } from '../../../core/projects/projects-source';
@@ -20,7 +22,7 @@ const ready = (projects: readonly ProjectSnapshot[]): ProjectsState => ({
 
 function render(state: ProjectsState): HTMLElement {
   TestBed.configureTestingModule({
-    providers: [{ provide: PROJECTS_STATE, useValue: signal(state) }],
+    providers: [provideRouter([]), { provide: PROJECTS_STATE, useValue: signal(state) }],
   });
   const fixture = TestBed.createComponent(FleetSection);
   fixture.detectChanges();
@@ -51,5 +53,29 @@ describe('FleetSection', () => {
 
   it('says so when the account owns no repositories', () => {
     expect(render(ready([])).querySelector('.empty')?.textContent).toContain('No projects yet');
+  });
+
+  it('brings the project Home was opened for into view, once its card is there', async () => {
+    const state = signal<ProjectsState>({ status: 'reading' });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: PROJECTS_STATE, useValue: state },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({ project: 'me/stuck' }) } },
+        },
+      ],
+    });
+    const jumpTo = vi
+      .spyOn(TestBed.inject(ProjectJump), 'jumpTo')
+      .mockImplementation(() => undefined);
+    const fixture = TestBed.createComponent(FleetSection);
+    fixture.detectChanges();
+    expect(jumpTo).not.toHaveBeenCalled();
+
+    state.set(ready([project('calm'), project('stuck', 2)]));
+    await fixture.whenStable();
+
+    expect(jumpTo).toHaveBeenCalledExactlyOnceWith('me/stuck');
   });
 });

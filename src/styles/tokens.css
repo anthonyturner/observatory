@@ -90,6 +90,31 @@
     var(--sky-deep) 100%
   );
 
+  /* The orrery's night: indigo warmed by its sun toward the middle. */
+  --orrery-sky-centre: #15122c;
+  --orrery-sky-mid: #070b1c;
+  --orrery-sky-edge: #03050c;
+  --orrery-orbit: #2a3a5f;
+  --orrery-dial: #8ea2ff;
+  --orrery-sun-body: #ffd9a0;
+  --orrery-sun-core: #fff8ec;
+  --orrery-sun-glow: #ffe0aa;
+  --orrery-sun-halo: #ffb060;
+  --orrery-sun-ray: #ffd696;
+  --orrery-sun-ink: #3a2408;
+  --orrery-world-light: #ffffff;
+  --orrery-world-shade: #0a1020;
+  --orrery-moon: #dfe8ff;
+  --orrery-comet: var(--count-unclaimed);
+  --orrery-comet-head: #e8fbff;
+  --orrery-select: #ffffff;
+  --orrery-vignette: #000000;
+  --orrery-star-1: #ffffff;
+  --orrery-star-2: #dce8ff;
+  --orrery-star-3: #bcd2ff;
+  --orrery-star-4: #fff0d6;
+  --orrery-star-5: #ffd9b8;
+
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;

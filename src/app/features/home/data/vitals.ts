@@ -37,9 +37,11 @@ export interface DirectiveList {
   readonly note: string;
 }
 
+/** A link to another view in the app: a route path, and a part of it to open. */
 export interface DocLink {
   readonly label: string;
-  readonly href: string;
+  readonly path: string;
+  readonly fragment?: string;
 }
 
 export interface DocTabs {

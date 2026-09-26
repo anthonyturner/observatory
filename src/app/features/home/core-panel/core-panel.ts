@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { CORE_MOOD } from '../../../core/instrument/core-tokens';
 import { CoreCanvas } from '../core-canvas/core-canvas';
 import { CoreTouch } from '../core-touch/core-touch';
 
@@ -10,4 +11,6 @@ import { CoreTouch } from '../core-touch/core-touch';
   styleUrl: './core-panel.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CorePanel {}
+export class CorePanel {
+  protected readonly mood = inject(CORE_MOOD);
+}

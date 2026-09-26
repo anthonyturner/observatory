@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { CoreHand } from '../../../core/instrument/core-hand';
-import { CORE_RENDERER, CORE_STATE } from '../../../core/instrument/core-tokens';
+import { CORE_MOOD, CORE_RENDERER, CORE_STATE } from '../../../core/instrument/core-tokens';
 import { CoreView, coreViewOf } from '../../../core/instrument/core-view';
 import { FrameLoop, FrameScheduler } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
@@ -44,6 +44,7 @@ export class CoreCanvas {
   private readonly document = inject(DOCUMENT);
   private readonly projects = inject(PROJECTS);
   private readonly state = inject(CORE_STATE);
+  private readonly mood = inject(CORE_MOOD);
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
   private readonly hand = inject(CoreHand);
@@ -68,6 +69,7 @@ export class CoreCanvas {
     effect(() => {
       this.motion.isStill();
       this.hand.touched();
+      this.mood();
       this.lit.key();
       this.loop?.kick();
     });
@@ -113,6 +115,7 @@ export class CoreCanvas {
       isStill: this.motion.isStill(),
       hand: this.hand.state.pose,
       litKey: this.lit.key(),
+      mood: this.mood(),
     });
   }
 

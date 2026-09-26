@@ -152,9 +152,11 @@ export class StarmapSky {
       const engine = this.engine;
       if (!engine || !narrowing || untracked(this.chart) !== 'issues') return;
       if (!this.nurserySky.narrow(engine, narrowing)) return engine.kick();
-      untracked(() => this.nurserySky.layOut(engine, this.nursery(), false));
-      this.select();
-      engine.fit();
+      untracked(() => {
+        this.nurserySky.layOut(engine, this.nursery(), false);
+        this.select();
+        engine.fit();
+      });
     });
     effect(() => {
       this.selected();

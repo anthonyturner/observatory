@@ -2,8 +2,9 @@
  * `gh --json` field names as GraphQL selections, and how to reshape each answer
  * the way `gh` does, so a report reads the same whichever reader built it.
  * `gh` is itself built on GitHub's GraphQL API with these names; where it
- * reshapes (connections flattened to arrays, a null string read as `""`, a
- * check's workflow lifted to `workflowName`), the table does the same.
+ * reshapes (connections flattened to arrays, a null string read as `""`), the
+ * table does the same. A check run carries no `workflowName`: its check suite
+ * is refused to a fine-grained token, so a check goes by its name alone.
  */
 
 /** One field: what to ask GraphQL for, and how to shape its answer like `gh`. */
@@ -43,7 +44,6 @@ function checkOf(check: Node): Node {
       targetUrl: orEmpty(check['targetUrl']),
     };
   }
-  const workflow = asNode(asNode(asNode(check['checkSuite'])['workflowRun'])['workflow']);
   return {
     __typename: 'CheckRun',
     completedAt: check['completedAt'],
@@ -52,13 +52,11 @@ function checkOf(check: Node): Node {
     name: check['name'],
     startedAt: check['startedAt'],
     status: check['status'],
-    workflowName: orEmpty(workflow['name']),
   };
 }
 
 const CHECKS = `__typename
-  ... on CheckRun { name status conclusion startedAt completedAt detailsUrl
-    checkSuite { workflowRun { workflow { name } } } }
+  ... on CheckRun { name status conclusion startedAt completedAt detailsUrl }
   ... on StatusContext { context state targetUrl createdAt }`;
 
 /** An account as `gh` gives it: a user with its id and name, anything else an app. */

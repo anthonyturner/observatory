@@ -20,6 +20,7 @@ function frame(overrides: Partial<CoreFrame> = {}): CoreFrame {
     hand: { yaw: 0, pitch: 0, x: 0, y: 0, glow: 0 },
     litKey: null,
     mood: { name: 'calm', stress: 0, reason: 'nothing blocked' },
+    sinceRefresh: null,
     ...overrides,
   };
 }

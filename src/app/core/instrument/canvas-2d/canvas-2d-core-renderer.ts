@@ -10,7 +10,14 @@ import { Lens } from '../lens';
 import { orbitLoop, tierArcs } from '../rings';
 import { BallPainter } from './ball-painter';
 import { GlowPainter, GrowingBead } from './glow-painter';
-import { floorPaths, paintFloor, paintOverflow, paintRings } from './instrument-painter';
+import { floorLift, rippleEllipses, rippleRings } from '../refresh-ripple';
+import {
+  floorPaths,
+  paintFloor,
+  paintOverflow,
+  paintRings,
+  paintRipple,
+} from './instrument-painter';
 import { CorePalette, readPalette } from '../palette';
 
 /** The core drawn with Canvas 2D: everything on one canvas, laid over the sky. */
@@ -89,9 +96,18 @@ export class Canvas2DCoreRenderer implements CoreRenderer {
         paths: this.floor.paths,
         centreX: view.centreX,
         centreY: view.centreY,
-        fade: pose.intro * view.lift,
+        fade: pose.intro * view.lift * floorLift(frame.sinceRefresh, frame.isStill),
       });
     }
+    paintRipple(context, palette, {
+      centreX: view.centreX,
+      centreY: view.centreY,
+      rings: rippleEllipses(rippleRings(frame.sinceRefresh, frame.isStill), {
+        coreRadius: view.radius,
+        depth: view.floorDepth,
+        width: view.width,
+      }),
+    });
     paintRings(context, this.lens, palette, {
       orbit: this.orbit,
       tiers: tierArcs(view.radius, pose.tierSpin),

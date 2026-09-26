@@ -17,7 +17,7 @@ import { CoreView, coreViewOf } from '../../../core/instrument/core-view';
 import { FrameLoop, FrameScheduler } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { LitProject } from '../../../core/projects/lit-project';
-import { PROJECTS } from '../../../core/projects/projects-source';
+import { PROJECTS, PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { BeadLabel } from './bead-label';
 
 /** The backdrop's budget: speech models will share the graphics card with it. */
@@ -45,6 +45,10 @@ export class CoreCanvas {
   private readonly projects = inject(PROJECTS);
   private readonly state = inject(CORE_STATE);
   private readonly mood = inject(CORE_MOOD);
+  private readonly projectsState = inject(PROJECTS_STATE);
+  /** When the latest projects report arrived, in real seconds, and which one it was. */
+  private refreshWall: number | null = null;
+  private lastReport: string | null = null;
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
   private readonly hand = inject(CoreHand);
@@ -71,6 +75,13 @@ export class CoreCanvas {
       this.hand.touched();
       this.mood();
       this.lit.key();
+      this.loop?.kick();
+    });
+    effect(() => {
+      const state = this.projectsState();
+      if (state.status !== 'ready' || state.report.generatedAt === this.lastReport) return;
+      this.lastReport = state.report.generatedAt;
+      this.refreshWall = performance.now() / 1000;
       this.loop?.kick();
     });
     afterNextRender(() => this.start());
@@ -116,6 +127,7 @@ export class CoreCanvas {
       hand: this.hand.state.pose,
       litKey: this.lit.key(),
       mood: this.mood(),
+      sinceRefresh: this.refreshWall === null ? null : wall - this.refreshWall,
     });
   }
 

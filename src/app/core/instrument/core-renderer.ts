@@ -19,6 +19,8 @@ export interface CoreFrame {
   readonly litKey: string | null;
   /** How the projects stand, which quickens and warms the core. */
   readonly mood: CoreMood;
+  /** Real seconds since a new projects report arrived, or null before the first. */
+  readonly sinceRefresh: number | null;
 }
 
 /** Draws the core. The 2D and 3D renderers both implement it, so choosing

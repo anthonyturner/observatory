@@ -2,6 +2,7 @@ import { BeadOverflow } from '../beads';
 import { TierLevels } from '../core-states';
 import { FloorGrid, floorBatches } from '../floor-grid';
 import { Lens } from '../lens';
+import { RippleEllipse } from '../refresh-ripple';
 import { CorePalette } from '../palette';
 
 export type StrokeMode = 'line' | 'loop';
@@ -97,5 +98,26 @@ export function paintOverflow(
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillText(`+${overflow.count}`, seen.x, seen.y);
+  context.restore();
+}
+
+/** The wave across the floor when new data arrives: half ellipses about the
+ *  point under the core, drawn with the floor so they move with it. */
+export function paintRipple(
+  context: CanvasRenderingContext2D,
+  palette: CorePalette,
+  ripple: { centreX: number; centreY: number; rings: readonly RippleEllipse[] },
+): void {
+  if (!ripple.rings.length) return;
+  context.save();
+  context.translate(ripple.centreX, ripple.centreY);
+  context.strokeStyle = palette.floor;
+  context.lineWidth = 1.5;
+  for (const ring of ripple.rings) {
+    context.globalAlpha = ring.alpha;
+    context.beginPath();
+    context.ellipse(0, ring.centreY, ring.radiusX, ring.radiusY, 0, 0, Math.PI);
+    context.stroke();
+  }
   context.restore();
 }

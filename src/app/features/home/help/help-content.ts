@@ -32,6 +32,11 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
       'The core’s mood follows your projects: calm, slow green when nothing is blocked; quicker, deeper breathing, warming toward amber, as blocked projects and stuck PRs pile up. Grey until the projects are read. The line under CLAUDE says why.',
   },
   {
+    term: 'Ripple',
+    meaning:
+      'A wave rolls across the floor each time fresh project data arrives, about every five minutes. No ripple for a long while means the data has stopped coming.',
+  },
+  {
     term: 'Dots',
     meaning:
       'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name; click a dot to go to its card. A dot fades, with a slow grey pulsing ring, once its oldest pull request has sat untouched for a week.',

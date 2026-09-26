@@ -1,0 +1,35 @@
+/* Design tokens: the one place a colour, font or surface is defined. Component
+   styles use these names, never literals, so a restyle is one file. */
+:root {
+  color-scheme: dark;
+
+  --void: #04060e;
+  --ink: #eaf0ff;
+  --ink-soft: #c7d2ee;
+  --muted: #8d9bc4;
+  /* Fails contrast for words on glass: rules and ticks only. */
+  --faint: #5c6a92;
+  --flow: #8ea2ff;
+  --ok: #5fe3a1;
+  --bad: #ff6f5e;
+  --bad-soft: #ff8b7d;
+  --meh: #ffc24d;
+  --warm: #ffd98a;
+
+  --edge: rgba(120, 150, 220, 0.22);
+  --edge-soft: rgba(120, 150, 220, 0.12);
+  --flow-glow: rgba(142, 162, 255, 0.45);
+
+  /* Gradients, not blurs: a blurred panel over a live sky costs a phone its
+     frame rate. */
+  --scrim-column: radial-gradient(closest-side, rgba(3, 5, 12, 0.6) 45%, rgba(3, 5, 12, 0));
+  --glass-strong: linear-gradient(165deg, rgba(12, 18, 38, 0.86), rgba(9, 14, 30, 0.84));
+  --sky-night: radial-gradient(ellipse at 50% 38%, #0b1230 0%, #060a1a 45%, var(--void) 80%);
+
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+
+  --radius-panel: 12px;
+}

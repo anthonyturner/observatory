@@ -1,0 +1,37 @@
+:host {
+  display: block;
+}
+
+.fleet {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin: 0 0 14px;
+  padding: 10px 16px 11px;
+  border: 1px solid var(--edge-soft);
+  border-radius: var(--radius-panel);
+  background: var(--glass-strong);
+}
+
+h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}

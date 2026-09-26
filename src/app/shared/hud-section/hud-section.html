@@ -1,0 +1,9 @@
+<section [attr.aria-labelledby]="headingId">
+  <h2 class="label" [id]="headingId">
+    {{ heading() }}
+    @if (note(); as note) {
+      <small>{{ note }}</small>
+    }
+  </h2>
+  <ng-content />
+</section>

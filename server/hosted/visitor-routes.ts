@@ -8,6 +8,7 @@ import {
   type Routes,
 } from '../http/api-handler.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
+import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { EMPTY_TRIAGE } from '../triage/triage.ts';
@@ -80,6 +81,8 @@ export function visitorRoutes(
       '/api/history': async (query) => reads.history(await visibleRepo(query)),
       '/api/ledger': async (query) => reads.ledger(await visibleRepo(query)),
       '/api/issues': async (query) => reads.issues(await visibleRepo(query)),
+      '/api/issue': async (query) =>
+        reads.issue(await visibleRepo(query), issueNumberFrom(query.get('number'))),
       '/api/pull': async (query) =>
         reads.pull(await visibleRepo(query), pullNumberFrom(query.get('number'))),
       ...logs,

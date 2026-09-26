@@ -17,6 +17,8 @@ export class IssuesPanel {
   readonly pulls = input.required<ReadonlyMap<number, OpenPull>>();
   /** Asks for an open pull request's screen. */
   readonly pull = output<number>();
+  /** Asks to read an issue in the issue window. */
+  readonly open = output<number>();
 
   protected readonly screen = inject(IssuesScreen);
 }

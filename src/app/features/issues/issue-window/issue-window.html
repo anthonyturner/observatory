@@ -1,0 +1,102 @@
+@let kick = kicker();
+<div
+  #win
+  class="sheet issuewin"
+  role="dialog"
+  aria-modal="false"
+  aria-labelledby="issue-title"
+  aria-describedby="issue-kicker"
+  tabindex="-1"
+  [class.still]="still()"
+  [style.--sev]="kick.colour"
+  [appDraggable]="placeKey"
+  (keydown)="onKey($event)"
+>
+  <div class="ibar grab" data-handle title="Drag to move · double-click to reset">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="toprow">
+      <div class="kicker" id="issue-kicker" [style.color]="kick.ink">{{ kick.text }}</div>
+      <span class="ibar-label" aria-hidden="true">{{ barLabel() }}</span>
+      <div class="winbtns">
+        <button
+          type="button"
+          [disabled]="fetching()"
+          [title]="fetching() ? 'Fetching from GitHub' : 'Fetch this issue again'"
+          (click)="refresh()"
+        >
+          {{ fetching() ? 'Fetching…' : 'Refresh' }}
+        </button>
+        <a
+          [href]="url()"
+          target="_blank"
+          rel="noopener"
+          [attr.aria-label]="'Open issue ' + number() + ' on GitHub, new tab'"
+          >GitHub<span aria-hidden="true">&nbsp;↗</span></a
+        >
+        <button
+          type="button"
+          aria-label="Close issue window"
+          title="Close (Esc)"
+          (click)="closed.emit()"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  </div>
+  <header class="ihead">
+    <div class="kicker" aria-hidden="true" [style.color]="kick.ink">{{ kick.text }}</div>
+    <h2 #heading id="issue-title" tabindex="-1">
+      <span class="num">#{{ number() }}</span
+      ><span>{{ info().title ?? 'title loading…' }}</span>
+    </h2>
+    <div class="imetaline">{{ metaLine() }}</div>
+    @if (labels().length || assignees().length || unassigned()) {
+      <div class="irow">
+        <app-issue-meta
+          tone="window"
+          [labels]="labels()"
+          [assignees]="assignees()"
+          [unassigned]="unassigned()"
+        />
+      </div>
+    }
+    @if (chips().length) {
+      <div class="irow">
+        <span class="cap">Pull requests</span>
+        <app-issue-meta tone="window" [chips]="chips()" (pull)="pull.emit($event)" />
+      </div>
+    }
+  </header>
+  <section #body class="pane ibody" tabindex="0" aria-label="Description">
+    @switch (state().status) {
+      @case ('ready') {
+        @if (detail(); as issue) {
+          <app-sheet-markdown [source]="issue.body" />
+          @if (issue.bodyTruncated) {
+            <p class="note warn">
+              Description shortened to fit —
+              <a [href]="url()" target="_blank" rel="noopener">read the rest on GitHub ↗</a>
+            </p>
+          }
+        }
+      }
+      @case ('failed') {
+        <div class="missing">
+          <p class="note warn">
+            GitHub didn’t return this issue. It may have been moved or deleted, or GitHub was
+            unreachable.
+          </p>
+          <button type="button" class="fetchbtn" (click)="refresh()">Try again</button>
+          <p class="note">
+            <a [href]="url()" target="_blank" rel="noopener">Read it on GitHub ↗</a>
+          </p>
+        </div>
+      }
+      @default {
+        <p class="note">Loading the description…</p>
+      }
+    }
+  </section>
+  <div class="istatus" role="status">{{ status() }}</div>
+</div>

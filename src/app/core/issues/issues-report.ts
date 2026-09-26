@@ -69,7 +69,8 @@ function labelsOf(value: unknown): IssueLabel[] {
     );
 }
 
-function parseIssue(value: unknown): Issue | null {
+/** One issue as the API lists it, or null when it does not parse. */
+export function parseIssue(value: unknown): Issue | null {
   if (!isObject(value)) return null;
   const { number, title, url, createdAt, updatedAt, closedAt, stateReason, author } = value;
   if (!isCount(number) || !isString(title) || !isGitHub(url)) return null;

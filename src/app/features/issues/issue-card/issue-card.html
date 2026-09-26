@@ -1,0 +1,36 @@
+<div class="card" [style.--sev]="colour()" [appDraggable]="placeKey">
+  <button class="close" type="button" aria-label="Close" (click)="closed.emit()">&times;</button>
+  <div class="grab" data-handle title="Drag to move">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="bucketname">{{ words() }}</div>
+    <div class="prno">#{{ star().issue.number }}</div>
+  </div>
+  <h2>{{ star().issue.title }}</h2>
+  <dl class="facts">
+    @for (fact of facts(); track fact.term) {
+      <dt>{{ fact.term }}</dt>
+      <dd [class.hot]="fact.isHot">{{ fact.value }}</dd>
+    }
+  </dl>
+  @if (labels().length || star().issue.assignees.length || chips().length) {
+    <div class="cardmeta">
+      <app-issue-meta
+        [labels]="labels()"
+        [assignees]="star().issue.assignees"
+        [chips]="chips()"
+        (pull)="pull.emit($event)"
+      />
+    </div>
+  }
+  <div class="cardacts">
+    <button
+      type="button"
+      class="primary"
+      [attr.data-openissue]="star().issue.number"
+      (click)="open.emit(star().issue.number)"
+    >
+      Open
+    </button>
+    <a [href]="star().issue.url" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</div>

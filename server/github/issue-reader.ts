@@ -47,6 +47,19 @@ export interface ClosingPull {
 /** The `gh --json` fields ClosingPull holds. */
 export const CLOSING_PULL_FIELDS: readonly string[] = ['number', 'closingIssuesReferences'];
 
+/** One issue with its description, as `gh issue view --json` reports it. */
+export interface RawIssueDetail extends RawIssue {
+  readonly body: string;
+}
+
+/** The `gh --json` fields RawIssueDetail holds. */
+export const RAW_ISSUE_DETAIL_FIELDS: readonly string[] = [...RAW_ISSUE_FIELDS, 'body'];
+
+/** What the issue window needs from GitHub: one issue, open or closed. */
+export interface IssueDetailReader {
+  issueDetail(repo: string, number: number): Promise<RawIssueDetail>;
+}
+
 /** What the Issues screen needs from GitHub. */
 export interface IssueReader {
   openIssues(repo: string): Promise<RawIssue[]>;

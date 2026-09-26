@@ -160,6 +160,14 @@ export function drawReticle(
   c.restore();
 }
 
+/** A star its own sky draws gets the ring over its body, in the flat layer. */
+function drawCustomReticle(f: SkyFrame): void {
+  const star = f.selected;
+  if (!star?.custom) return;
+  const [x, y] = f.toScreen(star.ax, star.ay, star.az);
+  drawReticle(f.ctx, x, y, starRadius(f, star, 1) * 1.5 + 9, f.t);
+}
+
 /** The radius a star is drawn at this frame. */
 export const starRadius = (f: SkyFrame, star: SkyStar, grow: number): number =>
   star.mag * Math.max(f.camera.current.scale, 0.42) * grow;
@@ -456,6 +464,8 @@ export class CanvasSkyRenderer implements SkyRenderer {
     }
 
     ctx.globalCompositeOperation = 'source-over';
+    for (const layer of f.layers) layer.flat?.(ctx, f);
+    drawCustomReticle(f);
     for (const c of f.clusters) drawClusterLabel(f, c);
     if (f.camera.current.scale > 0.5) for (const s of f.stars) drawStarLabel(f, s);
     for (const layer of f.layers) layer.labels?.(ctx, f);

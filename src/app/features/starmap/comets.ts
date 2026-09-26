@@ -1,4 +1,5 @@
 import { IssuesReport } from '../../core/issues/issues-report';
+import { COMET_COLOUR } from '../issues/issue-inks';
 
 /** An open issue no open pull request closes: a comet passing through the sky. */
 export interface Comet {
@@ -12,7 +13,7 @@ export interface Comet {
 
 /** At most this many are drawn, idlest first; the legend counts them all. */
 export const COMET_CAP = 40;
-export const COMET_COLOUR = '#9fe8ff';
+export { COMET_COLOUR };
 
 const DAY_MS = 86_400_000;
 const daysSince = (iso: string, now: number): number =>

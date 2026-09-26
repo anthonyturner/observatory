@@ -17,6 +17,8 @@ const HOT_IDLE_DAYS = 30;
 export class CometCard {
   readonly comet = input.required<Comet>();
   readonly closed = output<void>();
+  /** Asks to read the issue in the issue window. */
+  readonly open = output<number>();
 
   protected readonly colour = COMET_COLOUR;
   protected readonly hotIdle = HOT_IDLE_DAYS;

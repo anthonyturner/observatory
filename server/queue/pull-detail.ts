@@ -1,5 +1,5 @@
 import type { RawCheck, RawCommit, RawFile, RawLabel, RawPull } from '../github/pull-reader.ts';
-import { BadRequest } from '../http/api-handler.ts';
+import { numberFrom } from '../http/number-from.ts';
 import { type PullBucket, bucketOf } from '../projects/pull-counts.ts';
 import { clipBody, fitDiff } from './pull-size.ts';
 
@@ -209,11 +209,5 @@ export const withoutCode = (detail: PullDetail): PullDetail => ({
 });
 
 /** A pull request number from a request, or a BadRequest. */
-export function pullNumberFrom(value: unknown): number {
-  const text = typeof value === 'number' ? String(value) : value;
-  const number = Number(text);
-  if (typeof text !== 'string' || !/^\d{1,9}$/.test(text) || number < 1) {
-    throw new BadRequest('number must be a pull request number');
-  }
-  return number;
-}
+export const pullNumberFrom = (value: unknown): number =>
+  numberFrom(value, 'a pull request number');

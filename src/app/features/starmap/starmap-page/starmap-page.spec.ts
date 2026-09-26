@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { AMBIENT_PLAYER } from '../../../core/sound/sound-preference';
+import { anIssue } from '../../../core/issues/testing/issues-fixture';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapPage } from './starmap-page';
 
@@ -68,6 +69,32 @@ function render(fragment: string | null = null) {
       (b) => b.textContent?.trim() === words,
     );
   return { fixture, element, http, button, fragments };
+}
+
+const issueRow = (number: number, extra: Record<string, unknown>) => ({
+  number,
+  title: `Issue ${number}`,
+  url: `https://github.com/me/a/issues/${number}`,
+  labels: [{ name: 'bug', color: 'd73a4a' }],
+  assignees: [],
+  author: 'me',
+  createdAt: '2026-09-01T12:00:00Z',
+  updatedAt: '2026-09-20T12:00:00Z',
+  closedAt: null,
+  prs: [],
+  ...extra,
+});
+
+/** Answers the page's read of the issues: one nobody is on, one with pull requests. */
+function flushIssues(http: HttpTestingController): void {
+  http.expectOne('/api/issues?repo=me/a').flush({
+    generatedAt: new Date().toISOString(),
+    repo: 'me/a',
+    days: 60,
+    total: { open: 2, closed: 0, comets: 1 },
+    open: [issueRow(1, { comet: true }), issueRow(2, { comet: false, prs: [7, 3] })],
+    closed: [],
+  });
 }
 
 describe('StarmapPage', () => {
@@ -159,27 +186,7 @@ describe('StarmapPage', () => {
 
   it('lists the issues as pr-starmap does, with its stamp, legend and chips', () => {
     const { fixture, element, http, button } = render('issues');
-    const issue = (number: number, extra: Record<string, unknown>) => ({
-      number,
-      title: `Issue ${number}`,
-      url: `https://github.com/me/a/issues/${number}`,
-      labels: [{ name: 'bug', color: 'd73a4a' }],
-      assignees: [],
-      author: 'me',
-      createdAt: '2026-09-01T12:00:00Z',
-      updatedAt: '2026-09-20T12:00:00Z',
-      closedAt: null,
-      prs: [],
-      ...extra,
-    });
-    http.expectOne('/api/issues?repo=me/a').flush({
-      generatedAt: new Date().toISOString(),
-      repo: 'me/a',
-      days: 60,
-      total: { open: 2, closed: 0, comets: 1 },
-      open: [issue(1, { comet: true }), issue(2, { comet: false, prs: [7, 3] })],
-      closed: [],
-    });
+    flushIssues(http);
     fixture.detectChanges();
 
     expect(element.querySelector('h1')?.textContent).toBe('Issues');
@@ -204,6 +211,34 @@ describe('StarmapPage', () => {
     http.expectOne('/api/edit?repo=me/a&number=7');
     http.expectOne('/api/labels?repo=me/a');
     expect(element.querySelector('app-pr-screen')).not.toBeNull();
+  });
+
+  it('charts the issues as the nursery under the docked bar, and reads one in the window', () => {
+    const { fixture, element, http, button } = render('issues/map');
+    flushIssues(http);
+    fixture.detectChanges();
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    expect(element.querySelector('.issuedock app-issue-bar')).not.toBeNull();
+    expect(element.querySelector('.listview')).toBeNull();
+    sky.pickedIssue.emit({ issue: anIssue(1), look: 'globule', jets: [], colour: '#9fe8ff' });
+    fixture.detectChanges();
+    expect(element.querySelector('app-issue-card .bucketname')?.textContent).toBe(
+      'Globule — nobody on it',
+    );
+
+    button('Open')?.click();
+    fixture.detectChanges();
+    http.expectOne('/api/issue?repo=me/a&number=1');
+    expect(element.querySelector('app-issue-window')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(element.querySelector('app-issue-window')).toBeNull();
+    expect(element.querySelector('app-issue-card')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(element.querySelector('app-issue-card')).toBeNull();
   });
 
   it('opens a star’s card, and its full screen from Open; Esc closes them in turn', () => {

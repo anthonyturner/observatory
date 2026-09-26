@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { ISSUE_TABS, IssueTab, LabelOption } from '../issue-list';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ISSUE_TABS } from '../issue-list';
+import { IssuesScreen } from '../issues-screen';
 
 /**
  * pr-starmap's issue bar: the Open and Closed tabs with their counts, the
- * label menu and the search. It rides over the list, or above the nursery sky.
+ * label menu and the search. It sits atop the list, or docks above the
+ * nursery and filters it, and either way drives the one Issues screen, so a
+ * half-typed search survives the switch.
  */
 @Component({
   selector: 'app-issue-bar',
@@ -12,23 +15,14 @@ import { ISSUE_TABS, IssueTab, LabelOption } from '../issue-list';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IssueBar {
-  readonly tab = input.required<IssueTab>();
-  /** The tabs' counts, once the issues have been read. */
-  readonly counts = input<{ readonly open: string; readonly closed: string } | null>(null);
-  readonly labels = input.required<readonly LabelOption[]>();
-  readonly label = input.required<string>();
-  readonly query = input.required<string>();
-  readonly tabChange = output<IssueTab>();
-  readonly labelChange = output<string>();
-  readonly queryChange = output<string>();
-
+  protected readonly screen = inject(IssuesScreen);
   protected readonly tabs = ISSUE_TABS;
 
   protected onLabel(event: Event): void {
-    if (event.target instanceof HTMLSelectElement) this.labelChange.emit(event.target.value);
+    if (event.target instanceof HTMLSelectElement) this.screen.label.set(event.target.value);
   }
 
   protected onQuery(event: Event): void {
-    if (event.target instanceof HTMLInputElement) this.queryChange.emit(event.target.value);
+    if (event.target instanceof HTMLInputElement) this.screen.query.set(event.target.value);
   }
 }

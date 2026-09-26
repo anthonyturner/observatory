@@ -6,6 +6,7 @@ import type { Frame } from '../history/frames.ts';
 import type { HistoryStore } from '../history/history-store.ts';
 import { type Ledger, ledgerReport } from '../history/ledger.ts';
 import { recordFrame } from '../history/record-frame.ts';
+import { type IssueDetail, issueDetail } from '../issues/issue-detail.ts';
 import { type IssuesReport, issuesReport } from '../issues/issues-report.ts';
 import type { LogSnapshot, LogsUnconfigured } from '../logs/log-types.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
@@ -59,6 +60,10 @@ export interface ApiReads {
   /** Also records a frame of the star map's memory when one is due. */
   queue(repo: string): Promise<QueueReport>;
   issues(repo: string): Promise<IssuesReport>;
+  /** One issue with its description, for the issue window. */
+  issue(repo: string, number: number): Promise<IssueDetail>;
+  /** The next read of this issue goes to GitHub, not the cache. */
+  forgetIssue(repo: string, number: number): void;
   pull(repo: string, number: number): Promise<PullDetail>;
   /** The next read of this pull request goes to GitHub, not the cache. */
   forgetPull(repo: string, number: number): void;
@@ -84,6 +89,11 @@ export function cachedReads(sources: ReadSources): ApiReads {
     );
     return report;
   }, QUEUE_TTL_MS);
+  const numberKey = (repo: string, number: number): string => `${repo}#${number}`;
+  const issueOf = keyedCache(async (key) => {
+    const [repo, number] = key.split('#');
+    return issueDetail(github, repo, Number(number));
+  }, PULL_TTL_MS);
   const pullOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
     const [raw, diff] = await Promise.all([
@@ -93,13 +103,15 @@ export function cachedReads(sources: ReadSources): ApiReads {
     ]);
     return pullDetailOf(raw, { diff, fetchedAt: new Date().toISOString() });
   }, PULL_TTL_MS);
-  const pullKey = (repo: string, number: number): string => `${repo}#${number}`;
+
   return {
     projects: cached(() => projectsReport(github), PROJECTS_TTL_MS),
     queue: queueOf,
     issues: cachedByKey((repo) => issuesReport(github, repo), QUEUE_TTL_MS),
-    pull: (repo, number) => pullOf.read(pullKey(repo, number)),
-    forgetPull: (repo, number) => pullOf.forget(pullKey(repo, number)),
+    issue: (repo, number) => issueOf.read(numberKey(repo, number)),
+    forgetIssue: (repo, number) => issueOf.forget(numberKey(repo, number)),
+    pull: (repo, number) => pullOf.read(numberKey(repo, number)),
+    forgetPull: (repo, number) => pullOf.forget(numberKey(repo, number)),
     labels: cachedByKey((repo) => github.repoLabels(repo), LABELS_TTL_MS),
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),
     history: async (repo) => ({ repo, frames: await history.read(repo) }),

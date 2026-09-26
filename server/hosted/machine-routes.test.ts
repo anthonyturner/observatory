@@ -163,6 +163,17 @@ describe('the push routes', () => {
     assert.equal((await push(handle, { repo: 'someone/else', frames: [] })).status, 404);
     assert.equal((await push(handle, { repo: 'me/app', collisions: { check: 'x' } })).status, 400);
     assert.equal((await push(handle, { usage: 'lots' })).status, 400);
+    assert.equal((await push(handle, { triage: {} })).status, 400);
+  });
+
+  it('write nothing when any part is malformed', async () => {
+    const { handle, data } = site();
+    const usage = { generatedAt: 'x', limits: null, tokens: { days: 30, rows: [] } };
+
+    const response = await push(handle, { repo: 'me/app', usage, collisions: { check: 'x' } });
+
+    assert.equal(response.status, 400);
+    assert.deepEqual([...data.keys()], []);
   });
 });
 

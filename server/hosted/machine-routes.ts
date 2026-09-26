@@ -1,13 +1,17 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { ApiReads } from '../app/api-reads.ts';
+import type { CollisionsReport } from '../collisions/collisions-report.ts';
 import type { Frame } from '../history/frames.ts';
 import { type HistoryMerger, framesFrom } from '../history/history-store.ts';
 import { BadRequest, NotFound, answer, json, readJson } from '../http/api-handler.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
+import type { LogSnapshot } from '../logs/log-types.ts';
 import type { Store } from '../store/store.ts';
+import type { TriageState } from '../triage/triage.ts';
 import type { TriageStore } from '../triage/triage-store.ts';
 import { triageStateFrom } from '../triage/triage-store.ts';
 import { mergeTriage } from '../triage/triage-merge.ts';
+import type { UsageReport } from '../usage/usage-types.ts';
 import type { OpenRoutes } from './gated-handler.ts';
 import {
   USAGE_KEY,
@@ -61,6 +65,35 @@ interface PushBody {
   readonly usage?: unknown;
 }
 
+/** A push's parts, each checked. */
+interface CheckedPush {
+  readonly usage?: UsageReport;
+  readonly triage?: TriageState;
+  readonly frames?: Frame[];
+  readonly collisions?: CollisionsReport;
+  readonly logs?: LogSnapshot;
+}
+
+/** `value` read by `read`, or a BadRequest saying it is not `what`; absent stays absent. */
+function part<T>(value: unknown, read: (value: unknown) => T | null, what: string): T | undefined {
+  if (value === undefined) return undefined;
+  const checked = read(value);
+  if (checked === null) throw new BadRequest(`${what} is malformed`);
+  return checked;
+}
+
+/** Every part checked before anything is written, so a malformed one leaves the site as it was. */
+function checkedPush(body: PushBody): CheckedPush {
+  const parts: CheckedPush = {
+    usage: part(body.usage, usageFrom, 'usage'),
+    triage: part(body.triage, triageStateFrom, 'triage'),
+    frames: part(body.frames, (frames) => framesFrom({ frames }), 'frames'),
+    collisions: part(body.collisions, collisionsFrom, 'collisions'),
+    logs: part(body.logs, logsFrom, 'logs'),
+  };
+  return Object.fromEntries(Object.entries(parts).filter((entry) => entry[1] !== undefined));
+}
+
 /**
  * The routes for machines, not people. Vercel's scheduler calls the cron with
  * `CRON_SECRET`; `npm run push` calls push with `PUSH_TOKEN`. Neither passes
@@ -79,35 +112,33 @@ export function machineRoutes(sources: MachineSources): OpenRoutes {
     return charted;
   }
 
+  /** Writes each checked part, and says what it wrote. */
   async function takePush(body: PushBody): Promise<{ readonly wrote: readonly string[] }> {
+    const parts = checkedPush(body);
+    const repo = body.repo === undefined ? null : await chartedRepo(body.repo);
+    if (!repo && Object.keys(parts).some((part) => part !== 'usage')) {
+      throw new BadRequest('repo is required with triage, frames, collisions or logs');
+    }
     const wrote: string[] = [];
-    if (body.usage !== undefined) {
-      const usage = usageFrom(body.usage);
-      if (!usage) throw new BadRequest('usage is not a usage report');
-      await store.set(USAGE_KEY, usage);
+    if (parts.usage) {
+      await store.set(USAGE_KEY, parts.usage);
       wrote.push('usage');
     }
-    if (body.repo === undefined) return { wrote };
-    const repo = await chartedRepo(body.repo);
-    if (body.triage !== undefined) {
-      await triage.write(repo, mergeTriage(await triage.read(repo), triageStateFrom(body.triage)));
+    if (!repo) return { wrote };
+    if (parts.triage) {
+      await triage.write(repo, mergeTriage(await triage.read(repo), parts.triage));
       wrote.push('triage');
     }
-    if (body.frames !== undefined) {
-      const frames: Frame[] = framesFrom({ frames: body.frames });
-      await history.merge(repo, frames);
-      wrote.push(`${frames.length} frames`);
+    if (parts.frames) {
+      await history.merge(repo, parts.frames);
+      wrote.push(`${parts.frames.length} frames`);
     }
-    if (body.collisions !== undefined) {
-      const collisions = collisionsFrom(body.collisions);
-      if (!collisions) throw new BadRequest('collisions is not a collisions report');
-      await store.set(collisionsKey(repo), collisions);
+    if (parts.collisions) {
+      await store.set(collisionsKey(repo), parts.collisions);
       wrote.push('collisions');
     }
-    if (body.logs !== undefined) {
-      const logs = logsFrom(body.logs);
-      if (!logs) throw new BadRequest('logs is not a Log Sky snapshot');
-      await store.set(logsKey(repo), logs);
+    if (parts.logs) {
+      await store.set(logsKey(repo), parts.logs);
       wrote.push('logs');
     }
     return { wrote };
@@ -124,12 +155,11 @@ export function machineRoutes(sources: MachineSources): OpenRoutes {
           results.push({ repo, error: firstLine(error) });
         }
       }
-      const projects = await reads.projects();
-      return json(200, {
-        at: new Date().toISOString(),
-        projects: projects.projects.length,
-        results,
-      });
+      const projects = await reads.projects().then(
+        (report) => report.projects.length,
+        (error: unknown) => firstLine(error),
+      );
+      return json(200, { at: new Date().toISOString(), projects, results });
     },
 
     'GET /api/push': async (request, url) => {

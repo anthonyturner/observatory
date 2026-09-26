@@ -1,0 +1,11 @@
+@let data = column();
+<app-hud-section heading="System vitals" note="usage · issues">
+  <div class="vitals">
+    @for (reading of data.vitals; track reading.id) {
+      <app-vital-readout [reading]="reading" />
+    }
+  </div>
+</app-hud-section>
+<app-weekly-gauge [usage]="data.weekly" />
+<app-directive-list [directives]="data.directives" />
+<app-doc-tabs [docs]="data.docs" />

@@ -1,9 +1,19 @@
 <section [attr.aria-labelledby]="headingId">
-  <h2 class="label" [id]="headingId">
-    {{ heading() }}
-    @if (note(); as note) {
-      <small>{{ note }}</small>
-    }
-  </h2>
+  @if (level() === 3) {
+    <h3 class="label" [class.ruled]="ruled()" [id]="headingId">
+      <ng-container *ngTemplateOutlet="headingText" />
+    </h3>
+  } @else {
+    <h2 class="label" [class.ruled]="ruled()" [id]="headingId">
+      <ng-container *ngTemplateOutlet="headingText" />
+    </h2>
+  }
   <ng-content />
 </section>
+
+<ng-template #headingText>
+  {{ heading() }}
+  @if (note(); as note) {
+    <small>{{ note }}</small>
+  }
+</ng-template>

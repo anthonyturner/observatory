@@ -23,4 +23,16 @@ describe('HudSection', () => {
   it('leaves the note out when there is none', () => {
     expect(render('Skills').querySelector('small')).toBeNull();
   });
+
+  it('nests as a third-level heading without its rule when asked', () => {
+    const fixture = TestBed.createComponent(HudSection);
+    fixture.componentRef.setInput('heading', 'Directives');
+    fixture.componentRef.setInput('level', 3);
+    fixture.componentRef.setInput('ruled', false);
+    fixture.detectChanges();
+
+    const heading = (fixture.nativeElement as HTMLElement).querySelector('h3');
+    expect(heading?.textContent).toContain('Directives');
+    expect(heading?.classList.contains('ruled')).toBe(false);
+  });
 });

@@ -1,0 +1,26 @@
+<span class="corner top-left" aria-hidden="true"></span>
+<span class="corner top-right" aria-hidden="true"></span>
+<span class="corner bottom-left" aria-hidden="true"></span>
+<span class="corner bottom-right" aria-hidden="true"></span>
+<app-hud-section heading="Claude · weekly usage" [level]="3" [ruled]="false">
+  <p class="reading">
+    @if (usage().percentUsed !== null) {
+      <b>{{ usage().percentUsed }}</b
+      ><span>% used</span>
+    } @else {
+      <b class="unknown">unknown</b>
+    }
+  </p>
+  <p class="note">{{ usage().note }}</p>
+  <div class="meter" aria-hidden="true">
+    @if (fillPercent() !== null) {
+      <div class="fill" [style.width.%]="fillPercent()"></div>
+    }
+    <div class="ticks"></div>
+  </div>
+  <div class="scale" aria-hidden="true">
+    @for (mark of scaleMarks; track mark) {
+      <span>{{ mark }}</span>
+    }
+  </div>
+</app-hud-section>

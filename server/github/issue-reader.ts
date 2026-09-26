@@ -9,6 +9,17 @@ export interface RawIssue {
   readonly updatedAt: string;
 }
 
+/** The `gh --json` fields RawIssue holds. */
+export const RAW_ISSUE_FIELDS: readonly string[] = [
+  'number',
+  'title',
+  'url',
+  'labels',
+  'assignees',
+  'createdAt',
+  'updatedAt',
+];
+
 /** An open pull request, with the issues it says it closes. */
 export interface ClosingPull {
   readonly number: number;

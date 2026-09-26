@@ -2,7 +2,11 @@
 export interface RepoRef {
   readonly name: string;
   readonly nameWithOwner: string;
+  /** Unknown counts as private wherever a visitor might see it. */
+  readonly isPrivate: boolean;
 }
+
+export const REPO_FIELDS: readonly string[] = ['name', 'nameWithOwner', 'isPrivate'];
 
 /** One check or status on a pull request's head commit. */
 export interface CheckRun {
@@ -21,6 +25,17 @@ export interface PullRequest {
   readonly closingIssuesReferences: readonly { readonly number: number }[] | null;
   readonly updatedAt: string;
 }
+
+/** The `gh --json` fields PullRequest holds. */
+export const PULL_REQUEST_FIELDS: readonly string[] = [
+  'number',
+  'title',
+  'url',
+  'mergeable',
+  'statusCheckRollup',
+  'closingIssuesReferences',
+  'updatedAt',
+];
 
 /** Everything the projects report needs from GitHub, and nothing else. */
 export interface GitHubReader {

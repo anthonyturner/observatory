@@ -22,7 +22,7 @@ export async function recordFrame(
   github: FateReader,
   now: number,
 ): Promise<Frame | null> {
-  const previous = store.read(report.repo).at(-1) ?? null;
+  const previous = (await store.read(report.repo)).at(-1) ?? null;
   const items = frameItemsOf(report);
   if (!isWorthRecording(previous, items, now)) return null;
   const fates = await mapWithLimit(leftSince(previous, items), FATE_CONCURRENCY, async (item) => {
@@ -34,6 +34,6 @@ export async function recordFrame(
     items,
     departed: fates.filter((departed): departed is Departed => departed !== null),
   };
-  store.append(report.repo, frame);
+  await store.append(report.repo, frame);
   return frame;
 }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { BadRequest } from '../http/api-server.ts';
+import { BadRequest } from '../http/api-handler.ts';
 import { EMPTY_TRIAGE, applyTriage, triageOf, triageRequestFrom } from './triage.ts';
 
 const NOW = Date.parse('2026-09-26T12:00:00Z');

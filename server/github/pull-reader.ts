@@ -47,7 +47,8 @@ export interface PullReader {
   pullDetail(repo: string, number: number): Promise<RawPull>;
 }
 
-export const PULL_DETAIL_FIELDS = [
+/** The `gh --json` fields RawPull holds. */
+export const PULL_DETAIL_FIELDS: readonly string[] = [
   'number',
   'title',
   'body',
@@ -68,4 +69,4 @@ export const PULL_DETAIL_FIELDS = [
   'changedFiles',
   'createdAt',
   'updatedAt',
-].join(',');
+];

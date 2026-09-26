@@ -1,12 +1,16 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { FateReader } from './fate-reader.ts';
-import type { PullFiles } from '../collisions/collision-pairs.ts';
-import type { FilesReader } from '../collisions/collisions-report.ts';
-import type { GitHubReader, PullRequest, RepoRef } from './github-reader.ts';
-import type { ClosingPull, IssueReader, RawIssue } from './issue-reader.ts';
-import { PULL_DETAIL_FIELDS, type PullReader, type RawPull } from './pull-reader.ts';
-import type { QueuePull, QueueReader } from './queue-reader.ts';
+import { type ListedFiles, pullFilesOf } from './listed-files.ts';
+import type { GitHub } from './github.ts';
+import {
+  PULL_REQUEST_FIELDS,
+  type PullRequest,
+  REPO_FIELDS,
+  type RepoRef,
+} from './github-reader.ts';
+import { type ClosingPull, RAW_ISSUE_FIELDS, type RawIssue } from './issue-reader.ts';
+import { PULL_DETAIL_FIELDS, type RawPull } from './pull-reader.ts';
+import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
 
 const run = promisify(execFile);
 
@@ -15,9 +19,6 @@ const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 const PULL_LIMIT = '100';
 const ISSUE_LIMIT = '1000';
 const REPO_LIMIT = '1000';
-const PULL_FIELDS =
-  'number,title,url,mergeable,statusCheckRollup,closingIssuesReferences,updatedAt';
-const QUEUE_FIELDS = `${PULL_FIELDS},isDraft,additions,deletions,createdAt`;
 
 async function gh(args: readonly string[]): Promise<string> {
   const { stdout } = await run('gh', [...args], { encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES });
@@ -30,12 +31,7 @@ const ghJson = async <T>(args: readonly string[]): Promise<T> => JSON.parse(awai
 const ISSUES_DISABLED = /has disabled issues/i;
 
 /** GitHub through the `gh` CLI, as the account this machine signed it in with. */
-export function ghCliReader(): GitHubReader &
-  QueueReader &
-  PullReader &
-  IssueReader &
-  FateReader &
-  FilesReader {
+export function ghCliReader(): GitHub {
   return {
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
@@ -48,7 +44,7 @@ export function ghCliReader(): GitHubReader &
         '--limit',
         REPO_LIMIT,
         '--json',
-        'name,nameWithOwner',
+        REPO_FIELDS.join(','),
       ]),
     openPulls: (repo) =>
       ghJson<PullRequest[]>([
@@ -61,7 +57,7 @@ export function ghCliReader(): GitHubReader &
         '--limit',
         PULL_LIMIT,
         '--json',
-        PULL_FIELDS,
+        PULL_REQUEST_FIELDS.join(','),
       ]),
     queuePulls: (repo) =>
       ghJson<QueuePull[]>([
@@ -74,7 +70,7 @@ export function ghCliReader(): GitHubReader &
         '--limit',
         PULL_LIMIT,
         '--json',
-        QUEUE_FIELDS,
+        QUEUE_PULL_FIELDS.join(','),
       ]),
     openIssues: (repo) =>
       ghJson<RawIssue[]>([
@@ -87,7 +83,7 @@ export function ghCliReader(): GitHubReader &
         '--limit',
         ISSUE_LIMIT,
         '--json',
-        'number,title,url,labels,assignees,createdAt,updatedAt',
+        RAW_ISSUE_FIELDS.join(','),
       ]),
     closingPulls: (repo) =>
       ghJson<ClosingPull[]>([
@@ -120,10 +116,18 @@ export function ghCliReader(): GitHubReader &
         ])
       ).length,
     pullDetail: (repo, number) =>
-      ghJson<RawPull>(['pr', 'view', String(number), '--repo', repo, '--json', PULL_DETAIL_FIELDS]),
+      ghJson<RawPull>([
+        'pr',
+        'view',
+        String(number),
+        '--repo',
+        repo,
+        '--json',
+        PULL_DETAIL_FIELDS.join(','),
+      ]),
     pullFiles: async (repo) =>
-      (
-        await ghJson<{ number: number; files: { path: string }[] | null }[]>([
+      pullFilesOf(
+        await ghJson<ListedFiles[]>([
           'pr',
           'list',
           '--repo',
@@ -134,11 +138,8 @@ export function ghCliReader(): GitHubReader &
           PULL_LIMIT,
           '--json',
           'number,files',
-        ])
-      ).map((pull): PullFiles => ({
-        number: pull.number,
-        files: (pull.files ?? []).map((file) => file.path),
-      })),
+        ]),
+      ),
     pullState: async (repo, pull) =>
       (
         await ghJson<{ state: string }>([

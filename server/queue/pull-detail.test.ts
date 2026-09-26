@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { RawPull } from '../github/pull-reader.ts';
-import { BadRequest } from '../http/api-server.ts';
+import { BadRequest } from '../http/api-handler.ts';
 import { checkLinesOf, outcomeOf, pullDetailOf, pullNumberFrom } from './pull-detail.ts';
 
 const raw: RawPull = {

@@ -1,0 +1,12 @@
+{
+  "replies": [
+    {
+      "data": {
+        "search": {
+          "issueCount": 3
+        }
+      }
+    }
+  ],
+  "expected": 3
+}

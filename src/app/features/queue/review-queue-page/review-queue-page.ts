@@ -11,13 +11,9 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
-import { changeCount, changeMarks, changesSince } from '../../../core/queue/changes';
+import { changeCount, changesSince } from '../../../core/queue/changes';
 import { CollisionsFeed } from '../../../core/queue/collisions-feed';
-import {
-  collisionSummary,
-  collisionThreads,
-  collisionsOf,
-} from '../../../core/queue/collisions-report';
+import { collisionSummary, collisionsOf } from '../../../core/queue/collisions-report';
 import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LastSeen } from '../../../core/queue/last-seen';
 import { QueueFeed } from '../../../core/queue/queue-feed';
@@ -42,7 +38,8 @@ import {
   queueStamp,
   visibleItems,
 } from '../queue-view';
-import { StarChart } from '../star-chart/star-chart';
+import { StarmapSky } from '../../starmap/starmap-sky/starmap-sky';
+import { skyItemOf, skyPairOf } from '../../starmap/sky-items';
 
 export type QueueView = 'map' | 'list';
 /** The project page's tabs; the address fragment picks one (`#issues`). */
@@ -55,7 +52,7 @@ const ISSUES_FRAGMENT = 'issues';
   imports: [
     RouterLink,
     PullPanel,
-    StarChart,
+    StarmapSky,
     OrreryTools,
     IssuesTab,
     ChangesCard,
@@ -97,7 +94,7 @@ export class ReviewQueuePage {
   protected readonly filter = signal<QueueFilter>(null);
   /** The star map, or the list: the map first, as pr-starmap opens. */
   protected readonly view = signal<QueueView>('map');
-  protected readonly chart = viewChild<StarChart>('chart');
+  protected readonly chart = viewChild<StarmapSky>('chart');
   /** The pull request whose panel is open, if any. */
   protected readonly openPull = signal<number | null>(null);
   protected readonly state = this.feed.state;
@@ -130,8 +127,11 @@ export class ReviewQueuePage {
       : null;
   });
   protected readonly hasChanges = computed(() => changeCount(this.changes()) > 0);
-  protected readonly marks = computed(() => changeMarks(this.changes()));
-  protected readonly threads = computed(() => collisionThreads(this.collisions.report()));
+  /** The queue as pr-starmap's sky charts it, and its collision pairs. */
+  protected readonly skyItems = computed(() => this.visible().map(skyItemOf));
+  protected readonly skyPairs = computed(() =>
+    (this.collisions.report()?.pairs ?? []).map(skyPairOf),
+  );
   protected readonly collisionNote = computed(() => collisionSummary(this.collisions.report()));
   protected readonly collisionCheck = computed(() => this.collisions.report()?.check ?? null);
   /** The open pull request's collisions, for its panel. */

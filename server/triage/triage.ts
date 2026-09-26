@@ -1,4 +1,4 @@
-import { BadRequest } from '../http/api-server.ts';
+import { BadRequest } from '../http/api-handler.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 

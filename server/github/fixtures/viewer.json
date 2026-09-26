@@ -1,0 +1,12 @@
+{
+  "replies": [
+    {
+      "data": {
+        "viewer": {
+          "login": "anthonyturner"
+        }
+      }
+    }
+  ],
+  "expected": "anthonyturner"
+}

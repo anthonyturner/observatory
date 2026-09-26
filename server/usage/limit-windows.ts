@@ -3,6 +3,7 @@ import type {
   LimitSample,
   LimitWindow,
   Limits,
+  PastWeek,
   Point,
   WeekProjection,
   WindowReading,
@@ -10,6 +11,9 @@ import type {
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
+const WEEK_MS = 7 * DAY_MS;
+/** Earlier weeks kept for the chart of how far each got. */
+const PAST_WEEKS = 8;
 /** The weekly chart is a few hundred pixels wide; more points add bytes, not detail. */
 const MAX_WEEK_POINTS = 336;
 const MAX_FIVE_HOUR_POINTS = 120;
@@ -109,8 +113,31 @@ function windowOf(
   };
 }
 
-/** The current week and five-hour window. Each comes from the newest reading
- *  that carries it, since Claude Code may leave either out. */
+/** Each week before `current`, oldest first, at its highest reading: as far
+ *  as it got before its reset. */
+export function pastWeeks(
+  samples: readonly LimitSample[],
+  current: WindowReading | null,
+): PastWeek[] {
+  const readings = samples
+    .flatMap((sample) => (sample.week ? [sample.week] : []))
+    .filter((week) => !(current && sameReset(week.resetsAt, current.resetsAt)))
+    .sort((a, b) => a.resetsAt.localeCompare(b.resetsAt));
+  const weeks: PastWeek[] = [];
+  for (const reading of readings) {
+    const last = weeks[weeks.length - 1];
+    if (last && sameReset(last.resetsAt, reading.resetsAt)) {
+      weeks[weeks.length - 1] = { ...last, peak: Math.max(last.peak, reading.pct) };
+    } else {
+      weeks.push({ resetsAt: reading.resetsAt, peak: reading.pct });
+    }
+  }
+  return weeks.slice(-PAST_WEEKS);
+}
+
+/** The current week and five-hour window, and how far earlier weeks got.
+ *  Each window comes from the newest reading that carries it, since Claude
+ *  Code may leave either out. */
 export function limitsFrom(samples: readonly LimitSample[], now: number): Limits | null {
   if (!samples.length) return null;
   const week = windowOf(samples, 'week', MAX_WEEK_POINTS, now);
@@ -119,8 +146,10 @@ export function limitsFrom(samples: readonly LimitSample[], now: number): Limits
     since: samples[0].at,
     week: week && {
       ...week,
+      startsAt: new Date(Date.parse(week.resetsAt) - WEEK_MS).toISOString(),
       projection: week.expired ? null : projectWeek(week.points, week.resetsAt, now),
     },
     five: windowOf(samples, 'five', MAX_FIVE_HOUR_POINTS, now),
+    weeks: pastWeeks(samples, week),
   };
 }

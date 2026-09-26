@@ -1,0 +1,12 @@
+@for (tile of tiles(); track tile.label) {
+  <div class="tile" [class.warn]="tile.isWarn">
+    <span class="k">{{ tile.label }}</span>
+    <b>{{ tile.value }}</b>
+    <span class="s"
+      >{{ tile.sub }}
+      @if (tile.meter !== null) {
+        <span class="meter"><i [style.width.%]="tile.meter"></i></span>
+      }
+    </span>
+  </div>
+}

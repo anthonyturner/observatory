@@ -1,0 +1,17 @@
+:host {
+  position: fixed;
+  z-index: 30;
+  max-width: 280px;
+  padding: 8px 11px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--usage-tip-wash);
+  color: var(--ink);
+  font: 12px/1.5 var(--font-sans);
+  white-space: pre-line;
+  pointer-events: none;
+}
+
+:host[hidden] {
+  display: none;
+}

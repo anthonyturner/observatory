@@ -1,0 +1,31 @@
+/* pr-starmap's list section, with Usage's headings in the flow colour. */
+:host {
+  display: block;
+}
+
+section {
+  margin-bottom: 30px;
+}
+
+h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--edge-soft);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--flow);
+}
+
+h3 small {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--faint);
+}

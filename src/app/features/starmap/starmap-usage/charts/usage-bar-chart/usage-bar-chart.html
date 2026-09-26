@@ -1,0 +1,38 @@
+@let c = chart();
+<svg
+  [attr.width]="c.width"
+  [attr.height]="c.height"
+  [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height"
+  role="img"
+  [attr.aria-label]="label()"
+>
+  @for (row of c.rows; track $index) {
+    <text
+      class="label"
+      [class.strong]="row.isStrong"
+      [attr.x]="row.label.x"
+      [attr.y]="row.label.y"
+      text-anchor="end"
+    >
+      {{ row.label.text }}
+    </text>
+    <rect
+      class="bar"
+      [class.dim]="!row.isStrong"
+      [attr.x]="row.bar.x"
+      [attr.y]="row.bar.y"
+      [attr.width]="row.bar.width"
+      [attr.height]="row.bar.height"
+      rx="3"
+    />
+    <text class="val" [attr.x]="row.value.x" [attr.y]="row.value.y">{{ row.value.text }}</text>
+    <rect
+      class="hit"
+      [attr.x]="row.hit.x"
+      [attr.y]="row.hit.y"
+      [attr.width]="row.hit.width"
+      [attr.height]="row.hit.height"
+      [attr.data-tip]="row.hit.tip"
+    />
+  }
+</svg>

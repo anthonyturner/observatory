@@ -14,7 +14,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { ageWords, fogLevel } from '../../../core/projects/data-age';
 import { CollisionsFeed } from '../../../core/queue/collisions-feed';
-import { collisionsOf } from '../../../core/queue/collisions-report';
 import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LedgerFeed } from '../../../core/queue/ledger-feed';
 import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
@@ -35,7 +34,6 @@ import { ChangesPanel } from '../memory/changes-panel/changes-panel';
 import { MemoryView } from '../memory/memory-view';
 import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
 import { Timeline } from '../memory/timeline/timeline';
-import { PullPanel } from '../../queue/pull-panel/pull-panel';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
@@ -47,6 +45,7 @@ import { LogList } from '../../logs/log-list/log-list';
 import { MeteorRecord } from '../../logs/meteor-record/meteor-record';
 import { LogSkyView } from '../log-sky-view';
 import { QUEUE_HELP_ENTRIES, QUEUE_HELP_KEYS } from '../../queue/queue-help';
+import { PrScreen } from '../pr-screen/pr-screen';
 import { skyItemOf, skyPairOf } from '../sky-items';
 import { StarmapHeader } from '../starmap-header/starmap-header';
 import { StarmapPrList } from '../starmap-pr-list/starmap-pr-list';
@@ -109,7 +108,7 @@ export interface SkyState {
     ChangesPanel,
     Timeline,
     StarmapUsage,
-    PullPanel,
+    PrScreen,
     StarCard,
     LogCard,
     LogList,
@@ -326,17 +325,14 @@ export class StarmapPage {
         })),
     };
   });
-  protected readonly sheetTriage = computed(() => {
-    // A visitor to the hosted preview cannot change anything, so has no triage to show.
-    if (!this.session.canWrite()) return null;
-    const item = this.items().find((each) => each.number === this.sheetPull());
-    return item ? { isSeen: item.isSeen, hidden: item.hidden } : null;
+  private readonly sheetItem = computed(
+    () => this.items().find((each) => each.number === this.sheetPull()) ?? null,
+  );
+  protected readonly sheetBucket = computed(() => {
+    const item = this.sheetItem();
+    return item ? shownBucket(item) : null;
   });
-  protected readonly sheetCollisions = computed(() => {
-    const number = this.sheetPull();
-    return number === null ? [] : collisionsOf(this.collisions.report(), number);
-  });
-  protected readonly collisionCheck = computed(() => this.collisions.report()?.check ?? null);
+  protected readonly sheetTitle = computed(() => this.sheetItem()?.title ?? null);
   /** The meteor record shows under the Log Sky's map, when it has days. */
   protected readonly showMeteors = computed(
     () => this.chart() === 'logs' && this.view() === 'map' && this.logs.hasDays(),
@@ -356,6 +352,7 @@ export class StarmapPage {
       untracked(() => {
         this.filter.set(null);
         this.openPull.set(null);
+        this.sheetPull.set(null);
       });
       if (repo === '/') return;
       untracked(() => {

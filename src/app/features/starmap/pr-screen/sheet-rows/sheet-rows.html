@@ -1,0 +1,16 @@
+@if (!rows().length && empty(); as nothing) {
+  <p class="note">{{ nothing }}</p>
+} @else {
+  @if (note(); as said) {
+    <p class="note">{{ said }}</p>
+  }
+  <ul class="rows">
+    @for (row of rows(); track row.key) {
+      <li>
+        @for (cell of row.cells; track $index) {
+          <span [class]="cell.classes">{{ cell.text }}</span>
+        }
+      </li>
+    }
+  </ul>
+}

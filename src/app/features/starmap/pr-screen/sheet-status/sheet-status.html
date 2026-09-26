@@ -1,0 +1,8 @@
+@if (badge(); as shown) {
+  <span class="pending" [class]="shown.status" [title]="shown.message">● {{ shown.text }}</span>
+}
+@if (hasNewer()) {
+  <button type="button" class="newer" (click)="showNewer.emit()">
+    Newer details arrived · show
+  </button>
+}

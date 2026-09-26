@@ -1,0 +1,23 @@
+@for (span of spans(); track $index) {
+  @switch (span.kind) {
+    @case ('code') {
+      <code>{{ span.text }}</code>
+    }
+    @case ('link') {
+      @if (span.strong) {
+        <strong
+          ><a [href]="span.href" target="_blank" rel="noopener">{{ span.text }}</a></strong
+        >
+      } @else {
+        <a [href]="span.href" target="_blank" rel="noopener">{{ span.text }}</a>
+      }
+    }
+    @default {
+      @if (span.strong) {
+        <strong>{{ span.text }}</strong>
+      } @else {
+        <ng-container>{{ span.text }}</ng-container>
+      }
+    }
+  }
+}

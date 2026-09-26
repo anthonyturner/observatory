@@ -3,9 +3,12 @@ import { ownerRoutes } from '../app/api-routes.ts';
 import { uncheckedCollisions } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
 import type { RepoRef } from '../github/github-reader.ts';
+import { storeEditStore } from '../edits/edit-store.ts';
+import { pullEditor } from '../edits/pull-editor.ts';
 import { githubApiReader } from '../github/github-api-reader.ts';
 import { storeHistoryStore } from '../history/history-store.ts';
 import { type ApiHandler, createApiHandler, json } from '../http/api-handler.ts';
+import { withoutCode } from '../queue/pull-detail.ts';
 import type { Store } from '../store/store.ts';
 import { upstashStore } from '../store/upstash-store.ts';
 import { storeTriageStore } from '../triage/triage-store.ts';
@@ -70,6 +73,21 @@ function pushedReads(live: ApiReads, store: Store): ApiReads {
   };
 }
 
+/** What a visitor reads: a private repository's pull requests without their code.
+ *  One whose privacy is not known counts as private. */
+function visitorReads(reads: ApiReads, repos: () => Promise<RepoRef[]>): ApiReads {
+  return {
+    ...reads,
+    pull: async (repo, number) => {
+      const detail = await reads.pull(repo, number);
+      const isPublic = (await repos()).some(
+        (each) => !each.isPrivate && each.nameWithOwner.toLowerCase() === repo.toLowerCase(),
+      );
+      return isPublic ? detail : withoutCode(detail);
+    },
+  };
+}
+
 /** The API as it runs on Vercel, from the environment. */
 function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): ApiHandler {
   const { store } = dependencies;
@@ -89,7 +107,14 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
     }),
     store,
   );
-  const owner = ownerRoutes(reads, triage);
+  const editor = pullEditor({
+    writer: github,
+    labels: (repo) => reads.labels(repo),
+    store: storeEditStore(store),
+    changed: ({ repo, number }) => reads.forgetPull(repo, number),
+    now: Date.now,
+  });
+  const owner = ownerRoutes(reads, triage, editor);
   const machines = machineRoutes({
     reads,
     store,
@@ -116,7 +141,9 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
     visitor:
       config.preview === 'off'
         ? null
-        : createApiHandler(visitorRoutes(owner, reads, visibleRepos(repos, config), policy)),
+        : createApiHandler(
+            visitorRoutes(owner, visitorReads(reads, repos), visibleRepos(repos, config), policy),
+          ),
   });
 }
 

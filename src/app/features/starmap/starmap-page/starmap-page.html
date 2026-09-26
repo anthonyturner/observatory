@@ -125,14 +125,11 @@
 }
 
 @if (sheetPull(); as number) {
-  <app-pull-panel
+  <app-pr-screen
     [repo]="repo()"
     [number]="number"
-    [triage]="sheetTriage()"
-    [collisions]="sheetCollisions()"
-    [collisionCheck]="collisionCheck()"
-    (picked)="openSheet($event)"
-    (triaged)="recordTriage(number, $event)"
+    [bucket]="sheetBucket()"
+    [title]="sheetTitle()"
     (closed)="sheetPull.set(null)"
   />
 }

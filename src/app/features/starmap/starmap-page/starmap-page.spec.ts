@@ -164,7 +164,9 @@ describe('StarmapPage', () => {
     button('#7')?.click();
     fixture.detectChanges();
     http.expectOne('/api/pull?repo=me/a&number=7');
-    expect(element.querySelector('app-pull-panel')).not.toBeNull();
+    http.expectOne('/api/edit?repo=me/a&number=7');
+    http.expectOne('/api/labels?repo=me/a');
+    expect(element.querySelector('app-pr-screen')).not.toBeNull();
   });
 
   it('opens a star’s card, and its full screen from Open; Esc closes them in turn', () => {
@@ -178,11 +180,13 @@ describe('StarmapPage', () => {
     button('Open')?.click();
     fixture.detectChanges();
     http.expectOne('/api/pull?repo=me/a&number=7');
-    expect(element.querySelector('app-pull-panel')).not.toBeNull();
+    http.expectOne('/api/edit?repo=me/a&number=7');
+    http.expectOne('/api/labels?repo=me/a');
+    expect(element.querySelector('app-pr-screen')).not.toBeNull();
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
-    expect(element.querySelector('app-pull-panel')).toBeNull();
+    expect(element.querySelector('app-pr-screen')).toBeNull();
     expect(element.querySelector('.prno')).not.toBeNull();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();

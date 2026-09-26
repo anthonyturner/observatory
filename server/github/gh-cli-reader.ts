@@ -1,5 +1,5 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { gh, ghJson } from './gh-cli.ts';
+import { ghCliWriter } from './gh-cli-writer.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import type { GitHub } from './github.ts';
 import {
@@ -14,26 +14,16 @@ import {
   RAW_ISSUE_FIELDS,
   type RawIssue,
 } from './issue-reader.ts';
-import { PULL_DETAIL_FIELDS, type RawPull } from './pull-reader.ts';
+import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
 
-const run = promisify(execFile);
-
-/** Enough for any list `gh` returns here; its default is 1 MB. */
-const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 const PULL_LIMIT = '100';
 const ISSUE_LIMIT = '1000';
 /** Enough for sixty days of a busy repository's pull requests. */
 const LEDGER_LIMIT = '400';
 const REPO_LIMIT = '1000';
-
-async function gh(args: readonly string[]): Promise<string> {
-  const { stdout } = await run('gh', [...args], { encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES });
-  return stdout;
-}
-
-const ghJson = async <T>(args: readonly string[]): Promise<T> => JSON.parse(await gh(args)) as T;
+const LABEL_LIMIT = '200';
 
 /** A repository with issues switched off answers `gh issue list` with this. */
 const ISSUES_DISABLED = /has disabled issues/i;
@@ -41,6 +31,7 @@ const ISSUES_DISABLED = /has disabled issues/i;
 /** GitHub through the `gh` CLI, as the account this machine signed it in with. */
 export function ghCliReader(): GitHub {
   return {
+    ...ghCliWriter(),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([
@@ -130,6 +121,18 @@ export function ghCliReader(): GitHub {
         repo,
         '--json',
         PULL_DETAIL_FIELDS.join(','),
+      ]),
+    pullDiff: (repo, number) => gh(['pr', 'diff', String(number), '--repo', repo]),
+    repoLabels: (repo) =>
+      ghJson<RawLabel[]>([
+        'label',
+        'list',
+        '--repo',
+        repo,
+        '--limit',
+        LABEL_LIMIT,
+        '--json',
+        'name,color',
       ]),
     touchedPulls: async (repo, sinceDay) =>
       byNumberDescending(

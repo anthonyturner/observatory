@@ -188,6 +188,43 @@
   --orrery-star-4: #fff0d6;
   --orrery-star-5: #ffd9b8;
 
+  /* pr-starmap's PR screen: its glass, the diff's washes, and the Edit tab. */
+  --sheet-glass: linear-gradient(170deg, rgba(16, 24, 50, 0.95), rgba(6, 10, 22, 0.97));
+  --sheet-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 40px 90px -24px rgba(0, 0, 0, 0.9);
+  --sheet-code-wash: rgba(142, 162, 255, 0.1);
+  --sheet-code-ink: #cfd9f5;
+  --sheet-md-ink: #d7e0f6;
+  --sheet-well: rgba(3, 6, 14, 0.7);
+  --sheet-head-wash: rgba(142, 162, 255, 0.07);
+  --sheet-file-wash: rgba(142, 162, 255, 0.06);
+  --sheet-diff-well: rgba(3, 6, 14, 0.75);
+  --sheet-add-wash: rgba(95, 227, 161, 0.1);
+  --sheet-add-ink: #b4f3d2;
+  --sheet-del-wash: rgba(255, 111, 94, 0.1);
+  --sheet-del-ink: #ffc0b8;
+  --sheet-hunk-wash: rgba(142, 162, 255, 0.08);
+  --sheet-hunk-ink: #9fb3ff;
+  --sheet-input-well: rgba(3, 6, 14, 0.6);
+  --sheet-edit-edge: rgba(192, 140, 255, 0.6);
+  --sheet-edit-wash: rgba(192, 140, 255, 0.22);
+  --sheet-button-wash: rgba(142, 162, 255, 0.08);
+  --sheet-savebar: rgba(6, 10, 22, 0.96);
+  --sheet-decide-edge: rgba(255, 194, 77, 0.3);
+  --sheet-decide-wash: rgba(255, 194, 77, 0.05);
+  --sheet-ask-edge: rgba(142, 162, 255, 0.55);
+  --sheet-ask-wash: rgba(142, 162, 255, 0.18);
+  --sheet-ask-hover: rgba(142, 162, 255, 0.3);
+  /* The badge that says how an edit went. */
+  --sheet-pending-edge: rgba(192, 140, 255, 0.45);
+  --sheet-pending-wash: rgba(192, 140, 255, 0.1);
+  --sheet-pending-ink: #d9c2ff;
+  --sheet-applied-edge: rgba(95, 227, 161, 0.45);
+  --sheet-applied-wash: rgba(95, 227, 161, 0.1);
+  --sheet-applied-ink: #a9f0cb;
+  --sheet-failed-edge: rgba(255, 111, 94, 0.5);
+  --sheet-failed-wash: rgba(255, 111, 94, 0.1);
+  --sheet-failed-ink: #ffb3aa;
+
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;

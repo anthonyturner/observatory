@@ -1,6 +1,6 @@
 import { ProjectSnapshot } from '../projects/project.types';
 import { ballCount2D, ballNetwork } from './ball-network';
-import { MAX_BEADS, layoutBeads } from './beads';
+import { MAX_BEADS, layoutBeads, stalePulse, stalenessOf } from './beads';
 import { coreRadius, coreViewOf } from './core-view';
 import { FLOOR_STRIDE, buildFloorGrid, floorBatches, floorKey } from './floor-grid';
 import { ORBIT, TIER_RING } from './proportions';
@@ -173,5 +173,27 @@ describe('buildFloorGrid', () => {
       expect(batches[i].alpha).toBeGreaterThan(batches[i - 1].alpha);
     }
     for (const { segments } of batches) expect(segments.length % 4).toBe(0);
+  });
+});
+
+describe('staleness', () => {
+  it('stays fresh for a week, then fades to its faintest by six weeks', () => {
+    expect(stalenessOf(project('a', { oldestIdleDays: 3 }))).toBe(0);
+    expect(stalenessOf(project('a', { oldestIdleDays: 7 }))).toBe(0);
+    expect(stalenessOf(project('a', { oldestIdleDays: 20 }))).toBeGreaterThan(0);
+    expect(stalenessOf(project('a', { oldestIdleDays: 90 }))).toBe(1);
+    expect(stalenessOf(project('a'))).toBe(0);
+  });
+
+  it('dims a stale bead and gives it a ring that pulses, or holds when still', () => {
+    const { beads } = layoutBeads(
+      [project('fresh', { oldestIdleDays: 1 }), project('old', { oldestIdleDays: 60 })],
+      100,
+    );
+    const [fresh, old] = [...beads].sort((a, b) => a.staleness - b.staleness);
+    expect(old.staleness).toBe(1);
+    expect(stalePulse(fresh.staleness, 1, false)).toBe(0);
+    expect(stalePulse(old.staleness, 0, false)).not.toBe(stalePulse(old.staleness, 1, false));
+    expect(stalePulse(old.staleness, 0, true)).toBe(stalePulse(old.staleness, 5, true));
   });
 });

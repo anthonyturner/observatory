@@ -71,6 +71,7 @@ export class CoreScene {
     this.beads = new BeadPoints(
       layout.beads,
       (bead) => palette.colour(bead.severity.color),
+      palette.stale,
       this.resources,
     );
     this.glow = new CentreGlow(this.resources);
@@ -109,7 +110,7 @@ export class CoreScene {
       viewHeight: view.height,
       isStill: frame.isStill,
     });
-    this.beads.update(pose, pixelRatio, frame.litKey);
+    this.beads.update(pose, pixelRatio, frame);
     this.glow.update(pose, this.ball.tint, this.coreRadius);
   }
 

@@ -1,0 +1,13 @@
+<div class="group" role="group" aria-label="Zoom">
+  <button type="button" aria-label="Zoom out" title="Zoom out (−)" (click)="zoomOut.emit()">
+    &minus;
+  </button>
+  <button type="button" aria-label="Zoom in" title="Zoom in (+)" (click)="zoomIn.emit()">+</button>
+  <button type="button" title="Frame every world" (click)="fit.emit()">Fit</button>
+</div>
+<div class="group">
+  <button type="button" [attr.aria-pressed]="isMoving()" (click)="motion.toggle()">
+    Motion {{ isMoving() ? 'on' : 'off' }}
+  </button>
+</div>
+<span class="hint">drag · scroll · click a world</span>

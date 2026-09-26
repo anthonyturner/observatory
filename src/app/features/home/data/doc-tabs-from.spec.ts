@@ -17,16 +17,16 @@ describe('docTabsFrom', () => {
     expect(tabs).toEqual({
       project: 'stuck',
       links: [
-        { label: 'Star map', href: '/p/me/stuck' },
-        { label: 'Orrery', href: '/orrery' },
-        { label: 'Issues', href: '/p/me/stuck#issues' },
-        { label: 'Logs', href: '/p/me/stuck#logs' },
-        { label: 'Usage', href: '/p/me/stuck#usage' },
+        { label: 'Star map', path: '/p/me/stuck' },
+        { label: 'Orrery', path: '/orrery' },
+        { label: 'Issues', path: '/p/me/stuck', fragment: 'issues' },
+        { label: 'Logs', path: '/p/me/stuck', fragment: 'logs' },
+        { label: 'Usage', path: '/p/me/stuck', fragment: 'usage' },
       ],
     });
   });
 
   it('keeps only the orrery when there are no projects', () => {
-    expect(docTabsFrom([])).toEqual({ links: [{ label: 'Orrery', href: '/orrery' }] });
+    expect(docTabsFrom([])).toEqual({ links: [{ label: 'Orrery', path: '/orrery' }] });
   });
 });

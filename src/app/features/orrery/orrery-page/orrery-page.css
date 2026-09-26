@@ -1,0 +1,113 @@
+:host {
+  position: fixed;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  background: var(--void);
+}
+
+/* The HUD sits over the sky; only its own controls take the pointer. */
+.hud {
+  position: fixed;
+  right: 0;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-inline: 20px;
+  pointer-events: none;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.top {
+  top: 0;
+  padding-top: calc(18px + env(safe-area-inset-top, 0px));
+}
+
+.bottom {
+  bottom: 0;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+.brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 34px;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.stamp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.home {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 12px;
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.home span {
+  color: var(--flow);
+}
+
+.home:hover {
+  border-color: var(--flow);
+  background: var(--flow-tint);
+}
+
+.state {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  max-width: min(420px, calc(100vw - 40px));
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  color: var(--muted);
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+@media (max-width: 720px) {
+  h1 {
+    font-size: 28px;
+  }
+
+  .home {
+    min-height: 44px;
+  }
+}

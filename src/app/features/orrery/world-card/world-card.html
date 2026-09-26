@@ -1,0 +1,54 @@
+@let snapshot = project();
+<article class="card" aria-labelledby="world-card-name">
+  <button class="close" type="button" aria-label="Close" (click)="closed.emit()">&times;</button>
+  <div>
+    <div class="kind">{{ kind() }}</div>
+    <h2 id="world-card-name">{{ snapshot.name }}</h2>
+    <div class="repo">{{ snapshot.repo }}</div>
+  </div>
+
+  @if (snapshot.error; as error) {
+    <p class="error">{{ error }}</p>
+    <p class="unknown">Counts unknown, not zero.</p>
+  } @else {
+    <div class="counts">
+      @for (bar of bars(); track bar.label) {
+        <div class="count">
+          <span class="number">{{ bar.count }}</span>
+          <span
+            class="bar"
+            aria-hidden="true"
+            [style.--c]="bar.color"
+            [style.width.%]="bar.widthPercent * 0.6"
+          ></span>
+          <span class="label">{{ bar.label }}</span>
+        </div>
+      } @empty {
+        <span class="label">nothing waiting</span>
+      }
+    </div>
+    <dl class="totals">
+      <div>
+        <dt>{{ snapshot.open }}</dt>
+        <dd>pull request{{ snapshot.open === 1 ? '' : 's' }} open</dd>
+      </div>
+      @if (snapshot.issues !== undefined) {
+        <div>
+          <dt>{{ snapshot.issues }}</dt>
+          <dd>issue{{ snapshot.issues === 1 ? '' : 's' }} open</dd>
+        </div>
+      }
+      <div>
+        <dt>{{ snapshot.oldestIdleDays ?? 0 }}</dt>
+        <dd>days since the oldest was touched</dd>
+      </div>
+    </dl>
+  }
+
+  <div class="actions">
+    <button type="button" (click)="showOnHome.emit(snapshot.repo)">Show on Home</button>
+    <a [href]="pullsUrl()" target="_blank" rel="noopener"
+      >Pull requests <span aria-hidden="true">&#8599;</span></a
+    >
+  </div>
+</article>

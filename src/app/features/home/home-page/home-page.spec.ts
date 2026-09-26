@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { CORE_RENDERER } from '../../../core/instrument/core-tokens';
 import { CoreRenderer } from '../../../core/instrument/core-renderer';
 import { SKY_CANVAS, SkyCanvas } from '../../../core/sky/sky-painter';
@@ -29,6 +30,7 @@ describe('HomePage', () => {
   function render(): HTMLElement {
     TestBed.configureTestingModule({
       providers: [
+        provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: CORE_RENDERER, useValue: () => NO_CANVAS },

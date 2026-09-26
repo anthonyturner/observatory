@@ -1,0 +1,230 @@
+:host {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  z-index: 6;
+  display: block;
+  width: min(348px, calc(100vw - 40px));
+  max-height: min(580px, calc(100vh - 40px));
+  overflow-y: auto;
+  transform: translateY(-50%);
+  animation: card-in 0.38s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(18px);
+  }
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--glass-card-soft);
+  box-shadow:
+    var(--sheen-inset),
+    var(--shadow-card),
+    0 0 60px -30px var(--sev);
+}
+
+/* The rail down the left edge, in the world's colour. */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, transparent, var(--sev) 18%, var(--sev) 82%, transparent);
+  box-shadow: 0 0 14px var(--sev);
+}
+
+.kind {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--sev);
+}
+
+h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.repo {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--bad-soft);
+  overflow-wrap: anywhere;
+}
+
+.unknown {
+  margin: -8px 0 0;
+  font-size: 12.5px;
+}
+
+.counts {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.number {
+  min-width: 24px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.bar {
+  height: 7px;
+  min-width: 3px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 55%, transparent));
+  box-shadow: 0 0 12px -1px var(--c);
+}
+
+.label {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding-top: 13px;
+  border-top: 1px solid var(--edge-soft);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.totals div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+dt {
+  min-width: 24px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Controls sit in a row of their own, never over the text. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--edge-soft);
+}
+
+.actions > * {
+  flex: 1 1 auto;
+  min-width: 104px;
+  padding: 9px 13px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 9px;
+  background: var(--flow-wash-strong);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.actions > *:hover {
+  border-color: var(--flow);
+  background: var(--flow-tint-strong);
+}
+
+.close {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid var(--edge-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  border-color: var(--edge);
+  color: var(--ink);
+}
+
+/* On a phone the card sits at the foot of the screen, above the tools. */
+@media (max-width: 720px) {
+  :host {
+    top: auto;
+    right: 10px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    width: auto;
+    max-height: 55vh;
+    transform: none;
+    animation: none;
+  }
+
+  .actions > *,
+  .close {
+    min-height: 44px;
+  }
+
+  .close {
+    width: 44px;
+    top: 6px;
+    right: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    animation: none;
+  }
+}

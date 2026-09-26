@@ -1,0 +1,7 @@
+:host {
+  display: block;
+}
+
+app-issue-bar {
+  margin-bottom: 18px;
+}

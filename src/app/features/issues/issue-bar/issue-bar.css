@@ -1,0 +1,98 @@
+/* pr-starmap's issue bar, rule for rule. */
+:host {
+  display: block;
+}
+
+.issuebar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.toolgroup {
+  display: flex;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+  overflow: hidden;
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.toolgroup button {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 13px;
+  min-width: 42px;
+  border: 0;
+  border-right: 1px solid var(--edge-soft);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.toolgroup button:last-child {
+  border-right: 0;
+}
+
+.toolgroup button:hover {
+  color: var(--ink);
+  background: var(--starmap-hover);
+}
+
+.toolgroup button:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+.toolgroup button[aria-selected='true'] {
+  color: var(--ink);
+  background: var(--starmap-press);
+}
+
+.toolgroup b {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+select,
+input {
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+select {
+  flex: 0 1 190px;
+  cursor: pointer;
+}
+
+select option {
+  background: var(--issue-option);
+}
+
+input {
+  flex: 1 1 170px;
+}
+
+input::placeholder {
+  color: var(--faint);
+}
+
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}

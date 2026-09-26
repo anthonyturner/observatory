@@ -2,7 +2,12 @@ import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
 import { type GraphQl, type GraphQlConfig, githubGraphQl } from './github-graphql.ts';
 import { ISSUE_GRAPHQL, PULL_GRAPHQL, nodesOf, selectionOf } from './graphql-fields.ts';
-import { type ClosingPull, RAW_ISSUE_FIELDS, type RawIssue } from './issue-reader.ts';
+import {
+  CLOSING_PULL_FIELDS,
+  type ClosingPull,
+  RAW_ISSUE_FIELDS,
+  type RawIssue,
+} from './issue-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import { PULL_DETAIL_FIELDS, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
@@ -135,14 +140,39 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     return enabled ? nodes.map(shape) : null;
   }
 
+  /** Issues closed on or after `sinceDay`, found the way `gh issue list --search` finds them. */
+  async function closedIssues(
+    repo: string,
+    sinceDay: string,
+    fields: readonly string[],
+  ): Promise<Node[]> {
+    const { select, shape } = selectionOf(ISSUE_GRAPHQL, fields);
+    const nodes = await allPages(async (after) => {
+      const data = await graphql(
+        `query($query: String!, $last: Int!, $after: String) {
+          search(type: ISSUE_ADVANCED, last: $last, after: $after, query: $query) {
+            pageInfo { hasNextPage endCursor }
+            nodes { ... on Issue { ${select} } }
+          }
+        }`,
+        {
+          query: `( closed:>=${sinceDay} ) repo:${repo} state:closed type:issue`,
+          last: PAGE_SIZE,
+          after,
+        },
+      );
+      return pageOf(asNode(data)['search']);
+    }, ISSUE_LIMIT);
+    return nodes.map(shape);
+  }
+
   return {
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),
     openPulls: async (repo) => shaped<PullRequest>(await openPulls(repo, PULL_REQUEST_FIELDS)),
     queuePulls: async (repo) => shaped<QueuePull>(await openPulls(repo, QUEUE_PULL_FIELDS)),
-    closingPulls: async (repo) =>
-      shaped<ClosingPull>(await openPulls(repo, ['number', 'closingIssuesReferences'])),
+    closingPulls: async (repo) => shaped<ClosingPull>(await openPulls(repo, CLOSING_PULL_FIELDS)),
     touchedPulls: async (repo, sinceDay) =>
       byNumberDescending(shaped<LedgerPull>(await touchedPulls(repo, sinceDay))),
     pullFiles: async (repo) =>
@@ -160,20 +190,8 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
       if (!issues) throw new Error(`GitHub: the repository ${repo} has disabled issues`);
       return shaped<RawIssue>(issues);
     },
-    closedSinceCount: async (repo, sinceDay) => {
-      const data = await graphql(
-        `
-          query ($query: String!) {
-            search(query: $query, type: ISSUE, first: 1) {
-              issueCount
-            }
-          }
-        `,
-        { query: `repo:${repo} is:issue is:closed closed:>=${sinceDay}` },
-      );
-      // `gh` counts at most the list it was asked for.
-      return Math.min(Number(asNode(asNode(data)['search'])['issueCount']), ISSUE_LIMIT);
-    },
+    closedIssues: async (repo, sinceDay) =>
+      shaped<RawIssue>(await closedIssues(repo, sinceDay, RAW_ISSUE_FIELDS)),
   };
 }
 

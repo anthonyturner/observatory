@@ -27,7 +27,10 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
-import { IssuesTab } from '../../issues/issues-tab/issues-tab';
+import { IssuesFeed } from '../../../core/issues/issues-feed';
+import { openPullsOf } from '../../issues/issue-list';
+import { IssuesPanel } from '../../issues/issues-panel/issues-panel';
+import { IssuesScreen } from '../../issues/issues-screen';
 import { ChangesPanel } from '../memory/changes-panel/changes-panel';
 import { MemoryView } from '../memory/memory-view';
 import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
@@ -102,7 +105,7 @@ export interface SkyState {
     StarmapHeader,
     StarmapTools,
     StarmapPrList,
-    IssuesTab,
+    IssuesPanel,
     ChangesPanel,
     Timeline,
     StarmapUsage,
@@ -127,6 +130,8 @@ export interface SkyState {
     LogSkyView,
     MemoryView,
     UsageWatch,
+    IssuesFeed,
+    IssuesScreen,
   ],
   templateUrl: './starmap-page.html',
   styleUrl: './starmap-page.css',
@@ -143,6 +148,7 @@ export class StarmapPage {
   protected readonly session = inject(ViewerSession);
   private readonly motion = inject(MotionPreference);
   protected readonly logs = inject(LogSkyView);
+  protected readonly issues = inject(IssuesScreen);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
@@ -154,9 +160,8 @@ export class StarmapPage {
     ),
     { initialValue: '' },
   );
-  protected readonly chart = toSignal(this.route.fragment.pipe(map(chartOf)), {
-    initialValue: 'prs' as Chart,
-  });
+  private readonly fragment = toSignal(this.route.fragment, { initialValue: null });
+  protected readonly chart = computed<Chart>(() => chartOf(this.fragment()));
   /** The pull-request and log skies share one view; issues are a list for now. */
   private readonly skyView = signal<SkyView>('map');
   protected readonly view = computed<SkyView>(() =>
@@ -199,9 +204,17 @@ export class StarmapPage {
     this.memory.replay() ? [] : (this.collisions.report()?.pairs ?? []).map(skyPairOf),
   );
   protected readonly title = computed(() => titleOf(this.chart()));
-  protected readonly chips = computed(() =>
-    this.chart() === 'prs' ? queueChips(this.skyItems()) : [],
+  protected readonly chips = computed(() => {
+    const chart = this.chart();
+    if (chart === 'issues') return this.issues.chips();
+    return chart === 'prs' ? queueChips(this.skyItems()) : [];
+  });
+  /** What the legend has narrowed the screen to. */
+  protected readonly legendFilter = computed(() =>
+    this.chart() === 'issues' ? this.issues.filter() : this.filter(),
   );
+  /** The open pull requests the queue knows, for the issues' chips. */
+  protected readonly openPulls = computed(() => openPullsOf(this.report()?.items ?? []));
   private readonly usageDocument = computed(() => {
     const state = this.usage.state();
     return state.status === 'ready' ? state.document : null;
@@ -209,6 +222,7 @@ export class StarmapPage {
   protected readonly stamp = computed(() => {
     const report = this.report();
     if (this.chart() === 'usage') return usageStamp(this.usageDocument());
+    if (this.chart() === 'issues') return this.issues.stamp();
     if (this.chart() !== 'prs') return '';
     const replay = this.memory.replay();
     const repo = report?.repo ?? this.repo();
@@ -230,6 +244,7 @@ export class StarmapPage {
   });
   protected readonly stale = computed(() => {
     if (this.chart() === 'usage') return this.usageFog();
+    if (this.chart() === 'issues') return this.issues.stale();
     const state = this.state();
     const report = this.report();
     if (!report || this.memory.replay()) return null;
@@ -348,7 +363,15 @@ export class StarmapPage {
         this.feed.watch(repo);
         this.logs.clear();
         this.logs.watch(repo);
+        this.issues.watch(repo);
       });
+    });
+    this.issues.openAt(this.fragment());
+    // The Issues tab lives in the address too, so Back and a shared link keep it.
+    effect(() => {
+      const fragment = this.issues.fragment();
+      if (this.chart() !== 'issues') return;
+      untracked(() => this.navigateTo(fragment));
     });
     // A refresh lays the Log Sky out again; the card and threads follow their fault.
     effect(() => {
@@ -386,11 +409,13 @@ export class StarmapPage {
     this.openPull.set(null);
     this.logs.clear();
     this.logs.filter.set(null);
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      fragment: fragmentOf(chart),
-      replaceUrl: true,
-    });
+    this.issues.clearFilter();
+    this.navigateTo(chart === 'issues' ? this.issues.fragment() : fragmentOf(chart));
+  }
+
+  private navigateTo(fragment: string | undefined): void {
+    if ((this.fragment() ?? undefined) === fragment) return;
+    void this.router.navigate([], { relativeTo: this.route, fragment, replaceUrl: true });
   }
 
   protected setView(view: SkyView): void {
@@ -401,6 +426,10 @@ export class StarmapPage {
   protected toggleFilter(id: string): void {
     if (this.chart() === 'logs') {
       this.logs.toggleFilter(id as LogKey);
+      return;
+    }
+    if (this.chart() === 'issues') {
+      this.issues.toggleComets();
       return;
     }
     this.filter.update((current) => (current === id ? null : id));
@@ -428,6 +457,7 @@ export class StarmapPage {
     }
     this.refreshing.set(true);
     this.feed.refresh(this.repo());
+    this.issues.refresh(this.repo());
   }
 
   /** A point on the timeline: the refresh there, or now. */

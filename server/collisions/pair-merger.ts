@@ -22,6 +22,10 @@ const REF_ROOT = 'refs/observatory/pull';
 const MERGE_CONFLICTED = 1;
 const FETCH_CONCURRENCY = 4;
 const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
+/** A fetch that has not finished by then is given up on, and its pairs left unchecked. */
+const GIT_TIMEOUT_MS = 2 * 60_000;
+/** No terminal is attached, so git must fail rather than wait for a password. */
+const GIT_ENV = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
 
 const refOf = (pull: number): string => `${REF_ROOT}/${pull}`;
 const refspecOf = (pull: number): string => `+refs/pull/${pull}/head:${refOf(pull)}`;
@@ -29,7 +33,10 @@ const refspecOf = (pull: number): string => `+refs/pull/${pull}/head:${refOf(pul
 /** `git` with `input` on stdin, for `update-ref --stdin`. */
 function gitWithInput(clone: string, args: readonly string[], input: string): Promise<void> {
   return new Promise((done, fail) => {
-    const child = spawn('git', ['-C', clone, ...args], { stdio: ['pipe', 'ignore', 'ignore'] });
+    const child = spawn('git', ['-C', clone, ...args], {
+      stdio: ['pipe', 'ignore', 'ignore'],
+      env: GIT_ENV,
+    });
     child.on('error', fail);
     child.on('close', (code) =>
       code === 0 ? done() : fail(new Error(`git ${args[0]} exited ${code}`)),
@@ -41,7 +48,12 @@ function gitWithInput(clone: string, args: readonly string[], input: string): Pr
 /** Pairs merged with `git merge-tree --write-tree` (git 2.38 or newer). */
 export function gitPairMerger(): PairMerger {
   const git = (clone: string, args: readonly string[]) =>
-    run('git', ['-C', clone, ...args], { encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES });
+    run('git', ['-C', clone, ...args], {
+      encoding: 'utf8',
+      maxBuffer: MAX_OUTPUT_BYTES,
+      timeout: GIT_TIMEOUT_MS,
+      env: GIT_ENV,
+    });
 
   /** All heads in one fetch; if one is missing that fails, so then one at a time. */
   async function fetchHeads(clone: string, pulls: readonly number[]): Promise<Set<number>> {

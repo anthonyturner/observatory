@@ -1,0 +1,54 @@
+:host {
+  display: block;
+}
+
+.pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 3px 10px;
+  border: 1px solid var(--sheet-pending-edge);
+  border-radius: 999px;
+  background: var(--sheet-pending-wash);
+  color: var(--sheet-pending-ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.pending.applied {
+  border-color: var(--sheet-applied-edge);
+  background: var(--sheet-applied-wash);
+  color: var(--sheet-applied-ink);
+}
+
+.pending.failed,
+.pending.rejected,
+.pending.partial {
+  border-color: var(--sheet-failed-edge);
+  background: var(--sheet-failed-wash);
+  color: var(--sheet-failed-ink);
+}
+
+.newer {
+  width: fit-content;
+  padding: 3px 11px;
+  margin-left: 8px;
+  border: 1px solid var(--sheet-ask-edge);
+  border-radius: 999px;
+  background: var(--sheet-ask-wash);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.newer:hover {
+  background: var(--sheet-ask-hover);
+}
+
+.newer:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}

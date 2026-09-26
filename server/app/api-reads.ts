@@ -1,5 +1,6 @@
 import type { CollisionsReport } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
+import type { RawLabel } from '../github/pull-reader.ts';
 import type { Frame } from '../history/frames.ts';
 import type { HistoryStore } from '../history/history-store.ts';
 import { type Ledger, ledgerReport } from '../history/ledger.ts';
@@ -13,7 +14,7 @@ import { type PullDetail, pullDetailOf } from '../queue/pull-detail.ts';
 import { type QueueReport, queueReport } from '../queue/queue-report.ts';
 import type { UsageReport } from '../usage/usage-types.ts';
 import { cached } from '../util/cached.ts';
-import { cachedByKey } from '../util/cached-by-key.ts';
+import { cachedByKey, keyedCache } from '../util/cached-by-key.ts';
 
 /** GitHub is read at most this often; the page asks every few minutes. */
 const PROJECTS_TTL_MS = 5 * 60_000;
@@ -21,6 +22,8 @@ const PROJECTS_TTL_MS = 5 * 60_000;
 const QUEUE_TTL_MS = 2 * 60_000;
 /** One pull request is read when it is opened, and again a minute later at most. */
 const PULL_TTL_MS = 60_000;
+/** A repository's labels change rarely; the Edit tab offers them. */
+const LABELS_TTL_MS = 5 * 60_000;
 /** Merging every pair in a clone takes a while: at most every ten minutes. */
 const COLLISIONS_TTL_MS = 10 * 60_000;
 /** A log folder can hold hundreds of thousands of lines: read it every five minutes at most. */
@@ -54,7 +57,12 @@ export interface ApiReads {
   issues(repo: string): Promise<IssuesReport>;
   /** One issue with its description, for the issue window. */
   issue(repo: string, number: number): Promise<IssueDetail>;
+  /** The next read of this issue goes to GitHub, not the cache. */
+  forgetIssue(repo: string, number: number): void;
   pull(repo: string, number: number): Promise<PullDetail>;
+  /** The next read of this pull request goes to GitHub, not the cache. */
+  forgetPull(repo: string, number: number): void;
+  labels(repo: string): Promise<RawLabel[]>;
   collisions(repo: string): Promise<CollisionsReport>;
   history(repo: string): Promise<HistoryReport>;
   /** Openings, merges and closures a day for sixty days, rebuilt from GitHub. */
@@ -74,20 +82,30 @@ export function cachedReads(sources: ReadSources): ApiReads {
     );
     return report;
   }, QUEUE_TTL_MS);
-  const issueOf = cachedByKey(async (key) => {
+  const numberKey = (repo: string, number: number): string => `${repo}#${number}`;
+  const issueOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
     return issueDetail(github, repo, Number(number));
   }, PULL_TTL_MS);
-  const pullOf = cachedByKey(async (key) => {
+  const pullOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
-    return pullDetailOf(await github.pullDetail(repo, Number(number)));
+    const [raw, diff] = await Promise.all([
+      github.pullDetail(repo, Number(number)),
+      // A diff GitHub will not produce, being too large, must not sink the rest of the screen.
+      github.pullDiff(repo, Number(number)).catch(() => ''),
+    ]);
+    return pullDetailOf(raw, { diff, fetchedAt: new Date().toISOString() });
   }, PULL_TTL_MS);
+
   return {
     projects: cached(() => projectsReport(github), PROJECTS_TTL_MS),
     queue: queueOf,
     issues: cachedByKey((repo) => issuesReport(github, repo), QUEUE_TTL_MS),
-    issue: (repo, number) => issueOf(`${repo}#${number}`),
-    pull: (repo, number) => pullOf(`${repo}#${number}`),
+    issue: (repo, number) => issueOf.read(numberKey(repo, number)),
+    forgetIssue: (repo, number) => issueOf.forget(numberKey(repo, number)),
+    pull: (repo, number) => pullOf.read(numberKey(repo, number)),
+    forgetPull: (repo, number) => pullOf.forget(numberKey(repo, number)),
+    labels: cachedByKey((repo) => github.repoLabels(repo), LABELS_TTL_MS),
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),
     history: async (repo) => ({ repo, frames: await history.read(repo) }),
     ledger: cachedByKey((repo) => ledgerReport(github, repo), LEDGER_TTL_MS),

@@ -20,6 +20,8 @@ import { SkyEngine } from '../engine/sky-engine';
 import { SkyLayout, layoutQueue } from '../engine/sky-layout';
 import { SkyItem, SkyStar } from '../engine/sky-model';
 import { ThreadLayer } from '../engine/thread-layer';
+import { CometLayer, layoutComets } from '../engine/comet-layer';
+import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
 import { News, NewsLayer } from '../memory/news-layer';
 import { LogSkyLayout, LogStar } from '../../../core/logs/log-layout';
@@ -85,6 +87,12 @@ export class StarmapSky {
   readonly selected = input<number | null>(null);
   readonly pairs = input<readonly SkyPair[]>([]);
   readonly showCollisions = input(true);
+  /** Unclaimed issues passing through, and whether they are shown. */
+  readonly comets = input<readonly Comet[]>([]);
+  readonly showComets = input(true);
+  readonly selectedComet = input<Comet | null>(null);
+  /** Whether a past refresh is on screen: comets are the present, so they step aside. */
+  readonly replaying = input(false);
   /** The review queue's news: what changed, and whether it has been seen. */
   readonly news = input<News>({ events: [], acknowledged: false });
   /** 0 clear to 1 full. */
@@ -96,6 +104,8 @@ export class StarmapSky {
   readonly pickedLog = output<LogStar | null>();
   /** An issue's body was clicked, or empty sky (null), on the nursery. */
   readonly pickedIssue = output<IssueStar | null>();
+  /** A comet was clicked. */
+  readonly pickedComet = output<Comet>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('sky');
   private readonly document = inject(DOCUMENT);
@@ -106,6 +116,7 @@ export class StarmapSky {
   private readonly threads = new ThreadLayer();
   private readonly newsLayer = new NewsLayer();
   private readonly nurserySky = new NurserySky(this.document);
+  private readonly cometLayer = new CometLayer<Comet>();
   private engine: SkyEngine | null = null;
   private isFramed = false;
   /** The skies already framed once, so a data refresh keeps the viewer's camera. */
@@ -148,6 +159,16 @@ export class StarmapSky {
       untracked(() => this.select());
     });
     effect(() => {
+      this.cometLayer.comets = layoutComets(this.comets(), COMET_CAP);
+      this.engine?.kick();
+    });
+    effect(() => {
+      this.cometLayer.show = this.showComets();
+      this.cometLayer.paused = this.replaying();
+      this.cometLayer.selected = this.selectedComet();
+      this.engine?.kick();
+    });
+    effect(() => {
       this.newsLayer.news = this.news();
       this.engine?.kick();
     });
@@ -179,6 +200,15 @@ export class StarmapSky {
 
   fit(): void {
     this.engine?.fit();
+  }
+
+  /** Lays the nursery out afresh and frames it, as pressing Starmap on Issues does. */
+  arriveNursery(): void {
+    const engine = this.engine;
+    if (!engine || this.chart() !== 'issues') return;
+    this.nurserySky.layOut(engine, this.nursery(), false);
+    this.select();
+    engine.fit();
   }
 
   pan(dx: number, dy: number): void {
@@ -257,6 +287,7 @@ export class StarmapSky {
             onLost,
           );
         },
+        pickedOther: (thing) => this.pickedComet.emit(thing as Comet),
         failed: (error) => this.errors.handleError(error),
       });
     } catch (error) {
@@ -265,6 +296,7 @@ export class StarmapSky {
       return;
     }
     this.engine.layers = [
+      this.cometLayer,
       this.collisions,
       this.binaries,
       this.threads,

@@ -37,7 +37,7 @@ export class IssueCard {
   protected readonly facts = computed(() =>
     issueFacts(this.star(), this.now(), (iso) => formatDay(iso)),
   );
-  protected readonly labels = computed(() => labelChips(this.star().issue));
+  protected readonly labels = computed(() => labelChips(this.star().issue.labels));
   protected readonly chips = computed(() => {
     const { issue } = this.star();
     return pullChips(issue.prs, issue.url, this.pulls());

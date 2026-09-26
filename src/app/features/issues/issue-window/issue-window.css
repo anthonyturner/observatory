@@ -1,0 +1,143 @@
+/* pr-starmap's PR screen glass, shorter and without tabs. Its height follows
+   the description, and it hangs from near the top rather than the middle, so
+   the header does not jump down when the description arrives. */
+.sheet {
+  position: fixed;
+  top: max(20px, 8vh);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  background: var(--sheet-glass);
+  backdrop-filter: blur(24px) saturate(150%);
+  box-shadow:
+    var(--sheet-shadow),
+    0 0 80px -40px var(--sev, var(--flow));
+  z-index: 8;
+  overflow: hidden;
+  animation: issuein 0.34s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.sheet:focus {
+  outline: none;
+}
+
+/* Set from the viewer's Motion choice. */
+.sheet.still {
+  animation: none;
+}
+
+@keyframes issuein {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* A dragged window is placed by left and top alone. */
+.dragged {
+  transform: none !important;
+  animation: none !important;
+  right: auto !important;
+  bottom: auto !important;
+}
+
+.pane {
+  overflow-y: auto;
+  padding: 20px 22px 26px;
+}
+
+.ibody {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ibody:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+.note {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.note.warn {
+  color: var(--warm);
+}
+
+.note a,
+.istatus a {
+  color: var(--flow);
+}
+
+.missing {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 520px;
+}
+
+.fetchbtn {
+  width: fit-content;
+  padding: 9px 16px;
+  border: 1px solid var(--sheet-ask-edge);
+  border-radius: 9px;
+  background: var(--sheet-ask-wash);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.fetchbtn:hover {
+  background: var(--sheet-ask-hover);
+}
+
+.istatus {
+  padding: 0 22px 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.istatus:empty {
+  padding: 0;
+}
+
+/* A phone gets the whole screen, scrolling as one under a thin pinned bar. */
+@media (max-width: 720px) {
+  .sheet {
+    display: block;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    overflow-y: auto;
+    transform: none;
+    border-radius: 0;
+    animation: none;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .ibody {
+    overflow: visible;
+    padding: 16px 16px 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+  }
+}

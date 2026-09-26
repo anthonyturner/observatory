@@ -63,8 +63,7 @@ export class IssuesScreen {
   readonly labels = computed(() => labelOptions(this.report()?.[this.tab()] ?? [], this.label()));
   /** `#issues`, `#issues/closed`, and `/map` for the nursery. */
   readonly fragment = computed(
-    () =>
-      `issues${this.tab() === 'closed' ? '/closed' : ''}${this.view() === 'map' ? '/map' : ''}`,
+    () => `issues${this.tab() === 'closed' ? '/closed' : ''}${this.view() === 'map' ? '/map' : ''}`,
   );
 
   readonly chips = computed((): LegendChip[] => {
@@ -110,6 +109,14 @@ export class IssuesScreen {
           headline: 'No issues read yet.',
           detail: 'The next refresh reads them, or press Refresh.',
         };
+  });
+
+  /** What the list knows of the issue in the window, before its own read arrives. */
+  readonly windowSeed = computed(() => {
+    const number = this.windowIssue();
+    const report = this.report();
+    if (number === null || !report) return null;
+    return [...report.open, ...report.closed].find((issue) => issue.number === number) ?? null;
   });
 
   /** What the nursery says in place of a disk. */

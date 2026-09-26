@@ -79,7 +79,93 @@
             "deletions": 1,
             "changedFiles": 4,
             "createdAt": "2026-09-26T08:56:34Z",
-            "updatedAt": "2026-09-26T09:44:27Z"
+            "updatedAt": "2026-09-26T09:44:27Z",
+            "headRefOid": "b2b767f94b7a8acb0e88d0cc7ec9c3023b0329be",
+            "assignees": {
+              "nodes": []
+            },
+            "commits": {
+              "nodes": [
+                {
+                  "commit": {
+                    "oid": "0b812de608ba0d9aab75576ef2ad7cf0eb57fee3",
+                    "messageHeadline": "chore(apply): start stuck-draft recovery in auto-prepare",
+                    "messageBody": "",
+                    "committedDate": "2026-09-26T08:56:19Z",
+                    "authoredDate": "2026-09-26T08:56:19Z",
+                    "authors": {
+                      "nodes": [
+                        {
+                          "email": "author@example.com",
+                          "name": "anthonyturner",
+                          "user": {
+                            "id": "MDQ6VXNlcjUyMTAwNDE=",
+                            "login": "anthonyturner"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "commit": {
+                    "oid": "b2b767f94b7a8acb0e88d0cc7ec9c3023b0329be",
+                    "messageHeadline": "fix(apply): recover stuck preparing drafts and skip open-draft companies",
+                    "messageBody": "An auto-prepare process killed mid-draft left its application in\npreparing forever. That row kept counting toward the review queue, so\nenough of them made every later run end queue-full with exit code 0.\n\nEach run that is allowed to go ahead now first moves any application\nstill preparing after 30 minutes to failed, with a note and an\nautoprepare.recovered audit entry under the scheduler actor. No other\nstatus is touched.\n\nCandidate selection also skips a company that already has an\napplication in preparing or review from any earlier run, alongside the\nexisting same-run and post-submission checks.\n\nRefs issue 14.\n\nCo-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>",
+                    "committedDate": "2026-09-26T09:02:55Z",
+                    "authoredDate": "2026-09-26T09:02:55Z",
+                    "authors": {
+                      "nodes": [
+                        {
+                          "email": "author@example.com",
+                          "name": "anthonyturner",
+                          "user": {
+                            "id": "MDQ6VXNlcjUyMTAwNDE=",
+                            "login": "anthonyturner"
+                          }
+                        },
+                        {
+                          "email": "author@example.com",
+                          "name": "Claude Opus 5.5 (1M context)",
+                          "user": {
+                            "id": "MDQ6VXNlcjgxODQ3",
+                            "login": "claude"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            "files": {
+              "nodes": [
+                {
+                  "path": "docs/assisted-apply.md",
+                  "additions": 3,
+                  "deletions": 1,
+                  "changeType": "MODIFIED"
+                },
+                {
+                  "path": "server/src/persistence/application-repository.ts",
+                  "additions": 22,
+                  "deletions": 0,
+                  "changeType": "MODIFIED"
+                },
+                {
+                  "path": "server/src/services/apply/auto-prepare-service.ts",
+                  "additions": 18,
+                  "deletions": 0,
+                  "changeType": "MODIFIED"
+                },
+                {
+                  "path": "server/test/auto-prepare.test.ts",
+                  "additions": 80,
+                  "deletions": 0,
+                  "changeType": "MODIFIED"
+                }
+              ]
+            }
           }
         }
       }
@@ -135,6 +221,72 @@
     ],
     "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies",
     "updatedAt": "2026-09-26T09:44:27Z",
-    "url": "https://github.com/anthonyturner/jobpilot/pull/16"
+    "url": "https://github.com/anthonyturner/jobpilot/pull/16",
+    "assignees": [],
+    "commits": [
+      {
+        "authoredDate": "2026-09-26T08:56:19Z",
+        "authors": [
+          {
+            "email": "author@example.com",
+            "id": "MDQ6VXNlcjUyMTAwNDE=",
+            "login": "anthonyturner",
+            "name": "anthonyturner"
+          }
+        ],
+        "committedDate": "2026-09-26T08:56:19Z",
+        "messageBody": "",
+        "messageHeadline": "chore(apply): start stuck-draft recovery in auto-prepare",
+        "oid": "0b812de608ba0d9aab75576ef2ad7cf0eb57fee3"
+      },
+      {
+        "authoredDate": "2026-09-26T09:02:55Z",
+        "authors": [
+          {
+            "email": "author@example.com",
+            "id": "MDQ6VXNlcjUyMTAwNDE=",
+            "login": "anthonyturner",
+            "name": "anthonyturner"
+          },
+          {
+            "email": "author@example.com",
+            "id": "MDQ6VXNlcjgxODQ3",
+            "login": "claude",
+            "name": "Claude Opus 5.5 (1M context)"
+          }
+        ],
+        "committedDate": "2026-09-26T09:02:55Z",
+        "messageBody": "An auto-prepare process killed mid-draft left its application in\npreparing forever. That row kept counting toward the review queue, so\nenough of them made every later run end queue-full with exit code 0.\n\nEach run that is allowed to go ahead now first moves any application\nstill preparing after 30 minutes to failed, with a note and an\nautoprepare.recovered audit entry under the scheduler actor. No other\nstatus is touched.\n\nCandidate selection also skips a company that already has an\napplication in preparing or review from any earlier run, alongside the\nexisting same-run and post-submission checks.\n\nRefs issue 14.\n\nCo-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>",
+        "messageHeadline": "fix(apply): recover stuck preparing drafts and skip open-draft companies",
+        "oid": "b2b767f94b7a8acb0e88d0cc7ec9c3023b0329be"
+      }
+    ],
+    "headRefOid": "b2b767f94b7a8acb0e88d0cc7ec9c3023b0329be",
+    "files": [
+      {
+        "path": "docs/assisted-apply.md",
+        "additions": 3,
+        "deletions": 1,
+        "changeType": "MODIFIED"
+      },
+      {
+        "path": "server/src/persistence/application-repository.ts",
+        "additions": 22,
+        "deletions": 0,
+        "changeType": "MODIFIED"
+      },
+      {
+        "path": "server/src/services/apply/auto-prepare-service.ts",
+        "additions": 18,
+        "deletions": 0,
+        "changeType": "MODIFIED"
+      },
+      {
+        "path": "server/test/auto-prepare.test.ts",
+        "additions": 80,
+        "deletions": 0,
+        "changeType": "MODIFIED"
+      }
+    ]
   }
 }

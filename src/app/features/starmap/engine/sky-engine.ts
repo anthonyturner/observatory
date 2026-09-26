@@ -33,6 +33,8 @@ export interface SkyHost {
   insets(): FitInsets;
   /** A star was clicked, or empty sky (null). */
   picked(star: SkyStar | null): void;
+  /** A layer's own thing was clicked where no star was, as a comet. */
+  pickedOther?(thing: unknown): void;
   /** Loads the 3D renderer; rejects if the browser cannot run it. */
   loadWebGL?(
     camera: CameraController,
@@ -239,6 +241,17 @@ export class SkyEngine {
       }
     }
     return best;
+  }
+
+  /** A click: a star, else something a layer drew there, else empty sky. */
+  private click(sx: number, sy: number): void {
+    const star = this.pick(sx, sy);
+    if (star) return this.host.picked(star);
+    for (const layer of this.layers) {
+      const thing = layer.pick?.(sx, sy);
+      if (thing && this.host.pickedOther) return this.host.pickedOther(thing);
+    }
+    this.host.picked(null);
   }
 
   /** Where a world point is on screen, through the active renderer. */
@@ -491,7 +504,7 @@ export class SkyEngine {
       if (wasClick) {
         velocity.x = 0;
         velocity.y = 0;
-        this.host.picked(this.pick(e.clientX, e.clientY));
+        this.click(e.clientX, e.clientY);
       }
       this.kick();
     });

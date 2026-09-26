@@ -1,3 +1,5 @@
+import { editRequestFrom, editTargetFrom } from '../edits/edit-request.ts';
+import type { PullEditor } from '../edits/pull-editor.ts';
 import type { RouteTable } from '../http/api-handler.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
@@ -8,9 +10,13 @@ import { recordTriage, withTriage } from '../triage/triaged-queue.ts';
 import type { ApiReads } from './api-reads.ts';
 
 const repoOf = (query: URLSearchParams): string => repoNameFrom(query.get('repo'));
+const numberOf = (query: URLSearchParams): number => pullNumberFrom(query.get('number'));
 
-/** The API as its owner uses it: every report, and triage to read and write. */
-export function ownerRoutes(reads: ApiReads, triage: TriageStore): RouteTable {
+/** A description may be up to 65,536 characters, and JSON can take several bytes for each. */
+const EDIT_BODY_LIMIT_BYTES = 512 * 1024;
+
+/** The API as its owner uses it: every report, triage to read and write, and pull request edits. */
+export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEditor): RouteTable {
   return {
     get: {
       '/api/usage': () => reads.usage(),
@@ -22,15 +28,33 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore): RouteTable {
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/ledger': (query) => reads.ledger(repoOf(query)),
       '/api/issues': (query) => reads.issues(repoOf(query)),
-      '/api/issue': (query) => reads.issue(repoOf(query), issueNumberFrom(query.get('number'))),
+      '/api/issue': (query) => {
+        const [repo, number] = [repoOf(query), issueNumberFrom(query.get('number'))];
+        // Refresh in the issue window asks for it anew rather than a minute-old copy.
+        if (query.get('fresh') === '1') reads.forgetIssue(repo, number);
+        return reads.issue(repo, number);
+      },
       '/api/logs': (query) => reads.logs(repoOf(query)),
-      '/api/pull': (query) => reads.pull(repoOf(query), pullNumberFrom(query.get('number'))),
+      '/api/pull': (query) => {
+        const [repo, number] = [repoOf(query), numberOf(query)];
+        // Refresh on the PR screen asks for it anew rather than a minute-old copy.
+        if (query.get('fresh') === '1') reads.forgetPull(repo, number);
+        return reads.pull(repo, number);
+      },
+      '/api/labels': (query) => reads.labels(repoOf(query)),
+      '/api/edit': (query) => editor.read({ repo: repoOf(query), number: numberOf(query) }),
     },
     post: {
       '/api/triage': async (body) => {
         const request = triageRequestFrom(body);
         return recordTriage(request, await reads.queue(request.repo), triage, Date.now());
       },
+      '/api/edit': (body) => editor.apply(editRequestFrom(body)),
+      '/api/edit/clear': async (body) => {
+        await editor.clear(editTargetFrom(body));
+        return null;
+      },
     },
+    bodyLimits: { '/api/edit': EDIT_BODY_LIMIT_BYTES },
   };
 }

@@ -31,6 +31,12 @@
   pointer-events: auto;
 }
 
+/* The issue bar rides above the nursery, so its tabs, label and search filter the sky too. */
+.issuedock {
+  margin-top: 12px;
+  max-width: 760px;
+}
+
 .listview {
   position: fixed;
   inset: 0;

@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { AMBIENT_PLAYER } from '../../../core/sound/sound-preference';
+import { anIssue } from '../../../core/issues/testing/issues-fixture';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapPage } from './starmap-page';
 
@@ -70,6 +71,32 @@ function render(fragment: string | null = null) {
   return { fixture, element, http, button, fragments };
 }
 
+const issueRow = (number: number, extra: Record<string, unknown>) => ({
+  number,
+  title: `Issue ${number}`,
+  url: `https://github.com/me/a/issues/${number}`,
+  labels: [{ name: 'bug', color: 'd73a4a' }],
+  assignees: [],
+  author: 'me',
+  createdAt: '2026-09-01T12:00:00Z',
+  updatedAt: '2026-09-20T12:00:00Z',
+  closedAt: null,
+  prs: [],
+  ...extra,
+});
+
+/** Answers the page's read of the issues: one nobody is on, one with pull requests. */
+function flushIssues(http: HttpTestingController): void {
+  http.expectOne('/api/issues?repo=me/a').flush({
+    generatedAt: new Date().toISOString(),
+    repo: 'me/a',
+    days: 60,
+    total: { open: 2, closed: 0, comets: 1 },
+    open: [issueRow(1, { comet: true }), issueRow(2, { comet: false, prs: [7, 3] })],
+    closed: [],
+  });
+}
+
 describe('StarmapPage', () => {
   beforeEach(() => localStorage.clear());
 
@@ -80,6 +107,43 @@ describe('StarmapPage', () => {
     expect(element.querySelector('h1')?.textContent).toBe('Review Queue');
     expect(element.querySelector('.stamp')?.textContent).toContain('me/a · 2 open · refreshed');
     expect(element.querySelector('.lg')?.textContent).toContain('0 cannot merge');
+  });
+
+  it('counts the unclaimed issues in the legend, and shows or hides their comets', () => {
+    const { fixture, element, http } = render();
+    const at = new Date().toISOString();
+    const open = (number: number, comet: boolean) => ({
+      number,
+      title: `Issue ${number}`,
+      url: `https://github.com/me/a/issues/${number}`,
+      labels: [],
+      assignees: [],
+      author: null,
+      createdAt: at,
+      updatedAt: at,
+      closedAt: null,
+      stateReason: null,
+      comet,
+      prs: comet ? [] : [7],
+    });
+    http.expectOne('/api/issues?repo=me/a').flush({
+      generatedAt: at,
+      repo: 'me/a',
+      days: 60,
+      total: { open: 2, closed: 0, comets: 1 },
+      open: [open(3, true), open(4, false)],
+      closed: [],
+    });
+    fixture.detectChanges();
+    const chip = Array.from(element.querySelectorAll<HTMLButtonElement>('.lg')).find((b) =>
+      b.textContent?.includes('unclaimed'),
+    );
+
+    expect(chip?.textContent).toContain('1 unclaimed issue');
+    expect(chip?.getAttribute('aria-pressed')).toBe('true');
+    chip?.click();
+    fixture.detectChanges();
+    expect(chip?.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('leaves dismissed pull requests out, and lists the rest by bucket', () => {
@@ -122,27 +186,7 @@ describe('StarmapPage', () => {
 
   it('lists the issues as pr-starmap does, with its stamp, legend and chips', () => {
     const { fixture, element, http, button } = render('issues');
-    const issue = (number: number, extra: Record<string, unknown>) => ({
-      number,
-      title: `Issue ${number}`,
-      url: `https://github.com/me/a/issues/${number}`,
-      labels: [{ name: 'bug', color: 'd73a4a' }],
-      assignees: [],
-      author: 'me',
-      createdAt: '2026-09-01T12:00:00Z',
-      updatedAt: '2026-09-20T12:00:00Z',
-      closedAt: null,
-      prs: [],
-      ...extra,
-    });
-    http.expectOne('/api/issues?repo=me/a').flush({
-      generatedAt: new Date().toISOString(),
-      repo: 'me/a',
-      days: 60,
-      total: { open: 2, closed: 0, comets: 1 },
-      open: [issue(1, { comet: true }), issue(2, { comet: false, prs: [7, 3] })],
-      closed: [],
-    });
+    flushIssues(http);
     fixture.detectChanges();
 
     expect(element.querySelector('h1')?.textContent).toBe('Issues');
@@ -164,7 +208,37 @@ describe('StarmapPage', () => {
     button('#7')?.click();
     fixture.detectChanges();
     http.expectOne('/api/pull?repo=me/a&number=7');
-    expect(element.querySelector('app-pull-panel')).not.toBeNull();
+    http.expectOne('/api/edit?repo=me/a&number=7');
+    http.expectOne('/api/labels?repo=me/a');
+    expect(element.querySelector('app-pr-screen')).not.toBeNull();
+  });
+
+  it('charts the issues as the nursery under the docked bar, and reads one in the window', () => {
+    const { fixture, element, http, button } = render('issues/map');
+    flushIssues(http);
+    fixture.detectChanges();
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    expect(element.querySelector('.issuedock app-issue-bar')).not.toBeNull();
+    expect(element.querySelector('.listview')).toBeNull();
+    sky.pickedIssue.emit({ issue: anIssue(1), look: 'globule', jets: [], colour: '#9fe8ff' });
+    fixture.detectChanges();
+    expect(element.querySelector('app-issue-card .bucketname')?.textContent).toBe(
+      'Globule — nobody on it',
+    );
+
+    button('Open')?.click();
+    fixture.detectChanges();
+    http.expectOne('/api/issue?repo=me/a&number=1');
+    expect(element.querySelector('app-issue-window')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(element.querySelector('app-issue-window')).toBeNull();
+    expect(element.querySelector('app-issue-card')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(element.querySelector('app-issue-card')).toBeNull();
   });
 
   it('opens a star’s card, and its full screen from Open; Esc closes them in turn', () => {
@@ -178,11 +252,13 @@ describe('StarmapPage', () => {
     button('Open')?.click();
     fixture.detectChanges();
     http.expectOne('/api/pull?repo=me/a&number=7');
-    expect(element.querySelector('app-pull-panel')).not.toBeNull();
+    http.expectOne('/api/edit?repo=me/a&number=7');
+    http.expectOne('/api/labels?repo=me/a');
+    expect(element.querySelector('app-pr-screen')).not.toBeNull();
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
-    expect(element.querySelector('app-pull-panel')).toBeNull();
+    expect(element.querySelector('app-pr-screen')).toBeNull();
     expect(element.querySelector('.prno')).not.toBeNull();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();

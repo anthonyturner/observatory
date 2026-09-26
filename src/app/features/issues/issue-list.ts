@@ -1,4 +1,4 @@
-import { Issue, IssuesReport } from '../../core/issues/issues-report';
+import { Issue, IssueLabel, IssuesReport } from '../../core/issues/issues-report';
 import { formatDay } from '../../core/logs/log-format';
 import { QueueItem, shownBucket } from '../../core/queue/queue-report';
 import { BY_ID } from '../starmap/engine/sky-model';
@@ -86,8 +86,8 @@ export const labelInk = (color: string): string =>
   LABEL_HEX.test(color) ? `#${color}` : 'var(--faint)';
 
 /** An issue's labels as the chips paint them. */
-export const labelChips = (issue: Issue): { name: string; ink: string }[] =>
-  issue.labels.map((label) => ({ name: label.name, ink: labelInk(label.color) }));
+export const labelChips = (labels: readonly IssueLabel[]): { name: string; ink: string }[] =>
+  labels.map((label) => ({ name: label.name, ink: labelInk(label.color) }));
 
 /** A plain left click stays on the page; any other opens a link as usual. */
 export const isPlainClick = (event: MouseEvent): boolean =>
@@ -179,7 +179,7 @@ export function issueRowView(
     issue,
     sev: rowSev(issue),
     when: rowWhen(issue, now),
-    labels: labelChips(issue),
+    labels: labelChips(issue.labels),
     chips: pullChips(issue.prs, issue.url, pulls),
     hasMeta: issue.comet || !!(issue.labels.length || issue.assignees.length || issue.prs.length),
   };

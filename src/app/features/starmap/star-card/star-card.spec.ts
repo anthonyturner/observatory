@@ -53,6 +53,16 @@ describe('StarCard', () => {
     expect(hrefs).toEqual(['https://github.com/me/a/pull/58', 'https://github.com/me/a/issues/57']);
   });
 
+  it('offers a visitor no way to change anything', () => {
+    const { fixture, button } = render();
+    fixture.componentRef.setInput('canWrite', false);
+    fixture.detectChanges();
+
+    expect(button('Snooze 7d')).toBeUndefined();
+    expect(button('Dismiss')).toBeUndefined();
+    expect(button('Open')).toBeDefined();
+  });
+
   it('asks to open, snooze, dismiss or close', () => {
     const { fixture, button, element } = render();
     const asked: string[] = [];

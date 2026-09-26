@@ -77,6 +77,7 @@
   <app-star-card
     [item]="item"
     [context]="cardContext()"
+    [canWrite]="session.canWrite()"
     (closed)="openPull.set(null)"
     (open)="openSheet($event)"
     (snooze)="recordTriage($event, { action: 'snooze', days: SNOOZE_DAYS })"

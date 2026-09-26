@@ -21,6 +21,8 @@ const CARD_PLACE_KEY = 'observatory.cardPos';
 export class StarCard {
   readonly item = input.required<QueueItem>();
   readonly context = input.required<CardContext>();
+  /** A visitor to the hosted preview cannot change anything. */
+  readonly canWrite = input(true);
   readonly closed = output<void>();
   /** Asks for the pull request's full screen. */
   readonly open = output<number>();

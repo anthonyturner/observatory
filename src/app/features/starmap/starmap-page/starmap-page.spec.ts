@@ -153,4 +153,19 @@ describe('StarmapPage', () => {
     post.flush({});
     http.expectOne('/api/queue?repo=me/a');
   });
+
+  it('offers a visitor to the hosted preview no triage to change', () => {
+    const { fixture, http } = render();
+    http.expectOne('/api/session').flush({ access: 'visitor', signIn: '/api/auth/login' });
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    sky.picked.emit(7);
+    fixture.detectChanges();
+    http.expectOne('/api/pull?repo=me/a&number=7');
+    const panel = fixture.debugElement.query(By.directive(PullPanel))
+      .componentInstance as PullPanel;
+
+    expect(panel.triage()).toBeNull();
+  });
 });

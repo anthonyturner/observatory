@@ -24,7 +24,9 @@
     @if (issueUrl(); as url) {
       <a [href]="url" target="_blank" rel="noopener">Issue #{{ item().closes[0] }}</a>
     }
-    <button type="button" (click)="snooze.emit(item().number)">Snooze 7d</button>
-    <button type="button" (click)="dismiss.emit(item().number)">Dismiss</button>
+    @if (canWrite()) {
+      <button type="button" (click)="snooze.emit(item().number)">Snooze 7d</button>
+      <button type="button" (click)="dismiss.emit(item().number)">Dismiss</button>
+    }
   </div>
 </div>

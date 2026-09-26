@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { EntryAction, ReplyEntry } from '../../../core/assistant/reply-entry';
+import { ReplyFocusRequest } from '../../../core/assistant/reply-focus';
 import { ReplyEntryCard } from '../reply-entry/reply-entry';
 
 /** A button pressed under the reply numbered `entryId`. */
@@ -20,6 +21,7 @@ export class ReplyList {
   readonly entries = input.required<readonly ReplyEntry[]>();
   /** The reply being read aloud, if any. */
   readonly speakingId = input<number | null>(null);
+  readonly focusRequest = input<ReplyFocusRequest | null>(null);
   readonly pressed = output<EntryPress>();
   readonly stopSpeaking = output<void>();
   readonly followed = output<string>();

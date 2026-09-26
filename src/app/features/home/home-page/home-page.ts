@@ -4,6 +4,7 @@ import { CorePanel } from '../core-panel/core-panel';
 import { FleetSection } from '../fleet-section/fleet-section';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
+import { CoreStateFeed } from '../../../core/core-state/core-state-feed';
 import { HOME_HELP_ENTRIES, HOME_HELP_KEYS } from '../help/help-content';
 import { SkillsPanel } from '../skills-panel/skills-panel';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
@@ -26,7 +27,7 @@ import { SoundPreference } from '../../../core/sound/sound-preference';
     HelpCard,
   ],
   providers: [SoundPreference],
-  hostDirectives: [HelpShortcuts],
+  hostDirectives: [HelpShortcuts, CoreStateFeed],
   templateUrl: './home-page.html',
   styleUrl: './home-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

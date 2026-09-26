@@ -1,0 +1,5 @@
+<ul aria-label="Assistant state">
+  @for (chip of chips; track chip.id) {
+    <li [attr.data-chip]="chip.id" [attr.aria-current]="chip.id === lit()">{{ chip.label }}</li>
+  }
+</ul>

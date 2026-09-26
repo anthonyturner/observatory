@@ -10,6 +10,8 @@ import {
   inject,
   input,
 } from '@angular/core';
+import { CORE_SPOKEN_TIER } from '../../../core/core-state/core-state-tokens';
+import { arcOf } from '../../../core/core-state/core-state.types';
 import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { CoreHand } from '../../../core/instrument/core-hand';
 import { CORE_MOOD, CORE_RENDERER, CORE_STATE } from '../../../core/instrument/core-tokens';
@@ -46,6 +48,7 @@ export class CoreCanvas {
   private readonly document = inject(DOCUMENT);
   private readonly projects = inject(PROJECTS);
   private readonly state = inject(CORE_STATE);
+  private readonly spokenTier = inject(CORE_SPOKEN_TIER);
   private readonly mood = inject(CORE_MOOD);
   private readonly projectsState = inject(PROJECTS_STATE);
   /** When the latest projects report arrived, in real seconds, and which one it was. */
@@ -125,6 +128,7 @@ export class CoreCanvas {
       wall,
       state: this.state(),
       stateAge: wall - this.stateSince,
+      spokenTier: arcOf(this.spokenTier()),
       isStill: this.motion.isStill(),
       hand: this.hand.state.pose,
       litKey: this.lit.key(),

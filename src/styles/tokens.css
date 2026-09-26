@@ -65,6 +65,10 @@
   --voice-live-edge: rgba(95, 227, 161, 0.5);
   --voice-live-wash: rgba(95, 227, 161, 0.16);
   --voice-trouble-edge: rgba(255, 111, 94, 0.35);
+  /* The core's state chips: the lit one, and Error lit. */
+  --chip-lit: rgba(142, 162, 255, 0.18);
+  --chip-error-edge: rgba(255, 111, 94, 0.5);
+  --chip-error: rgba(255, 111, 94, 0.16);
 
   /* Gradients, not blurs: a blurred panel over a live sky costs a phone its
      frame rate. */

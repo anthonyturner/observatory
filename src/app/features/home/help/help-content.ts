@@ -93,7 +93,8 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
 ];
 
 export const HOME_HELP_KEYS: readonly HelpKey[] = [
+  { key: '/', action: 'ask' },
   { key: '?', action: 'help' },
-  { key: 'Esc', action: 'close' },
+  { key: 'Esc', action: 'close, throw a recording away, stay here or stop speaking' },
   { key: '← → ↑ ↓', action: 'turn the core' },
 ];

@@ -18,7 +18,7 @@ describe('HelpShortcuts', () => {
   }
 
   const press = (key: string, target: EventTarget = document) =>
-    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 
   it('toggles help with ? and closes it with Escape', () => {
     const { help } = setUp();
@@ -36,5 +36,17 @@ describe('HelpShortcuts', () => {
     press('?', input);
 
     expect(help.isOpen()).toBe(false);
+  });
+
+  it('leaves an Escape another handler has used, as when it threw a recording away', () => {
+    const { help } = setUp();
+    help.toggle();
+    const usedByVoice = (event: KeyboardEvent): void => event.preventDefault();
+    document.addEventListener('keydown', usedByVoice);
+
+    press('Escape');
+    document.removeEventListener('keydown', usedByVoice);
+
+    expect(help.isOpen()).toBe(true);
   });
 });

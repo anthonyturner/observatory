@@ -4,7 +4,13 @@
   <button type="button" aria-pressed="false">Motion</button>
 </div>
 <div class="group">
-  <button type="button" aria-pressed="false" aria-label="Help" title="What am I looking at? (?)">
+  <button
+    type="button"
+    aria-label="Help"
+    title="What am I looking at? (?)"
+    [attr.aria-pressed]="help.isOpen()"
+    (click)="help.toggle()"
+  >
     ?
   </button>
 </div>

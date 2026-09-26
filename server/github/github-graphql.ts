@@ -15,11 +15,27 @@ const API_VERSION = '2022-11-28';
 const USER_AGENT = 'observatory';
 const MAX_ERROR_LENGTH = 400;
 
+interface GraphQlError {
+  readonly message?: string;
+  readonly type?: string;
+  readonly path?: readonly (string | number)[];
+}
+
 interface GraphQlReply {
   readonly data?: unknown;
-  readonly errors?: readonly { readonly message?: string }[];
+  readonly errors?: readonly GraphQlError[];
   readonly message?: string;
 }
+
+/** Fields a reply may be missing: GitHub leaves them null when the token may not read them,
+ *  and the readers already take null for them (a check run no workflow started). */
+const OPTIONAL_FIELDS: ReadonlySet<string> = new Set(['workflowRun']);
+
+const isOptionalRefusal = (error: GraphQlError): boolean =>
+  error.type === 'FORBIDDEN' && OPTIONAL_FIELDS.has(String(error.path?.at(-1)));
+
+const describe = (error: GraphQlError): string =>
+  `${error.message ?? 'unknown error'}${error.path ? ` (at ${error.path.join('.')})` : ''}`;
 
 export const clip = (text: string): string => text.slice(0, MAX_ERROR_LENGTH);
 
@@ -44,7 +60,8 @@ function replyOf(text: string): GraphQlReply {
 }
 
 /** GitHub's GraphQL API with a token, over plain `fetch`. A partial answer
- *  with errors is an error: a report is never built from half a reply. */
+ *  with errors is an error: a report is never built from half a reply. The one
+ *  exception is a refusal of an optional field alone, which is left null. */
 export function githubGraphQl(config: GraphQlConfig): GraphQl {
   const { token, fetch: send = fetch } = config;
   if (!token) throw new Error('reading GitHub needs GITHUB_TOKEN');
@@ -58,9 +75,8 @@ export function githubGraphQl(config: GraphQlConfig): GraphQl {
     if (!response.ok) {
       throw new Error(clip(`GitHub: HTTP ${response.status} ${reply.message ?? ''}`.trim()));
     }
-    if (reply.errors?.length) {
-      const messages = reply.errors.map((error) => error.message ?? 'unknown error');
-      throw new Error(clip(`GitHub: ${messages.join('; ')}`));
+    if (reply.errors?.length && !reply.errors.every(isOptionalRefusal)) {
+      throw new Error(clip(`GitHub: ${reply.errors.map(describe).join('; ')}`));
     }
     if (typeof reply.data !== 'object' || reply.data === null) {
       throw new Error('GitHub: an answer with no data');

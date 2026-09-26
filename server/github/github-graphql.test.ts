@@ -49,6 +49,40 @@ describe('githubGraphQl', () => {
     await assert.rejects(graphql('query { x }'), /Could not resolve to a Repository/);
   });
 
+  it('answers the rest when only a check run’s workflow is refused', async () => {
+    const data = { repository: { run: { checkSuite: { workflowRun: null } } } };
+    const graphql = githubGraphQl({
+      token: 't',
+      fetch: answering(200, {
+        data,
+        errors: [
+          {
+            type: 'FORBIDDEN',
+            path: ['repository', 'run', 'checkSuite', 'workflowRun'],
+            message: 'Resource not accessible by personal access token',
+          },
+        ],
+      }),
+    });
+
+    assert.deepEqual(await graphql('query { x }'), data);
+  });
+
+  it('still fails when anything else is refused, naming where', async () => {
+    const graphql = githubGraphQl({
+      token: 't',
+      fetch: answering(200, {
+        data: { repository: null },
+        errors: [
+          { type: 'FORBIDDEN', path: ['repository', 'run', 'checkSuite', 'workflowRun'] },
+          { type: 'FORBIDDEN', path: ['repository'], message: 'Resource not accessible' },
+        ],
+      }),
+    });
+
+    await assert.rejects(graphql('query { x }'), /Resource not accessible \(at repository\)/);
+  });
+
   it('fails on an answer with no data, or one that is not JSON', async () => {
     await assert.rejects(
       githubGraphQl({ token: 't', fetch: answering(200, {}) })('query { x }'),

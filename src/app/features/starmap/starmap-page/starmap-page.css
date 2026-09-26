@@ -77,7 +77,8 @@
   }
 
   /* Folded, the charts go with the tools. */
-  .hud.bottom[data-folded] app-meteor-record {
+  .hud.bottom[data-folded] app-meteor-record,
+  .hud.bottom[data-folded] app-timeline {
     display: none;
   }
 }

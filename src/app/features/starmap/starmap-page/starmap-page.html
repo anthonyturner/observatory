@@ -9,6 +9,7 @@
   [traced]="logs.traced()"
   [pairs]="skyPairs()"
   [showCollisions]="showCollisions()"
+  [news]="skyNews()"
   [fog]="chart() === 'logs' ? logs.fog() : fog()"
   [hidden]="(chart() !== 'prs' && chart() !== 'logs') || view() !== 'map'"
   [insets]="insets()"
@@ -50,6 +51,7 @@
     [title]="title()"
     [stamp]="chart() === 'logs' ? logs.stamp() : stamp()"
     [stale]="chart() === 'logs' ? logs.stale() : stale()"
+    [replaying]="chart() === 'prs' && !!memory.replay()"
     [chips]="chart() === 'logs' ? logs.chips() : chips()"
     [filter]="chart() === 'logs' ? logs.filter() : legendFilter()"
     (toggled)="toggleFilter($event)"
@@ -57,6 +59,18 @@
 </div>
 
 <div class="hud bottom" [attr.data-folded]="folded() ? '' : null">
+  @if (showTimeline() && memory.ledger(); as ledger) {
+    <app-timeline
+      [rows]="ledger.rows"
+      [frames]="memory.frames()"
+      [lastSeen]="memory.lastSeen()"
+      [replayAt]="memory.replay()?.at ?? null"
+      [playing]="memory.playing()"
+      (scrub)="scrub($event)"
+      (replay)="togglePlayer()"
+      (live)="memory.live()"
+    />
+  }
   @if (showMeteors() && logs.snapshot(); as snapshot) {
     <app-meteor-record
       [snapshot]="snapshot"
@@ -80,11 +94,13 @@
   />
 </div>
 
-@if (hasChanges() && changes(); as changed) {
-  <app-changes-card
-    [changes]="changed"
-    (picked)="goTo($event)"
-    (acknowledged)="acknowledgeChanges()"
+@if (showChanges()) {
+  <app-changes-panel
+    [news]="memory.news()"
+    [replayAt]="memory.replay()?.at ?? null"
+    (go)="goTo($event)"
+    (playAgain)="memory.playAgain()"
+    (acknowledged)="memory.acknowledge()"
   />
 }
 

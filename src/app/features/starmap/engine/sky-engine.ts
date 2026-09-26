@@ -115,6 +115,16 @@ export class SkyEngine {
     this.kick();
   }
 
+  /** When the last star finishes arriving, in wall seconds, so news can wait for it. */
+  entranceEnd(): number {
+    return this.bornAt + Math.max(0, ...this.stars.map((s) => s.delay)) + 0.9;
+  }
+
+  /** Whether ambient motion is off, as the page asked. */
+  get frozen(): boolean {
+    return this.host.frozen();
+  }
+
   setHidden(hidden: boolean): void {
     this.hidden = hidden;
     this.host.canvas.hidden = hidden;
@@ -419,6 +429,7 @@ export class SkyEngine {
       selected: this.selected,
       fog: this.fog,
       layers: this.layers,
+      renderer: this.renderer.kind,
       born: (star) => this.born(star, wall),
       passes: this.passes,
       dim,

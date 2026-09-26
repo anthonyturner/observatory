@@ -5,6 +5,8 @@ export interface FrameItem {
   readonly number: number;
   readonly title: string;
   readonly bucket: PullBucket;
+  /** How long it had sat untouched then; 0 in frames recorded before this was kept. */
+  readonly idleDays: number;
 }
 
 export type Fate = 'merged' | 'closed';
@@ -35,7 +37,13 @@ const titleOf = (value: Json): string => (typeof value['title'] === 'string' ? v
 
 function parseItem(value: unknown): FrameItem | null {
   if (!isObject(value) || !isNumber(value['number']) || !isBucket(value['bucket'])) return null;
-  return { number: value['number'], title: titleOf(value), bucket: value['bucket'] };
+  const idle = value['idleDays'];
+  return {
+    number: value['number'],
+    title: titleOf(value),
+    bucket: value['bucket'],
+    idleDays: typeof idle === 'number' && idle >= 0 ? idle : 0,
+  };
 }
 
 function parseDeparted(value: unknown): Departed | null {

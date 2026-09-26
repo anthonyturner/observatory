@@ -11,12 +11,15 @@ import {
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import { PULL_DETAIL_FIELDS, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
+import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
 
 /** The same limits the `gh` reader asks for, so both see the same lists. */
 const PULL_LIMIT = 100;
 const ISSUE_LIMIT = 1000;
 const REPO_LIMIT = 1000;
 const PAGE_SIZE = 100;
+/** As the `gh` reader asks for: sixty days of a busy repository. */
+const LEDGER_LIMIT = 400;
 
 type Node = Readonly<Record<string, unknown>>;
 
@@ -96,6 +99,24 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     return shape(repository['pullRequest']);
   }
 
+  /** Every pull request updated since a day, through search, as `gh pr list --search` finds them. */
+  async function touchedPulls(repo: string, sinceDay: string): Promise<Node[]> {
+    const { select, shape } = selectionOf(PULL_GRAPHQL, LEDGER_PULL_FIELDS);
+    const nodes = await allPages(async (after) => {
+      const data = await graphql(
+        `query($query: String!, $first: Int!, $after: String) {
+          search(query: $query, type: ISSUE, first: $first, after: $after) {
+            pageInfo { hasNextPage endCursor }
+            nodes { ... on PullRequest { ${select} } }
+          }
+        }`,
+        { query: `repo:${repo} is:pr updated:>=${sinceDay}`, first: PAGE_SIZE, after },
+      );
+      return pageOf(asNode(data)['search']);
+    }, LEDGER_LIMIT);
+    return nodes.map(shape);
+  }
+
   /** Open issues with `fields`, or null when the repository has issues switched off. */
   async function openIssues(repo: string, fields: readonly string[]): Promise<Node[] | null> {
     const { select, shape } = selectionOf(ISSUE_GRAPHQL, fields);
@@ -152,6 +173,8 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     openPulls: async (repo) => shaped<PullRequest>(await openPulls(repo, PULL_REQUEST_FIELDS)),
     queuePulls: async (repo) => shaped<QueuePull>(await openPulls(repo, QUEUE_PULL_FIELDS)),
     closingPulls: async (repo) => shaped<ClosingPull>(await openPulls(repo, CLOSING_PULL_FIELDS)),
+    touchedPulls: async (repo, sinceDay) =>
+      byNumberDescending(shaped<LedgerPull>(await touchedPulls(repo, sinceDay))),
     pullFiles: async (repo) =>
       pullFilesOf(shaped<ListedFiles>(await openPulls(repo, ['number', 'files']))),
     pullDetail: async (repo, number) =>

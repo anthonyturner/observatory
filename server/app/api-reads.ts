@@ -2,6 +2,7 @@ import type { CollisionsReport } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
 import type { Frame } from '../history/frames.ts';
 import type { HistoryStore } from '../history/history-store.ts';
+import { type Ledger, ledgerReport } from '../history/ledger.ts';
 import { recordFrame } from '../history/record-frame.ts';
 import { type IssuesReport, issuesReport } from '../issues/issues-report.ts';
 import type { LogSnapshot, LogsUnconfigured } from '../logs/log-types.ts';
@@ -23,6 +24,8 @@ const PULL_TTL_MS = 60_000;
 const COLLISIONS_TTL_MS = 10 * 60_000;
 /** A log folder can hold hundreds of thousands of lines: read it every five minutes at most. */
 const LOGS_TTL_MS = 5 * 60_000;
+/** The ledger moves a day at a time; ten minutes is fresh enough. */
+const LEDGER_TTL_MS = 10 * 60_000;
 
 /** Where the reports come from: the same code here and hosted, with different sources. */
 export interface ReadSources {
@@ -51,6 +54,8 @@ export interface ApiReads {
   pull(repo: string, number: number): Promise<PullDetail>;
   collisions(repo: string): Promise<CollisionsReport>;
   history(repo: string): Promise<HistoryReport>;
+  /** Openings, merges and closures a day for sixty days, rebuilt from GitHub. */
+  ledger(repo: string): Promise<Ledger>;
   usage(): Promise<UsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
 }
@@ -77,6 +82,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     pull: (repo, number) => pullOf(`${repo}#${number}`),
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),
     history: async (repo) => ({ repo, frames: await history.read(repo) }),
+    ledger: cachedByKey((repo) => ledgerReport(github, repo), LEDGER_TTL_MS),
     usage: sources.usage,
     logs: cachedByKey(sources.logs, LOGS_TTL_MS),
   };

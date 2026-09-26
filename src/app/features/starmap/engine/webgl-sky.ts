@@ -1,25 +1,20 @@
 import {
   AdditiveBlending,
   BufferGeometry,
-  CanvasTexture,
   Color,
   Float32BufferAttribute,
   Line,
   LineBasicMaterial,
   LineDashedMaterial,
   Material,
-  Object3D,
   PerspectiveCamera,
   Points,
   ReinhardToneMapping,
-  SRGBColorSpace,
   Scene,
   ShaderMaterial,
   Sprite,
-  SpriteMaterial,
   Texture,
   Vector2,
-  Vector3,
   WebGLRenderer,
 } from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -28,6 +23,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { CameraController } from './camera-controller';
+import { Kit, Owned, vec } from './gpu-kit';
+import { NewsEffects3D } from './news-3d';
 import {
   drawClusterLabel,
   drawFog,
@@ -44,89 +41,6 @@ import { FieldStar, SkyStar } from './sky-model';
 /* pr-starmap's WebGL sky: a perspective camera over the same world, bloom on
    the luminous cores only, a vignette and grain pass, a nebula of cloud
    sprites at depth. Words and marks are drawn over it by the 2D overlay. */
-
-interface Disposable {
-  dispose(): void;
-}
-
-/** The GPU resources a scene owns, released together when it is rebuilt. */
-class Owned {
-  private readonly resources = new Set<Disposable>();
-
-  own<T extends Disposable>(resource: T): T {
-    this.resources.add(resource);
-    return resource;
-  }
-
-  release(root: Object3D): void {
-    root.traverse((o) => {
-      const mesh = o as Object3D & { geometry?: BufferGeometry; material?: Material | Material[] };
-      if (mesh.geometry) {
-        mesh.geometry.dispose();
-        this.resources.delete(mesh.geometry);
-      }
-      if (mesh.material) {
-        for (const m of [mesh.material].flat()) {
-          m.dispose();
-          this.resources.delete(m);
-        }
-      }
-    });
-    root.removeFromParent();
-  }
-
-  disposeAll(): void {
-    for (const resource of this.resources) resource.dispose();
-    this.resources.clear();
-  }
-}
-
-const vec = (x: number, y: number, z = 0): Vector3 => new Vector3(x, -y, z);
-
-/** One tool box for the scene builders: textures, sprites and lines it owns. */
-class Kit {
-  constructor(
-    readonly document: Document,
-    readonly owned: Owned,
-  ) {}
-
-  texture(paint: (c: CanvasRenderingContext2D, size: number) => void, size = 128): Texture {
-    const cv = this.document.createElement('canvas');
-    cv.width = cv.height = size;
-    const c = cv.getContext('2d');
-    if (c) paint(c, size);
-    const map = this.owned.own(new CanvasTexture(cv));
-    map.colorSpace = SRGBColorSpace;
-    return map;
-  }
-
-  sprite(map: Texture, colour = '#ffffff', opacity = 1): Sprite {
-    const material = this.owned.own(
-      new SpriteMaterial({
-        map,
-        color: colour,
-        opacity,
-        transparent: true,
-        depthWrite: false,
-        blending: AdditiveBlending,
-      }),
-    );
-    return new Sprite(material);
-  }
-
-  line(points: Vector3[], colour: string, opacity = 1, dashed = false): Line {
-    const geometry = this.owned.own(new BufferGeometry().setFromPoints(points));
-    const opts = { color: colour, transparent: true, opacity, depthWrite: false };
-    const material = this.owned.own(
-      dashed
-        ? new LineDashedMaterial({ ...opts, dashSize: 7, gapSize: 9 })
-        : new LineBasicMaterial(opts),
-    );
-    const object = new Line(geometry, material);
-    if (dashed) object.computeLineDistances();
-    return object;
-  }
-}
 
 /** A single GPU draw for hundreds of stars, spread through an actual volume. */
 function field3D(
@@ -174,6 +88,7 @@ function field3D(
 
 interface SceneModel {
   update(f: SkyFrame): void;
+  dispose(): void;
 }
 
 function buildScene3D(
@@ -301,6 +216,13 @@ function buildScene3D(
       );
   };
 
+  const news = new NewsEffects3D({
+    scene,
+    kit,
+    camera,
+    toScreen: (x, y, z) => camera.project(x, y, z),
+  });
+
   const updateLine = (object: Line, members: readonly SkyStar[]): void => {
     const p = object.geometry.attributes['position'];
     members.forEach((s, i) => p.setXYZ(i, s.ax, -s.ay, s.az));
@@ -346,6 +268,10 @@ function buildScene3D(
       }
       (flow.material as LineDashedMaterial).scale = cam.scale;
       dashTime.value = t * 30;
+      news.update(f.layers.flatMap((layer) => layer.effects3D?.(f) ?? []));
+    },
+    dispose(): void {
+      news.dispose();
     },
   };
 }
@@ -452,6 +378,7 @@ export class WebGLSkyRenderer implements SkyRenderer {
   }
 
   setScene(data: SkyScene): void {
+    this.model?.dispose();
     this.scene.clear();
     this.owned.disposeAll();
     this.model = buildScene3D(this.scene, this.kit, this.camera, data);

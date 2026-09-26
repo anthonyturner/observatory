@@ -1,92 +1,127 @@
 import type { ClosingPull, IssueReader, RawIssue } from '../github/issue-reader.ts';
 
 const DAY_MS = 86_400_000;
-/** How far back "closed recently" looks. */
-export const CLOSED_WINDOW_DAYS = 30;
+/** How far back the closed list reaches, as pr-starmap's memory ledger does. */
+export const ISSUE_DAYS = 60;
+const TITLE_MAX = 200;
 
-/** One open issue as the Issues tab lists it. */
-export interface IssueItem {
+export interface IssueLabel {
+  readonly name: string;
+  readonly color: string;
+}
+
+/** One issue as pr-starmap's `issues/current` lists it. */
+export interface IssueRow {
   readonly number: number;
   readonly title: string;
   readonly url: string;
-  readonly labels: readonly string[];
+  readonly labels: readonly IssueLabel[];
   readonly assignees: readonly string[];
-  /** Open pull requests that say they close it; none means nobody is on it. */
-  readonly pulls: readonly number[];
-  readonly idleDays: number;
-  readonly ageDays: number;
+  /** Null for a deleted account. */
+  readonly author: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly closedAt: string | null;
+  /** Closed issues only: `COMPLETED`, `NOT_PLANNED`, `DUPLICATE`, or null. */
+  readonly stateReason?: string | null;
+  /** Open issues only: no open pull request closes it. */
+  readonly comet?: boolean;
+  /** This repository's pull requests linked to it, open or not. */
+  readonly prs: readonly number[];
 }
 
-/** What `GET /api/issues` returns. */
+/** What `GET /api/issues` returns: pr-starmap's `issues/current`, and the repository. */
 export interface IssuesReport {
   readonly generatedAt: string;
   readonly repo: string;
-  /** Nobody-on-it first, then in progress; the idlest first within each. */
-  readonly items: readonly IssueItem[];
-  readonly closedRecently: number;
-  readonly closedWindowDays: number;
+  /** How far back `closed` reaches. */
+  readonly days: number;
+  readonly total: { readonly open: number; readonly closed: number; readonly comets: number };
+  /** Most recently touched first. */
+  readonly open: readonly IssueRow[];
+  /** Most recently closed first. */
+  readonly closed: readonly IssueRow[];
 }
 
-const daysSince = (iso: string, now: number): number =>
-  Math.max(0, Math.floor((now - Date.parse(iso)) / DAY_MS));
+const clip = (title: string): string =>
+  title.length > TITLE_MAX ? `${title.slice(0, TITLE_MAX - 1)}…` : title;
 
-/** Issue number → the open pull requests that say they close it. */
-export function pullsByIssue(pulls: readonly ClosingPull[]): Map<number, number[]> {
-  const byIssue = new Map<number, number[]>();
+/** `https://github.com/o/r/issues/1` and `…/o/r/pull/2` are the same repository. */
+const repoOf = (url: string): string => url.split('/').slice(0, 5).join('/').toLowerCase();
+
+/** Issue URL → the open pull requests that close it. By URL, not number: a pull
+ *  request closing `other/repo#12` must not claim this repository's #12. */
+export function openedBy(pulls: readonly ClosingPull[]): Map<string, number[]> {
+  const opened = new Map<string, number[]>();
   for (const pull of pulls) {
-    for (const { number } of pull.closingIssuesReferences ?? []) {
-      byIssue.set(number, [...(byIssue.get(number) ?? []), pull.number]);
+    for (const { url } of pull.closingIssuesReferences ?? []) {
+      opened.set(url, [...(opened.get(url) ?? []), pull.number]);
     }
   }
-  return byIssue;
+  return opened;
 }
 
-export function issueItemOf(issue: RawIssue, pulls: readonly number[], now: number): IssueItem {
+/** One issue as the list shows it, with every pull request linked to it. */
+export function issueRowOf(issue: RawIssue, opened: ReadonlyMap<string, number[]>): IssueRow {
+  const mine = opened.get(issue.url) ?? [];
+  // Only this repository's pull requests: the page can open those.
+  const linked = (issue.closedByPullRequestsReferences ?? [])
+    .filter((pull) => repoOf(pull.url) === repoOf(issue.url))
+    .map((pull) => pull.number);
   return {
     number: issue.number,
-    title: issue.title,
+    title: clip(issue.title),
     url: issue.url,
-    labels: (issue.labels ?? []).map((label) => label.name),
+    labels: (issue.labels ?? []).map((label) => ({ name: label.name, color: label.color })),
     assignees: (issue.assignees ?? []).map((assignee) => assignee.login),
-    pulls: [...pulls].sort((a, b) => a - b),
-    idleDays: daysSince(issue.updatedAt, now),
-    ageDays: daysSince(issue.createdAt, now),
+    author: issue.author?.login ?? null,
+    createdAt: issue.createdAt,
+    updatedAt: issue.updatedAt,
+    closedAt: issue.closedAt || null,
+    ...(issue.closedAt ? { stateReason: issue.stateReason || null } : { comet: !mine.length }),
+    prs: [...new Set([...mine, ...linked])].sort((a, b) => a - b),
   };
 }
 
-/** Nobody-on-it first, the idlest first within each group, then by number. */
-export function rankIssues(items: readonly IssueItem[]): IssueItem[] {
-  return [...items].sort(
-    (a, b) =>
-      Number(a.pulls.length > 0) - Number(b.pulls.length > 0) ||
-      b.idleDays - a.idleDays ||
-      a.number - b.number,
-  );
-}
-
-/** "2026-08-27": the day `days` before `now`, as GitHub's search takes it. */
+/** "2026-07-28": the day `days` before `now`, as GitHub's search takes it. */
 export const dayBefore = (now: number, days: number): string =>
   new Date(now - days * DAY_MS).toISOString().slice(0, 10);
 
-/** A repository's open issues and who, if anyone, is on each. */
+const byTouched = (a: IssueRow, b: IssueRow): number =>
+  b.updatedAt.localeCompare(a.updatedAt) || b.number - a.number;
+const byClosed = (a: IssueRow, b: IssueRow): number =>
+  (b.closedAt ?? '').localeCompare(a.closedAt ?? '') || b.number - a.number;
+
+/** A repository's open issues and those closed within `ISSUE_DAYS`, each with
+ *  the pull requests linked to it, as pr-starmap's `bin/issues.mjs` reads them. */
 export async function issuesReport(
   github: IssueReader,
   repo: string,
   now = Date.now(),
 ): Promise<IssuesReport> {
-  const [issues, pulls, closedRecently] = await Promise.all([
+  const closedSince = new Date(now - ISSUE_DAYS * DAY_MS).toISOString();
+  const [openIssues, closedIssues, pulls] = await Promise.all([
     github.openIssues(repo),
+    github.closedIssues(repo, dayBefore(now, ISSUE_DAYS)),
     github.closingPulls(repo),
-    github.closedSinceCount(repo, dayBefore(now, CLOSED_WINDOW_DAYS)),
   ]);
-  const byIssue = pullsByIssue(pulls);
+  const opened = openedBy(pulls);
+  const open = openIssues.map((issue) => issueRowOf(issue, opened)).sort(byTouched);
+  // GitHub's search window is whole days; the report's is exact.
+  const closed = closedIssues
+    .filter((issue) => issue.closedAt && issue.closedAt >= closedSince)
+    .map((issue) => issueRowOf(issue, opened))
+    .sort(byClosed);
   return {
     generatedAt: new Date(now).toISOString(),
     repo,
-    items: rankIssues(
-      issues.map((issue) => issueItemOf(issue, byIssue.get(issue.number) ?? [], now)),
-    ),
-    closedRecently,
-    closedWindowDays: CLOSED_WINDOW_DAYS,
+    days: ISSUE_DAYS,
+    total: {
+      open: open.length,
+      closed: closed.length,
+      comets: open.filter((issue) => issue.comet).length,
+    },
+    open,
+    closed,
   };
 }

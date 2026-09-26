@@ -116,6 +116,11 @@
   --card-act-hover: rgba(142, 162, 255, 0.18);
   --card-primary-edge: rgba(142, 162, 255, 0.55);
 
+  /* pr-starmap's issues: a comet's mark, a pull-request chip, the label menu. */
+  --issue-comet-edge: rgba(159, 232, 255, 0.4);
+  --issue-chip: rgba(142, 162, 255, 0.1);
+  --issue-option: #0b1226;
+
   /* A collision thread: a pair that would conflict. */
   --chart-thread-conflict: var(--bad);
 

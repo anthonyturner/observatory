@@ -1,0 +1,30 @@
+<div class="issuebar">
+  <div class="toolgroup" role="tablist" aria-label="Open or closed issues">
+    @for (each of tabs; track each.id) {
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="tab() === each.id"
+        (click)="tabChange.emit(each.id)"
+      >
+        {{ each.label }}<b>{{ counts()?.[each.id] ?? '' }}</b>
+      </button>
+    }
+  </div>
+  <select aria-label="Show only one label" [disabled]="!labels().length" (change)="onLabel($event)">
+    <option value="">All labels</option>
+    @for (option of labels(); track option.name) {
+      <option [value]="option.name" [selected]="option.name === label()">
+        {{ option.name }} ({{ option.count }})
+      </option>
+    }
+  </select>
+  <input
+    type="search"
+    placeholder="Search titles or #n"
+    aria-label="Search issue titles"
+    autocomplete="off"
+    [value]="query()"
+    (input)="onQuery($event)"
+  />
+</div>

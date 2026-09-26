@@ -1,0 +1,19 @@
+<app-issue-bar
+  [tab]="screen.tab()"
+  [counts]="screen.counts()"
+  [labels]="screen.labels()"
+  [label]="screen.label()"
+  [query]="screen.query()"
+  (tabChange)="screen.setTab($event)"
+  (labelChange)="screen.label.set($event)"
+  (queryChange)="screen.query.set($event)"
+/>
+<app-issue-list
+  [report]="screen.report()"
+  [tab]="screen.tab()"
+  [narrowing]="screen.narrowing()"
+  [pulls]="pulls()"
+  [now]="screen.minute()"
+  [message]="screen.message()"
+  (pull)="pull.emit($event)"
+/>

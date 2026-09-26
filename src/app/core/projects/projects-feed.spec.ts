@@ -19,7 +19,7 @@ describe('ProjectsFeed', () => {
 
     expect(feed.state()).toEqual({
       status: 'ready',
-      report: { generatedAt: '2026-09-26T12:00:00Z', projects: [] },
+      report: { generatedAt: '2026-09-26T12:00:00Z', projects: [], directives: [] },
     });
   });
 

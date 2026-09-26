@@ -9,7 +9,8 @@ const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 const PULL_LIMIT = '100';
 const ISSUE_LIMIT = '1000';
 const REPO_LIMIT = '1000';
-const PULL_FIELDS = 'number,mergeable,statusCheckRollup,closingIssuesReferences,updatedAt';
+const PULL_FIELDS =
+  'number,title,url,mergeable,statusCheckRollup,closingIssuesReferences,updatedAt';
 
 async function gh(args: readonly string[]): Promise<string> {
   const { stdout } = await run('gh', [...args], { encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES });

@@ -8,6 +8,8 @@ const DAY = 86_400_000;
 
 const pull = (overrides: Partial<PullRequest> = {}): PullRequest => ({
   number: 1,
+  title: 'A change',
+  url: 'https://github.com/me/a/pull/1',
   mergeable: 'MERGEABLE',
   statusCheckRollup: [{ conclusion: 'SUCCESS' }],
   closingIssuesReferences: [{ number: 10 }],

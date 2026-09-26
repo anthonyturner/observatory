@@ -1,9 +1,25 @@
 import { ProjectCounts, ProjectSnapshot } from './project.types';
 
+/** A pull request's most urgent state, most urgent first. */
+export const PULL_BUCKETS = ['conflicted', 'failing', 'unknown', 'unlinked', 'unreviewed'] as const;
+
+export type PullBucket = (typeof PULL_BUCKETS)[number];
+
+/** One pull request from the top of the blocked-first queue across every project. */
+export interface QueueDirective {
+  readonly project: string;
+  readonly number: number;
+  readonly title: string;
+  readonly url: string;
+  readonly bucket: PullBucket;
+}
+
 /** What `GET /api/projects` returns. */
 export interface ProjectsReport {
   readonly generatedAt: string;
   readonly projects: readonly ProjectSnapshot[];
+  /** The most urgent open pull requests, most urgent first. */
+  readonly directives: readonly QueueDirective[];
 }
 
 type Json = Record<string, unknown>;
@@ -49,7 +65,21 @@ function parseProject(value: unknown): ProjectSnapshot | null {
   };
 }
 
-/** Reads the report defensively; a project that does not parse is left out. */
+const isBucket = (value: unknown): value is PullBucket =>
+  (PULL_BUCKETS as readonly unknown[]).includes(value);
+/** Only links to GitHub are followed from the page. */
+const isGitHubUrl = (value: unknown): value is string =>
+  isString(value) && value.startsWith('https://github.com/');
+
+function parseDirective(value: unknown): QueueDirective | null {
+  if (!isObject(value)) return null;
+  const { project, number, title, url, bucket } = value;
+  if (!isString(project) || !isCount(number) || !isString(title) || !isGitHubUrl(url)) return null;
+  return isBucket(bucket) ? { project, number, title, url, bucket } : null;
+}
+
+/** Reads the report defensively; a project or directive that does not parse
+ *  is left out. */
 export function parseProjectsReport(value: unknown): ProjectsReport | null {
   if (!isObject(value) || !isString(value['generatedAt']) || !Array.isArray(value['projects'])) {
     return null;
@@ -59,5 +89,8 @@ export function parseProjectsReport(value: unknown): ProjectsReport | null {
     projects: value['projects']
       .map(parseProject)
       .filter((project): project is ProjectSnapshot => project !== null),
+    directives: (Array.isArray(value['directives']) ? value['directives'] : [])
+      .map(parseDirective)
+      .filter((directive): directive is QueueDirective => directive !== null),
   };
 }

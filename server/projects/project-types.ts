@@ -1,3 +1,5 @@
+import type { PullBucket } from './pull-counts.ts';
+
 /** How many of a project's pull requests and issues are in each state. */
 export interface ProjectCounts {
   readonly conflicted: number;
@@ -24,7 +26,19 @@ export interface ProjectSnapshot {
   readonly error?: string;
 }
 
+/** One pull request from the top of the blocked-first queue across every project. */
+export interface Directive {
+  readonly project: string;
+  readonly number: number;
+  readonly title: string;
+  readonly url: string;
+  readonly bucket: PullBucket;
+  readonly updatedAt: string;
+}
+
 export interface ProjectsReport {
   readonly generatedAt: string;
   readonly projects: readonly ProjectSnapshot[];
+  /** The most urgent open pull requests, most urgent first. */
+  readonly directives: readonly Directive[];
 }

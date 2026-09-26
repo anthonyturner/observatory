@@ -61,13 +61,13 @@ files on this machine, so it listens on loopback only:
 
   Readings are kept in `~/.claude/observatory/usage/`. Without them the limit
   meters say so rather than showing a number.
-- **Projects** are every repository the account signed in to the
+- **Projects** (the cards, Open issues and the Directives list) are every repository the account signed in to the
   [GitHub CLI](https://cli.github.com/) owns (no forks or archives), read
   through `gh` and cached for five minutes. Each open pull request is counted
   in its most urgent state: cannot merge, checks failing, mergeability
   unknown, no issue linked, or waiting on you.
 
-Directives, documents, skills and the top bar are still sample data.
+Documents, skills and the top bar are still sample data.
 
 ## Working on it
 

@@ -12,7 +12,10 @@ const project = (name: string, extra: Partial<ProjectSnapshot> = {}): ProjectSna
   ...extra,
 });
 const ready = (projects: ProjectSnapshot[]) =>
-  ({ status: 'ready', report: { generatedAt: '2026-09-26T12:00:00Z', projects } }) as const;
+  ({
+    status: 'ready',
+    report: { generatedAt: '2026-09-26T12:00:00Z', projects, directives: [] },
+  }) as const;
 
 describe('openIssuesVital', () => {
   it('adds up open issues across the projects it could read', () => {

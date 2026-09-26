@@ -37,6 +37,32 @@ describe('parseProjectsReport', () => {
     ).toEqual([project]);
   });
 
+  it('keeps well-formed directives and drops the rest', () => {
+    const directive = {
+      project: 'alpha',
+      number: 7,
+      title: 'Fix it',
+      url: 'https://github.com/me/alpha/pull/7',
+      bucket: 'failing',
+    };
+
+    const report = parseProjectsReport({
+      generatedAt: 'x',
+      projects: [],
+      directives: [
+        directive,
+        { ...directive, bucket: 'fresh' },
+        { ...directive, url: 'javascript:alert(1)' },
+      ],
+    });
+
+    expect(report?.directives).toEqual([directive]);
+  });
+
+  it('reads a report without directives as having none', () => {
+    expect(parseProjectsReport({ generatedAt: 'x', projects: [] })?.directives).toEqual([]);
+  });
+
   it('refuses something that is not a projects report', () => {
     expect(parseProjectsReport({ error: 'not found' })).toBeNull();
   });

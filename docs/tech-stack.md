@@ -17,7 +17,7 @@ so a missing line costs more than a long one.
   to it (`proxy.conf.json`). Node built-ins only. Tests: `node:test`.
 - Data: Claude Code usage is live, read from this machine's session logs
   (`~/.claude/projects`) and the status line's limit readings
-  (`~/.claude/observatory/usage/`). Projects and open issues are live from
+  (`~/.claude/observatory/usage/`). Projects, open issues and the directives are live from
   GitHub through the `gh` CLI (`server/github/`), as its signed-in account.
   Everything else is still sample data. No
   secrets live in this repository.

@@ -1,7 +1,8 @@
-import type { GitHubReader, RepoRef } from '../github/github-reader.ts';
+import type { GitHubReader, PullRequest, RepoRef } from '../github/github-reader.ts';
 import { mapWithLimit } from '../util/map-with-limit.ts';
-import type { ProjectSnapshot, ProjectsReport } from './project-types.ts';
-import { oldestIdleDays, pullCounts } from './pull-counts.ts';
+import { topDirectives } from './directives.ts';
+import type { Directive, ProjectSnapshot, ProjectsReport } from './project-types.ts';
+import { bucketOf, oldestIdleDays, pullCounts } from './pull-counts.ts';
 import { settleMergeable, type Sleep } from './settle-mergeable.ts';
 
 /** Repositories read at once: quick, without tripping GitHub's abuse limits. */
@@ -18,6 +19,13 @@ const NO_COUNTS = {
   unclaimed: 0,
 };
 
+/** One repository as read: its snapshot, and its pull requests as candidates
+ *  for the directives. */
+interface ProjectRead {
+  readonly snapshot: ProjectSnapshot;
+  readonly candidates: readonly Directive[];
+}
+
 /** The star map a project will have; until then the route leads Home. */
 const dashboardUrlOf = (nameWithOwner: string): string => `/p/${nameWithOwner}`;
 
@@ -26,12 +34,21 @@ const firstLine = (error: unknown): string =>
     .split('\n')[0]
     .slice(0, MAX_ERROR_LENGTH);
 
-async function snapshotOf(
+const directiveOf = (project: string, pull: PullRequest): Directive => ({
+  project,
+  number: pull.number,
+  title: pull.title,
+  url: pull.url,
+  bucket: bucketOf(pull),
+  updatedAt: pull.updatedAt,
+});
+
+async function readProject(
   github: GitHubReader,
   repo: RepoRef,
   now: number,
   wait?: Sleep,
-): Promise<ProjectSnapshot> {
+): Promise<ProjectRead> {
   const base = {
     name: repo.name,
     repo: repo.nameWithOwner,
@@ -44,27 +61,38 @@ async function snapshotOf(
     ]);
     const pulls = await settleMergeable(github, repo.nameWithOwner, listed, wait);
     return {
-      ...base,
-      open: pulls.length,
-      counts: pullCounts(pulls, openIssues),
-      ...(openIssues ? { issues: openIssues.length } : {}),
-      oldestIdleDays: oldestIdleDays(pulls, now),
+      snapshot: {
+        ...base,
+        open: pulls.length,
+        counts: pullCounts(pulls, openIssues),
+        ...(openIssues ? { issues: openIssues.length } : {}),
+        oldestIdleDays: oldestIdleDays(pulls, now),
+      },
+      candidates: pulls.map((pull) => directiveOf(repo.name, pull)),
     };
   } catch (error) {
     // Unreadable is its own state, never quietly zero.
-    return { ...base, open: 0, counts: NO_COUNTS, error: firstLine(error) };
+    return {
+      snapshot: { ...base, open: 0, counts: NO_COUNTS, error: firstLine(error) },
+      candidates: [],
+    };
   }
 }
 
-/** Every repository the signed-in account owns, as a project snapshot. */
+/** Every repository the signed-in account owns, as a project snapshot, and
+ *  the most urgent pull requests across them. */
 export async function projectsReport(
   github: GitHubReader,
   now = Date.now(),
   wait?: Sleep,
 ): Promise<ProjectsReport> {
   const repos = await github.ownedRepos(await github.viewer());
-  const projects = await mapWithLimit(repos, CONCURRENT_REPOS, (repo) =>
-    snapshotOf(github, repo, now, wait),
+  const reads = await mapWithLimit(repos, CONCURRENT_REPOS, (repo) =>
+    readProject(github, repo, now, wait),
   );
-  return { generatedAt: new Date(now).toISOString(), projects };
+  return {
+    generatedAt: new Date(now).toISOString(),
+    projects: reads.map((read) => read.snapshot),
+    directives: topDirectives(reads.flatMap((read) => read.candidates)),
+  };
 }

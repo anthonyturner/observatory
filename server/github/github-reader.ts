@@ -13,6 +13,8 @@ export interface CheckRun {
 /** An open pull request, with only the fields the counts read. */
 export interface PullRequest {
   readonly number: number;
+  readonly title: string;
+  readonly url: string;
   /** `MERGEABLE`, `CONFLICTING` or `UNKNOWN`: GitHub works it out lazily. */
   readonly mergeable: string;
   readonly statusCheckRollup: readonly CheckRun[] | null;

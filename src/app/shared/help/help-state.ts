@@ -4,15 +4,19 @@ import { Injectable, signal } from '@angular/core';
  *  each talk to this, never to each other. */
 @Injectable({ providedIn: 'root' })
 export class HelpState {
-  private readonly open = signal(false);
+  private readonly opened = signal(false);
 
-  readonly isOpen = this.open.asReadonly();
+  readonly isOpen = this.opened.asReadonly();
 
   toggle(): void {
-    this.open.update((isOpen) => !isOpen);
+    this.opened.update((isOpen) => !isOpen);
+  }
+
+  open(): void {
+    this.opened.set(true);
   }
 
   close(): void {
-    this.open.set(false);
+    this.opened.set(false);
   }
 }

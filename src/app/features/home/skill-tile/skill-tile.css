@@ -51,3 +51,9 @@ button:hover {
   letter-spacing: 0.06em;
   overflow-wrap: anywhere;
 }
+
+button[aria-busy='true'] {
+  border-color: var(--flow);
+  color: var(--ink-soft);
+  cursor: progress;
+}

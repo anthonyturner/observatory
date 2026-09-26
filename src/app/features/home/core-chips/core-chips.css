@@ -1,0 +1,32 @@
+ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  padding: 5px 11px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+li[aria-current='true'] {
+  border-color: var(--edge);
+  background: var(--chip-lit);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+li[data-chip='error'][aria-current='true'] {
+  border-color: var(--chip-error-edge);
+  background: var(--chip-error);
+  color: var(--bad-soft);
+}

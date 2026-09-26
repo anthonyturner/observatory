@@ -13,6 +13,8 @@ export interface CoreFrame {
   readonly state: CoreStateId;
   /** Real seconds since the core entered `state`. */
   readonly stateAge: number;
+  /** The arc of the reply being read aloud, 0 to 2. */
+  readonly spokenTier: number;
   readonly isStill: boolean;
   readonly hand: HandPose;
   /** The repo of the project lit on the ring, if any. */

@@ -2,6 +2,7 @@
 <app-core-canvas [anchor]="anchor" />
 <p class="name" aria-hidden="true">Claude</p>
 <p class="caption">Observatory core · one bead per project, blocked first</p>
+<app-core-chips [lit]="chip().id" />
 <p class="mood" [attr.data-mood]="mood().name">Mood · {{ mood().name }} — {{ mood().reason }}</p>
 @if (fog().age; as age) {
   <p class="fogged">Data fogged · {{ age }} old</p>

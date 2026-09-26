@@ -1,5 +1,6 @@
 import { ProjectSnapshot } from '../../../core/projects/project.types';
-import { homeSummaryFrom } from './home-summary';
+import { IDLE_CHIP, WORKING_CHIP, chipOf } from '../../../core/core-state/core-chips';
+import { coreStatusOf, homeSummaryFrom } from './home-summary';
 
 const NOW = new Date(2026, 8, 26, 15, 0).getTime();
 const quiet = { conflicted: 0, failing: 0, unknown: 0, unlinked: 0, unreviewed: 0, unclaimed: 0 };
@@ -24,11 +25,7 @@ describe('homeSummaryFrom', () => {
     );
 
     expect(summary.stamp).toBe('1 blocked · 3 projects · 8 open · refreshed 09:42');
-    expect(summary.statuses.map((status) => status.label)).toEqual([
-      'Core · Idle',
-      'Local',
-      '3 projects tracked',
-    ]);
+    expect(summary.statuses.map((status) => status.label)).toEqual(['Local', '3 projects tracked']);
   });
 
   it('dates a read from another day', () => {
@@ -46,6 +43,14 @@ describe('homeSummaryFrom', () => {
 
     const unreachable = homeSummaryFrom({ status: 'unreachable' }, NOW);
     expect(unreachable.stamp).toBe('API out of reach');
-    expect(unreachable.statuses[2]).toEqual({ label: 'Projects · out of reach', state: 'error' });
+    expect(unreachable.statuses[1]).toEqual({ label: 'Projects · out of reach', state: 'error' });
+  });
+});
+
+describe('coreStatusOf', () => {
+  it('names the lit chip, with a quiet dot at rest, a red one on an error, else a live one', () => {
+    expect(coreStatusOf(IDLE_CHIP)).toEqual({ label: 'Core · Idle', state: 'idle' });
+    expect(coreStatusOf(WORKING_CHIP)).toEqual({ label: 'Core · Working', state: 'active' });
+    expect(coreStatusOf(chipOf('error'))).toEqual({ label: 'Core · Error', state: 'error' });
   });
 });

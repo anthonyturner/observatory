@@ -28,8 +28,6 @@ const INTRO_S = 1.6;
 const BEAD_GROW_S = 0.8;
 /** The ball starts at this fraction of its size and grows to full with the intro. */
 const BALL_START = 0.55;
-/** Until the speaking state is wired to a reply, it lights the first tier. */
-const SPOKEN_TIER = 0;
 
 /** Carries the core's look from frame to frame: easing between states, the
  *  intro and the beads growing in. Renderers only draw the pose it gives. */
@@ -68,7 +66,7 @@ export class CoreAnimator {
         time: frame.time,
         age: frame.stateAge,
         isStill: frame.isStill,
-        spokenTier: SPOKEN_TIER,
+        spokenTier: frame.spokenTier,
       }),
       tierSpin: tierSpin(state, frame.time),
       sinceStart,

@@ -42,6 +42,11 @@ export const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
       'When a refresh shows issues closed or pull requests merged since the last one, that project’s dot bursts green and green comets flare into the core, one per thing done.',
   },
   {
+    term: 'Fog',
+    meaning:
+      'Home fogs over as its project data ages: nothing for six hours, full by three days. A line under the core says how old the data is. Fresh data clears it.',
+  },
+  {
     term: 'Dots',
     meaning:
       'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name; click a dot to go to its card. A dot fades, with a slow grey pulsing ring, once its oldest pull request has sat untouched for a week.',

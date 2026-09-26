@@ -3,7 +3,16 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { CORE_RENDERER } from '../../../core/instrument/core-tokens';
 import { CoreRenderer } from '../../../core/instrument/core-renderer';
+import { SKY_CANVAS, SkyCanvas } from '../../../core/sky/sky-painter';
 import { HomePage } from './home-page';
+
+const NO_SKY: SkyCanvas = {
+  canDraw: () => false,
+  setTrails: () => undefined,
+  setView: () => undefined,
+  paint: () => undefined,
+  dispose: () => undefined,
+};
 
 /** jsdom has no canvas to draw on. */
 const NO_CANVAS: CoreRenderer = {
@@ -22,6 +31,7 @@ describe('HomePage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: CORE_RENDERER, useValue: () => NO_CANVAS },
+        { provide: SKY_CANVAS, useValue: () => NO_SKY },
       ],
     });
     const fixture = TestBed.createComponent(HomePage);

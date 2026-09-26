@@ -1,3 +1,4 @@
+import { knownOpenIssues } from '../../../core/projects/open-issues';
 import { ProjectsState } from '../../../core/projects/projects-feed';
 import { ageOf } from '../../../core/usage/usage-format';
 import { VitalReading } from './vitals';
@@ -17,11 +18,11 @@ export function openIssuesVital(state: ProjectsState, now: number): VitalReading
   }
   const { projects, generatedAt } = state.report;
   const age = ageOf(generatedAt, now);
-  const known = projects.filter((project) => !project.error && project.issues !== undefined);
+  const total = knownOpenIssues(projects);
   const unread = projects.filter((project) => project.error).length;
-  if (!known.length) return { ...ISSUES_LABEL, value: null, age, note: 'not read' };
+  if (total === null) return { ...ISSUES_LABEL, value: null, age, note: 'not read' };
 
-  const total = known.reduce((sum, project) => sum + (project.issues ?? 0), 0);
+  const known = projects.filter((project) => !project.error && project.issues !== undefined);
   return {
     ...ISSUES_LABEL,
     value: String(total),

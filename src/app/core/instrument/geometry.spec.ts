@@ -45,6 +45,7 @@ describe('coreViewOf', () => {
     const view = coreViewOf({ left: 300, top: 100, width: 600, height: 600 }, viewport);
     expect(view.centreX).toBe(600);
     expect(view.centreY).toBe(400);
+    expect([view.poleX, view.poleY]).toEqual([600, 400]);
     expect(view.radius).toBe(175);
     expect(view.pixelRatio).toBe(2);
     expect(view.isAway).toBe(false);

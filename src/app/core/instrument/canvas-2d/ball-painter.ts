@@ -1,7 +1,7 @@
 import { BallNetwork, ballNetwork } from '../ball-network';
 import { CoreLook, rippleAt } from '../core-look';
 import { Lens } from '../lens';
-import { rgbCss } from './palette';
+import { rgbCss } from '../palette';
 
 export interface BallPose {
   readonly look: CoreLook;

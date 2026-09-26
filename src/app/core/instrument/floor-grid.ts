@@ -10,8 +10,11 @@ export interface FloorBatch {
 
 export interface FloorGrid {
   readonly key: string;
-  readonly batches: readonly FloorBatch[];
+  /** x1, y1, x2, y2, and each end's brightness, per segment, in pixels about the core's centre. */
+  readonly segments: Float32Array;
 }
+
+export const FLOOR_STRIDE = 6;
 
 export interface FloorSize {
   readonly coreRadius: number;
@@ -44,7 +47,8 @@ interface Plane {
 interface Segment {
   readonly from: readonly [number, number];
   readonly to: readonly [number, number];
-  readonly alpha: number;
+  readonly fromAlpha: number;
+  readonly toAlpha: number;
 }
 
 export const floorKey = ({ coreRadius, windowWidth, depth }: FloorSize): string =>
@@ -57,8 +61,15 @@ export const floorKey = ({ coreRadius, windowWidth, depth }: FloorSize): string 
 export function buildFloorGrid(size: FloorSize): FloorGrid {
   const horizon = size.coreRadius * BALL * 0.85;
   const plane: Plane = { horizon, drop: size.depth - horizon, halfWidth: size.windowWidth / 2 };
-  const segments = [...columns(plane), ...rows(plane)].filter((s) => s.alpha > INVISIBLE);
-  return { key: floorKey(size), batches: batch(segments) };
+  const segments = [...columns(plane), ...rows(plane)].filter(
+    (s) => s.fromAlpha + s.toAlpha > INVISIBLE * 2,
+  );
+  return {
+    key: floorKey(size),
+    segments: Float32Array.from(
+      segments.flatMap(({ from, to, fromAlpha, toAlpha }) => [...from, ...to, fromAlpha, toAlpha]),
+    ),
+  };
 }
 
 function fadeAt(plane: Plane, [x, y]: readonly [number, number]): number {
@@ -75,7 +86,7 @@ function segment(
   from: readonly [number, number],
   to: readonly [number, number],
 ): Segment {
-  return { from, to, alpha: (fadeAt(plane, from) + fadeAt(plane, to)) / 2 };
+  return { from, to, fromAlpha: fadeAt(plane, from), toAlpha: fadeAt(plane, to) };
 }
 
 /** Ground depth z puts column X at X·drop/z across. The floor runs on past the
@@ -118,11 +129,21 @@ function rows(plane: Plane): Segment[] {
   return out;
 }
 
-function batch(segments: readonly Segment[]): FloorBatch[] {
-  const top = segments.reduce((max, s) => Math.max(max, s.alpha), 0) || 1;
+/** The segments in a few batches of like brightness, for a canvas, whose
+ *  path carries one alpha. Each batch draws at its level's middle. */
+export function floorBatches(grid: FloorGrid): FloorBatch[] {
+  const { segments } = grid;
+  let top = 0;
+  for (let i = 0; i < segments.length; i += FLOOR_STRIDE) {
+    top = Math.max(top, segments[i + 4], segments[i + 5]);
+  }
+  top ||= 1;
   const levels = Array.from({ length: LEVELS }, (): number[] => []);
-  for (const { from, to, alpha } of segments) {
-    levels[Math.min(LEVELS - 1, Math.floor((alpha / top) * LEVELS))].push(...from, ...to);
+  for (let i = 0; i < segments.length; i += FLOOR_STRIDE) {
+    const alpha = (segments[i + 4] + segments[i + 5]) / 2;
+    levels[Math.min(LEVELS - 1, Math.floor((alpha / top) * LEVELS))].push(
+      ...segments.subarray(i, i + 4),
+    );
   }
   return levels
     .map((coords, level) => ({

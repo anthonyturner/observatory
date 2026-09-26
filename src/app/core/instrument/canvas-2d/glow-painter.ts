@@ -1,7 +1,7 @@
 import { Bead } from '../beads';
 import { CoreLook } from '../core-look';
 import { Lens } from '../lens';
-import { CorePalette, rgbCss } from './palette';
+import { CorePalette, rgbCss } from '../palette';
 
 /** A bead as it draws this frame: how far it has grown in, 0 to 1. */
 export interface GrowingBead {

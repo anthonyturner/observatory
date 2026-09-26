@@ -9,7 +9,6 @@ import {
   effect,
   inject,
   input,
-  viewChild,
 } from '@angular/core';
 import { CORE_RENDERER, CORE_STATE } from '../../../core/instrument/core-tokens';
 import { CoreView, coreViewOf } from '../../../core/instrument/core-view';
@@ -25,7 +24,7 @@ const FPS_AWAY = 15;
 /** Draws the core behind the HUD, at the anchor's place, following it as the page scrolls. */
 @Component({
   selector: 'app-core-canvas',
-  template: '<canvas #canvas></canvas>',
+  template: '',
   styleUrl: './core-canvas.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { 'aria-hidden': 'true' },
@@ -34,7 +33,7 @@ export class CoreCanvas {
   /** The box the core is centred in and sized to. */
   readonly anchor = input.required<HTMLElement>();
 
-  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly document = inject(DOCUMENT);
   private readonly projects = inject(PROJECTS);
   private readonly state = inject(CORE_STATE);
@@ -65,7 +64,7 @@ export class CoreCanvas {
   }
 
   private start(): void {
-    this.renderer.mount(this.canvas().nativeElement);
+    this.renderer.mount(this.host.nativeElement, () => this.loop?.kick());
     if (!this.renderer.canDraw()) return;
     this.loop = new FrameLoop({
       scheduler: this.scheduler(),

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ClockReadout } from '../clock-readout/clock-readout';
-import { HOME_SUMMARY } from '../data/home-summary';
+import { HOME_SUMMARY } from '../data/home-summary-source';
 import { StatusLine } from '../status-line/status-line';
 import { TopNav } from '../top-nav/top-nav';
 

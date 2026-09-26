@@ -1,0 +1,26 @@
+@if (earlier(); as earlier) {
+  <button type="button" class="more" (click)="isWhole.set(true)">
+    Show earlier ({{ earlier }})
+  </button>
+}
+@for (entry of shown(); track entry.key) {
+  @switch (entry.kind) {
+    @case ('quiet') {
+      <p class="quiet" [class.warn]="entry.isWarning">{{ entry.text }}</p>
+    }
+    @case ('text') {
+      <p class="text" [class.nested]="entry.isNested">{{ entry.text }}</p>
+    }
+    @case ('fold') {
+      <app-transcript-row [fold]="entry" />
+    }
+    @case ('result') {
+      <div class="result" [class.bad]="entry.isBad">
+        <h4>{{ entry.heading }}</h4>
+        @for (line of entry.lines; track $index) {
+          <p>{{ line }}</p>
+        }
+      </div>
+    }
+  }
+}

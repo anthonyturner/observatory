@@ -1,0 +1,129 @@
+:host {
+  display: block;
+}
+
+h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+h3 small {
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.toggle::before {
+  content: '\25BE';
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--muted);
+}
+
+.toggle[aria-expanded='false']::before {
+  content: '\25B8';
+}
+
+ol {
+  max-height: 26vh;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 12px 40px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover {
+  border-color: var(--edge-soft);
+}
+
+.row[aria-current='true'] {
+  border-color: var(--edge);
+  background: var(--run-row-current);
+}
+
+.mark,
+.time,
+.meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mark[data-tone='ok'] {
+  color: var(--ok);
+}
+
+.mark[data-tone='bad'] {
+  color: var(--bad-soft);
+}
+
+.mark[data-tone='live'] {
+  color: var(--flow);
+}
+
+.time,
+.meta {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.prompt {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 720px) {
+  /* The output needs the height more than the list does. */
+  ol {
+    max-height: 20vh;
+  }
+
+  .row {
+    grid-template-columns: 12px 40px minmax(0, 1fr);
+    min-height: 44px;
+  }
+
+  .meta {
+    grid-column: 3;
+  }
+}

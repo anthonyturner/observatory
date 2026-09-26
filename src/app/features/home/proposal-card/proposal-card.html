@@ -1,24 +1,22 @@
-<app-reply-chip [chip]="chip" />
-<h3 tabindex="-1" appFocusOnArrival [id]="titleId">Run this as a Claude Code task</h3>
-<p>{{ proposal().intro }}</p>
-@for (command of proposal().commands; track $index) {
-  <div class="cmd">
-    @if (command.shell) {
-      <span class="shell">{{ command.shell }}</span>
-    }
-    <pre #box tabindex="0" [attr.aria-label]="command.boxLabel">{{ command.command }}</pre>
-    <app-copy-button
-      [text]="command.command"
-      [label]="command.copyLabel"
-      [selectTarget]="box"
-      [isPrimary]="true"
-    />
-  </div>
-}
-<p class="small">{{ proposal().writtenFor }}</p>
-@if (proposal().runWhy; as why) {
-  <p class="small">{{ why }}</p>
-}
-<div class="acts">
-  <button type="button" class="abtn quiet" (click)="dismissed.emit()">Dismiss</button>
-</div>
+<app-proposal-frame heading="Run this as a Claude Code task">
+  <p>{{ proposal().intro }}</p>
+  @for (command of proposal().commands; track $index) {
+    <div class="cmd">
+      @if (command.shell) {
+        <span class="shell">{{ command.shell }}</span>
+      }
+      <pre #box tabindex="0" [attr.aria-label]="command.boxLabel">{{ command.command }}</pre>
+      <app-copy-button
+        [text]="command.command"
+        [label]="command.copyLabel"
+        [selectTarget]="box"
+        [isPrimary]="true"
+      />
+    </div>
+  }
+  <p class="small">{{ proposal().writtenFor }}</p>
+  @if (proposal().runWhy; as why) {
+    <p class="small">{{ why }}</p>
+  }
+  <button proposalActs type="button" class="abtn quiet" (click)="dismissed.emit()">Dismiss</button>
+</app-proposal-frame>

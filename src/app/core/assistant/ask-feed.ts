@@ -5,13 +5,14 @@ import { ASSISTANT_API, AssistantRefused } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { RouteReply, RouteRequest, Skill } from './assistant.types';
 import { PageJump } from './page-jump';
-import { ProposalSlot, commandProposalOf } from './proposal';
+import { Proposal, ProposalSlot, RunProposal, commandProposalOf, runProposalOf } from './proposal';
 import { NO_ANSWER_CHIP, WAITING_CHIP, chipOf } from './reply-chip';
 import { AskedHow, EntryAction, answering, noting, saying } from './reply-entry';
 import { ReplyLog } from './reply-log';
 import { ReplySpeech } from './reply-speech';
 import { TierOneActions } from './tier-one-actions';
 import { ReplyTier } from '../voice/reply-voice';
+import { Clock } from '../time/clock';
 
 /**
  * Home's assistant: sends a request to the router and shows what it decided.
@@ -28,6 +29,7 @@ export class AskFeed implements AskChannel {
   private readonly jump = inject(PageJump);
   private readonly proposals = inject(ProposalSlot);
   private readonly focus = inject(AskBoxFocus);
+  private readonly clock = inject(Clock);
   private readonly asking = signal(false);
   private readonly skillAsking = signal<string | null>(null);
   /** Whether the last request cut a reply off, for "stop" to say so. */
@@ -83,6 +85,19 @@ export class AskFeed implements AskChannel {
   dismissProposal(): void {
     this.proposals.dismiss();
     this.focus.request();
+  }
+
+  /** Cancel on a proposal to run: its reply says it was left. */
+  leaveProposal(entryId: number): void {
+    this.log.say(entryId, noting('Left it.'));
+    this.dismissProposal();
+  }
+
+  /** Asks for the same task again, in the same project, as a fresh proposal. */
+  proposeAgain(proposal: RunProposal): void {
+    this.proposals.dismiss();
+    const request = { text: proposal.prompt, pick: { tier: 3, project: proposal.project } };
+    void this.send(request, proposal.entryId);
   }
 
   private open(asked: string, how: AskedHow): number {
@@ -150,7 +165,19 @@ export class AskFeed implements AskChannel {
   private showProposal(entryId: number, reply: RouteReply): void {
     this.log.say(entryId, noting('Proposed a task: see above.'));
     this.proposalCount++;
-    this.proposals.show(commandProposalOf(reply, this.info.where(), this.proposalCount));
+    this.proposals.show(this.proposalOf(entryId, reply));
+  }
+
+  /** With the runner's ticket, which only the local site gives, a proposal
+   *  that can run here; otherwise the command to copy. */
+  private proposalOf(entryId: number, reply: RouteReply): Proposal {
+    const { run: ticket, prompt } = reply;
+    if (!ticket || !prompt) return commandProposalOf(reply, this.info.where(), this.proposalCount);
+    return runProposalOf(
+      { reply, ticket, prompt, entryId },
+      this.proposalCount,
+      this.clock.now().getTime(),
+    );
   }
 
   /** Unsure, or no model to ask: says so, and offers what it might have

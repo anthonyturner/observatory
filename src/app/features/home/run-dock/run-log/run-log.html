@@ -1,0 +1,16 @@
+<!-- Off, not polite: every streamed event would be read out. The dock's
+     status line says the milestones instead. -->
+<div
+  #log
+  class="log"
+  role="log"
+  aria-live="off"
+  aria-label="What Claude Code did"
+  tabindex="0"
+  (scroll)="onScroll()"
+>
+  <app-run-transcript [entries]="entries()" />
+</div>
+@if (hasNewer()) {
+  <button type="button" class="abtn jump" (click)="jumpToLatest()">Jump to latest &darr;</button>
+}

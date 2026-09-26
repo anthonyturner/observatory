@@ -83,6 +83,21 @@ describe('parseRouteReply', () => {
     ]);
   });
 
+  it('reads the local runner’s ticket whole, or not at all', () => {
+    const run = {
+      token: 't0k',
+      folder: 'E:\\repos\\app',
+      name: 'app',
+      expiresAt: 1_000,
+      limitMs: 1_800_000,
+      command: 'claude -p --output-format stream-json --verbose',
+    };
+
+    expect(parseRouteReply({ tier: 3, prompt: 'fix it', run })?.run).toEqual(run);
+    expect(parseRouteReply({ tier: 3, run: { ...run, expiresAt: 'soon' } })?.run).toBeUndefined();
+    expect(parseRouteReply({ tier: 3, run: { ...run, token: '' } })?.run).toBeUndefined();
+  });
+
   it('drops a field of the wrong kind rather than trusting it', () => {
     const reply = parseRouteReply({ tier: 4, via: 'magic', confidence: 3, href: 42 });
 

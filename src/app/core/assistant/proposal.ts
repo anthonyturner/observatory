@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import { RouteReply, ShellCommand, SiteWhere } from './assistant.types';
+import { MS_PER_MINUTE, wholeMinutes } from '../runs/run-words';
+import { RouteReply, RunTicket, ShellCommand, SiteWhere } from './assistant.types';
 
 /** One command on the card, with how its copy button and its box are named. */
 export interface ProposalCommand extends ShellCommand {
@@ -7,8 +8,7 @@ export interface ProposalCommand extends ShellCommand {
   readonly boxLabel: string;
 }
 
-/** A tier-3 task shown as the command to run it. The runner adds a second
- *  kind, a proposal that runs here once confirmed, beside this one. */
+/** A tier-3 task shown as the command to run it. */
 export interface CommandProposal {
   readonly kind: 'command';
   /** Each proposal is new, so a card shown twice still takes the focus. */
@@ -22,7 +22,48 @@ export interface CommandProposal {
   readonly runWhy: string | null;
 }
 
-export type Proposal = CommandProposal;
+/** A tier-3 task the local site runs once the owner presses Run: what would
+ *  run, where and how, each on its own line, so nothing is taken on trust. */
+export interface RunProposal {
+  readonly kind: 'run';
+  readonly id: number;
+  /** The reply it answers, which says how it went. */
+  readonly entryId: number;
+  readonly prompt: string;
+  readonly project: string | null;
+  readonly ticket: RunTicket;
+  /** "app · E:
+epospp". */
+  readonly where: string;
+  /** Its permissions, its time limit and how long it stays valid. */
+  readonly terms: string;
+}
+
+export type Proposal = CommandProposal | RunProposal;
+
+/** Where a proposal to run came from: the reply, and the runner's ticket. */
+export interface RunOrigin {
+  readonly reply: RouteReply;
+  readonly ticket: RunTicket;
+  readonly prompt: string;
+  readonly entryId: number;
+}
+
+/** The card that can start a run, as it reads at `now`. */
+export function runProposalOf(origin: RunOrigin, id: number, now: number): RunProposal {
+  const { ticket } = origin;
+  const validMinutes = Math.max(1, Math.round((ticket.expiresAt - now) / MS_PER_MINUTE));
+  return {
+    kind: 'run',
+    id,
+    entryId: origin.entryId,
+    prompt: origin.prompt,
+    project: origin.reply.project ?? null,
+    ticket,
+    where: `${ticket.name} · ${ticket.folder}`,
+    terms: `Runs with your own Claude Code permissions and hooks. Anything your allow rules don’t cover is refused, not asked. One run at a time; it stops after ${wholeMinutes(ticket.limitMs)} minutes. Valid for ${validMinutes} minutes.`,
+  };
+}
 
 /** The card for `reply`. The hosted site cannot run anything, so it says the
  *  command is for your own machine; each command names the shell it is quoted

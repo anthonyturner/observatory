@@ -3,11 +3,12 @@ import { RouterLink } from '@angular/router';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { SoundPreference } from '../../../core/sound/sound-preference';
 import { HelpState } from '../../../shared/help/help-state';
+import { RunPill } from '../run-pill/run-pill';
 
-/** The way to the orrery and the page's tools. */
+/** A task's pill, the way to the orrery, and the page's tools. */
 @Component({
   selector: 'app-top-nav',
-  imports: [RouterLink],
+  imports: [RouterLink, RunPill],
   templateUrl: './top-nav.html',
   styleUrl: './top-nav.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

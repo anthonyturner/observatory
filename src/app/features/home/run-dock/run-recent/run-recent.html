@@ -1,0 +1,32 @@
+<section aria-labelledby="run-recent-title">
+  <h3 id="run-recent-title">
+    <button
+      type="button"
+      class="toggle"
+      aria-controls="run-recent-list"
+      [attr.aria-expanded]="isOpen()"
+      (click)="toggled.emit()"
+    >
+      Recent runs
+    </button>
+    <small>{{ rows().length }}</small>
+  </h3>
+  <ol id="run-recent-list" [hidden]="!isOpen()">
+    @for (row of rows(); track row.id) {
+      <li>
+        <button
+          type="button"
+          class="row"
+          [attr.aria-current]="row.isShown"
+          [attr.aria-label]="row.label"
+          (click)="picked.emit(row.id)"
+        >
+          <span class="mark" aria-hidden="true" [attr.data-tone]="row.tone">{{ row.mark }}</span>
+          <span class="time">{{ row.time }}</span>
+          <span class="prompt">{{ row.prompt }}</span>
+          <span class="meta">{{ row.meta }}</span>
+        </button>
+      </li>
+    }
+  </ol>
+</section>

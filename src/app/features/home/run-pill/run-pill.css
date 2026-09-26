@@ -1,0 +1,42 @@
+:host {
+  display: contents;
+}
+
+/* The run's state and timer in the top bar while the dock is folded away. */
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--run-pill-edge);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--warm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--warm);
+}
+
+/* No task running, only earlier ones to read: the pill steps back. */
+.past {
+  border-color: var(--edge);
+  color: var(--muted);
+}
+
+.past:hover {
+  border-color: var(--flow);
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  button {
+    min-height: 44px;
+  }
+}

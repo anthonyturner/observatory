@@ -1,4 +1,5 @@
 import { ReplyTier } from '../voice/reply-voice';
+import { Json, fieldOf, isNumber, isObject, isText, listOf, oneOf } from '../json/json-fields';
 import {
   AskOption,
   AssistantStatus,
@@ -6,36 +7,19 @@ import {
   ReplyVia,
   RouteReply,
   RoutePick,
+  RunTicket,
   ShellCommand,
   SiteWhere,
   Skill,
 } from './assistant.types';
-
-type Json = Record<string, unknown>;
 
 const JEV_STATES: readonly JevState[] = ['on', 'off'];
 const WHERES: readonly SiteWhere[] = ['local', 'hosted'];
 const VIAS: readonly ReplyVia[] = ['keyword', 'jev', 'pick', 'skill'];
 const TIERS: readonly ReplyTier[] = [1, 2, 3];
 
-const isObject = (value: unknown): value is Json =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-const isText = (value: unknown): value is string => typeof value === 'string' && value !== '';
-const oneOf =
-  <T>(allowed: readonly T[]) =>
-  (value: unknown): value is T =>
-    allowed.includes(value as T);
 const isPickValue = (value: unknown): value is string | number | null =>
   value === null || typeof value === 'string' || typeof value === 'number';
-const listOf = <T>(value: unknown, parse: (item: unknown) => T | null): T[] =>
-  (Array.isArray(value) ? value : []).map(parse).filter((item): item is T => item !== null);
-
-/** The field when it passes `check`, else nothing, so an odd field is dropped
- *  rather than trusted. */
-function fieldOf<T>(body: Json, key: string, check: (value: unknown) => value is T): T | undefined {
-  const value = body[key];
-  return check(value) ? value : undefined;
-}
 
 function parseSkill(value: unknown): Skill | null {
   if (!isObject(value) || !isText(value['id']) || !isText(value['label'])) return null;
@@ -70,6 +54,16 @@ function commandsOf(body: Json): ShellCommand[] {
   const commands = listOf(body['commands'], parseCommand);
   const lone = fieldOf(body, 'command', isText);
   return commands.length || !lone ? commands : [{ shell: null, command: lone }];
+}
+
+/** The local runner's ticket for a proposal, whole or not at all: Run needs
+ *  every field of it. */
+function parseRunTicket(value: unknown): RunTicket | undefined {
+  if (!isObject(value)) return undefined;
+  const { token, folder, name, expiresAt, limitMs, command } = value;
+  if (!isText(token) || !isText(folder) || !isText(name) || !isText(command)) return undefined;
+  if (!isNumber(expiresAt) || !isNumber(limitMs)) return undefined;
+  return { token, folder, name, expiresAt, limitMs, command };
 }
 
 const isConfidence = (value: unknown): value is number =>
@@ -108,5 +102,6 @@ export function parseRouteReply(body: unknown): RouteReply | null {
     commands: commandsOf(body),
     project: text('project'),
     runWhy: text('runWhy'),
+    run: parseRunTicket(body['run']),
   };
 }

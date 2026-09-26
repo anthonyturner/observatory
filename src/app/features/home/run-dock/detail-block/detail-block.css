@@ -1,0 +1,50 @@
+:host {
+  display: grid;
+  gap: 6px;
+}
+
+h4 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+pre {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: pre-wrap;
+  color: var(--ink-soft);
+  scrollbar-width: thin;
+}
+
+button {
+  justify-self: start;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--flow);
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  button {
+    min-height: 44px;
+  }
+}

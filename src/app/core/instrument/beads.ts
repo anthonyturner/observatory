@@ -27,6 +27,8 @@ export interface BeadLayout {
 }
 
 export const MAX_BEADS = 24;
+/** How much larger the lit project's bead draws. */
+export const LIT_BEAD_GROWTH = 1.45;
 /** A desktop core is about this radius; beads shrink with a phone's smaller one. */
 const FULL_SIZE_RADIUS = 140;
 const MIN_SIZE_SCALE = 0.45;

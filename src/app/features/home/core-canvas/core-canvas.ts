@@ -10,21 +10,28 @@ import {
   inject,
   input,
 } from '@angular/core';
+import { CoreGeometry } from '../../../core/instrument/core-geometry';
+import { CoreHand } from '../../../core/instrument/core-hand';
 import { CORE_RENDERER, CORE_STATE } from '../../../core/instrument/core-tokens';
 import { CoreView, coreViewOf } from '../../../core/instrument/core-view';
 import { FrameLoop, FrameScheduler } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { LitProject } from '../../../core/projects/lit-project';
 import { PROJECTS } from '../../../core/projects/projects-source';
+import { BeadLabel } from './bead-label';
 
 /** The backdrop's budget: speech models will share the graphics card with it. */
 const FPS_SHOWN = 30;
 /** Once the core has scrolled away there is little left to see. */
 const FPS_AWAY = 15;
+/** The ball follows the hand, so it draws as smoothly as the display allows. */
+const FPS_TOUCHED = 60;
 
 /** Draws the core behind the HUD, at the anchor's place, following it as the page scrolls. */
 @Component({
   selector: 'app-core-canvas',
-  template: '',
+  imports: [BeadLabel],
+  template: '<app-bead-label />',
   styleUrl: './core-canvas.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { 'aria-hidden': 'true' },
@@ -39,6 +46,9 @@ export class CoreCanvas {
   private readonly state = inject(CORE_STATE);
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
+  private readonly hand = inject(CoreHand);
+  private readonly lit = inject(LitProject);
+  private readonly geometry = inject(CoreGeometry);
   private readonly renderer = inject(CORE_RENDERER)();
   private readonly teardown: (() => void)[] = [];
   private loop: FrameLoop | null = null;
@@ -57,6 +67,8 @@ export class CoreCanvas {
     });
     effect(() => {
       this.motion.isStill();
+      this.hand.touched();
+      this.lit.key();
       this.loop?.kick();
     });
     afterNextRender(() => this.start());
@@ -69,7 +81,7 @@ export class CoreCanvas {
     this.loop = new FrameLoop({
       scheduler: this.scheduler(),
       draw: (time, wall) => this.draw(time, wall),
-      framesPerSecond: () => (this.view?.isAway ? FPS_AWAY : FPS_SHOWN),
+      framesPerSecond: () => this.framesPerSecond(),
       isStill: () => this.motion.isStill(),
       onError: (error) => this.errors.handleError(error),
     });
@@ -86,13 +98,21 @@ export class CoreCanvas {
     };
   }
 
+  private framesPerSecond(): number {
+    if (this.view?.isAway) return FPS_AWAY;
+    return this.hand.state.isBusy ? FPS_TOUCHED : FPS_SHOWN;
+  }
+
   private draw(time: number, wall: number): void {
+    this.hand.state.advance(wall);
     this.renderer.frame({
       time,
       wall,
       state: this.state(),
       stateAge: wall - this.stateSince,
       isStill: this.motion.isStill(),
+      hand: this.hand.state.pose,
+      litKey: this.lit.key(),
     });
   }
 
@@ -109,6 +129,7 @@ export class CoreCanvas {
       pixelRatio: window.devicePixelRatio,
     });
     this.renderer.setView(this.view);
+    this.geometry.place(this.view);
     this.loop?.kick();
   }
 

@@ -3,6 +3,7 @@ import { ProjectSnapshot } from '../../projects/project.types';
 import { ballCount3D, ballNetwork } from '../ball-network';
 import { layoutBeads } from '../beads';
 import { CorePose, ballRadiusOf } from '../core-animator';
+import { CoreFrame } from '../core-renderer';
 import { CoreView } from '../core-view';
 import { buildFloorGrid, floorKey } from '../floor-grid';
 import { CorePalette } from '../palette';
@@ -23,6 +24,7 @@ export interface SceneFrame {
   readonly pose: CorePose;
   readonly view: CoreView;
   readonly pixelRatio: number;
+  readonly frame: CoreFrame;
 }
 
 /** Dots keep their size near a desktop core's and shrink a little on a phone's. */
@@ -89,7 +91,7 @@ export class CoreScene {
     }
   }
 
-  update({ pose, view, pixelRatio }: SceneFrame): void {
+  update({ pose, view, pixelRatio, frame }: SceneFrame): void {
     this.group.visible = !view.isAway;
     if (view.isAway) return;
     this.group.position.set(view.centreX, -view.centreY, 0);
@@ -102,8 +104,12 @@ export class CoreScene {
         MAX_DOT_SCALE,
         Math.max(MIN_DOT_SCALE, this.coreRadius / DOT_SCALE_RADIUS),
       ),
+      hand: frame.hand,
+      viewWidth: view.width,
+      viewHeight: view.height,
+      isStill: frame.isStill,
     });
-    this.beads.update(pose, pixelRatio);
+    this.beads.update(pose, pixelRatio, frame.litKey);
     this.glow.update(pose, this.ball.tint, this.coreRadius);
   }
 

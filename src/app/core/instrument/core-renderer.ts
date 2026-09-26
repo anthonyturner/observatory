@@ -1,5 +1,6 @@
 import { ProjectSnapshot } from '../projects/project.types';
 import { CoreStateId } from './core-states';
+import { HandPose } from './hand';
 import { CoreView } from './core-view';
 
 /** One frame to draw. */
@@ -12,6 +13,9 @@ export interface CoreFrame {
   /** Real seconds since the core entered `state`. */
   readonly stateAge: number;
   readonly isStill: boolean;
+  readonly hand: HandPose;
+  /** The repo of the project lit on the ring, if any. */
+  readonly litKey: string | null;
 }
 
 /** Draws the core. The 2D and 3D renderers both implement it, so choosing

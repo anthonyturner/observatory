@@ -91,6 +91,23 @@ files on this machine, so it listens on loopback only:
   scanning `OBSERVATORY_CLONES_ROOT` (by default the folder holding this
   checkout). Without one, the pairs are shown as unchecked, never as safe.
 
+- **Log sky**: an app's own log folder, read by `GET /api/logs?repo=owner/name`
+  at most every five minutes. It understands Overwolf's log format
+  (`2026-09-23 01:43:37,307 (INFO) <source> (:1) - message`), one window per
+  file. The page never sees raw lines: numbers, JSON payloads and URL paths are
+  stripped first (they carry most of a log's personal data, such as player ids
+  and names inside match payloads), and repeats fold into one fault per window.
+  The 160 loudest faults are kept, errors first; the totals still count
+  everything. Point a repository at its folder once:
+
+  ```
+  node server/logs/set-dir.ts owner/repo "C:\Users\you\AppData\Local\Overwolf\Log\Apps\Your App"
+  ```
+
+  The folder is kept in `~/.claude/observatory/logs.json`
+  (`{"owner/repo": "<folder>"}`). Without one, the API answers
+  `{"configured": false}`.
+
 Skills are still sample data.
 
 ## Working on it

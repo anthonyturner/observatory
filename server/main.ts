@@ -7,6 +7,9 @@ import { fileCloneFinder } from './collisions/clone-finder.ts';
 import { collisionsReport } from './collisions/collisions-report.ts';
 import { gitPairMerger } from './collisions/pair-merger.ts';
 import { issuesReport } from './issues/issues-report.ts';
+import { fsLogFolder } from './logs/log-folder.ts';
+import { fileLogsConfig } from './logs/logs-config.ts';
+import { logsReport } from './logs/logs-report.ts';
 import { pullDetailOf, pullNumberFrom } from './queue/pull-detail.ts';
 import { queueReport } from './queue/queue-report.ts';
 import { repoNameFrom } from './queue/repo-name.ts';
@@ -27,6 +30,8 @@ const QUEUE_TTL_MS = 2 * 60_000;
 const PULL_TTL_MS = 60_000;
 /** Merging every pair in a clone takes a while: at most every ten minutes. */
 const COLLISIONS_TTL_MS = 10 * 60_000;
+/** A log folder can hold hundreds of thousands of lines: read it every five minutes at most. */
+const LOGS_TTL_MS = 5 * 60_000;
 
 const port = Number(process.env['OBSERVATORY_API_PORT'] ?? DEFAULT_PORT);
 const github = ghCliReader();
@@ -48,6 +53,12 @@ const queueOf = cachedByKey(async (repo) => {
   return report;
 }, QUEUE_TTL_MS);
 const issuesOf = cachedByKey((repo) => issuesReport(github, repo), QUEUE_TTL_MS);
+const logFolder = fsLogFolder();
+const logsConfig = fileLogsConfig();
+const logsOf = cachedByKey(
+  (repo) => logsReport(logsConfig, logFolder, repo, new Date()),
+  LOGS_TTL_MS,
+);
 const pullOf = cachedByKey(async (key) => {
   const [repo, number] = key.split('#');
   return pullDetailOf(await github.pullDetail(repo, Number(number)));
@@ -68,6 +79,7 @@ const server = createApiServer(
       return { repo, frames: history.read(repo) };
     },
     '/api/issues': (query) => issuesOf(repoNameFrom(query.get('repo'))),
+    '/api/logs': (query) => logsOf(repoNameFrom(query.get('repo'))),
     '/api/pull': (query) =>
       pullOf(`${repoNameFrom(query.get('repo'))}#${pullNumberFrom(query.get('number'))}`),
   },

@@ -64,6 +64,8 @@ export interface SkyLayer {
   above?(c: CanvasRenderingContext2D, frame: SkyFrame): void;
   /** Words, after the glow is composited. */
   labels?(ctx: CanvasRenderingContext2D, frame: SkyFrame): void;
+  /** Something of its own under a click that hit no star, as a comet. */
+  pick?(sx: number, sy: number): unknown;
   /** Bursts for the 3D scene to play, where the 2D sky would draw them itself. */
   effects3D?(frame: SkyFrame): NewsEffect3D[];
 }

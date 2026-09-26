@@ -8,6 +8,7 @@ export interface IssueItem {
   /** Open pull requests that say they close it; none means nobody is on it. */
   readonly pulls: readonly number[];
   readonly idleDays: number;
+  readonly ageDays: number;
 }
 
 /** What `GET /api/issues` returns. */
@@ -34,7 +35,7 @@ const isGitHub = (value: unknown): value is string =>
 
 function parseItem(value: unknown): IssueItem | null {
   if (!isObject(value)) return null;
-  const { number, title, url, idleDays } = value;
+  const { number, title, url, idleDays, ageDays } = value;
   if (!isCount(number) || !isString(title) || !isGitHub(url)) return null;
   return {
     number,
@@ -44,6 +45,7 @@ function parseItem(value: unknown): IssueItem | null {
     assignees: strings(value['assignees']),
     pulls: counts(value['pulls']),
     idleDays: isCount(idleDays) ? idleDays : 0,
+    ageDays: isCount(ageDays) ? ageDays : 0,
   };
 }
 

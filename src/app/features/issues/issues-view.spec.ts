@@ -9,6 +9,7 @@ const issue = (number: number, overrides: Partial<IssueItem> = {}): IssueItem =>
   assignees: [],
   pulls: [],
   idleDays: 1,
+  ageDays: 3,
   ...overrides,
 });
 

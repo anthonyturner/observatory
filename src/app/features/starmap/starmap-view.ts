@@ -35,6 +35,9 @@ export interface LegendChip {
   readonly text: string;
   /** Whether it has anything to light; an empty chip is faint and inert. */
   readonly live: boolean;
+  /** Pressed by its own rule, where it toggles something rather than filtering. */
+  readonly pressed?: boolean;
+  readonly title?: string;
 }
 
 /** The review queue's legend: each bucket, then the quick wins across them. */

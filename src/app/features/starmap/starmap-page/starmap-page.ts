@@ -36,6 +36,9 @@ import { PullPanel } from '../../queue/pull-panel/pull-panel';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
+import { CometCard } from '../comet-card/comet-card';
+import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
+import { IssuesFeed } from '../../../core/issues/issues-feed';
 import { LogsFeed } from '../../../core/logs/logs-feed';
 import { LogKey } from '../../../core/logs/log-levels';
 import { LogStar } from '../../../core/logs/log-layout';
@@ -74,6 +77,9 @@ const SIDE_PANEL_WIDTH = 380;
 /** The card's Snooze, as pr-starmap's: a week. */
 const SNOOZE_DAYS = 7;
 
+/** The comets' legend chip, which shows and hides them rather than filtering. */
+const COMETS = 'comets';
+
 /** Keys typed into a field belong to the field. */
 const TYPING = 'input, textarea, select, [contenteditable]';
 
@@ -108,6 +114,7 @@ export interface SkyState {
     StarmapUsage,
     PullPanel,
     StarCard,
+    CometCard,
     LogCard,
     LogList,
     MeteorRecord,
@@ -122,6 +129,7 @@ export interface SkyState {
     QueueFeed,
     HistoryFeed,
     LedgerFeed,
+    IssuesFeed,
     CollisionsFeed,
     LogsFeed,
     LogSkyView,
@@ -138,6 +146,7 @@ export class StarmapPage {
   private readonly collisions = inject(CollisionsFeed);
   private readonly ledger = inject(LedgerFeed);
   protected readonly memory = inject(MemoryView);
+  private readonly issues = inject(IssuesFeed);
   protected readonly usage = inject(UsageWatch);
   private readonly triage = inject(TriageClient);
   protected readonly session = inject(ViewerSession);
@@ -164,6 +173,13 @@ export class StarmapPage {
   );
   protected readonly filter = signal<string | null>(null);
   protected readonly showCollisions = signal(true);
+  /** The unclaimed issues passing through, and whether they are shown. */
+  protected readonly showComets = signal(true);
+  protected readonly selectedComet = signal<Comet | null>(null);
+  protected readonly comets = computed(() => {
+    const state = this.issues.state();
+    return cometsOf(state.status === 'ready' ? state.report : null);
+  });
   protected readonly folded = signal(false);
   protected readonly refreshing = signal(false);
   /** The pull request whose star is selected, its card open. */
@@ -199,9 +215,22 @@ export class StarmapPage {
     this.memory.replay() ? [] : (this.collisions.report()?.pairs ?? []).map(skyPairOf),
   );
   protected readonly title = computed(() => titleOf(this.chart()));
-  protected readonly chips = computed(() =>
-    this.chart() === 'prs' ? queueChips(this.skyItems()) : [],
-  );
+  protected readonly chips = computed(() => {
+    if (this.chart() !== 'prs') return [];
+    const total = this.comets().length;
+    return [
+      ...queueChips(this.skyItems()),
+      {
+        id: COMETS,
+        colour: COMET_COLOUR,
+        count: total,
+        text: `unclaimed issue${total === 1 ? '' : 's'}`,
+        live: total > 0,
+        pressed: this.showComets() && total > 0,
+        title: total > COMET_CAP ? `The ${COMET_CAP} idlest are drawn` : 'Show or hide the comets',
+      },
+    ];
+  });
   private readonly usageDocument = computed(() => {
     const state = this.usage.state();
     return state.status === 'ready' ? state.document : null;
@@ -346,6 +375,7 @@ export class StarmapPage {
       untracked(() => {
         this.memory.watch(repo);
         this.feed.watch(repo);
+        this.issues.watch(repo);
         this.logs.clear();
         this.logs.watch(repo);
       });
@@ -399,6 +429,11 @@ export class StarmapPage {
 
   /** A legend chip narrows the sky to itself; pressing it again shows everything. */
   protected toggleFilter(id: string): void {
+    if (id === COMETS) {
+      this.showComets.update((shown) => !shown);
+      this.selectedComet.set(null);
+      return;
+    }
     if (this.chart() === 'logs') {
       this.logs.toggleFilter(id as LogKey);
       return;
@@ -415,6 +450,17 @@ export class StarmapPage {
   }
 
   /** Flies to a star from the list, and opens it. */
+  /** A click on the sky: a star's pull request, or empty sky. */
+  protected pick(number: number | null): void {
+    this.selectedComet.set(null);
+    this.openPull.set(number);
+  }
+
+  protected pickComet(comet: Comet): void {
+    this.openPull.set(null);
+    this.selectedComet.set(comet);
+  }
+
   protected goTo(number: number): void {
     this.skyView.set('map');
     this.openPull.set(number);
@@ -492,6 +538,7 @@ export class StarmapPage {
   /** Esc closes the full screen first, then the card, as on pr-starmap. */
   protected closeTopmost(): void {
     if (this.sheetPull() !== null) this.sheetPull.set(null);
+    else if (this.selectedComet()) this.selectedComet.set(null);
     else if (this.chart() === 'logs') this.logs.closeCard();
     else this.openPull.set(null);
   }

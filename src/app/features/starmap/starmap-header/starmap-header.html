@@ -18,7 +18,8 @@
         class="lg"
         [style.--sev]="chip.colour"
         [attr.data-empty]="chip.live ? '0' : '1'"
-        [attr.aria-pressed]="filter() === chip.id"
+        [attr.aria-pressed]="chip.pressed ?? filter() === chip.id"
+        [attr.title]="chip.title ?? null"
         (click)="chip.live && toggled.emit(chip.id)"
       >
         <span class="dot"></span><b>{{ fmtN(chip.count) }}</b> {{ chip.text }}

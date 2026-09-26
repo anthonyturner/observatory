@@ -1,0 +1,22 @@
+<div class="card" [style.--sev]="colour" [appDraggable]="placeKey">
+  <button class="close" type="button" aria-label="Close" (click)="closed.emit()">&times;</button>
+  <div class="grab" data-handle title="Drag to move">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="bucketname">Comet — no pull request closes it</div>
+    <div class="prno">#{{ comet().issue }}</div>
+  </div>
+  <h2>{{ comet().title }}</h2>
+  <dl class="facts">
+    <dt>idle</dt>
+    <dd [class.hot]="comet().idleDays > hotIdle">{{ comet().idleDays }} days</dd>
+    <dt>age</dt>
+    <dd>{{ comet().ageDays }} days</dd>
+    @if (comet().labels.length) {
+      <dt>labels</dt>
+      <dd>{{ comet().labels.join(', ') }}</dd>
+    }
+  </dl>
+  <div class="cardacts">
+    <a [href]="comet().url" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</div>

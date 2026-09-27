@@ -99,6 +99,7 @@ describe('SkillsPanel', () => {
       tier: 3,
       ask: [{ label: 'app', pick: { project: 'app' } }],
       commands: [],
+      sources: [],
     };
     const { fixture, element } = await render(known(skills(2)), async () => whichProject);
     const tile = element.querySelector<HTMLButtonElement>('app-skill-tile button');
@@ -122,7 +123,7 @@ describe('SkillsPanel', () => {
     first.focus();
     first.click();
     second.focus();
-    answer({ tier: 3, ask: [{ label: 'app', pick: {} }], commands: [] });
+    answer({ tier: 3, ask: [{ label: 'app', pick: {} }], commands: [], sources: [] });
     await fixture.whenStable();
 
     expect(TestBed.inject(ReplyFocus).firstAction()).toBeNull();

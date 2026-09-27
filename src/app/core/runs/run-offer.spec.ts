@@ -39,7 +39,7 @@ function setUp() {
   const entryId = log.open('fix the sum test', 'typed');
   const proposal: RunProposal = runProposalOf(
     {
-      reply: { ask: [], commands: [], project: 'app' },
+      reply: { ask: [], commands: [], sources: [], project: 'app' },
       prompt: 'Fix the failing sum test',
       entryId,
       ticket: {

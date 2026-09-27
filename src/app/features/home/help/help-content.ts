@@ -75,7 +75,8 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   },
   {
     term: 'Tier 2',
-    meaning: '●●○ A quick answer from a small model. Labelled as one, and it can be wrong.',
+    meaning:
+      '●●○ Jev’s answer, from Claude Haiku. It looks up your projects and usage itself, remembers this visit’s conversation, and can be wrong.',
   },
   {
     term: TIER_3,
@@ -90,7 +91,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Speak',
     meaning:
-      'Reads actions and quick answers aloud, in this browser. Off until you turn it on, and remembered.',
+      'Reads actions and Jev’s answers aloud, in this browser. Off until you turn it on, and remembered.',
   },
 ];
 

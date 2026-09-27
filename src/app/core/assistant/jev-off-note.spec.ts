@@ -4,7 +4,7 @@ describe('jevOffNote', () => {
   it('names a project in an example, and where the key goes on this machine', () => {
     expect(jevOffNote('local', 'observatory')).toBe(
       'Jev is off, so only app actions work: “open the orrery”, “refresh”, “issues for observatory”. ' +
-        'Quick answers need an OpenRouter key: set `OPENROUTER_API_KEY`, or put it in `~/.claude/observatory/.env`, then restart the site.',
+        'Talking with Jev needs an OpenRouter key: set `OPENROUTER_API_KEY`, or put it in `~/.claude/observatory/.env`, then restart the site.',
     );
   });
 

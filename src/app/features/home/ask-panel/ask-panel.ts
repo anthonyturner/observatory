@@ -3,6 +3,7 @@ import { AskBoxFocus } from '../../../core/assistant/ask-box-focus';
 import { AskDraft } from '../../../core/assistant/ask-draft';
 import { AskFeed } from '../../../core/assistant/ask-feed';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
+import { Conversation } from '../../../core/assistant/conversation';
 import { jevOffNote } from '../../../core/assistant/jev-off-note';
 import { ProposalSlot } from '../../../core/assistant/proposal';
 import { ReplyFocus } from '../../../core/assistant/reply-focus';
@@ -46,6 +47,7 @@ export class AskPanel {
   private readonly projects = inject(PROJECTS);
   protected readonly slot = inject(ProposalSlot);
   protected readonly draft = inject(AskDraft);
+  protected readonly conversation = inject(Conversation);
   private readonly bar = viewChild(AskBar);
 
   protected readonly isOwnersOnly = computed(

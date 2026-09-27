@@ -14,11 +14,10 @@ export interface ReplyChip {
 
 const TIER_CHIP: Readonly<Record<ReplyTier, { readonly pips: string; readonly kind: string }>> = {
   1: { pips: '●○○', kind: 'Action' },
-  2: { pips: '●●○', kind: 'Quick answer' },
+  2: { pips: '●●○', kind: 'Answer' },
   3: { pips: '●●●', kind: 'Proposal' },
 };
 const NO_TIER_PIPS = '○○○';
-const PERCENT = 100;
 const MS_PER_SECOND = 1000;
 
 export const WAITING_CHIP: ReplyChip = { pips: null, text: 'Working it out…', tone: 'wait' };
@@ -33,26 +32,19 @@ export const TASK_CHIP: ReplyChip = {
 const tookText = (ms: number): string =>
   ms < MS_PER_SECOND ? `${ms} ms` : `${(ms / MS_PER_SECOND).toFixed(1)} s`;
 
-/** How the reply was reached. Tuning the thresholds needs to see which
- *  requests Jev was unsure about. */
+/** How the reply was reached. */
 function howOf(reply: RouteReply): string {
-  if (reply.via === 'jev') return `via Jev ${Math.round((reply.confidence ?? 0) * PERCENT)}%`;
+  if (reply.via === 'agent') return 'Jev';
   if (reply.via === 'pick') return 'your pick';
   return reply.via === 'skill' ? 'skill' : 'keyword';
 }
 
 function tierWords(reply: RouteReply, tier: ReplyTier, took: string): string[] {
   const how = howOf(reply);
-  return [
-    `Tier ${tier}`,
-    TIER_CHIP[tier].kind,
-    ...(reply.failed ? ['failed'] : []),
-    reply.by ? `${how} → ${reply.by}` : how,
-    took,
-  ];
+  return [`Tier ${tier}`, TIER_CHIP[tier].kind, reply.by ? `${how} → ${reply.by}` : how, took];
 }
 
-/** A reply with no tier: asking which project for an action, a note, or unsure. */
+/** A reply with no tier: asking which project for an action, a note, or options. */
 function untieredChip(reply: RouteReply, took: string): ReplyChip {
   if (reply.action) {
     const words = ['Tier 1', 'Which project', howOf(reply), took];
@@ -60,7 +52,7 @@ function untieredChip(reply: RouteReply, took: string): ReplyChip {
   }
   const words = reply.note
     ? [reply.via === 'skill' ? 'Skill' : 'Keywords only', took]
-    : ['Unsure', howOf(reply), took];
+    : ['Options', howOf(reply), took];
   return { pips: NO_TIER_PIPS, text: words.join(' · '), tone: 'tier' };
 }
 
@@ -68,7 +60,7 @@ function untieredChip(reply: RouteReply, took: string): ReplyChip {
 export function chipOf(reply: RouteReply, ms: number): ReplyChip {
   const took = tookText(ms);
   if (!reply.tier) return untieredChip(reply, took);
-  const tone: ChipTone = reply.failed ? 'bad' : reply.tier === 3 ? 'task' : 'tier';
+  const tone: ChipTone = reply.tier === 3 ? 'task' : 'tier';
   return {
     pips: TIER_CHIP[reply.tier].pips,
     text: tierWords(reply, reply.tier, took).join(' · '),

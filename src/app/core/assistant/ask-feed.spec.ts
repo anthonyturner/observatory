@@ -10,12 +10,18 @@ import { ASK_FEED_CHANNEL, AskFeed } from './ask-feed';
 import { AskOutcome } from './ask-outcome';
 import { ASSISTANT_API, AssistantApi, AssistantRefused } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
+import { Conversation } from './conversation';
 import { RouteReply, RouteRequest } from './assistant.types';
 import { GRACE_MS, JUMP_WAIT_MS } from './page-jump';
 import { ProposalSlot } from './proposal';
 import { ReplyLog } from './reply-log';
 
-const reply = (fields: Partial<RouteReply>): RouteReply => ({ ask: [], commands: [], ...fields });
+const reply = (fields: Partial<RouteReply>): RouteReply => ({
+  ask: [],
+  commands: [],
+  sources: [],
+  ...fields,
+});
 
 const OPEN_ISSUES = reply({
   via: 'keyword',
@@ -67,7 +73,7 @@ describe('AskFeed', () => {
 
     TestBed.inject(ASK_CHANNEL).submit('  help  ', { spoken: true });
 
-    expect(route).toHaveBeenCalledWith({ text: 'help' });
+    expect(route).toHaveBeenCalledWith({ text: 'help', history: [] });
     expect(feed.busy()).toBe(true);
     expect(latest()).toEqual(
       expect.objectContaining({
@@ -170,7 +176,7 @@ describe('AskFeed', () => {
     const { feed, latest, route } = setUp([
       answer(
         reply({
-          via: 'jev',
+          via: 'keyword',
           note: undefined,
           question: 'Not sure. Did you mean:',
           ask: [{ label: 'Open app · Logs', pick }],
@@ -196,9 +202,7 @@ describe('AskFeed', () => {
 
   it('leaves the options on Neither', async () => {
     const { feed, latest } = setUp([
-      answer(
-        reply({ question: 'Did you mean:', ask: [{ label: 'A quick answer', pick: { tier: 2 } }] }),
-      ),
+      answer(reply({ question: 'Did you mean:', ask: [{ label: 'A task', pick: { tier: 3 } }] })),
     ]);
     feed.submit('hmm');
     await settle();
@@ -209,7 +213,7 @@ describe('AskFeed', () => {
     expect(latest().said.text).toBe('Left it.');
   });
 
-  it('shows a quick answer to copy, and reads it aloud', async () => {
+  it('shows Jev’s answer to copy, and reads it aloud', async () => {
     const { feed, latest, voice } = setUp([answer(reply({ tier: 2, text: 'Use `git rebase`.' }))]);
 
     feed.submit('how do I rebase');
@@ -221,16 +225,79 @@ describe('AskFeed', () => {
     expect(voice.speak).toHaveBeenCalledWith('Use `git rebase`.', 2);
   });
 
-  it('says why a quick answer failed, with Try again as a quick answer', async () => {
-    const { feed, latest } = setUp([answer(reply({ tier: 2, failed: 'there is no key' }))]);
+  it('keeps the conversation, sending it with each typed or spoken request', async () => {
+    const { feed, route } = setUp([
+      answer(reply({ via: 'agent', tier: 2, text: 'A rebase replays commits.' })),
+      answer(OPEN_ISSUES),
+      answer(reply({ via: 'agent', tier: 2, text: 'Yes.' })),
+    ]);
 
-    feed.submit('why');
+    feed.submit('what is a rebase');
+    await settle();
+    feed.submit('issues for app');
+    await settle();
+    feed.stayHere();
+    feed.submit('is that all', { spoken: true });
     await settle();
 
-    expect(latest().said.text).toBe('Couldn’t get a quick answer: there is no key.');
-    expect(latest().actions).toEqual([
-      { kind: 'send', label: 'Try again', request: { text: 'why', pick: { tier: 2 } } },
+    expect(route).toHaveBeenLastCalledWith({
+      text: 'is that all',
+      history: [
+        { role: 'user', text: 'what is a rebase' },
+        { role: 'assistant', text: 'A rebase replays commits.' },
+        { role: 'user', text: 'issues for app' },
+        { role: 'assistant', text: 'Opening app · Issues' },
+      ],
+    });
+    expect(TestBed.inject(Conversation).history()).toHaveLength(6);
+  });
+
+  it('forgets the conversation on New conversation, keeping the replies', async () => {
+    const { feed, log, route } = setUp([
+      answer(reply({ via: 'agent', tier: 2, text: 'Hello.' })),
+      answer(reply({ via: 'agent', tier: 2, text: 'Hi again.' })),
     ]);
+    feed.submit('hi');
+    await settle();
+
+    feed.newConversation();
+    feed.submit('hi');
+    await settle();
+
+    expect(route).toHaveBeenLastCalledWith({ text: 'hi', history: [] });
+    expect(log.entries()).toHaveLength(2);
+  });
+
+  it('adds nothing to the conversation for a request with no answer', async () => {
+    const { feed } = setUp([() => Promise.reject(new Error('down'))]);
+
+    feed.submit('hi');
+    await settle();
+
+    expect(TestBed.inject(Conversation).hasTurns()).toBe(false);
+  });
+
+  it('shows what Jev said about a task it proposed, without reading it aloud', async () => {
+    const { feed, latest, voice } = setUp([
+      answer(
+        reply({
+          via: 'agent',
+          tier: 3,
+          prompt: 'fix it',
+          text: 'I have proposed a task; press Run to start it.',
+          commands: [{ shell: 'bash', command: 'claude -p "fix it"' }],
+        }),
+      ),
+    ]);
+
+    feed.submit('fix the build');
+    await settle();
+
+    expect(latest().said).toEqual(
+      expect.objectContaining({ text: 'I have proposed a task; press Run to start it.' }),
+    );
+    expect(TestBed.inject(ProposalSlot).proposal()?.kind).toBe('command');
+    expect(voice.speak).not.toHaveBeenCalled();
   });
 
   it('puts a task up as a proposal, and never reads it aloud', async () => {
@@ -360,7 +427,7 @@ describe('AskFeed', () => {
     feed.press(latest().id, latest().actions[0]);
     await settle();
 
-    expect(route).toHaveBeenLastCalledWith({ text: 'help' });
+    expect(route).toHaveBeenLastCalledWith({ text: 'help', history: [] });
     expect(latest().said.text).toBe('Opened the help card.');
   });
 
@@ -455,7 +522,7 @@ describe('AskFeed', () => {
 
       TestBed.inject(ASK_CHANNEL).submit('open issues', { spoken: true });
 
-      expect(route).toHaveBeenCalledWith({ text: 'open issues' });
+      expect(route).toHaveBeenCalledWith({ text: 'open issues', history: [] });
       expect(TestBed.inject(AskDraft).heard()).toBeNull();
     });
   });

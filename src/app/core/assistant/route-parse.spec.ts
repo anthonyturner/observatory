@@ -51,6 +51,7 @@ describe('parseRouteReply', () => {
         jev: 'on',
         ask: [],
         commands: [],
+        sources: [],
       }),
     );
   });
@@ -99,12 +100,27 @@ describe('parseRouteReply', () => {
   });
 
   it('drops a field of the wrong kind rather than trusting it', () => {
-    const reply = parseRouteReply({ tier: 4, via: 'magic', confidence: 3, href: 42 });
+    const reply = parseRouteReply({ tier: 4, via: 'jev', href: 42 });
 
     expect(reply?.tier).toBeUndefined();
     expect(reply?.via).toBeUndefined();
-    expect(reply?.confidence).toBeUndefined();
     expect(reply?.href).toBeUndefined();
+  });
+
+  it('reads Jev’s words on an action and on a proposal', () => {
+    expect(parseRouteReply({ via: 'agent', tier: 1, says: 'Here it is.' })).toEqual(
+      expect.objectContaining({ via: 'agent', says: 'Here it is.' }),
+    );
+    expect(parseRouteReply({ via: 'agent', tier: 3, text: 'Press Run.' })?.text).toBe('Press Run.');
+  });
+
+  it('passes the sources an answer drew on through, dropping a malformed one', () => {
+    const source = { title: 'Git', url: 'https://git-scm.com' };
+
+    expect(parseRouteReply({ tier: 2, sources: [source, { title: 'No url' }] })?.sources).toEqual([
+      source,
+    ]);
+    expect(parseRouteReply({ tier: 2 })?.sources).toEqual([]);
   });
 
   it('is null for a body that is not an object', () => {

@@ -25,11 +25,19 @@ export interface AssistantStatus {
  *  router does what the button said. */
 export type RoutePick = Readonly<Record<string, string | number | null>>;
 
-/** One request: typed words, a pressed option for them, or a skill. */
+/** One turn of the conversation so far: what was asked, or what Jev said. */
+export interface HistoryTurn {
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
+}
+
+/** One request: typed words, a pressed option for them, or a skill. Typed
+ *  and spoken words carry the conversation they continue. */
 export interface RouteRequest {
   readonly text?: string;
   readonly pick?: RoutePick;
   readonly skill?: string;
+  readonly history?: readonly HistoryTurn[];
 }
 
 export interface AskOption {
@@ -59,7 +67,13 @@ export interface RunTicket {
 }
 
 /** How the router reached its reply. */
-export type ReplyVia = 'keyword' | 'jev' | 'pick' | 'skill';
+export type ReplyVia = 'keyword' | 'agent' | 'pick' | 'skill';
+
+/** A page an answer drew on. */
+export interface ReplySource {
+  readonly title: string;
+  readonly url: string;
+}
 
 /** The router's reply. Which fields come depends on what it decided. */
 export interface RouteReply {
@@ -73,15 +87,11 @@ export interface RouteReply {
   readonly href?: string;
   readonly says?: string;
   readonly text?: string;
-  /** The model a quick answer came from. */
+  /** The model Jev's answer came from. */
   readonly by?: string;
-  /** Why a quick answer could not be had. */
-  readonly failed?: string;
   readonly note?: string;
   readonly question?: string;
   readonly ask: readonly AskOption[];
-  /** How sure Jev was of the tier, 0 to 1. */
-  readonly confidence?: number;
   readonly prompt?: string;
   readonly commands: readonly ShellCommand[];
   readonly project?: string;
@@ -89,4 +99,6 @@ export interface RouteReply {
   readonly runWhy?: string;
   /** Only the local site sends one: the proposal can run here. */
   readonly run?: RunTicket;
+  /** The pages Jev's answer drew on. */
+  readonly sources: readonly ReplySource[];
 }

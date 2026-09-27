@@ -1,6 +1,6 @@
 import { chipOf } from './reply-chip';
 
-const base = { ask: [], commands: [] };
+const base = { ask: [], commands: [], sources: [] };
 
 describe('chipOf', () => {
   it('names a keyword action by its tier and how long it took', () => {
@@ -11,17 +11,13 @@ describe('chipOf', () => {
     });
   });
 
-  it('says how sure Jev was, and which model answered', () => {
-    expect(
-      chipOf({ ...base, via: 'jev', confidence: 0.834, tier: 2, by: 'Haiku' }, 1530).text,
-    ).toBe('Tier 2 · Quick answer · via Jev 83% → Haiku · 1.5 s');
-  });
-
-  it('marks a failed quick answer', () => {
-    const chip = chipOf({ ...base, via: 'pick', tier: 2, failed: 'no key' }, 10);
-
-    expect(chip.text).toBe('Tier 2 · Quick answer · failed · your pick · 10 ms');
-    expect(chip.tone).toBe('bad');
+  it('says Jev answered, and which model it answered through', () => {
+    expect(chipOf({ ...base, via: 'agent', tier: 2, by: 'Haiku' }, 1530).text).toBe(
+      'Tier 2 · Answer · Jev → Haiku · 1.5 s',
+    );
+    expect(chipOf({ ...base, via: 'agent', tier: 1 }, 10).text).toBe(
+      'Tier 1 · Action · Jev · 10 ms',
+    );
   });
 
   it('warms a proposal', () => {
@@ -38,15 +34,13 @@ describe('chipOf', () => {
     );
   });
 
-  it('says keywords only when there was no model to ask, and unsure otherwise', () => {
+  it('says keywords only when there was no model to ask, and options otherwise', () => {
     expect(chipOf({ ...base, via: 'keyword', note: 'Jev is off' }, 3)).toEqual({
       pips: '○○○',
       text: 'Keywords only · 3 ms',
       tone: 'tier',
     });
     expect(chipOf({ ...base, via: 'skill', note: 'no star map' }, 3).text).toBe('Skill · 3 ms');
-    expect(chipOf({ ...base, via: 'jev', confidence: 0.4 }, 3).text).toBe(
-      'Unsure · via Jev 40% · 3 ms',
-    );
+    expect(chipOf({ ...base, via: 'pick' }, 3).text).toBe('Options · your pick · 3 ms');
   });
 });

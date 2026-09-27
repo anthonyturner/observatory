@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AskFeed } from '../../../core/assistant/ask-feed';
 import { ASSISTANT_API, AssistantApi } from '../../../core/assistant/assistant-api';
+import { Conversation } from '../../../core/assistant/conversation';
 import { AssistantStatus, RouteReply } from '../../../core/assistant/assistant.types';
 import { AskPanel, REPLIES_SHOWN } from './ask-panel';
 
@@ -12,7 +13,8 @@ const LOCAL: AssistantStatus = { jev: 'on', where: 'local', skills: [] };
 async function render(options: { status?: AssistantStatus; reply?: RouteReply } = {}) {
   const api: AssistantApi = {
     status: async () => options.status ?? LOCAL,
-    route: async () => options.reply ?? { tier: 2, text: 'An answer', ask: [], commands: [] },
+    route: async () =>
+      options.reply ?? { tier: 2, text: 'An answer', ask: [], commands: [], sources: [] },
   };
   TestBed.configureTestingModule({
     providers: [
@@ -80,6 +82,7 @@ describe('AskPanel', () => {
         project: 'app',
         commands: [{ shell: 'bash', command: 'claude -p "fix it"' }],
         ask: [],
+        sources: [],
       },
     });
 
@@ -90,6 +93,21 @@ describe('AskPanel', () => {
     expect(card?.querySelector('h3')?.textContent).toContain('Run this as a Claude Code task');
     expect(card?.querySelector('pre')?.textContent).toBe('claude -p "fix it"');
     expect(card?.textContent).toContain('Copy command');
+  });
+
+  it('offers New conversation once there is one, and clears it', async () => {
+    const { element, refresh } = await render();
+    const button = () => element.querySelector<HTMLButtonElement>('button.new-conversation');
+    expect(button()).toBeNull();
+
+    TestBed.inject(AskFeed).submit('hello');
+    await refresh();
+    button()?.click();
+    await refresh();
+
+    expect(TestBed.inject(Conversation).hasTurns()).toBe(false);
+    expect(button()).toBeNull();
+    expect(element.querySelector('.replies')?.textContent).toContain('An answer');
   });
 
   it('gives a visitor one line in place of the Ask box', async () => {

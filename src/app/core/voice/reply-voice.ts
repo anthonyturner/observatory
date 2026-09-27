@@ -1,6 +1,6 @@
 import { InjectionToken, Signal, signal } from '@angular/core';
 
-/** How much effort a reply took: an app action, a quick answer, or a task. */
+/** How much effort a reply took: an app action, an answer, or a task. */
 export type ReplyTier = 1 | 2 | 3;
 
 /** Reads the assistant's replies aloud. The Ask feed depends on this alone,

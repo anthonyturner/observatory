@@ -31,12 +31,32 @@
   border-radius: 999px;
 }
 
+/* The status pill on the left, New conversation quietly on the right. */
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* Kept in the page while empty, so a screen reader hears it when it speaks;
-   it only gives back the gap it would leave. */
+   it only gives back the gap it would leave, unless New conversation is beside it. */
 .assistant-status:empty {
-  margin-top: -12px;
   padding: 0;
   border: 0;
+}
+
+.status-row:has(.assistant-status:empty):not(:has(.new-conversation)) {
+  margin-top: -12px;
+}
+
+.new-conversation {
+  min-height: 28px;
+  margin-left: auto;
+  padding: 0 11px;
+  border-color: var(--edge-soft);
+  background: transparent;
+  font-size: 12px;
 }
 
 .preview-note {
@@ -89,4 +109,10 @@ code {
 
 .earlier app-reply-list {
   margin-top: 10px;
+}
+
+@media (max-width: 720px) {
+  .new-conversation {
+    min-height: 44px;
+  }
 }

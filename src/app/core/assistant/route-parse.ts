@@ -4,6 +4,7 @@ import {
   AskOption,
   AssistantStatus,
   JevState,
+  ReplySource,
   ReplyVia,
   RouteReply,
   RoutePick,
@@ -15,7 +16,7 @@ import {
 
 const JEV_STATES: readonly JevState[] = ['on', 'off'];
 const WHERES: readonly SiteWhere[] = ['local', 'hosted'];
-const VIAS: readonly ReplyVia[] = ['keyword', 'jev', 'pick', 'skill'];
+const VIAS: readonly ReplyVia[] = ['keyword', 'agent', 'pick', 'skill'];
 const TIERS: readonly ReplyTier[] = [1, 2, 3];
 
 const isPickValue = (value: unknown): value is string | number | null =>
@@ -66,8 +67,10 @@ function parseRunTicket(value: unknown): RunTicket | undefined {
   return { token, folder, name, expiresAt, limitMs, command };
 }
 
-const isConfidence = (value: unknown): value is number =>
-  typeof value === 'number' && value >= 0 && value <= 1;
+function parseSource(value: unknown): ReplySource | null {
+  if (!isObject(value) || !isText(value['title']) || !isText(value['url'])) return null;
+  return { title: value['title'], url: value['url'] };
+}
 
 /** What `GET /api/route` returns, or null when it is not that. */
 export function parseAssistantStatus(body: unknown): AssistantStatus | null {
@@ -93,15 +96,14 @@ export function parseRouteReply(body: unknown): RouteReply | null {
     says: text('says'),
     text: text('text'),
     by: text('by'),
-    failed: text('failed'),
     note: text('note'),
     question: text('question'),
     ask: listOf(body['ask'], parseOption),
-    confidence: fieldOf(body, 'confidence', isConfidence),
     prompt: text('prompt'),
     commands: commandsOf(body),
     project: text('project'),
     runWhy: text('runWhy'),
     run: parseRunTicket(body['run']),
+    sources: listOf(body['sources'], parseSource),
   };
 }

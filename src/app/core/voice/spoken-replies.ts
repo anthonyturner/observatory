@@ -35,8 +35,9 @@ class ReplyTurn {
   }
 }
 
-/** Reads replies aloud, sentence by sentence, each made while the one before
- *  it plays, so a long answer starts as soon as its first sentence is ready.
+/** Reads replies aloud, piece by piece as the engine cuts them, each made
+ *  while the one before it plays, so a long answer starts as soon as its
+ *  first piece is ready.
  *  Tap to talk, Esc, a new reply, Speak turned off and leaving the page all
  *  cut it off at once. The engine makes the sound; this does the rest. */
 @Injectable({ providedIn: 'root' })
@@ -68,11 +69,11 @@ export class SpokenReplies implements ReplyVoice {
 
   speak(text: string, tier: ReplyTier): Promise<void> {
     this.stop();
-    const parts = sentences(text);
-    if (!this.preference.isOn() || this.talk.isTalking() || !parts.length) return Promise.resolve();
+    const hasWords = sentences(text).length > 0;
+    if (!this.preference.isOn() || this.talk.isTalking() || !hasWords) return Promise.resolve();
     const turn = new ReplyTurn(tier);
     this.turn = turn;
-    this.readAloud(turn, parts)
+    this.readAloud(turn, text)
       .catch((error: unknown) => {
         if (this.turn === turn) this.report(error);
       })
@@ -87,7 +88,7 @@ export class SpokenReplies implements ReplyVoice {
     return true;
   }
 
-  private async readAloud(turn: ReplyTurn, parts: readonly string[]): Promise<void> {
+  private async readAloud(turn: ReplyTurn, text: string): Promise<void> {
     const onAgreed = (): void => this.preference.turnOn();
     const warmUp = await this.engine.warmUp({ takesFocus: false, onAgreed });
     // A download waits for the viewer's say-so, so Speak is off till then.
@@ -97,7 +98,8 @@ export class SpokenReplies implements ReplyVoice {
     if (this.turn !== turn) return;
     const job = new SpeechJob(line, () => this.startedSounding(turn));
     turn.job = job;
-    for (const part of parts) {
+    // Cut once warmed up: the picked voice is known by then.
+    for (const part of this.engine.parts(text)) {
       const clip = await this.engine.synthesize(part);
       if (this.turn !== turn) return;
       job.play(clip);

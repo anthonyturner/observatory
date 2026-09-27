@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { SpeakPreference } from './speak-preference';
 import { SpeakerOutput } from './speaker-output';
+import { sentences } from './sentences';
 import { SPEECH_ENGINE, SpeechEngine, WarmUp } from './speech-engine';
 import { SpokenReplies } from './spoken-replies';
 import { TalkState } from './talk-state';
@@ -54,6 +55,7 @@ class FakeEngine implements SpeechEngine {
   failure: VoiceError | null = null;
   readonly said: string[] = [];
   released = 0;
+  parts: (text: string) => string[] = sentences;
   async warmUp(): Promise<WarmUp> {
     return this.warmUpAnswer;
   }
@@ -178,5 +180,16 @@ describe('SpokenReplies', () => {
     engine.failure = new VoiceError('broke', 'device');
     await replies.speak('Hello.', 1);
     expect(status.line()?.isTrouble).toBe(true);
+  });
+
+  it('speaks the pieces the engine cuts the reply into', async () => {
+    const { replies, engine } = setup();
+
+    engine.parts = (text) => [sentences(text).slice(0, 2).join(' '), ...sentences(text).slice(2)];
+
+    void replies.speak('One. Two. Three.', 2);
+    await settle();
+
+    expect(engine.said).toEqual(['One. Two.', 'Three.']);
   });
 });

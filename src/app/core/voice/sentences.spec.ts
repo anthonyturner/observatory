@@ -1,4 +1,4 @@
-import { SENTENCE_MAX, sentences } from './sentences';
+import { SENTENCE_MAX, joinedSentences, sentences } from './sentences';
 
 describe('sentences', () => {
   it('splits at the end of each sentence and at line breaks', () => {
@@ -32,5 +32,24 @@ describe('sentences', () => {
   it('cuts a sentence with no spaces at the limit', () => {
     const parts = sentences('x'.repeat(SENTENCE_MAX + 50));
     expect(parts.map((part) => part.length)).toEqual([SENTENCE_MAX, 50]);
+  });
+});
+
+describe('joinedSentences', () => {
+  it('joins sentences into pieces up to the limit, never splitting one', () => {
+    expect(joinedSentences('One. Two. Three is longer.', 9)).toEqual([
+      'One. Two.',
+      'Three is longer.',
+    ]);
+  });
+
+  it('keeps a whole short reply as one piece', () => {
+    expect(joinedSentences('The build is green. Three are ready.', 900)).toEqual([
+      'The build is green. Three are ready.',
+    ]);
+  });
+
+  it('has no pieces for a reply with no words', () => {
+    expect(joinedSentences('`` ...', 900)).toEqual([]);
   });
 });

@@ -1,4 +1,5 @@
 import { ErrorHandler, Injectable, inject } from '@angular/core';
+import { sentences } from './sentences';
 import { DownloadConsent } from './download-consent';
 import { ModelLoaders } from './model-loaders';
 import { SPEAK_SPEC } from './model-specs';
@@ -42,6 +43,11 @@ export class KokoroEngine implements SpeechEngine {
     }
     this.load();
     return 'ready';
+  }
+
+  /** Kokoro reads at most about 500 sounds at a time: one sentence each. */
+  parts(text: string): string[] {
+    return sentences(text);
   }
 
   async synthesize(sentence: string): Promise<SpokenClip> {

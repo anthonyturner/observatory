@@ -1,3 +1,4 @@
+import { sentences } from '../sentences';
 import { SpeechEngine, WarmUp } from '../speech-engine';
 import { SpokenClip } from '../voice-protocol';
 
@@ -13,6 +14,10 @@ export class FakeSpeechEngine implements SpeechEngine {
   async warmUp(): Promise<WarmUp> {
     this.warmUps++;
     return this.warmUpAnswer;
+  }
+
+  parts(text: string): string[] {
+    return sentences(text);
   }
 
   async synthesize(sentence: string): Promise<SpokenClip> {

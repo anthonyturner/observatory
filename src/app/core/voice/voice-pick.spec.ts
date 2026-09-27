@@ -10,6 +10,8 @@ import { VoicePick } from './voice-pick';
 
 function setUp(isSpeakOn: boolean) {
   localStorage.clear();
+  // A browser that picked Kokoro: these tests switch away from it.
+  localStorage.setItem('observatory.voice', JSON.stringify({ engine: 'kokoro', voice: null }));
   if (isSpeakOn) localStorage.setItem('observatory.speak', 'on');
   const engine = new FakeSpeechEngine();
   const stop = vi.fn(() => true);

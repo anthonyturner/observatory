@@ -12,6 +12,8 @@ import { VoicePicker } from './voice-picker';
 
 async function render(state: CatalogState = ELEVENLABS_ON) {
   localStorage.clear();
+  // A browser that picked Kokoro: these tests switch away from it.
+  localStorage.setItem('observatory.voice', JSON.stringify({ engine: 'kokoro', voice: null }));
   const pick = { chooseEngine: vi.fn(async () => undefined), chooseVoice: vi.fn() };
   TestBed.configureTestingModule({
     providers: [fakeCatalog(state).provider, { provide: VoicePick, useValue: pick }],

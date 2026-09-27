@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { ReplyFocusRequest } from '../../../core/assistant/reply-focus';
 import { EntryAction, ReplyEntry } from '../../../core/assistant/reply-entry';
+import { Reader } from '../../../core/reader/reader-service';
 import { codeSpans } from '../../../core/text/inline-code';
 import { CopyButton } from '../../../shared/copy-button/copy-button';
 import { FocusOnArrival } from '../../../shared/focus-on-arrival/focus-on-arrival';
@@ -40,6 +41,7 @@ export class ReplyEntryCard {
   readonly followed = output<string>();
 
   protected readonly spans = computed(() => codeSpans(this.entry().said.text));
+  private readonly reader = inject(Reader);
 
   private readonly acts = viewChild.required<ElementRef<HTMLElement>>('acts');
   private readonly injector = inject(Injector);
@@ -67,5 +69,14 @@ export class ReplyEntryCard {
 
   private focusFirstAction(): void {
     this.acts().nativeElement.querySelector('button')?.focus();
+  }
+
+  /** A plain click reads the source in the floating reader; Ctrl, ⌘, Shift
+   *  or a middle click keeps the browser's own new tab. */
+  protected readHere(event: MouseEvent, url: string): void {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+      return;
+    event.preventDefault();
+    void this.reader.open(url);
   }
 }

@@ -28,6 +28,8 @@ import { usageReport } from './usage/usage-report.ts';
 import { elevenLabs } from './voice/eleven-labs.ts';
 import { localElevenLabs } from './voice/eleven-labs-settings.ts';
 import { SPEAK_PATH, VOICE_PATH, withVoiceRoutes } from './voice/voice-routes.ts';
+import { fetchPage } from './reader/page-fetch.ts';
+import { READ_PATH, withReaderRoutes } from './reader/reader-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -85,15 +87,25 @@ const voice = {
 // the account `gh` is signed in with, and runs Claude Code once the owner
 // confirms a proposal.
 /** Routes that run code or spend the owner's money: this machine's own page only. */
-const LOOPBACK_ONLY: ReadonlySet<string> = new Set([RUNS_PATH, ROUTE_PATH, VOICE_PATH, SPEAK_PATH]);
+/** The reader fetches any public page on request, so only this machine's page may ask. */
+const LOOPBACK_ONLY: ReadonlySet<string> = new Set([
+  RUNS_PATH,
+  ROUTE_PATH,
+  VOICE_PATH,
+  SPEAK_PATH,
+  READ_PATH,
+]);
 
 const server = createApiServer(
   guardLoopback(
     createApiHandler(
       withLocalSession(
-        withVoiceRoutes(
-          withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
-          voice,
+        withReaderRoutes(
+          withVoiceRoutes(
+            withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
+            voice,
+          ),
+          fetchPage,
         ),
       ),
     ),

@@ -142,8 +142,14 @@ Skills are still sample data.
 ### Home's assistant (Jev)
 
 `POST /api/route` answers a request typed or spoken on Home, and
-`GET /api/route` says whether Jev is on, where the site runs (`local` or
-`hosted`), and which skills there are.
+`GET /api/route` says whether Jev is on and which skills there are.
+
+**Local only.** Jev, its skills and the reply voice exist only on the local
+site. The hosted site has no `/api/route` and no `/api/voice` at all, for
+anyone, the owner included, and never reads an OpenRouter or ElevenLabs key
+set there: an agent that reads your projects and proposes work in them
+answers only on your own machine ([ADR-0006](docs/decisions/0006-keep-the-assistant-on-the-local-site-only.md)).
+Home there shows one line in place of Ask, voice and skills.
 
 - **Commands, instantly.** A request that names an app action in so many words
   ("open the orrery", "open the logs for observatory", "refresh") is matched by
@@ -166,9 +172,8 @@ than guessing:
   or Usage), refreshes, opens the help card, and proposes a Claude Code task
   in a project.
 - **Will not**: change code, run commands or touch GitHub itself. Work is only
-  ever proposed, as a `claude -p` command to paste, quoted for PowerShell or
-  bash (the local site writes it for this machine's shell; the hosted one, for
-  both). Locally, the proposal also carries a one-use token for **Run** (see
+  ever proposed, as a `claude -p` command to paste, quoted for this
+  machine's shell. The proposal also carries a one-use token for **Run** (see
   below); nothing runs until you press it, and never from speech.
 
 Each request takes at most six rounds of tool calls and 45 seconds. If
@@ -183,9 +188,8 @@ it) or set it in the environment:
 OPENROUTER_API_KEY=<your key>
 ```
 
-On Vercel, set `OPENROUTER_API_KEY` on the project. Without a key, Jev is off
-and says so: only keyword matches work, and locally a request can still be
-proposed as a command. The key is sent to OpenRouter only, and scrubbed from
+Without a key, Jev is off and says so: only keyword matches work, and a
+request can still be proposed as a command. The key is sent to OpenRouter only, and scrubbed from
 every error and log line.
 
 **Skills** are fixed requests, one tile each on Home, each proposed as tier-3
@@ -208,9 +212,7 @@ read on every request (up to 64 KiB):
 
 An id is lower-case words joined by dashes; a label is up to 40 characters;
 `project` pins a skill to one project; `null` removes a starter; there are at
-most 24 skills in all. The hosted site offers the starters only. On the hosted
-site the assistant is the owner's alone: a visitor to the public preview is
-refused, since every request can cost money.
+most 24 skills in all.
 
 ### The reply voice (ElevenLabs)
 
@@ -236,12 +238,9 @@ ELEVENLABS_API_KEY=<your key>
 ELEVENLABS_VOICE_ID=<optional voice id>
 ```
 
-On Vercel, set `ELEVENLABS_API_KEY`, and optionally `ELEVENLABS_VOICE_ID`, on
-the project. Without a key the voice is off, makes no call, and the page falls
-back to Kokoro. The key is sent to ElevenLabs only, in its own header, and
-scrubbed from every error and log line. On the hosted site the voice is the
-owner's alone: a visitor to the public preview is refused, since every sentence
-costs money.
+Without a key the voice is off, makes no call, and the page falls back to
+Kokoro. The key is sent to ElevenLabs only, in its own header, and scrubbed
+from every error and log line. Like Jev, the voice is local only.
 
 ## Run: tier-3 work on this machine
 
@@ -334,9 +333,6 @@ day (for example `0 6 * * *`) and `maxDuration` to 300.
 | `SITE_URL`                                    | Optional: your site's address, if sign-in should always return there.                                           |
 | `PUBLIC_PREVIEW`                              | Optional: `on` lets anyone see your public repositories, read-only; `all` the private ones too. Off unless set. |
 | `PREVIEW_LOGS`                                | Optional: `on` shows visitors the Log Sky, redacted. Off unless set.                                            |
-| `OPENROUTER_API_KEY`                          | Optional: an OpenRouter key, which turns on Jev on Home. Off unless set.                                        |
-| `ELEVENLABS_API_KEY`                          | Optional: an ElevenLabs key, which turns on the ElevenLabs reply voice on Home. Off unless set.                 |
-| `ELEVENLABS_VOICE_ID`                         | Optional: the ElevenLabs voice to start in. The account's first voice unless set.                               |
 
 A site missing one of the required variables answers every request saying
 which. Generate the secrets with, for example,

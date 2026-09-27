@@ -204,80 +204,35 @@ describe('hostedApi', () => {
     assert.equal(JSON.stringify([...store.data]), before);
   });
 
-  it('gives the owner Home’s assistant, with Jev off when no OpenRouter key is set', async () => {
-    const { handle } = site();
-
-    const status = (await (await get(handle, '/api/route', ownerCookie)).json()) as {
-      jev: string;
-      where: string;
-    };
-    const routed = await handle(
-      new Request(`${SITE}/api/route`, {
-        method: 'POST',
-        headers: {
-          'x-observatory': '1',
-          'content-type': 'application/json',
-          cookie: ownerCookie,
-        },
-        body: JSON.stringify({ text: 'open the orrery' }),
-      }),
-    );
-
-    assert.deepEqual([status.jev, status.where], ['off', 'hosted']);
-    assert.deepEqual(await routed.json(), {
-      via: 'keyword',
-      tier: 1,
-      action: 'open-orrery',
-      href: '/orrery',
-      says: 'Opening the orrery',
-      jev: 'off',
+  it('has no assistant and no voice, for anyone, even with their keys set', async () => {
+    const { handle } = site({
+      ...ENV,
+      PUBLIC_PREVIEW: 'all',
+      OPENROUTER_API_KEY: 'sk-or-test',
+      ELEVENLABS_API_KEY: 'eleven-test',
     });
-  });
+    const post = (path: string, body: object, cookie?: string) =>
+      handle(
+        new Request(`${SITE}${path}`, {
+          method: 'POST',
+          headers: {
+            'x-observatory': '1',
+            'content-type': 'application/json',
+            ...(cookie ? { cookie } : {}),
+          },
+          body: JSON.stringify(body),
+        }),
+      );
 
-  it('refuses a visitor Home’s assistant, since every request can cost money', async () => {
-    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all', OPENROUTER_API_KEY: 'sk-or-test' });
-
-    const routed = await handle(
-      new Request(`${SITE}/api/route`, {
-        method: 'POST',
-        headers: { 'x-observatory': '1', 'content-type': 'application/json' },
-        body: JSON.stringify({ text: 'what is a rebase' }),
-      }),
-    );
-
-    assert.equal(routed.status, 403);
-    assert.equal((await get(handle, '/api/route')).status, 403);
-  });
-
-  it('gives the owner the ElevenLabs voice, off with no key and making no call', async () => {
-    const { handle } = site();
-
-    const status = await get(handle, '/api/voice', ownerCookie);
-    const spoken = await handle(
-      new Request(`${SITE}/api/voice/speak`, {
-        method: 'POST',
-        headers: { 'x-observatory': '1', 'content-type': 'application/json', cookie: ownerCookie },
-        body: JSON.stringify({ text: 'Hello.', voice: 'abc123' }),
-      }),
-    );
-
-    assert.deepEqual(await status.json(), { elevenlabs: 'off', voices: [], defaultVoice: null });
-    assert.equal(spoken.status, 503);
-  });
-
-  it('refuses a visitor the ElevenLabs voice, since every sentence costs money', async () => {
-    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
-
-    const spoken = await handle(
-      new Request(`${SITE}/api/voice/speak`, {
-        method: 'POST',
-        headers: { 'x-observatory': '1', 'content-type': 'application/json' },
-        body: JSON.stringify({ text: 'Hello.', voice: 'abc123' }),
-      }),
-    );
-
-    assert.equal(spoken.status, 403);
-    assert.equal((await get(handle, '/api/voice')).status, 403);
+    for (const cookie of [ownerCookie, undefined]) {
+      assert.equal((await get(handle, '/api/route', cookie)).status, 404);
+      assert.equal((await post('/api/route', { text: 'read my code' }, cookie)).status, 404);
+      assert.equal((await get(handle, '/api/voice', cookie)).status, 404);
+      assert.equal(
+        (await post('/api/voice/speak', { text: 'Hello.', voice: 'abc123' }, cookie)).status,
+        404,
+      );
+    }
   });
 
   it('shows a visitor private repositories too with PUBLIC_PREVIEW=all, still read-only', async () => {

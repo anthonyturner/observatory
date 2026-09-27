@@ -6,9 +6,9 @@ import { HelpState } from '../../shared/help/help-state';
 import { REPLY_VOICE, ReplyVoice } from '../voice/reply-voice';
 import { ASK_CHANNEL } from './ask-channel';
 import { AskDraft } from './ask-draft';
-import { ASK_FEED_CHANNEL, AskFeed } from './ask-feed';
+import { ASK_FEED_CHANNEL, AskFeed, ELSEWHERE } from './ask-feed';
 import { AskOutcome } from './ask-outcome';
-import { ASSISTANT_API, AssistantApi, AssistantRefused } from './assistant-api';
+import { ASSISTANT_API, AssistantApi, AssistantAbsent } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { Conversation } from './conversation';
 import { RouteReply, RouteRequest } from './assistant.types';
@@ -431,13 +431,14 @@ describe('AskFeed', () => {
     expect(latest().said.text).toBe('Opened the help card.');
   });
 
-  it('takes a refusal as no assistant here, not as a failure', async () => {
-    const { feed, latest } = setUp([() => Promise.reject(new AssistantRefused('visitor'))]);
+  it('takes an absent assistant as elsewhere, not as a failure', async () => {
+    const { feed, latest } = setUp([() => Promise.reject(new AssistantAbsent('hosted'))]);
 
     feed.submit('help');
     await settle();
 
-    expect(TestBed.inject(AssistantInfo).isRefused()).toBe(true);
+    expect(TestBed.inject(AssistantInfo).isElsewhere()).toBe(true);
+    expect(latest().said.text).toBe(ELSEWHERE);
     expect(latest().actions).toEqual([]);
   });
 

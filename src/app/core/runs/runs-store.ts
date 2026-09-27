@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { AssistantInfo } from '../assistant/assistant-info';
 import { ReplySpeech } from '../assistant/reply-speech';
-import { ViewerSession } from '../session/viewer-session';
 import { Clock } from '../time/clock';
 import { PastRuns } from './past-runs';
 import { RunAnnouncer } from './run-announcer';
@@ -61,7 +60,6 @@ interface Followed {
 export class RunsStore {
   private readonly api = inject(RUNS_API);
   private readonly info = inject(AssistantInfo);
-  private readonly session = inject(ViewerSession);
   private readonly speech = inject(ReplySpeech);
   private readonly clock = inject(Clock);
   private readonly cache = inject(RunCache);
@@ -73,9 +71,7 @@ export class RunsStore {
   private wasLive = false;
 
   /** Only the local site runs tasks, and only for its owner. */
-  readonly isAvailable = computed(
-    () => this.info.where() === 'local' && !this.session.isVisitor() && !this.info.isRefused(),
-  );
+  readonly isAvailable = computed(() => this.info.where() === 'local' && !this.info.isElsewhere());
   readonly followed = computed(() => this.following()?.record ?? null);
   readonly isLive = computed(() => this.followed()?.isLive() ?? false);
   /** The runner's list, for Recent runs and the pill. */

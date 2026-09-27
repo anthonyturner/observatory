@@ -2,7 +2,6 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AssistantInfo } from '../assistant/assistant-info';
 import { ReplySpeech } from '../assistant/reply-speech';
-import { ViewerSession } from '../session/viewer-session';
 import { Clock } from '../time/clock';
 import { RunAnnouncer } from './run-announcer';
 import { RUN_CACHE_STORAGE } from './run-cache';
@@ -26,9 +25,8 @@ function setUp(storage: Storage = sessionStorage) {
       { provide: ReplySpeech, useValue: speech },
       {
         provide: AssistantInfo,
-        useValue: { where: signal('local').asReadonly(), isRefused: signal(false).asReadonly() },
+        useValue: { where: signal('local').asReadonly(), isElsewhere: signal(false).asReadonly() },
       },
-      { provide: ViewerSession, useValue: { isVisitor: signal(false).asReadonly() } },
     ],
   });
   const store = TestBed.inject(RunsStore);

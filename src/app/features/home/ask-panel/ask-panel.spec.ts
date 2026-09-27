@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AskFeed } from '../../../core/assistant/ask-feed';
+import { AskFeed, ELSEWHERE } from '../../../core/assistant/ask-feed';
 import { ASSISTANT_API, AssistantApi } from '../../../core/assistant/assistant-api';
 import { Conversation } from '../../../core/assistant/conversation';
 import { AssistantStatus, RouteReply } from '../../../core/assistant/assistant.types';
@@ -110,18 +110,17 @@ describe('AskPanel', () => {
     expect(element.querySelector('.replies')?.textContent).toContain('An answer');
   });
 
-  it('gives a visitor one line in place of the Ask box', async () => {
-    const { element, refresh, http } = await render();
+  it('has no Ask box on the hosted site, even for the owner, only one line', async () => {
+    for (const access of ['owner', 'visitor'] as const) {
+      TestBed.resetTestingModule();
+      const { element, refresh, http } = await render();
 
-    http.expectOne('/api/session').flush({ access: 'visitor', signIn: '/api/auth/login' });
-    await refresh();
+      http.expectOne('/api/session').flush({ access, signIn: '/api/auth/login' });
+      await refresh();
 
-    expect(element.querySelector('app-ask-bar')).toBeNull();
-    expect(element.querySelector('.preview-note')?.textContent).toContain(
-      'The assistant belongs to the owner.',
-    );
-    expect(element.querySelector('.preview-note a')?.getAttribute('href')).toContain(
-      '/api/auth/login?next=',
-    );
+      expect(element.querySelector('app-ask-bar')).toBeNull();
+      expect(element.querySelector('app-voice-controls')).toBeNull();
+      expect(element.querySelector('.preview-note')?.textContent).toContain(ELSEWHERE);
+    }
   });
 });

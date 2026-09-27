@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ASSISTANT_API, AssistantApi, AssistantRefused } from './assistant-api';
+import { ASSISTANT_API, AssistantApi, AssistantAbsent } from './assistant-api';
 import { AssistantStatus } from './assistant.types';
 import { AssistantInfo } from './assistant-info';
 
@@ -32,14 +32,14 @@ describe('AssistantInfo', () => {
     await info.load();
 
     expect(info.skills()).toEqual({ status: 'lost' });
-    expect(info.isRefused()).toBe(false);
+    expect(info.isElsewhere()).toBe(false);
   });
 
-  it('marks a refusal as no assistant here', async () => {
-    const { info } = setUp(() => Promise.reject(new AssistantRefused('visitor')));
+  it('marks an absent assistant as elsewhere', async () => {
+    const { info } = setUp(() => Promise.reject(new AssistantAbsent('hosted')));
 
     await info.load();
 
-    expect(info.isRefused()).toBe(true);
+    expect(info.isElsewhere()).toBe(true);
   });
 });

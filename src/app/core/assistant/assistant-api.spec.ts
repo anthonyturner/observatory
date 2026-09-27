@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ASSISTANT_API, AssistantRefused } from './assistant-api';
+import { ASSISTANT_API, AssistantAbsent } from './assistant-api';
 
 function setUp() {
   TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
@@ -22,15 +22,20 @@ describe('HttpAssistantApi', () => {
     expect(await replied).toEqual(expect.objectContaining({ tier: 1, op: 'refresh' }));
   });
 
-  it('takes a 403 as the router refusing this viewer', async () => {
+  it('takes a 403 or a 404 as no assistant on this site', async () => {
     const { api, http } = setUp();
 
-    const status = api.status();
+    const refused = api.status();
     http
       .expectOne('/api/route')
       .flush({ error: 'forbidden' }, { status: 403, statusText: 'Forbidden' });
+    await expect(refused).rejects.toBeInstanceOf(AssistantAbsent);
 
-    await expect(status).rejects.toBeInstanceOf(AssistantRefused);
+    const missing = api.status();
+    http
+      .expectOne('/api/route')
+      .flush({ error: 'not found' }, { status: 404, statusText: 'Not Found' });
+    await expect(missing).rejects.toBeInstanceOf(AssistantAbsent);
   });
 
   it('rejects an answer that is not the router’s', async () => {

@@ -1,4 +1,3 @@
-import { ELEVENLABS_ENV, type ElevenLabsSettings } from '../voice/eleven-labs-settings.ts';
 import { MIN_SECRET_LENGTH } from './sealed-value.ts';
 
 /** The environment variables the hosted site needs, all set on the Vercel project. */
@@ -31,10 +30,6 @@ export interface HostedConfig {
   readonly siteUrl: string | null;
   readonly preview: PreviewSetting;
   readonly previewLogs: boolean;
-  /** Optional: with none, Jev is off and says so. */
-  readonly openRouterKey: string | null;
-  /** Optional: with no key, the ElevenLabs voice is off and the page speaks with its own. */
-  readonly elevenLabs: ElevenLabsSettings;
 }
 
 export type Env = Readonly<Record<string, string | undefined>>;
@@ -74,11 +69,6 @@ export function hostedConfigFrom(env: Env): ConfigResult {
       siteUrl: env['SITE_URL']?.replace(/\/$/, '') || null,
       preview: previewOf(env['PUBLIC_PREVIEW']),
       previewLogs: env['PREVIEW_LOGS'] === 'on',
-      openRouterKey: env['OPENROUTER_API_KEY'] || null,
-      elevenLabs: {
-        key: env[ELEVENLABS_ENV.key] || null,
-        preferredVoice: env[ELEVENLABS_ENV.voice] || null,
-      },
     },
   };
 }

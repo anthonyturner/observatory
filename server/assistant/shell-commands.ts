@@ -36,9 +36,6 @@ const SHELLS: Readonly<Record<Shell, ShellQuoting>> = {
   },
 };
 
-/** Every shell served: the hosted site cannot know which one its reader has. */
-export const ALL_SHELLS: readonly Shell[] = ['powershell', 'bash'];
-
 /** The one shell this machine's owner pastes into. */
 export const localShells = (platform: NodeJS.Platform): readonly Shell[] => [
   platform === 'win32' ? 'powershell' : 'bash',

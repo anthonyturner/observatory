@@ -2,7 +2,7 @@ import type { AnswerReply, Reply, Source } from '../route-contract.ts';
 import type { AgentRun } from './jev-agent.ts';
 
 /** How a reply names Jev's own answers. */
-export const JEV_LABEL = 'Jev';
+const JEV_LABEL = 'Jev';
 
 /** A reply with the pages it drew on, when there were any. */
 export type SourcedReply = Reply & { readonly sources?: readonly Source[] };

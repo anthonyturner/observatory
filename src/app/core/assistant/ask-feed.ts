@@ -15,10 +15,10 @@ import { AskedHow, EntryAction, answering, noting, saying } from './reply-entry'
 import { ReplyLog } from './reply-log';
 import { ReplySpeech } from './reply-speech';
 import { TierOneActions } from './tier-one-actions';
-import { ReplyTier } from '../voice/reply-voice';
 import { Clock } from '../time/clock';
 
 const PROPOSED = 'Proposed a task: see above.';
+const ACTION_TIER = 1;
 
 /** The same request with a pressed option's pick. A pick is settled, so it
  *  goes without the conversation. */
@@ -195,7 +195,7 @@ export class AskFeed implements AskChannel {
   /** Says what the action does as it starts ("Refreshing every project…"). */
   private showAction(entryId: number, reply: RouteReply): void {
     this.actions.carryOut(entryId, reply, this.cutSpeech);
-    if (reply.op !== 'stop') this.speakSaid(entryId, 1);
+    if (reply.op !== 'stop') this.speakAction(entryId);
   }
 
   /** Only the words are read aloud; a web answer's sources are listed, not spoken. */
@@ -255,9 +255,10 @@ export class AskFeed implements AskChannel {
     this.log.say(entryId, noting('Left it.'));
   }
 
-  private speakSaid(entryId: number, tier: ReplyTier): void {
+  /** Reads out what an action says as it starts. */
+  private speakAction(entryId: number): void {
     const said = this.log.find(entryId)?.said.text ?? '';
-    this.speech.speak(said, entryId, tier);
+    this.speech.speak(said, entryId, ACTION_TIER);
   }
 }
 

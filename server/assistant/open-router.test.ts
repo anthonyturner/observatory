@@ -133,4 +133,77 @@ describe('openRouter', () => {
 
     await assert.rejects(decideWith(fetch), hasReason('shape'));
   });
+
+  it('searches the web with the quick model, keeping the cited pages once each and no URLs in the words', async () => {
+    const { sent, fetch } = fakeFetch(() =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: {
+              content: 'Two labs shipped models [1]. See https://example.com/a for more.',
+              annotations: [
+                {
+                  type: 'url_citation',
+                  url_citation: { url: 'https://example.com/a', title: 'Lab A' },
+                },
+                {
+                  type: 'url_citation',
+                  url_citation: { url: 'https://example.com/a', title: 'Lab A again' },
+                },
+                {
+                  type: 'url_citation',
+                  url_citation: { url: 'javascript:alert(1)', title: 'Bad' },
+                },
+                { type: 'url_citation', url_citation: { url: 'https://example.org/b' } },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    const said = await openRouter({ key: KEY, fetch, sleep: noSleep }).search('AI news');
+    const body = JSON.parse(String(sent[0].init.body)) as { plugins: unknown; model: string };
+    const [plugin] = body.plugins as { id: string; max_results: number; search_prompt: string }[];
+    assert.equal(plugin.id, 'web');
+    assert.equal(plugin.max_results, 5);
+    assert.match(plugin.search_prompt, /Never name, cite or link/);
+    assert.equal(body.model, 'anthropic/claude-haiku-4.5');
+    assert.equal(said.text, 'Two labs shipped models. See for more.');
+    assert.deepEqual(said.sources, [
+      { title: 'Lab A', url: 'https://example.com/a' },
+      { title: 'example.org', url: 'https://example.org/b' },
+    ]);
+  });
+
+  it('leaves the bare site names web search cites out of the words, which are read aloud', async () => {
+    const { fetch } = fakeFetch(() =>
+      Response.json({
+        choices: [
+          {
+            message: {
+              content:
+                '- wsj.com Nvidia bought a lab.\n- A study found more AI pages. techcrunch.com\nMore at news.bbc.co.uk today.',
+            },
+          },
+        ],
+      }),
+    );
+    const said = await openRouter({ key: KEY, fetch, sleep: noSleep }).search('AI news');
+    assert.equal(
+      said.text,
+      '- Nvidia bought a lab.\n- A study found more AI pages.\nMore at today.',
+    );
+    assert.deepEqual(said.sources, []);
+  });
+
+  it('keeps a web answer to plain text: no bold and no headings', async () => {
+    const { fetch } = fakeFetch(() =>
+      Response.json({
+        choices: [{ message: { content: '## News\n**Biology lab**: Claude found an enzyme.' } }],
+      }),
+    );
+    const said = await openRouter({ key: KEY, fetch, sleep: noSleep }).search('Anthropic');
+    assert.equal(said.text, 'News\nBiology lab: Claude found an enzyme.');
+  });
 });

@@ -1,5 +1,5 @@
 import { ACTABLE_IDS, type ActableId, isActable } from './actions.ts';
-import { QUICK_CHOICE, actionChoice, taskChoice } from './choices.ts';
+import { LOOK_CHOICE, QUICK_CHOICE, actionChoice, taskChoice } from './choices.ts';
 import type { KeywordMatch } from './keyword-match.ts';
 import type { JevAnswer, JevAnswers } from './open-router.ts';
 import type { Choice, Project } from './route-contract.ts';
@@ -17,6 +17,7 @@ const UNSURE_OPTIONS = 2;
 export type JevDecision =
   | { readonly kind: 'act'; readonly action: ActableId; readonly project: Project | null }
   | { readonly kind: 'quick' }
+  | { readonly kind: 'look' }
   | { readonly kind: 'propose'; readonly project: Project | null }
   | { readonly kind: 'unsure'; readonly ask: readonly Choice[] };
 
@@ -65,6 +66,7 @@ function unsureChoices(tier: Sureness, action: Sureness, project: Project | null
       score: tier.chanceOf('tier1') * chance,
     })),
     { choice: QUICK_CHOICE, score: tier.chanceOf('tier2') },
+    { choice: LOOK_CHOICE, score: tier.chanceOf('web') },
     { choice: taskChoice(project), score: tier.chanceOf('tier3') },
   ]
     .sort((a, b) => b.score - a.score)
@@ -83,6 +85,7 @@ function decisionOf(tier: Sureness, action: Sureness, project: Project | null): 
     return { kind: 'act', action: action.choice, project };
   }
   if (isSureOfTier && tier.choice === 'tier2') return { kind: 'quick' };
+  if (isSureOfTier && tier.choice === 'web') return { kind: 'look' };
   if (isSureOfTier && tier.choice === 'tier3') return { kind: 'propose', project };
   return { kind: 'unsure', ask: unsureChoices(tier, action, project) };
 }

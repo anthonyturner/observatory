@@ -58,6 +58,12 @@ export interface RunTicket {
   readonly command: string;
 }
 
+/** A page a web answer drew on. */
+export interface Source {
+  readonly title: string;
+  readonly url: string;
+}
+
 /** How the router reached its reply. */
 export type ReplyVia = 'keyword' | 'jev' | 'pick' | 'skill';
 
@@ -77,6 +83,10 @@ export interface RouteReply {
   readonly by?: string;
   /** Why a quick answer could not be had. */
   readonly failed?: string;
+  /** A quick answer looked up on the web, or a lookup that failed. */
+  readonly web?: boolean;
+  /** The pages a web answer drew on. */
+  readonly sources?: readonly Source[];
   readonly note?: string;
   readonly question?: string;
   readonly ask: readonly AskOption[];

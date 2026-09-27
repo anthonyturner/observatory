@@ -7,6 +7,7 @@ export const TIERS = {
     'One of the listed app actions: open a page, show a list, refresh, stop speaking. Nothing to think about.',
   tier2:
     'A question answered in a few sentences from general knowledge. No files, no tools, no changes.',
+  web: 'A question that needs current information from the internet: news, recent events, new releases, prices, anything that changes. Answered from a web search.',
   tier3:
     'Work in a project: read or change code or files, run commands, handle pull requests or issues, or anything with several steps.',
 } as const;

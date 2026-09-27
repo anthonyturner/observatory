@@ -19,7 +19,8 @@ export interface Project {
 /** A button the page offered, pressed: an action, or a tier, and maybe a project. */
 export interface Pick {
   readonly action?: ActableId;
-  readonly tier?: 2 | 3;
+  /** `web`: look it up on the web; a quick answer, with sources. */
+  readonly tier?: 2 | 3 | 'web';
   readonly project?: string | null;
 }
 
@@ -71,9 +72,23 @@ export interface AskReply {
   readonly ask: readonly Choice[];
 }
 
+/** A page a web answer drew on. */
+export interface Source {
+  readonly title: string;
+  readonly url: string;
+}
+
+/** A tier-2 answer. `web` marks one looked up on the web, with its `sources`. */
 export type QuickReply =
-  | { readonly tier: 2; readonly label: string; readonly by: string; readonly text: string }
-  | { readonly tier: 2; readonly failed: string };
+  | {
+      readonly tier: 2;
+      readonly label: string;
+      readonly by: string;
+      readonly text: string;
+      readonly web?: true;
+      readonly sources?: readonly Source[];
+    }
+  | { readonly tier: 2; readonly failed: string; readonly web?: true };
 
 /** Work in a project, only ever proposed: `command` is the first of `commands`. */
 export interface Proposal {

@@ -26,15 +26,31 @@ export interface QuickAnswer {
   readonly isCut: boolean;
 }
 
+/** A page a web answer drew on. */
+export interface WebSource {
+  readonly title: string;
+  readonly url: string;
+}
+
+/** An answer from the web, with the pages it drew on. */
+export interface WebAnswer extends QuickAnswer {
+  readonly sources: readonly WebSource[];
+}
+
 /** The two models one OpenRouter key pays for. */
 export interface OpenRouter {
   /** False with no key: every call then fails with the reason `key`. */
   readonly isOn: boolean;
   /** How a reply names the quick-answer model. */
   readonly quickLabel: string;
+  /** How a reply names the model with web search. */
+  readonly webLabel: string;
   /** Jev's answers to `questions` about `state`. */
   decide(state: Readonly<Record<string, unknown>>, questions: JevQuestions): Promise<JevAnswers>;
   answer(text: string): Promise<QuickAnswer>;
+  /** The quick model with OpenRouter's web search: for anything that needs
+   *  current information, such as news. Each call pays for the search too. */
+  search(text: string): Promise<WebAnswer>;
 }
 
 interface Endpoint {
@@ -56,6 +72,15 @@ const OPENROUTER = {
     label: 'Claude Haiku',
     maxTokens: 300,
     timeoutMs: 20000,
+  },
+  web: {
+    path: '/chat/completions',
+    label: 'Claude Haiku · web search',
+    maxTokens: 450,
+    // A search runs before the model answers, so it gets longer than a quick answer.
+    timeoutMs: 35000,
+    // OpenRouter charges for each search result on top of the model call; five keeps a lookup cheap.
+    results: 5,
   },
 };
 
@@ -80,6 +105,18 @@ const QUICK_SYSTEM =
   'sentences or a short list. Put code in `backticks`. No headings and no preamble. If the question needs the ' +
   "developer's own files, code or commands run on their machine, say in one sentence that it needs a Claude Code " +
   'task instead.';
+
+const WEB_SYSTEM =
+  "You answer questions on a developer's dashboard from fresh web search results. Say what is new or true now, " +
+  'in plain text, in at most five short sentences or a short list, naming dates where they matter. No headings, ' +
+  'no preamble, no URLs and no citation marks: the page lists the sources itself. If the results do not answer ' +
+  'the question, say so in one sentence.';
+
+/** Replaces the search's own instructions, which ask for citations named by
+ *  site ("wsj.com reports…"): the page lists the sources, and the answer is read aloud. */
+const WEB_SEARCH_PROMPT =
+  'Web search results follow. Use them to answer, stating the facts directly. Never name, cite or link ' +
+  'the websites or publications; the page lists the sources separately.';
 
 const isObject = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null;
@@ -112,6 +149,59 @@ function quickAnswerOf(body: unknown): QuickAnswer {
   const text = isObject(message) ? message['content'] : undefined;
   if (typeof text !== 'string' || !text.trim()) throw new OpenRouterError('shape', 200, 'no text');
   return { text: text.trim(), isCut: isObject(choice) && choice['finish_reason'] === 'length' };
+}
+
+/** URLs, markdown links, bold, headings and citation marks the model left in
+ *  despite being asked not to: the page lists sources itself, shows plain
+ *  text, and reads the answer aloud. */
+function withoutCitations(text: string): string {
+  return (
+    text
+      .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '$1')
+      .replace(/\(\s*\[?\d+\]?(?:\s*,\s*\[?\d+\]?)*\s*\)/g, '')
+      .replace(/\[\d+\]/g, '')
+      .replace(/https?:\/\/\S+/g, '')
+      // Web search has the model cite a page by its bare site name ("wsj.com").
+      .replace(
+        /(?<![\w@/.-])(?:[a-z0-9-]+\.)+(?:com|org|net|io|ai|dev|co|news|gov|edu|app|tech|info)(?:\.[a-z]{2})?(?![\w/-])/gi,
+        '',
+      )
+      // The page shows plain text and reads it aloud: no bold, no headings.
+      .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+      .replace(/^#{1,6}[ \t]+/gm, '')
+      .replace(/[ \t]+([.,;:!?])/g, '$1')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/^([-*]) +/gm, '$1 ')
+      .replace(/[ \t]+$/gm, '')
+      .trim()
+  );
+}
+
+/** The pages cited, in order, once each, http(s) only. */
+function sourcesOf(body: unknown, most: number): WebSource[] {
+  const choices = isObject(body) ? body['choices'] : undefined;
+  const choice: unknown = Array.isArray(choices) ? choices[0] : undefined;
+  const message = isObject(choice) ? choice['message'] : undefined;
+  const annotations = isObject(message) ? message['annotations'] : undefined;
+  if (!Array.isArray(annotations)) return [];
+  const seen = new Set<string>();
+  const sources: WebSource[] = [];
+  for (const annotation of annotations) {
+    const citation = isObject(annotation) ? annotation['url_citation'] : undefined;
+    const url = isObject(citation) ? citation['url'] : undefined;
+    if (typeof url !== 'string' || !/^https?:\/\//.test(url) || seen.has(url)) continue;
+    seen.add(url);
+    const title =
+      isObject(citation) && typeof citation['title'] === 'string' ? citation['title'].trim() : '';
+    sources.push({ title: title || new URL(url).hostname, url });
+    if (sources.length >= most) break;
+  }
+  return sources;
+}
+
+function webAnswerOf(body: unknown, most: number): WebAnswer {
+  const answer = quickAnswerOf(body);
+  return { ...answer, text: withoutCitations(answer.text), sources: sourcesOf(body, most) };
 }
 
 /**
@@ -185,5 +275,21 @@ export function openRouter(options: OpenRouterOptions): OpenRouter {
           ],
         }),
       ),
+    search: async (text) =>
+      webAnswerOf(
+        await post(OPENROUTER.web, {
+          model: OPENROUTER.quick.model,
+          max_tokens: OPENROUTER.web.maxTokens,
+          plugins: [
+            { id: 'web', max_results: OPENROUTER.web.results, search_prompt: WEB_SEARCH_PROMPT },
+          ],
+          messages: [
+            { role: 'system', content: WEB_SYSTEM },
+            { role: 'user', content: text },
+          ],
+        }),
+        OPENROUTER.web.results,
+      ),
+    webLabel: OPENROUTER.web.label,
   };
 }

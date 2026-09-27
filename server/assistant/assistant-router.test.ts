@@ -23,6 +23,7 @@ function fakeModels(jev: JevAnswers | FailureReason | null, quick = 'An answer.'
   const models: OpenRouter = {
     isOn: jev !== null,
     quickLabel: 'Claude Haiku',
+    webLabel: 'Claude Haiku · web search',
     decide: async () => {
       asked.push('jev');
       if (jev === null) return fail('key');
@@ -32,6 +33,15 @@ function fakeModels(jev: JevAnswers | FailureReason | null, quick = 'An answer.'
       asked.push('quick');
       if (jev === null || jev === 'key') return fail('key');
       return { text: quick, isCut: false };
+    },
+    search: async () => {
+      asked.push('web');
+      if (jev === null || jev === 'key') return fail('key');
+      return {
+        text: 'New models shipped this week.',
+        isCut: false,
+        sources: [{ title: 'AI news', url: 'https://example.com/ai' }],
+      };
     },
   };
   return { asked, models };
@@ -318,5 +328,64 @@ describe('assistantRouter', () => {
     for (const skill of ['nope', 'constructor']) {
       await assert.rejects(router({}).route({ skill, pick: null }), BadRequest);
     }
+  });
+
+  it('looks news up on the web by keyword, with no Jev call, and gives its sources', async () => {
+    const { asked, models } = fakeModels(jevSays('tier2', 0.9));
+    const reply = await router({ models }).route(typed('AI news'));
+    assert.deepEqual(asked, ['web']);
+    assert.deepEqual(reply, {
+      via: 'keyword',
+      jev: 'on',
+      tier: 2,
+      web: true,
+      label: 'Web answer',
+      by: 'Claude Haiku · web search',
+      text: 'New models shipped this week.',
+      sources: [{ title: 'AI news', url: 'https://example.com/ai' }],
+    });
+  });
+
+  it('looks it up on the web when Jev is sure it needs current information', async () => {
+    const { asked, models } = fakeModels(jevSays('web', 0.9));
+    const reply = await router({ models }).route(typed('what did Anthropic release'));
+    assert.deepEqual(asked, ['jev', 'web']);
+    assert.equal(reply.via, 'jev');
+    assert.equal('web' in reply && reply.web, true);
+  });
+
+  it('offers a web lookup among the readings when Jev is unsure', async () => {
+    const { models } = fakeModels({
+      tier: { choice: 'web', probabilities: { web: 0.45, tier2: 0.4, tier3: 0.1, tier1: 0.05 } },
+      action: { choice: 'none', confidence: 0.9 },
+    });
+    const reply = await router({ models }).route(typed('whats going on with openai'));
+    assert.ok('ask' in reply);
+    assert.equal(reply.ask[0].label, 'Look it up on the web');
+    assert.deepEqual(reply.ask[0].pick, { tier: 'web' });
+  });
+
+  it('looks it up when the web pick is pressed', async () => {
+    const { asked, models } = fakeModels(jevSays('tier2', 0.9));
+    const reply = await router({ models }).route(typed('openai', { tier: 'web' }));
+    assert.deepEqual(asked, ['web']);
+    assert.equal(reply.via, 'pick');
+  });
+
+  it('says web lookups are off when there is no key', async () => {
+    const reply = await router({}).route(typed('latest AI news'));
+    assert.deepEqual(reply, {
+      via: 'keyword',
+      jev: 'off',
+      tier: 2,
+      web: true,
+      failed: 'web lookups are off: there is no OpenRouter key',
+    });
+  });
+
+  it('still opens a page named in so many words, even with a web word in it', async () => {
+    const { asked, models } = fakeModels(jevSays('tier2', 0.9));
+    await router({ models }).route(typed('open the orrery'));
+    assert.deepEqual(asked, []);
   });
 });

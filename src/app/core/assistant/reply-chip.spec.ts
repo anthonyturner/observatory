@@ -49,4 +49,19 @@ describe('chipOf', () => {
       'Unsure · via Jev 40% · 3 ms',
     );
   });
+
+  it('names an answer looked up on the web as one', () => {
+    const chip = chipOf(
+      {
+        tier: 2,
+        web: true,
+        via: 'keyword',
+        by: 'Claude Haiku · web search',
+        ask: [],
+        commands: [],
+      },
+      3400,
+    );
+    expect(chip.text).toBe('Tier 2 · Web answer · keyword → Claude Haiku · web search · 3.4 s');
+  });
 });

@@ -27,7 +27,7 @@ import { fileHandoffStore } from './agents/handoff-store.ts';
 import { usageReport } from './usage/usage-report.ts';
 import { elevenLabs } from './voice/eleven-labs.ts';
 import { localElevenLabs } from './voice/eleven-labs-settings.ts';
-import { SPEAK_PATH, VOICE_PATH, withVoiceRoutes } from './voice/voice-routes.ts';
+import { HEAR_PATH, SPEAK_PATH, VOICE_PATH, withVoiceRoutes } from './voice/voice-routes.ts';
 import { fetchPage } from './reader/page-fetch.ts';
 import { READ_PATH, withReaderRoutes } from './reader/reader-routes.ts';
 
@@ -93,6 +93,7 @@ const LOOPBACK_ONLY: ReadonlySet<string> = new Set([
   ROUTE_PATH,
   VOICE_PATH,
   SPEAK_PATH,
+  HEAR_PATH,
   READ_PATH,
 ]);
 

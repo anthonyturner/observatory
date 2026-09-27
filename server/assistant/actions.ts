@@ -1,22 +1,7 @@
-import type { JevQuestions } from './open-router.ts';
-import type { Project } from './route-contract.ts';
-
-/** What each tier means to Jev. The keys are its answer. */
-export const TIERS = {
-  tier1:
-    'One of the listed app actions: open a page, show a list, refresh, stop speaking. Nothing to think about.',
-  tier2:
-    'A question answered in a few sentences from general knowledge. No files, no tools, no changes.',
-  tier3:
-    'Work in a project: read or change code or files, run commands, handle pull requests or issues, or anything with several steps.',
-} as const;
-
-export type Tier = keyof typeof TIERS;
-
 /** What the page carries out itself. */
 export type PageOp = 'refresh' | 'help' | 'stop';
 
-/** `says` is what Jev reads; `words` match without Jev; `heard` are what Home's
+/** `says` is how Jev's tools describe it; `words` match without Jev; `heard` are what Home's
  *  speech model writes for a word it mishears, matched but never shown to Jev. */
 interface Spoken {
   readonly says: string;
@@ -55,10 +40,7 @@ export type ActableId =
   | 'help'
   | 'stop';
 
-/** Jev's answer when no action is meant. */
-const NO_ACTION = 'none';
-
-/** Tier-1 actions. The keyword matcher and the questions Jev reads are both
+/** Tier-1 actions. The keyword matcher and Jev's open_page tool are both
  *  built from this table, so a new action is one entry and both learn it. */
 export const ACTIONS: Readonly<Record<ActableId, Action>> = {
   // Whisper base writes "orrery", a rare word, as "ory" or "ori".
@@ -103,46 +85,7 @@ export const ACTIONS: Readonly<Record<ActableId, Action>> = {
   stop: { says: 'Stop talking', words: ['stop', 'quiet'], op: 'stop' },
 };
 
-const NO_ACTION_SAYS = 'None of these';
-/** Jev's answer when no project is meant. */
-const NO_PROJECT = 'none';
-
 export const isActable = (id: unknown): id is ActableId =>
   typeof id === 'string' && Object.hasOwn(ACTIONS, id);
 
 export const ACTABLE_IDS = Object.keys(ACTIONS) as ActableId[];
-
-/** The questions Jev is asked about one request: which tier, which action,
- *  and, when there are any, which project. */
-export function questionsFor(projects: readonly Project[]): JevQuestions {
-  const questions: Record<string, JevQuestions[string]> = {
-    tier: {
-      type: 'choice',
-      instructions: "How much effort does this request to a developer's dashboard need?",
-      criteria: TIERS,
-    },
-    action: {
-      type: 'choice',
-      instructions: 'If it asks for one of these app actions, which one?',
-      criteria: {
-        ...Object.fromEntries(ACTABLE_IDS.map((id) => [id, ACTIONS[id].says])),
-        [NO_ACTION]: NO_ACTION_SAYS,
-      },
-    },
-  };
-  if (projects.length) questions['project'] = projectQuestion(projects);
-  return questions;
-}
-
-function projectQuestion(projects: readonly Project[]): JevQuestions[string] {
-  return {
-    type: 'choice',
-    instructions: 'Which of these projects does the request name or mean?',
-    criteria: {
-      ...Object.fromEntries(
-        projects.map((project) => [project.name, `The project ${project.name} (${project.repo})`]),
-      ),
-      [NO_PROJECT]: 'No project is named or meant',
-    },
-  };
-}

@@ -1,40 +1,17 @@
 import { isTimeout, pause } from '../util/outbound.ts';
 import { keyScrubber } from '../util/key-scrub.ts';
+import { chatPayload, chatTurnOf } from './chat-completion.ts';
+import type { ChatRequest, ChatTurn } from './chat-messages.ts';
 import { OpenRouterError, reasonOf } from './open-router-error.ts';
 
-/** One question Jev answers by choosing among `criteria`, keyed by the answer. */
-export interface JevQuestion {
-  readonly type: 'choice';
-  readonly instructions: string;
-  readonly criteria: Readonly<Record<string, string>>;
-}
-
-export type JevQuestions = Readonly<Record<string, JevQuestion>>;
-
-/** One of Jev's answers, as it gave it: checked where it is read. */
-export interface JevAnswer {
-  readonly choice?: unknown;
-  readonly probabilities?: unknown;
-  readonly confidence?: unknown;
-}
-
-export type JevAnswers = Readonly<Record<string, JevAnswer | undefined>>;
-
-/** A quick answer, and whether it was cut off at the length cap. */
-export interface QuickAnswer {
-  readonly text: string;
-  readonly isCut: boolean;
-}
-
-/** The two models one OpenRouter key pays for. */
+/** The model one OpenRouter key pays for. */
 export interface OpenRouter {
   /** False with no key: every call then fails with the reason `key`. */
   readonly isOn: boolean;
-  /** How a reply names the quick-answer model. */
-  readonly quickLabel: string;
-  /** Jev's answers to `questions` about `state`. */
-  decide(state: Readonly<Record<string, unknown>>, questions: JevQuestions): Promise<JevAnswers>;
-  answer(text: string): Promise<QuickAnswer>;
+  /** How a reply names the model. */
+  readonly label: string;
+  /** One turn of the model's, given the conversation and the tools it may call. */
+  chat(request: ChatRequest): Promise<ChatTurn>;
 }
 
 interface Endpoint {
@@ -42,19 +19,14 @@ interface Endpoint {
   readonly timeoutMs: number;
 }
 
-/**
- * Where and what to call. Jev's id resolves on OpenRouter (its endpoints list
- * names TypeSafe as the provider, checked 2026-09-25) though the general model
- * list leaves it out, so its id may need to change here.
- */
+/** Where and what to call. */
 const OPENROUTER = {
   base: 'https://openrouter.ai/api/v1',
-  jev: { path: '/systemone', model: 'typesafe/jev-1.13', timeoutMs: 8000 },
-  quick: {
+  chat: {
     path: '/chat/completions',
     model: 'anthropic/claude-haiku-4.5',
     label: 'Claude Haiku',
-    maxTokens: 300,
+    maxTokens: 800,
     timeoutMs: 20000,
   },
 };
@@ -75,12 +47,6 @@ const MS_PER_SECOND = 1000;
 const MAX_DETAIL_LENGTH = 160;
 const APP_TITLE = 'Observatory';
 
-const QUICK_SYSTEM =
-  "You give quick answers on a developer's dashboard. Answer in plain text, in at most four short " +
-  'sentences or a short list. Put code in `backticks`. No headings and no preamble. If the question needs the ' +
-  "developer's own files, code or commands run on their machine, say in one sentence that it needs a Claude Code " +
-  'task instead.';
-
 const isObject = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null;
 
@@ -99,26 +65,10 @@ async function bodyOf(response: Response): Promise<unknown> {
   }
 }
 
-function answersOf(body: unknown): JevAnswers {
-  const answers = isObject(body) ? body['answers'] : undefined;
-  if (!isObject(answers)) throw new OpenRouterError('shape', 200, 'no answers');
-  return answers as JevAnswers;
-}
-
-function quickAnswerOf(body: unknown): QuickAnswer {
-  const choices = isObject(body) ? body['choices'] : undefined;
-  const choice: unknown = Array.isArray(choices) ? choices[0] : undefined;
-  const message = isObject(choice) ? choice['message'] : undefined;
-  const text = isObject(message) ? message['content'] : undefined;
-  if (typeof text !== 'string' || !text.trim()) throw new OpenRouterError('shape', 200, 'no text');
-  return { text: text.trim(), isCut: isObject(choice) && choice['finish_reason'] === 'length' };
-}
-
 /**
- * The one door to OpenRouter: Jev, which sorts a request by the effort it
- * needs, and the quick-answer model. With no key it still builds, `isOn` is
- * false and every call fails with the reason `key`, so a site without one
- * starts and says so.
+ * The one door to OpenRouter: the chat model Jev speaks through. With no key
+ * it still builds, `isOn` is false and every call fails with the reason
+ * `key`, so a site without one starts and says so.
  */
 export function openRouter(options: OpenRouterOptions): OpenRouter {
   const { key, fetch: send = fetch, sleep = pause } = options;
@@ -171,19 +121,8 @@ export function openRouter(options: OpenRouterOptions): OpenRouter {
 
   return {
     isOn: Boolean(key),
-    quickLabel: OPENROUTER.quick.label,
-    decide: async (state, questions) =>
-      answersOf(await post(OPENROUTER.jev, { state, model: OPENROUTER.jev.model, questions })),
-    answer: async (text) =>
-      quickAnswerOf(
-        await post(OPENROUTER.quick, {
-          model: OPENROUTER.quick.model,
-          max_tokens: OPENROUTER.quick.maxTokens,
-          messages: [
-            { role: 'system', content: QUICK_SYSTEM },
-            { role: 'user', content: text },
-          ],
-        }),
-      ),
+    label: OPENROUTER.chat.label,
+    chat: async (request) =>
+      chatTurnOf(await post(OPENROUTER.chat, chatPayload(request, OPENROUTER.chat))),
   };
 }

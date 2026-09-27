@@ -4,6 +4,11 @@ import type { ShellCommand } from './shell-commands.ts';
 /** The longest request routed, and the longest prompt a skill may hold. */
 export const MAX_REQUEST_LENGTH = 2000;
 
+/** The most turns of the conversation so far a request may carry, and the
+ *  longest each may be. The page keeps them; the server keeps nothing. */
+export const MAX_HISTORY_TURNS = 12;
+export const MAX_TURN_LENGTH = 2000;
+
 /** Where the site runs: only the local one can turn a proposal into a run. */
 export type Where = 'local' | 'hosted';
 
@@ -16,10 +21,10 @@ export interface Project {
   readonly href: string;
 }
 
-/** A button the page offered, pressed: an action, or a tier, and maybe a project. */
+/** A button the page offered, pressed: an action, or a task, and maybe a project. */
 export interface Pick {
   readonly action?: ActableId;
-  readonly tier?: 2 | 3;
+  readonly tier?: 3;
   readonly project?: string | null;
 }
 
@@ -29,10 +34,22 @@ export interface Choice {
   readonly pick: Pick;
 }
 
-/** What `POST /api/route` accepts: a skill's id, or typed words and maybe a pick. */
+/** One turn of the conversation so far, as the page kept it. */
+export interface HistoryTurn {
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
+}
+
+/** What `POST /api/route` accepts: a skill's id, or typed words, maybe a
+ *  pick, and the conversation they continue. */
 export type RouteRequest =
   | { readonly skill: string; readonly pick: Pick | null }
-  | { readonly skill: null; readonly text: string; readonly pick: Pick | null };
+  | {
+      readonly skill: null;
+      readonly text: string;
+      readonly pick: Pick | null;
+      readonly history: readonly HistoryTurn[];
+    };
 
 /** A proposal turned into a run the owner can confirm, as the local runner offers it. */
 export interface RunTicket {
@@ -71,9 +88,13 @@ export interface AskReply {
   readonly ask: readonly Choice[];
 }
 
-export type QuickReply =
-  | { readonly tier: 2; readonly label: string; readonly by: string; readonly text: string }
-  | { readonly tier: 2; readonly failed: string };
+/** Jev's own answer in words; `by` names the model. */
+export interface AnswerReply {
+  readonly tier: 2;
+  readonly label: string;
+  readonly by: string;
+  readonly text: string;
+}
 
 /** Work in a project, only ever proposed: `command` is the first of `commands`. */
 export interface Proposal {
@@ -85,6 +106,8 @@ export interface Proposal {
   readonly run?: RunTicket;
   /** Why there is no run, when a runner was asked for one. */
   readonly runWhy?: string;
+  /** What Jev said about it, when Jev proposed it. */
+  readonly text?: string;
 }
 
 /** A skill that cannot be proposed, and why. */
@@ -92,17 +115,23 @@ export interface NoteReply {
   readonly note: string;
 }
 
-export type Reply = ActionReply | AskReply | QuickReply | Proposal | NoteReply;
+export type Reply = ActionReply | AskReply | AnswerReply | Proposal | NoteReply;
+
+/** A page an answer drew on. */
+export interface Source {
+  readonly title: string;
+  readonly url: string;
+}
 
 /** How a reply was reached. */
-export type Via = 'keyword' | 'jev' | 'pick' | 'skill';
+export type Via = 'keyword' | 'agent' | 'pick' | 'skill';
 
 export type RouteReply = Reply & {
   readonly via: Via;
   readonly jev: JevSwitch;
   readonly skill?: string;
-  /** How sure Jev was of the tier, when Jev chose. */
-  readonly confidence?: number;
+  /** The pages Jev's answer drew on, when it looked any up. */
+  readonly sources?: readonly Source[];
 };
 
 /** One skill tile: the page shows no prompt until the proposal does. */

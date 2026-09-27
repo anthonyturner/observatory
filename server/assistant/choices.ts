@@ -14,8 +14,6 @@ export const actionChoice = (id: ActableId, project: Project | null): Choice => 
   pick: { action: id, project: project?.name ?? null },
 });
 
-export const QUICK_CHOICE: Choice = { label: 'A quick answer', pick: { tier: 2 } };
-
 export const taskChoice = (project: Project | null): Choice => ({
   label: 'Run it as a Claude Code task',
   pick: { tier: 3, project: project?.name ?? null },

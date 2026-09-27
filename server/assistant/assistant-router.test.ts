@@ -1,10 +1,19 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BadRequest } from '../http/api-handler.ts';
+import type { AgentEffect } from './agent/agent-tool.ts';
+import type { Agent, AgentRequest, AgentRun } from './agent/jev-agent.ts';
 import { type AssistantOptions, assistantRouter } from './assistant-router.ts';
 import { type FailureReason, OpenRouterError } from './open-router-error.ts';
-import type { JevAnswers, OpenRouter } from './open-router.ts';
-import type { Pick, Project, ProposalRunner, RouteRequest, RunOffer } from './route-contract.ts';
+import { proposer } from './proposal.ts';
+import type {
+  HistoryTurn,
+  Pick,
+  Project,
+  ProposalRunner,
+  RouteRequest,
+  RunOffer,
+} from './route-contract.ts';
 import { SKILLS } from './skills-table.ts';
 
 const observatory: Project = {
@@ -14,28 +23,27 @@ const observatory: Project = {
 };
 const app: Project = { name: 'app', repo: 'me/app', href: '/p/me/app' };
 
-/** Models that answer as told, remembering what they were asked. */
-function fakeModels(jev: JevAnswers | FailureReason | null, quick = 'An answer.') {
-  const asked: string[] = [];
-  const fail = (reason: FailureReason) => {
-    throw new OpenRouterError(reason, null);
-  };
-  const models: OpenRouter = {
-    isOn: jev !== null,
-    quickLabel: 'Claude Haiku',
-    decide: async () => {
-      asked.push('jev');
-      if (jev === null) return fail('key');
-      return typeof jev === 'string' ? fail(jev) : jev;
-    },
-    answer: async () => {
-      asked.push('quick');
-      if (jev === null || jev === 'key') return fail('key');
-      return { text: quick, isCut: false };
+/** An agent that answers as told, remembering what it was asked; off when told nothing. */
+function fakeAgent(answer: AgentRun | FailureReason | null) {
+  const asked: AgentRequest[] = [];
+  const agent: Agent = {
+    isOn: answer !== null,
+    by: 'Claude Haiku',
+    answer: async (request) => {
+      asked.push(request);
+      if (answer === null) throw new OpenRouterError('key', null);
+      if (typeof answer === 'string') throw new OpenRouterError(answer, null);
+      return answer;
     },
   };
-  return { asked, models };
+  return { asked, agent };
 }
+
+const jevSaid = (text: string, effect: AgentEffect | null = null): AgentRun => ({
+  text,
+  effect,
+  sources: [],
+});
 
 const RUN = {
   token: 't',
@@ -57,30 +65,27 @@ const runnerOffering = (offer: RunOffer): ProposalRunner & { asked: unknown[] } 
   };
 };
 
-function router(overrides: Partial<AssistantOptions>) {
+interface RouterOverrides extends Partial<AssistantOptions> {
+  readonly runner?: ProposalRunner;
+}
+
+function router({ runner, ...overrides }: RouterOverrides) {
   return assistantRouter({
-    models: fakeModels(null).models,
+    agent: fakeAgent(null).agent,
     projects: async () => [observatory, app],
     skills: async () => SKILLS,
     where: 'local',
-    shells: ['bash'],
-    runner: null,
+    proposals: proposer({ shells: ['bash'], runner: runner ?? null }),
     warn: () => undefined,
     ...overrides,
   });
 }
 
-const typed = (text: string, pick: Pick | null = null): RouteRequest => ({
-  skill: null,
-  text,
-  pick,
-});
-
-const jevSays = (tier: string, sure: number, action = 'none', project = 'none'): JevAnswers => ({
-  tier: { choice: tier, confidence: sure },
-  action: { choice: action, probabilities: { [action]: sure } },
-  project: { choice: project, confidence: sure },
-});
+const typed = (
+  text: string,
+  pick: Pick | null = null,
+  history: readonly HistoryTurn[] = [],
+): RouteRequest => ({ skill: null, text, pick, history });
 
 describe('assistantRouter', () => {
   it('reports whether Jev is on, where it runs, and the skills without their prompts', async () => {
@@ -97,9 +102,9 @@ describe('assistantRouter', () => {
   });
 
   it('carries out a command by keyword, with no model call', async () => {
-    const { asked, models } = fakeModels(jevSays('tier2', 1));
+    const { asked, agent } = fakeAgent(jevSaid('never'));
 
-    const reply = await router({ models }).route(typed('show the issues for observatory'));
+    const reply = await router({ agent }).route(typed('show the issues for observatory'));
 
     assert.deepEqual(reply, {
       via: 'keyword',
@@ -144,10 +149,10 @@ describe('assistantRouter', () => {
     assert.equal('question' in reply && reply.question, null);
   });
 
-  it('when Jev fails, matches keywords and says why, offering what still works', async () => {
-    const { models } = fakeModels('overloaded');
+  it('when Jev fails, matches keywords and says why, offering a task', async () => {
+    const { agent } = fakeAgent('overloaded');
 
-    const reply = await router({ models }).route(typed('what is a rebase'));
+    const reply = await router({ agent }).route(typed('what is a rebase'));
 
     assert.equal(reply.via, 'keyword');
     assert.equal(
@@ -155,99 +160,101 @@ describe('assistantRouter', () => {
       "Jev didn't answer (OpenRouter is busy), so I matched keywords instead.",
     );
     assert.deepEqual('ask' in reply && reply.ask.map((each) => each.label), [
-      'A quick answer',
       'Run it as a Claude Code task',
     ]);
   });
 
-  it('offers no quick answer when the key or the credit failed Jev', async () => {
-    const { models } = fakeModels('credit');
+  it('passes on a failure that is not the model’s', async () => {
+    const agent: Agent = {
+      isOn: true,
+      by: 'x',
+      answer: async () => {
+        throw new TypeError('a bug');
+      },
+    };
 
-    const reply = await router({ models }).route(typed('what is a rebase'));
-
-    assert.deepEqual('ask' in reply && reply.ask.map((each) => each.label), [
-      'Run it as a Claude Code task',
-    ]);
+    await assert.rejects(router({ agent }).route(typed('what is a rebase')), TypeError);
   });
 
-  it('acts on a sure tier-1 answer from Jev', async () => {
-    const { models } = fakeModels(jevSays('tier1', 0.9, 'show-usage'));
+  it('gives Jev the words, the conversation so far and the projects', async () => {
+    const { asked, agent } = fakeAgent(jevSaid('It replays commits.'));
+    const history: HistoryTurn[] = [
+      { role: 'user', text: 'hi' },
+      { role: 'assistant', text: 'Hello.' },
+    ];
 
-    const reply = await router({ models }).route(typed('how much have I used'));
+    await router({ agent }).route(typed('what is a rebase', null, history));
 
-    assert.deepEqual(reply, {
-      via: 'jev',
-      confidence: 0.9,
-      tier: 1,
-      action: 'show-usage',
-      href: '/p/me/observatory#usage',
-      says: 'Opening observatory · Usage',
-      jev: 'on',
-    });
+    assert.deepEqual(asked, [{ text: 'what is a rebase', history, projects: [observatory, app] }]);
   });
 
-  it('gives a quick answer on a sure tier-2 answer', async () => {
-    const { models } = fakeModels(jevSays('tier2', 0.8), 'A rebase replays commits.');
+  it('answers in Jev’s words, naming the model', async () => {
+    const { agent } = fakeAgent(jevSaid('A rebase replays commits.'));
 
-    const reply = await router({ models }).route(typed('what is a rebase'));
+    const reply = await router({ agent }).route(typed('what is a rebase'));
 
     assert.deepEqual(reply, {
-      via: 'jev',
-      confidence: 0.8,
+      via: 'agent',
       tier: 2,
-      label: 'Quick answer',
+      label: 'Jev',
       by: 'Claude Haiku',
       text: 'A rebase replays commits.',
       jev: 'on',
     });
   });
 
-  it('proposes a sure tier-3 answer in the project Jev named, as a command', async () => {
-    const { models } = fakeModels(jevSays('tier3', 0.9, 'none', 'app'));
+  it('opens the page Jev chose, saying what Jev said', async () => {
+    const opened = {
+      tier: 1,
+      action: 'show-usage',
+      href: '/p/me/observatory#usage',
+      says: 'Opening observatory · Usage',
+    } as const;
+    const { agent } = fakeAgent(jevSaid('Here is your usage.', { kind: 'action', reply: opened }));
 
-    const reply = await router({ models }).route(typed('fix the flaky test in app'));
+    const reply = await router({ agent }).route(typed('how much have I used'));
 
-    assert.deepEqual(reply, {
-      via: 'jev',
-      confidence: 0.9,
+    assert.deepEqual(reply, { via: 'agent', ...opened, says: 'Here is your usage.', jev: 'on' });
+  });
+
+  it('runs the op Jev chose', async () => {
+    const op = { tier: 1, action: 'refresh', op: 'refresh' } as const;
+    const { agent } = fakeAgent(jevSaid('Refreshing.', { kind: 'action', reply: op }));
+
+    const reply = await router({ agent }).route(typed('bring it all up to date'));
+
+    assert.deepEqual(reply, { via: 'agent', ...op, jev: 'on' });
+  });
+
+  it('shows the task Jev proposed, with what Jev said about it', async () => {
+    const proposal = {
       tier: 3,
-      prompt: 'fix the flaky test in app',
-      command: 'claude -p "fix the flaky test in app"',
-      commands: [{ shell: 'bash', command: 'claude -p "fix the flaky test in app"' }],
+      prompt: 'Fix the flaky test',
+      command: 'claude -p "Fix the flaky test"',
+      commands: [{ shell: 'bash', command: 'claude -p "Fix the flaky test"' }],
       project: 'app',
+    } as const;
+    const { agent } = fakeAgent(
+      jevSaid('I have proposed a task; press Run.', { kind: 'proposal', proposal }),
+    );
+
+    const reply = await router({ agent }).route(typed('fix the flaky test in app'));
+
+    assert.deepEqual(reply, {
+      via: 'agent',
+      ...proposal,
+      text: 'I have proposed a task; press Run.',
       jev: 'on',
     });
   });
 
-  it('asks rather than acts when Jev is unsure, offering the two likeliest readings', async () => {
-    const { models } = fakeModels({
-      tier: { choice: 'tier1', probabilities: { tier1: 0.5, tier2: 0.3, tier3: 0.2 } },
-      action: { choice: 'refresh', probabilities: { refresh: 0.9, help: 0.1 } },
-    });
+  it('carries the pages an answer drew on', async () => {
+    const sources = [{ title: 'Git', url: 'https://git-scm.com' }];
+    const { agent } = fakeAgent({ text: 'It replays commits.', effect: null, sources });
 
-    const reply = await router({ models }).route(typed('bring it up to date'));
+    const reply = await router({ agent }).route(typed('what is a rebase'));
 
-    assert.deepEqual(reply, {
-      via: 'jev',
-      confidence: 0.5,
-      question: 'Not sure what you meant. Did you mean:',
-      ask: [
-        { label: 'Refresh the data from GitHub now', pick: { action: 'refresh', project: null } },
-        { label: 'A quick answer', pick: { tier: 2 } },
-      ],
-      jev: 'on',
-    });
-  });
-
-  it('says quick answers are off when there is no key and the quick answer is picked', async () => {
-    const reply = await router({}).route(typed('what is a rebase', { tier: 2 }));
-
-    assert.deepEqual(reply, {
-      via: 'pick',
-      tier: 2,
-      failed: 'quick answers are off: there is no OpenRouter key',
-      jev: 'off',
-    });
+    assert.deepEqual(reply.sources, sources);
   });
 
   it('refuses a pick that names no such project', async () => {

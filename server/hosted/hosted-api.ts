@@ -1,8 +1,6 @@
 import { type ApiReads, cachedReads } from '../app/api-reads.ts';
 import { ownerRoutes, withAssistant } from '../app/api-routes.ts';
-import { assistantRouter } from '../assistant/assistant-router.ts';
-import { openRouter } from '../assistant/open-router.ts';
-import { projectsOf } from '../assistant/projects-of.ts';
+import { jevAssistant } from '../assistant/jev-assistant.ts';
 import { ALL_SHELLS } from '../assistant/shell-commands.ts';
 import { SKILLS } from '../assistant/skills-table.ts';
 import { uncheckedCollisions } from '../collisions/collisions-report.ts';
@@ -123,9 +121,9 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
     changed: ({ repo, number }) => reads.forgetPull(repo, number),
     now: Date.now,
   });
-  const assistant = assistantRouter({
-    models: openRouter({ key: config.openRouterKey }),
-    projects: async () => projectsOf(await reads.projects()),
+  const assistant = jevAssistant({
+    key: config.openRouterKey,
+    reads,
     // No skills.json here: the starters only.
     skills: async () => SKILLS,
     where: 'hosted',

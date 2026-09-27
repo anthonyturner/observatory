@@ -1,9 +1,7 @@
 import { cachedReads } from './app/api-reads.ts';
 import { ROUTE_PATH, ownerRoutes, withAssistant } from './app/api-routes.ts';
-import { assistantRouter } from './assistant/assistant-router.ts';
-import { openRouter } from './assistant/open-router.ts';
+import { jevAssistant } from './assistant/jev-assistant.ts';
 import { localKey } from './assistant/open-router-key.ts';
-import { projectsOf } from './assistant/projects-of.ts';
 import { localShells } from './assistant/shell-commands.ts';
 import { fileSkills } from './assistant/skills-file.ts';
 import { fileCloneFinder } from './collisions/clone-finder.ts';
@@ -68,9 +66,9 @@ const runner = localRunner({
 });
 shutDownWithProcess(runner);
 
-const assistant = assistantRouter({
-  models: openRouter({ key: localKey() }),
-  projects: async () => projectsOf(await reads.projects()),
+const assistant = jevAssistant({
+  key: localKey(),
+  reads,
   skills: fileSkills(),
   where: 'local',
   shells: localShells(process.platform),

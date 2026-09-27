@@ -13,7 +13,8 @@ export const TOP_TOOLS = 12;
 const sum = (rows: readonly TokenDay[], count: (row: TokenDay) => number): number =>
   rows.reduce((total, row) => total + count(row), 0);
 
-const familyTotal = (row: TokenDay): number =>
+/** A day's work tokens, every model family together. */
+export const familyTotal = (row: TokenDay): number =>
   Object.values(row.families).reduce((total, tokens) => total + tokens, 0);
 
 /** The days' totals. Sessions are counted across the whole window, so one

@@ -6,7 +6,8 @@ import { AskDraft } from './ask-draft';
 import { AskOutcome, FAILED, outcomeOf } from './ask-outcome';
 import { ASSISTANT_API, AssistantRefused } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
-import { RouteReply, RouteRequest, Skill, Source } from './assistant.types';
+import { Conversation } from './conversation';
+import { RoutePick, RouteReply, RouteRequest, Skill, Source } from './assistant.types';
 import { PageJump } from './page-jump';
 import { Proposal, ProposalSlot, RunProposal, commandProposalOf, runProposalOf } from './proposal';
 import { NO_ANSWER_CHIP, WAITING_CHIP, chipOf } from './reply-chip';
@@ -14,8 +15,15 @@ import { AskedHow, EntryAction, answering, noting, saying } from './reply-entry'
 import { ReplyLog } from './reply-log';
 import { ReplySpeech } from './reply-speech';
 import { TierOneActions } from './tier-one-actions';
-import { ReplyTier } from '../voice/reply-voice';
 import { Clock } from '../time/clock';
+
+const PROPOSED = 'Proposed a task: see above.';
+const ACTION_TIER = 1;
+
+/** The same request with a pressed option's pick. A pick is settled, so it
+ *  goes without the conversation. */
+const withPick = (request: RouteRequest, pick: RoutePick): RouteRequest =>
+  request.skill ? { skill: request.skill, pick } : { text: request.text, pick };
 
 /**
  * Home's assistant: sends a request to the router and shows what it decided.
@@ -34,6 +42,7 @@ export class AskFeed implements AskChannel {
   private readonly focus = inject(AskBoxFocus);
   private readonly draft = inject(AskDraft);
   private readonly clock = inject(Clock);
+  private readonly conversation = inject(Conversation);
   private readonly asking = signal(false);
   private readonly skillAsking = signal<string | null>(null);
   private readonly ended = new Subject<AskOutcome>();
@@ -56,7 +65,13 @@ export class AskFeed implements AskChannel {
     if (asked && spoken && this.holdsSpeech()) return this.hold(asked);
     if (!asked || this.asking()) return;
     this.carriedCut = spoken && this.cutSpeech;
-    void this.send({ text: asked }, this.open(asked, spoken ? 'spoken' : 'typed'));
+    void this.converse(asked, this.open(asked, spoken ? 'spoken' : 'typed'));
+  }
+
+  /** Starts a new conversation: Jev forgets what was said so far. The replies stay on show. */
+  newConversation(): void {
+    this.conversation.clear();
+    this.focus.request();
   }
 
   /** Sends only the skill's id: the router keeps its words, so a press can
@@ -129,8 +144,16 @@ export class AskFeed implements AskChannel {
     return this.log.open(asked, how);
   }
 
-  private async send(request: RouteRequest, entryId: number): Promise<void> {
-    if (this.asking()) return;
+  /** Typed or spoken words go with the conversation so far, and join it once answered. */
+  private async converse(asked: string, entryId: number): Promise<void> {
+    const reply = await this.send({ text: asked, history: this.conversation.history() }, entryId);
+    if (reply) this.conversation.record(asked, reply);
+  }
+
+  /** Sends `request` into the reply `entryId`, and settles with the reply
+   *  once it is shown, or null when there was none. */
+  private async send(request: RouteRequest, entryId: number): Promise<RouteReply | null> {
+    if (this.asking()) return null;
     this.asking.set(true);
     this.startWaiting(entryId);
     const startedAt = performance.now();
@@ -139,10 +162,12 @@ export class AskFeed implements AskChannel {
       if (reply.jev) this.info.noteJev(reply.jev);
       this.ended.next(outcomeOf(reply));
       this.show(entryId, reply, request, Math.round(performance.now() - startedAt));
+      return reply;
     } catch (error: unknown) {
       this.ended.next(FAILED);
       if (error instanceof AssistantRefused) this.showRefused(entryId);
       else this.showNoAnswer(entryId, request);
+      return null;
     } finally {
       this.asking.set(false);
     }
@@ -161,7 +186,6 @@ export class AskFeed implements AskChannel {
   private show(entryId: number, reply: RouteReply, request: RouteRequest, ms: number): void {
     this.log.setChip(entryId, chipOf(reply, ms));
     if (reply.tier === 1) this.showAction(entryId, reply);
-    else if (reply.tier === 2 && reply.failed) this.showFailedAnswer(entryId, reply);
     else if (reply.tier === 2) this.showAnswer(entryId, reply.text ?? '', reply.sources ?? []);
     // A task that comes with options is asking which project to run it in.
     else if (reply.tier === 3 && !reply.ask.length) this.showProposal(entryId, reply);
@@ -171,18 +195,7 @@ export class AskFeed implements AskChannel {
   /** Says what the action does as it starts ("Refreshing every project…"). */
   private showAction(entryId: number, reply: RouteReply): void {
     this.actions.carryOut(entryId, reply, this.cutSpeech);
-    if (reply.op !== 'stop') this.speakSaid(entryId, 1);
-  }
-
-  private showFailedAnswer(entryId: number, reply: RouteReply): void {
-    const asked = this.log.find(entryId)?.asked ?? '';
-    const what = reply.web ? 'look it up on the web' : 'get a quick answer';
-    this.log.say(entryId, noting(`Couldn’t ${what}: ${reply.failed ?? ''}.`));
-    const pick = { tier: reply.web ? 'web' : 2 };
-    this.log.setActions(entryId, [
-      { kind: 'send', label: 'Try again', request: { text: asked, pick } },
-    ]);
-    this.speakSaid(entryId, 2);
+    if (reply.op !== 'stop') this.speakAction(entryId);
   }
 
   /** Only the words are read aloud; a web answer's sources are listed, not spoken. */
@@ -191,9 +204,10 @@ export class AskFeed implements AskChannel {
     this.speech.speak(text, entryId, 2);
   }
 
-  /** A task is never read aloud: "shall I run this?" invites a spoken yes. */
+  /** A task is never read aloud, Jev's words about it included: "shall I
+   *  run this?" invites a spoken yes. */
   private showProposal(entryId: number, reply: RouteReply): void {
-    this.log.say(entryId, noting('Proposed a task: see above.'));
+    this.log.say(entryId, reply.text ? answering(reply.text) : noting(PROPOSED));
     this.proposalCount++;
     this.proposals.show(this.proposalOf(entryId, reply));
   }
@@ -210,15 +224,15 @@ export class AskFeed implements AskChannel {
     );
   }
 
-  /** Unsure, or no model to ask: says so, and offers what it might have
-   *  meant. Each option is the same request with the option's pick, so a
+  /** No model to ask, or a project to choose: says so, and offers what it
+   *  might have meant. Each option is the same request with the option's pick, so a
    *  skill stays that skill. */
   private showOptions(entryId: number, reply: RouteReply, request: RouteRequest): void {
     this.log.say(entryId, noting([reply.note, reply.question].filter(Boolean).join(' ')));
     const options: EntryAction[] = reply.ask.map((option) => ({
       kind: 'send',
       label: option.label,
-      request: { ...request, pick: option.pick },
+      request: withPick(request, option.pick),
     }));
     this.log.setActions(entryId, options.length ? [...options, { kind: 'neither' }] : []);
   }
@@ -241,9 +255,10 @@ export class AskFeed implements AskChannel {
     this.log.say(entryId, noting('Left it.'));
   }
 
-  private speakSaid(entryId: number, tier: ReplyTier): void {
+  /** Reads out what an action says as it starts. */
+  private speakAction(entryId: number): void {
     const said = this.log.find(entryId)?.said.text ?? '';
-    this.speech.speak(said, entryId, tier);
+    this.speech.speak(said, entryId, ACTION_TIER);
   }
 }
 

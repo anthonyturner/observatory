@@ -1,21 +1,19 @@
-import { QUICK_CHOICE, actionChoice, taskChoice } from './choices.ts';
+import { actionChoice, taskChoice } from './choices.ts';
 import type { KeywordMatch } from './keyword-match.ts';
 import type { AskReply } from './route-contract.ts';
 
-/** What can still work here with no model to sort the request. */
+/** What can still work here with no model to answer the request. */
 export interface StillWorking {
-  readonly quickAnswers: boolean;
   readonly proposals: boolean;
 }
 
 const MAX_FALLBACK_CHOICES = 3;
 
 /** No model to ask, or it failed: offer the actions the request's words
- *  touch, and whatever else can still work here, saying why in `note`. */
+ *  touch, and a task where one can still be proposed, saying why in `note`. */
 export function fallbackReply(match: KeywordMatch, note: string, can: StillWorking): AskReply {
   const ask = [
     ...match.actions.map((id) => actionChoice(id, match.project)),
-    ...(can.quickAnswers ? [QUICK_CHOICE] : []),
     ...(can.proposals ? [taskChoice(match.project)] : []),
   ];
   return {

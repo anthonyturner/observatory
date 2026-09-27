@@ -1,5 +1,6 @@
 import { BadRequest } from '../http/api-handler.ts';
 import { isActable } from './actions.ts';
+import { historyOf } from './history-request.ts';
 import { MAX_REQUEST_LENGTH, type Pick, type RouteRequest } from './route-contract.ts';
 
 type Json = Readonly<Record<string, unknown>>;
@@ -21,7 +22,7 @@ function pickOf(pick: Json): Pick {
     return { action: pick['action'], project };
   }
   const tier = pick['tier'];
-  if (tier !== 2 && tier !== 3 && tier !== 'web') throw new BadRequest('bad pick');
+  if (tier !== 3) throw new BadRequest('bad pick');
   return { tier, project };
 }
 
@@ -47,5 +48,6 @@ export function routeRequestFrom(body: unknown): RouteRequest {
   if (!isObject(body) || Array.isArray(body)) throw new BadRequest('body must be an object');
   const skill = skillOf(body);
   const pick = isObject(body['pick']) ? pickOf(body['pick']) : null;
-  return skill === null ? { skill, pick, text: textOf(body) } : { skill, pick };
+  if (skill !== null) return { skill, pick };
+  return { skill, pick, text: textOf(body), history: historyOf(body['history']) };
 }

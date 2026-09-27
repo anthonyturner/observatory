@@ -1,6 +1,6 @@
 import { CoreStateId } from '../instrument/core-states';
 
-/** How much effort a reply took: an app action, a quick answer, or a task. */
+/** How much effort a reply took: an app action, an answer, or a task. */
 export type CoreTier = 1 | 2 | 3;
 
 /** What a source of the core's state may do to it. The last one to write

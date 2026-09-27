@@ -61,7 +61,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Ask',
     meaning:
-      'Type a request and press Enter. Plainly named app actions are matched by keyword; Jev, a small model that sorts requests, decides the rest. News and anything else that needs current information is looked up on the web, with its sources listed under the answer. Each reply says which tier it took and how.',
+      'Type a request and press Enter. Plainly named app actions are matched by keyword; Jev answers the rest, looking up your projects, usage or the web as it needs, and remembers this visit’s conversation. A web answer lists its sources under it. Each reply says which tier it took and how.',
   },
   {
     term: 'Arcs',
@@ -75,7 +75,8 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   },
   {
     term: 'Tier 2',
-    meaning: '●●○ A quick answer from a small model. Labelled as one, and it can be wrong.',
+    meaning:
+      '●●○ Jev’s answer, from Claude Haiku. It looks up your projects and usage itself, remembers this visit’s conversation, and can be wrong.',
   },
   {
     term: TIER_3,
@@ -90,7 +91,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Speak',
     meaning:
-      'Reads actions and quick answers aloud, in this browser. Off until you turn it on, and remembered.',
+      'Reads actions and Jev’s answers aloud, in this browser. Off until you turn it on, and remembered.',
   },
 ];
 

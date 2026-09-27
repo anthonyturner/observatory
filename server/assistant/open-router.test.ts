@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import type { ChatRequest } from './chat-messages.ts';
 import { OpenRouterError } from './open-router-error.ts';
 import { openRouter } from './open-router.ts';
 
@@ -29,44 +30,84 @@ const failing = (error: Error) =>
 
 const noSleep = async () => undefined;
 
-const decideWith = (send: typeof fetch) =>
-  openRouter({ key: KEY, fetch: send, sleep: noSleep }).decide({ request: 'x' }, {});
+const ASK: ChatRequest = {
+  messages: [{ role: 'user', content: 'hi' }],
+  tools: [],
+  toolChoice: 'auto',
+};
+
+const chatWith = (send: typeof fetch) =>
+  openRouter({ key: KEY, fetch: send, sleep: noSleep }).chat(ASK);
+
+const said = (content: string) => () =>
+  Response.json({ choices: [{ message: { content }, finish_reason: 'stop' }] });
 
 const hasReason = (reason: string) => (error: OpenRouterError) => error.reason === reason;
 
 describe('openRouter', () => {
-  it('asks Jev with the key, the model and the questions, as Observatory', async () => {
-    const { sent, fetch } = fakeFetch(() =>
-      Response.json({ answers: { tier: { choice: 'tier2' } } }),
-    );
+  it('asks the chat model with the key, the model and the length cap, as Observatory', async () => {
+    const { sent, fetch } = fakeFetch(said('Hello.'));
 
-    const answers = await decideWith(fetch);
+    const turn = await chatWith(fetch);
 
-    assert.deepEqual(answers, { tier: { choice: 'tier2' } });
-    assert.equal(sent[0].url, 'https://openrouter.ai/api/v1/systemone');
+    assert.deepEqual(turn, { text: 'Hello.', toolCalls: [], isCut: false });
+    assert.equal(sent[0].url, 'https://openrouter.ai/api/v1/chat/completions');
     const headers = new Headers(sent[0].init.headers);
     assert.equal(headers.get('authorization'), `Bearer ${KEY}`);
     assert.equal(headers.get('x-title'), 'Observatory');
-    assert.deepEqual(JSON.parse(String(sent[0].init.body)), {
-      state: { request: 'x' },
-      model: 'typesafe/jev-1.13',
-      questions: {},
-    });
+    const body = JSON.parse(String(sent[0].init.body));
+    assert.equal(body.model, 'anthropic/claude-haiku-4.5');
+    assert.equal(body.max_tokens, 800);
+    assert.equal(body.tool_choice, 'auto');
   });
 
-  it('gives a quick answer trimmed, and says when it was cut off', async () => {
+  it('sends tools and tool turns in the OpenAI shape, and reads tool calls back', async () => {
+    const call = { id: 'c1', type: 'function', function: { name: 'refresh', arguments: '{}' } };
     const { sent, fetch } = fakeFetch(() =>
+      Response.json({ choices: [{ message: { content: null, tool_calls: [call] } }] }),
+    );
+    const models = openRouter({ key: KEY, fetch });
+
+    const turn = await models.chat({
+      messages: [
+        { role: 'assistant', content: null, toolCalls: [{ id: 'c0', name: 'x', arguments: '{}' }] },
+        { role: 'tool', toolCallId: 'c0', content: '{"ok":true}' },
+      ],
+      tools: [{ name: 'refresh', description: 'Refresh.', parameters: { type: 'object' } }],
+      toolChoice: 'none',
+    });
+
+    assert.deepEqual(turn.toolCalls, [{ id: 'c1', name: 'refresh', arguments: '{}' }]);
+    const body = JSON.parse(String(sent[0].init.body));
+    assert.deepEqual(body.messages[0].tool_calls[0], {
+      id: 'c0',
+      type: 'function',
+      function: { name: 'x', arguments: '{}' },
+    });
+    assert.deepEqual(body.messages[1], {
+      role: 'tool',
+      tool_call_id: 'c0',
+      content: '{"ok":true}',
+    });
+    assert.deepEqual(body.tools[0], {
+      type: 'function',
+      function: { name: 'refresh', description: 'Refresh.', parameters: { type: 'object' } },
+    });
+    assert.equal(body.tool_choice, 'none');
+  });
+
+  it('trims the words, and says when they were cut off', async () => {
+    const { fetch } = fakeFetch(() =>
       Response.json({
         choices: [{ message: { content: '  Use git rebase.  ' }, finish_reason: 'length' }],
       }),
     );
 
-    const answer = await openRouter({ key: KEY, fetch }).answer('how do I rebase?');
-
-    assert.deepEqual(answer, { text: 'Use git rebase.', isCut: true });
-    const body = JSON.parse(String(sent[0].init.body));
-    assert.equal(body.model, 'anthropic/claude-haiku-4.5');
-    assert.equal(body.messages[1].content, 'how do I rebase?');
+    assert.deepEqual(await chatWith(fetch), {
+      text: 'Use git rebase.',
+      toolCalls: [],
+      isCut: true,
+    });
   });
 
   it('is off with no key, and fails every call with the reason key, sending nothing', async () => {
@@ -74,18 +115,18 @@ describe('openRouter', () => {
     const models = openRouter({ key: null, fetch });
 
     assert.equal(models.isOn, false);
-    await assert.rejects(models.answer('hi'), hasReason('key'));
+    await assert.rejects(models.chat(ASK), hasReason('key'));
     assert.equal(sent.length, 0);
   });
 
   it('tries a rate limit twice more, waiting at most a second and a half each time', async () => {
     const waits: number[] = [];
     const busy = () => new Response('', { status: 429, headers: { 'retry-after': '30' } });
-    const { sent, fetch } = fakeFetch(busy, busy, () => Response.json({ answers: {} }));
+    const { sent, fetch } = fakeFetch(busy, busy, said('Hi.'));
 
     const models = openRouter({ key: KEY, fetch, sleep: async (ms) => void waits.push(ms) });
 
-    assert.deepEqual(await models.decide({}, {}), {});
+    assert.equal((await models.chat(ASK)).text, 'Hi.');
     assert.equal(sent.length, 3);
     assert.deepEqual(waits, [1500, 1500]);
   });
@@ -94,14 +135,14 @@ describe('openRouter', () => {
     const busy = () => new Response('', { status: 429 });
     const { fetch } = fakeFetch(busy, busy, busy);
 
-    await assert.rejects(decideWith(fetch), hasReason('busy'));
+    await assert.rejects(chatWith(fetch), hasReason('busy'));
   });
 
   it('names the reason from the status, and never echoes the key', async () => {
     const said = { error: { message: `Invalid key ${KEY}, header Bearer ${KEY}` } };
     const { fetch } = fakeFetch(() => Response.json(said, { status: 401 }));
 
-    await assert.rejects(decideWith(fetch), (error: OpenRouterError) => {
+    await assert.rejects(chatWith(fetch), (error: OpenRouterError) => {
       assert.equal(error.reason, 'key');
       assert.equal(error.words, 'the key was refused');
       assert.equal(error.status, 401);
@@ -114,7 +155,7 @@ describe('openRouter', () => {
   it('scrubs a network failure that carries the key', async () => {
     const fetch = failing(new Error(`connect failed for Bearer ${KEY}`));
 
-    await assert.rejects(decideWith(fetch), (error: OpenRouterError) => {
+    await assert.rejects(chatWith(fetch), (error: OpenRouterError) => {
       assert.equal(error.reason, 'network');
       assert.ok(!error.message.includes(KEY), error.message);
       return true;
@@ -123,7 +164,7 @@ describe('openRouter', () => {
 
   it('reads a timeout as one', async () => {
     await assert.rejects(
-      decideWith(failing(new DOMException('timed out', 'TimeoutError'))),
+      chatWith(failing(new DOMException('timed out', 'TimeoutError'))),
       hasReason('timeout'),
     );
   });
@@ -131,7 +172,7 @@ describe('openRouter', () => {
   it('refuses an answer it cannot read', async () => {
     const { fetch } = fakeFetch(() => Response.json({ nothing: true }));
 
-    await assert.rejects(decideWith(fetch), hasReason('shape'));
+    await assert.rejects(chatWith(fetch), hasReason('shape'));
   });
 
   it('searches the web with the quick model, keeping the cited pages once each and no URLs in the words', async () => {

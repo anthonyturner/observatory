@@ -19,7 +19,19 @@
         (asked)="feed.submit($event)"
         (escaped)="onEscape()"
       />
-      <p class="assistant-status" role="status">{{ status() }}</p>
+      <div class="status-row">
+        <p class="assistant-status" role="status">{{ status() }}</p>
+        @if (conversation.hasTurns()) {
+          <button
+            type="button"
+            class="abtn quiet new-conversation"
+            title="Jev forgets what was said so far"
+            (click)="feed.newConversation()"
+          >
+            New conversation
+          </button>
+        }
+      </div>
       <div class="feed">
         @if (jevOff(); as note) {
           <p class="jev-off">

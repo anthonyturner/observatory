@@ -192,7 +192,7 @@ describe('withAssistant', () => {
 
     assert.deepEqual(status, { jev: 'off', where: 'local', skills: [] });
     assert.equal(reply.op, 'help');
-    assert.deepEqual(routed, [{ skill: null, pick: null, text: 'help' }]);
+    assert.deepEqual(routed, [{ skill: null, pick: null, text: 'help', history: [] }]);
     assert.equal((await handle(new Request('http://x/api/labels?repo=me/app'))).status, 200);
   });
 

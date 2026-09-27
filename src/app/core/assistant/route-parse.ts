@@ -16,7 +16,7 @@ import {
 
 const JEV_STATES: readonly JevState[] = ['on', 'off'];
 const WHERES: readonly SiteWhere[] = ['local', 'hosted'];
-const VIAS: readonly ReplyVia[] = ['keyword', 'jev', 'pick', 'skill'];
+const VIAS: readonly ReplyVia[] = ['keyword', 'agent', 'pick', 'skill'];
 const TIERS: readonly ReplyTier[] = [1, 2, 3];
 
 const isPickValue = (value: unknown): value is string | number | null =>
@@ -74,9 +74,6 @@ function parseRunTicket(value: unknown): RunTicket | undefined {
   return { token, folder, name, expiresAt, limitMs, command };
 }
 
-const isConfidence = (value: unknown): value is number =>
-  typeof value === 'number' && value >= 0 && value <= 1;
-
 /** What `GET /api/route` returns, or null when it is not that. */
 export function parseAssistantStatus(body: unknown): AssistantStatus | null {
   if (!isObject(body)) return null;
@@ -101,13 +98,11 @@ export function parseRouteReply(body: unknown): RouteReply | null {
     says: text('says'),
     text: text('text'),
     by: text('by'),
-    failed: text('failed'),
     web: fieldOf(body, 'web', (value): value is boolean => value === true),
     sources: listOf(body['sources'], parseSource),
     note: text('note'),
     question: text('question'),
     ask: listOf(body['ask'], parseOption),
-    confidence: fieldOf(body, 'confidence', isConfidence),
     prompt: text('prompt'),
     commands: commandsOf(body),
     project: text('project'),

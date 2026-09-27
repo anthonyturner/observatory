@@ -11,8 +11,9 @@ interface StoredChoice {
 
 const STORAGE_KEY = 'observatory.voice';
 const ENGINES: readonly VoiceEngineId[] = ['kokoro', 'elevenlabs'];
-/** Kokoro costs nothing and sends no text away, so it is where a browser starts. */
-const FIRST_CHOICE: StoredChoice = { engine: 'kokoro', voice: null };
+/** The owner reads replies in their ElevenLabs voice, so a browser starts
+ *  there; Kokoro stands in whenever ElevenLabs cannot speak (see ActiveVoice). */
+const FIRST_CHOICE: StoredChoice = { engine: 'elevenlabs', voice: null };
 
 /** The reply voice the viewer picked, remembered in this browser. */
 @Injectable({ providedIn: 'root' })
@@ -48,7 +49,7 @@ function parseChoice(stored: string | null): StoredChoice {
 }
 
 /** Private windows and blocked site data throw here, and an edited value may
- *  not parse; either way the browser starts with Kokoro. */
+ *  not parse; either way the browser starts with ElevenLabs. */
 function readStoredChoice(): StoredChoice {
   try {
     return parseChoice(localStorage.getItem(STORAGE_KEY));

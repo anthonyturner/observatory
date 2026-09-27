@@ -13,8 +13,15 @@ function setUp(state: CatalogState) {
 }
 
 describe('ActiveVoice', () => {
-  it('is Kokoro until ElevenLabs is chosen', () => {
+  it('speaks ElevenLabs from the start, in the account’s default voice', () => {
     const { active } = setUp(ELEVENLABS_ON);
+    expect(active.speaker().engine).toBe('elevenlabs');
+    expect(active.fallbackReason()).toBeNull();
+  });
+
+  it('is Kokoro for a browser that picked it', () => {
+    const { active, choice } = setUp(ELEVENLABS_ON);
+    choice.chooseEngine('kokoro');
     expect(active.speaker()).toEqual({ engine: 'kokoro' });
     expect(active.fallbackReason()).toBeNull();
   });

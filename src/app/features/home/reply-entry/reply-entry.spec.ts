@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ReplyEntry, answering, noting, waitingEntry } from '../../../core/assistant/reply-entry';
+import { PAGE_READER, Reader } from '../../../core/reader/reader-service';
 import { ReplyEntryCard } from './reply-entry';
 
 const OPTIONS: ReplyEntry = {
@@ -70,5 +71,45 @@ describe('ReplyEntryCard', () => {
     await fixture.whenStable();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.sources')).toBeNull();
+  });
+
+  it('reads a source in the floating reader on a plain click, and leaves a Ctrl-click to the browser', async () => {
+    const asked: string[] = [];
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: PAGE_READER,
+          useValue: async (url: string) => {
+            asked.push(url);
+            return { failed: 'x' };
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(ReplyEntryCard);
+    fixture.componentRef.setInput('entry', {
+      ...waitingEntry(10, 'AI news', 'typed'),
+      said: answering('News.', [{ title: 'Lab A', url: 'https://example.com/a' }]),
+    });
+    await fixture.whenStable();
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      '.sources a',
+    );
+
+    const plain = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    link?.dispatchEvent(plain);
+    expect(plain.defaultPrevented).toBe(true);
+    expect(asked).toEqual(['https://example.com/a']);
+    expect(TestBed.inject(Reader).state().status).not.toBe('closed');
+
+    const ctrl = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      ctrlKey: true,
+    });
+    link?.dispatchEvent(ctrl);
+    expect(ctrl.defaultPrevented).toBe(false);
+    expect(asked).toHaveLength(1);
   });
 });

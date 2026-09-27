@@ -1,0 +1,102 @@
+@let current = state();
+@if (current.status !== 'closed') {
+  <section
+    #panel
+    class="panel"
+    role="dialog"
+    aria-modal="false"
+    aria-labelledby="reader-title"
+    [style.left.px]="position()?.left"
+    [style.top.px]="position()?.top"
+    [class.placed]="position() !== null"
+  >
+    <header
+      class="bar"
+      (pointerdown)="startDrag($event)"
+      (pointermove)="moveDrag($event)"
+      (pointerup)="endDrag()"
+      (pointercancel)="endDrag()"
+    >
+      <div class="where">
+        <span class="site">{{ ready()?.site ?? 'Reading…' }}</span>
+        @if (publishedOn(); as date) {
+          <span class="date">{{ date }}</span>
+        }
+      </div>
+      @if (frameUrl()) {
+        <div class="views" role="group" aria-label="View">
+          <button
+            type="button"
+            [attr.aria-pressed]="view() === 'reader'"
+            (click)="view.set('reader')"
+          >
+            Reader
+          </button>
+          <button type="button" [attr.aria-pressed]="view() === 'page'" (click)="view.set('page')">
+            Page
+          </button>
+        </div>
+      }
+      <a class="out" [href]="current.url" target="_blank" rel="noopener noreferrer"
+        >Open in browser ↗</a
+      >
+      <button
+        #closeButton
+        type="button"
+        class="close"
+        aria-label="Close the reader"
+        (click)="close()"
+      >
+        &times;
+      </button>
+    </header>
+
+    <div class="body" [class.framed]="view() === 'page' && frameUrl()">
+      @switch (current.status) {
+        @case ('loading') {
+          <p class="note" role="status">Fetching the page…</p>
+        }
+        @case ('failed') {
+          <h2 id="reader-title" class="title">Couldn’t read this page</h2>
+          <p class="note">{{ current.failed }}. Open it in your browser instead.</p>
+        }
+        @case ('ready') {
+          @if (view() === 'page' && frameUrl(); as url) {
+            <iframe
+              [src]="url"
+              [title]="current.page.title"
+              sandbox="allow-scripts allow-popups allow-forms"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          } @else {
+            <article>
+              <h2 id="reader-title" class="title">{{ current.page.title }}</h2>
+              @if (current.page.image; as image) {
+                <img [src]="image" alt="" referrerpolicy="no-referrer" loading="lazy" />
+              }
+              @for (block of current.page.blocks; track $index) {
+                @switch (block.kind) {
+                  @case ('heading') {
+                    <h3>{{ block.text }}</h3>
+                  }
+                  @case ('item') {
+                    <p class="item">{{ block.text }}</p>
+                  }
+                  @default {
+                    <p>{{ block.text }}</p>
+                  }
+                }
+              }
+              @if (current.page.isThin) {
+                <p class="note">
+                  This is all the page shows without a sign-in or a browser. Open it in your browser
+                  for the rest.
+                </p>
+              }
+            </article>
+          }
+        }
+      }
+    </div>
+  </section>
+}

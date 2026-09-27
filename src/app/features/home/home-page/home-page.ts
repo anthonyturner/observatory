@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { AskPanel } from '../ask-panel/ask-panel';
 import { CorePanel } from '../core-panel/core-panel';
 import { FleetSection } from '../fleet-section/fleet-section';
+import { ReaderWindow } from '../../reader/reader-window/reader-window';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { CoreStateFeed } from '../../../core/core-state/core-state-feed';
@@ -20,6 +21,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
 @Component({
   selector: 'app-home-page',
   imports: [
+    ReaderWindow,
     SkyBackdrop,
     TopBar,
     CorePanel,

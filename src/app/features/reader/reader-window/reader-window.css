@@ -1,0 +1,163 @@
+/* A floating window over the dashboard: glass like the cards, above the HUD,
+   resizable from its corner. */
+.panel {
+  position: fixed;
+  right: 24px;
+  top: 84px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, calc(100vw - 32px));
+  height: min(72vh, 720px);
+  min-width: 300px;
+  min-height: 220px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  resize: both;
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-panel);
+  background: var(--glass-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Once dragged, it sits where it was put. */
+.panel.placed {
+  right: auto;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--edge-soft);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.bar:active {
+  cursor: grabbing;
+}
+
+.where {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.site {
+  overflow: hidden;
+  color: var(--ink-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.views {
+  display: flex;
+  border: 1px solid var(--edge-soft);
+  border-radius: 6px;
+}
+
+.views button,
+.close {
+  padding: 3px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.views button[aria-pressed='true'] {
+  background: var(--flow-tint-strong);
+  color: var(--ink);
+}
+
+.out {
+  font-size: 12px;
+  color: var(--flow);
+  white-space: nowrap;
+}
+
+.close {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 20px 22px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.body.framed {
+  padding: 0;
+  overflow: hidden;
+}
+
+iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--ink);
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  max-height: 260px;
+  margin: 0 0 14px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+h3 {
+  margin: 18px 0 6px;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+.item {
+  padding-left: 14px;
+  border-left: 2px solid var(--edge);
+}
+
+.note {
+  color: var(--muted);
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .panel {
+    right: 8px;
+    left: 8px;
+    top: 64px;
+    width: auto;
+    resize: vertical;
+  }
+}

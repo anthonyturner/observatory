@@ -1,4 +1,5 @@
-import { jevAgent } from './agent/jev-agent.ts';
+import { type Agent, jevAgent } from './agent/jev-agent.ts';
+import { type ClaudeAgentOptions, claudeAgent } from './claude/claude-agent.ts';
 import { toolRegistry } from './agent/tool-registry.ts';
 import { type AssistantRouter, assistantRouter } from './assistant-router.ts';
 import { openRouter } from './open-router.ts';
@@ -19,6 +20,9 @@ export interface JevAssistantOptions {
   readonly shells: readonly Shell[];
   /** What turns a proposal into a run; null where nothing can. */
   readonly runner: ProposalRunner | null;
+  /** Claude Code to think with instead of OpenRouter, on the owner's own
+   *  subscription; null where there is none, as on the hosted site. */
+  readonly claude?: Omit<ClaudeAgentOptions, 'tools'> | null;
 }
 
 /** Home's assistant, put together from its parts: the same here and hosted,
@@ -28,10 +32,10 @@ export function jevAssistant(options: JevAssistantOptions): AssistantRouter {
   const proposals = proposer({ shells: options.shells, runner: options.runner });
   const models = openRouter({ key: options.key });
   const search = (query: string) => models.search(query);
-  const agent = jevAgent({
-    models,
-    tools: toolRegistry(agentTools({ reads, search, proposals })),
-  });
+  const tools = agentTools({ reads, search, proposals });
+  const agent: Agent = options.claude
+    ? claudeAgent({ ...options.claude, tools })
+    : jevAgent({ models, tools: toolRegistry(tools) });
   return assistantRouter({
     agent,
     projects: async () => projectsOf(await reads.projects()),

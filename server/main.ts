@@ -18,6 +18,12 @@ import { withLocalSession } from './http/session.ts';
 import { fsLogFolder } from './logs/log-folder.ts';
 import { fileLogsConfig } from './logs/logs-config.ts';
 import { logsReport } from './logs/logs-report.ts';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { McpSessions } from './assistant/claude/mcp-sessions.ts';
+import { MCP_PREFIX, withMcpEndpoint } from './assistant/claude/mcp-endpoint.ts';
+import { claudeStarter } from './runner/claude-launcher.ts';
+import { processTreeKiller } from './runner/process-tree.ts';
 import { findClaude } from './runner/claude-command.ts';
 import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
 import { RUNS_PATH, withRunsRoutes } from './runner/runs-routes.ts';
@@ -68,6 +74,10 @@ const runner = localRunner({
 });
 shutDownWithProcess(runner);
 
+// Jev thinks on the owner's Claude Code subscription when there is a
+// `claude` to start; OpenRouter is left for a machine without one.
+const mcpSessions = new McpSessions();
+const killer = processTreeKiller();
 const assistant = jevAssistant({
   key: localKey(),
   reads,
@@ -75,6 +85,13 @@ const assistant = jevAssistant({
   where: 'local',
   shells: localShells(process.platform),
   runner,
+  claude: claude && {
+    start: claudeStarter(claude),
+    stop: (pid) => killer.stop(pid),
+    sessions: mcpSessions,
+    mcpUrl: (token) => `http://127.0.0.1:${port}${MCP_PREFIX}${token}`,
+    scratch: join(tmpdir(), 'observatory-jev'),
+  },
 });
 
 const voiceSettings = localElevenLabs();
@@ -98,19 +115,22 @@ const LOOPBACK_ONLY: ReadonlySet<string> = new Set([
 ]);
 
 const server = createApiServer(
-  guardLoopback(
-    createApiHandler(
-      withLocalSession(
-        withReaderRoutes(
-          withVoiceRoutes(
-            withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
-            voice,
+  withMcpEndpoint(
+    guardLoopback(
+      createApiHandler(
+        withLocalSession(
+          withReaderRoutes(
+            withVoiceRoutes(
+              withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
+              voice,
+            ),
+            fetchPage,
           ),
-          fetchPage,
         ),
       ),
+      LOOPBACK_ONLY,
     ),
-    LOOPBACK_ONLY,
+    mcpSessions,
   ),
 );
 

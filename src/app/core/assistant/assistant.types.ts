@@ -66,14 +66,14 @@ export interface RunTicket {
   readonly command: string;
 }
 
-/** How the router reached its reply. */
-export type ReplyVia = 'keyword' | 'agent' | 'pick' | 'skill';
-
-/** A page an answer drew on. */
-export interface ReplySource {
+/** A page a web answer drew on. */
+export interface Source {
   readonly title: string;
   readonly url: string;
 }
+
+/** How the router reached its reply. */
+export type ReplyVia = 'keyword' | 'agent' | 'pick' | 'skill';
 
 /** The router's reply. Which fields come depends on what it decided. */
 export interface RouteReply {
@@ -89,6 +89,10 @@ export interface RouteReply {
   readonly text?: string;
   /** The model Jev's answer came from. */
   readonly by?: string;
+  /** Jev's answer drew on a web search. */
+  readonly web?: boolean;
+  /** The pages Jev's answer drew on. */
+  readonly sources?: readonly Source[];
   readonly note?: string;
   readonly question?: string;
   readonly ask: readonly AskOption[];
@@ -99,6 +103,4 @@ export interface RouteReply {
   readonly runWhy?: string;
   /** Only the local site sends one: the proposal can run here. */
   readonly run?: RunTicket;
-  /** The pages Jev's answer drew on. */
-  readonly sources: readonly ReplySource[];
 }

@@ -65,6 +65,7 @@ describe('toolRegistry', () => {
     const unread = async () => assert.fail('not read here');
     const tools = agentTools({
       reads: { projects: unread, queue: unread, issues: unread, usage: unread },
+      search: unread,
       proposals: proposer({ shells: ['bash'], runner: null }),
     });
 
@@ -75,6 +76,7 @@ describe('toolRegistry', () => {
         'project_pull_requests',
         'project_issues',
         'usage_summary',
+        'web_search',
         'open_page',
         'refresh',
         'show_help',

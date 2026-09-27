@@ -23,6 +23,15 @@
     <a [href]="url" (click)="follow($event, url)">Open it</a>
   }
 </p>
+@if (entry().said.sources.length) {
+  <ol class="sources" aria-label="Sources">
+    @for (source of entry().said.sources; track source.url) {
+      <li>
+        <a [href]="source.url" target="_blank" rel="noopener noreferrer">{{ source.title }}</a>
+      </li>
+    }
+  </ol>
+}
 <div class="acts" #acts>
   @for (action of entry().actions; track $index) {
     @switch (action.kind) {

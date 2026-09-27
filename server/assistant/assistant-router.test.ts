@@ -248,13 +248,22 @@ describe('assistantRouter', () => {
     });
   });
 
-  it('carries the pages an answer drew on', async () => {
-    const sources = [{ title: 'Git', url: 'https://git-scm.com' }];
-    const { agent } = fakeAgent({ text: 'It replays commits.', effect: null, sources });
+  it('marks an answer drawn from the web, with the pages it drew on', async () => {
+    const sources = [{ title: 'Release notes', url: 'https://example.com/notes' }];
+    const { agent } = fakeAgent({ text: 'Version 5 is out.', effect: null, sources });
 
-    const reply = await router({ agent }).route(typed('what is a rebase'));
+    const reply = await router({ agent }).route(typed('what is new in angular'));
 
-    assert.deepEqual(reply.sources, sources);
+    assert.deepEqual(reply, {
+      via: 'agent',
+      tier: 2,
+      label: 'Jev',
+      by: 'Claude Haiku',
+      text: 'Version 5 is out.',
+      web: true,
+      sources,
+      jev: 'on',
+    });
   });
 
   it('refuses a pick that names no such project', async () => {

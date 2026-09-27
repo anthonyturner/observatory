@@ -3,15 +3,21 @@ import { keyScrubber } from '../util/key-scrub.ts';
 import { chatPayload, chatTurnOf } from './chat-completion.ts';
 import type { ChatRequest, ChatTurn } from './chat-messages.ts';
 import { OpenRouterError, reasonOf } from './open-router-error.ts';
+import { type WebAnswer, webAnswerOf } from './web-answer.ts';
 
-/** The model one OpenRouter key pays for. */
+/** The model one OpenRouter key pays for, as Jev's agent and as web search. */
 export interface OpenRouter {
   /** False with no key: every call then fails with the reason `key`. */
   readonly isOn: boolean;
   /** How a reply names the model. */
   readonly label: string;
+  /** How a reply names the model with web search. */
+  readonly webLabel: string;
   /** One turn of the model's, given the conversation and the tools it may call. */
   chat(request: ChatRequest): Promise<ChatTurn>;
+  /** The model with OpenRouter's web search: for anything that needs current
+   *  information, such as news. Each call pays for the search too. */
+  search(text: string): Promise<WebAnswer>;
 }
 
 interface Endpoint {
@@ -29,7 +35,38 @@ const OPENROUTER = {
     maxTokens: 800,
     timeoutMs: 20000,
   },
+  web: {
+    path: '/chat/completions',
+    label: 'Claude Haiku · web search',
+    maxTokens: 450,
+    // A search runs before the model answers, so it gets longer than a chat turn.
+    timeoutMs: 35000,
+    // OpenRouter charges for each search result on top of the model call; five keeps a lookup cheap.
+    results: 5,
+  },
 };
+
+const WEB_SYSTEM =
+  "You answer questions on a developer's dashboard from fresh web search results. Say what is new or true now, " +
+  'in plain text, in at most five short sentences or a short list, naming dates where they matter. No headings, ' +
+  'no preamble, no URLs and no citation marks: the page lists the sources itself. If the results do not answer ' +
+  'the question, say so in one sentence.';
+
+/** Replaces the search's own instructions, which ask for citations named by
+ *  site ("wsj.com reports…"): the page lists the sources, and the answer is read aloud. */
+const WEB_SEARCH_PROMPT =
+  'Web search results follow. Use them to answer, stating the facts directly. Never name, cite or link ' +
+  'the websites or publications; the page lists the sources separately.';
+
+const webPayload = (text: string) => ({
+  model: OPENROUTER.chat.model,
+  max_tokens: OPENROUTER.web.maxTokens,
+  plugins: [{ id: 'web', max_results: OPENROUTER.web.results, search_prompt: WEB_SEARCH_PROMPT }],
+  messages: [
+    { role: 'system', content: WEB_SYSTEM },
+    { role: 'user', content: text },
+  ],
+});
 
 export interface OpenRouterOptions {
   /** A paid credential: it goes into the Authorization header and nowhere else. */
@@ -66,7 +103,8 @@ async function bodyOf(response: Response): Promise<unknown> {
 }
 
 /**
- * The one door to OpenRouter: the chat model Jev speaks through. With no key
+ * The one door to OpenRouter: the chat model Jev speaks through, and the same
+ * model with web search. With no key
  * it still builds, `isOn` is false and every call fails with the reason
  * `key`, so a site without one starts and says so.
  */
@@ -122,7 +160,10 @@ export function openRouter(options: OpenRouterOptions): OpenRouter {
   return {
     isOn: Boolean(key),
     label: OPENROUTER.chat.label,
+    webLabel: OPENROUTER.web.label,
     chat: async (request) =>
       chatTurnOf(await post(OPENROUTER.chat, chatPayload(request, OPENROUTER.chat))),
+    search: async (text) =>
+      webAnswerOf(await post(OPENROUTER.web, webPayload(text)), OPENROUTER.web.results),
   };
 }

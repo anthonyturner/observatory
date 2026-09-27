@@ -17,6 +17,8 @@ const TIER_CHIP: Readonly<Record<ReplyTier, { readonly pips: string; readonly ki
   2: { pips: '●●○', kind: 'Answer' },
   3: { pips: '●●●', kind: 'Proposal' },
 };
+/** A quick answer looked up on the web says so. */
+const WEB_KIND = 'Web answer';
 const NO_TIER_PIPS = '○○○';
 const MS_PER_SECOND = 1000;
 
@@ -41,7 +43,12 @@ function howOf(reply: RouteReply): string {
 
 function tierWords(reply: RouteReply, tier: ReplyTier, took: string): string[] {
   const how = howOf(reply);
-  return [`Tier ${tier}`, TIER_CHIP[tier].kind, reply.by ? `${how} → ${reply.by}` : how, took];
+  return [
+    `Tier ${tier}`,
+    reply.web ? WEB_KIND : TIER_CHIP[tier].kind,
+    reply.by ? `${how} → ${reply.by}` : how,
+    took,
+  ];
 }
 
 /** A reply with no tier: asking which project for an action, a note, or options. */

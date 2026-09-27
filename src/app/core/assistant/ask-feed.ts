@@ -7,7 +7,7 @@ import { AskOutcome, FAILED, outcomeOf } from './ask-outcome';
 import { ASSISTANT_API, AssistantRefused } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { Conversation } from './conversation';
-import { RoutePick, RouteReply, RouteRequest, Skill } from './assistant.types';
+import { RoutePick, RouteReply, RouteRequest, Skill, Source } from './assistant.types';
 import { PageJump } from './page-jump';
 import { Proposal, ProposalSlot, RunProposal, commandProposalOf, runProposalOf } from './proposal';
 import { NO_ANSWER_CHIP, WAITING_CHIP, chipOf } from './reply-chip';
@@ -186,7 +186,7 @@ export class AskFeed implements AskChannel {
   private show(entryId: number, reply: RouteReply, request: RouteRequest, ms: number): void {
     this.log.setChip(entryId, chipOf(reply, ms));
     if (reply.tier === 1) this.showAction(entryId, reply);
-    else if (reply.tier === 2) this.showAnswer(entryId, reply.text ?? '');
+    else if (reply.tier === 2) this.showAnswer(entryId, reply.text ?? '', reply.sources ?? []);
     // A task that comes with options is asking which project to run it in.
     else if (reply.tier === 3 && !reply.ask.length) this.showProposal(entryId, reply);
     else this.showOptions(entryId, reply, request);
@@ -198,8 +198,9 @@ export class AskFeed implements AskChannel {
     if (reply.op !== 'stop') this.speakSaid(entryId, 1);
   }
 
-  private showAnswer(entryId: number, text: string): void {
-    this.log.say(entryId, answering(text));
+  /** Only the words are read aloud; a web answer's sources are listed, not spoken. */
+  private showAnswer(entryId: number, text: string, sources: readonly Source[]): void {
+    this.log.say(entryId, answering(text, sources));
     this.speech.speak(text, entryId, 2);
   }
 

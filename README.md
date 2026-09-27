@@ -159,7 +159,9 @@ than guessing:
 
 - **Looks up**: the projects and their open pull requests counted by what
   blocks them; one project's open pull requests (bucket, days idle, whether it
-  links an issue); its open issues; Claude Code usage and the plan's limits.
+  links an issue); its open issues; Claude Code usage and the plan's limits;
+  and the web, for news or anything current, through OpenRouter's web search
+  (the page lists the sources under the answer and never reads them aloud).
 - **Does**: opens a page (the Orrery, Home, a project's star map, Issues, Logs
   or Usage), refreshes, opens the help card, and proposes a Claude Code task
   in a project.

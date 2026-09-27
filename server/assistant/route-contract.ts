@@ -88,12 +88,14 @@ export interface AskReply {
   readonly ask: readonly Choice[];
 }
 
-/** Jev's own answer in words; `by` names the model. */
+/** Jev's own answer in words; `by` names the model. `web` marks one that
+ *  drew on a web search, whose pages are the reply's `sources`. */
 export interface AnswerReply {
   readonly tier: 2;
   readonly label: string;
   readonly by: string;
   readonly text: string;
+  readonly web?: true;
 }
 
 /** Work in a project, only ever proposed: `command` is the first of `commands`. */

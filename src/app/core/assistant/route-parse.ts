@@ -4,7 +4,6 @@ import {
   AskOption,
   AssistantStatus,
   JevState,
-  ReplySource,
   ReplyVia,
   RouteReply,
   RoutePick,
@@ -12,6 +11,7 @@ import {
   ShellCommand,
   SiteWhere,
   Skill,
+  Source,
 } from './assistant.types';
 
 const JEV_STATES: readonly JevState[] = ['on', 'off'];
@@ -45,6 +45,13 @@ function parseOption(value: unknown): AskOption | null {
   return pick ? { label: value['label'], pick } : null;
 }
 
+/** A cited page, http(s) only: a link is followed on a click, so nothing else gets one. */
+function parseSource(value: unknown): Source | null {
+  if (!isObject(value) || !isText(value['url']) || !/^https?:\/\//.test(value['url'])) return null;
+  const title = fieldOf(value, 'title', isText);
+  return { title: title ?? value['url'], url: value['url'] };
+}
+
 function parseCommand(value: unknown): ShellCommand | null {
   if (!isObject(value) || !isText(value['command'])) return null;
   return { shell: fieldOf(value, 'shell', isText) ?? null, command: value['command'] };
@@ -65,11 +72,6 @@ function parseRunTicket(value: unknown): RunTicket | undefined {
   if (!isText(token) || !isText(folder) || !isText(name) || !isText(command)) return undefined;
   if (!isNumber(expiresAt) || !isNumber(limitMs)) return undefined;
   return { token, folder, name, expiresAt, limitMs, command };
-}
-
-function parseSource(value: unknown): ReplySource | null {
-  if (!isObject(value) || !isText(value['title']) || !isText(value['url'])) return null;
-  return { title: value['title'], url: value['url'] };
 }
 
 /** What `GET /api/route` returns, or null when it is not that. */
@@ -96,6 +98,8 @@ export function parseRouteReply(body: unknown): RouteReply | null {
     says: text('says'),
     text: text('text'),
     by: text('by'),
+    web: fieldOf(body, 'web', (value): value is boolean => value === true),
+    sources: listOf(body['sources'], parseSource),
     note: text('note'),
     question: text('question'),
     ask: listOf(body['ask'], parseOption),
@@ -104,6 +108,5 @@ export function parseRouteReply(body: unknown): RouteReply | null {
     project: text('project'),
     runWhy: text('runWhy'),
     run: parseRunTicket(body['run']),
-    sources: listOf(body['sources'], parseSource),
   };
 }

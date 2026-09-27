@@ -26,9 +26,11 @@ export interface JevAssistantOptions {
 export function jevAssistant(options: JevAssistantOptions): AssistantRouter {
   const { reads } = options;
   const proposals = proposer({ shells: options.shells, runner: options.runner });
+  const models = openRouter({ key: options.key });
+  const search = (query: string) => models.search(query);
   const agent = jevAgent({
-    models: openRouter({ key: options.key }),
-    tools: toolRegistry(agentTools({ reads, proposals })),
+    models,
+    tools: toolRegistry(agentTools({ reads, search, proposals })),
   });
   return assistantRouter({
     agent,

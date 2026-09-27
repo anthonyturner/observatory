@@ -1,4 +1,4 @@
-import { RouteRequest } from './assistant.types';
+import { RouteRequest, Source } from './assistant.types';
 import { ReplyChip, WAITING_CHIP } from './reply-chip';
 
 /** How a request came in, when it was not typed. */
@@ -18,6 +18,8 @@ export interface EntrySaid {
   readonly isNote: boolean;
   readonly isAnswer: boolean;
   readonly openHref: string | null;
+  /** The pages a web answer drew on, listed under it; never read aloud. */
+  readonly sources: readonly Source[];
 }
 
 /** One request and its reply, as the feed shows it. */
@@ -35,11 +37,16 @@ export const saying = (text: string): EntrySaid => ({
   isNote: false,
   isAnswer: false,
   openHref: null,
+  sources: [],
 });
 
 export const noting = (text: string): EntrySaid => ({ ...saying(text), isNote: true });
 
-export const answering = (text: string): EntrySaid => ({ ...saying(text), isAnswer: true });
+export const answering = (text: string, sources: readonly Source[] = []): EntrySaid => ({
+  ...saying(text),
+  isAnswer: true,
+  sources,
+});
 
 /** A request just sent, waiting on the router. */
 export function waitingEntry(id: number, asked: string, how: AskedHow): ReplyEntry {

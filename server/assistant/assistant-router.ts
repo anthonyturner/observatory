@@ -87,8 +87,7 @@ export function assistantRouter(options: AssistantOptions): AssistantRouter {
   ): Promise<Routed> {
     try {
       const run = await agent.answer({ text: typed.text, history: typed.history, projects });
-      const sourced = run.sources.length ? { sources: run.sources } : {};
-      return { via: 'agent', ...agentReply(run, agent.by), ...sourced };
+      return { via: 'agent', ...agentReply(run, agent.by) };
     } catch (error) {
       return agentFailed(error, match);
     }

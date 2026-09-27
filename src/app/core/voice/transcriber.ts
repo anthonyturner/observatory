@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { CLIP_DECODER, isQuiet, isWordless } from './clip-audio';
+import { ElevenLabsHearing, HearingFailed } from './eleven-labs-hearing';
 import { ModelLoader } from './model-loader';
 import { ModelLoaders } from './model-loaders';
 import { LISTEN_SPEC } from './model-specs';
@@ -10,16 +11,19 @@ import { VoiceWorkerClient } from './voice-worker-client';
 import { LIMIT_MS, within } from './within';
 
 const WAITING = 'Waiting for the speech model';
+const HEARING = 'Transcribing with ElevenLabs';
 
-/** Turns a recording into text in this browser, with Whisper. No audio
- *  leaves it, and the browser's own speech recognition is never used:
- *  Chrome sends that audio to Google. */
+/** Turns a recording into text: with ElevenLabs Scribe while ElevenLabs is
+ *  on (far better than a model small enough to download), else with Whisper
+ *  in this browser, where no audio leaves it. The browser's own speech
+ *  recognition is never used: Chrome sends that audio to Google. */
 @Injectable({ providedIn: 'root' })
 export class Transcriber {
   private readonly client = inject(VoiceWorkerClient);
   private readonly decode = inject(CLIP_DECODER);
   private readonly narration = inject(VoiceNarration);
   private readonly failed = new Subject<VoiceError>();
+  private readonly hearing = inject(ElevenLabsHearing);
 
   /** The speech model, which is always wanted once asked for. */
   readonly model: ModelLoader = inject(ModelLoaders).create(LISTEN_SPEC, {
@@ -31,6 +35,10 @@ export class Transcriber {
 
   /** The words in `clip`, or null when it holds none. */
   async transcribe(clip: Blob): Promise<string | null> {
+    if (this.hearing.isAvailable()) {
+      const heard = await this.hearByElevenLabs(clip);
+      if (heard !== undefined) return heard;
+    }
     this.narration.say(this.model.isLoaded() ? this.transcribing() : WAITING);
     const audio = await this.decode(clip).catch(() => null);
     if (!audio || isQuiet(audio)) return null;
@@ -38,6 +46,20 @@ export class Transcriber {
     this.narration.say(this.transcribing());
     const text = await this.client.transcribe(audio);
     return isWordless(text) ? null : text;
+  }
+
+  /** ElevenLabs' words, or undefined when it failed and Whisper, already
+   *  here, should take this recording instead. A failure with no Whisper
+   *  ready is passed on, so the page can say why and offer it. */
+  private async hearByElevenLabs(clip: Blob): Promise<string | null | undefined> {
+    this.narration.say(HEARING);
+    try {
+      const text = (await this.hearing.hear(clip)).trim();
+      return isWordless(text) ? null : text;
+    } catch (error: unknown) {
+      if (error instanceof HearingFailed && this.model.isLoaded()) return undefined;
+      throw error;
+    }
   }
 
   private transcribing(): string {

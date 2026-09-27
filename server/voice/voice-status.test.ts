@@ -20,6 +20,7 @@ function account(isOn: boolean, list: () => Promise<Voice[]>) {
       return list();
     },
     speak: async () => assert.fail('not asked to speak'),
+    hear: async () => assert.fail('not asked to hear'),
   };
   return { voice, calls: () => calls };
 }

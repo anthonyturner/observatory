@@ -86,7 +86,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Talk',
     meaning:
-      'Press Tap to talk once to start and again to stop, or hold it and let go to send. No audio leaves this browser.',
+      'Press Tap to talk once to start and again to stop, or hold it and let go to send. With ElevenLabs on, your recording is turned into text by ElevenLabs, on your ElevenLabs credits; otherwise a speech model in this browser does it, and no audio leaves it.',
   },
   {
     term: 'Speak',

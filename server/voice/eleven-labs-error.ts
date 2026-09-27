@@ -3,6 +3,8 @@ import type { Complaint } from './eleven-labs-complaint.ts';
 /** Each reason a call to ElevenLabs failed, in words a reply can use as they are. */
 const REASONS = {
   key: 'the key was refused',
+  permission:
+    'the key lacks the speech-to-text permission (turn it on under Settings → API Keys in ElevenLabs)',
   credit: 'the ElevenLabs account is out of credit or quota',
   input: 'it refused the request',
   voice: 'that voice is not on the account',
@@ -31,10 +33,16 @@ const REASON_BY_STATUS: Readonly<Record<number, VoiceFailureReason>> = {
 
 /** ElevenLabs answers 401 for a spent quota as well as a bad key, telling them apart only by this. */
 const QUOTA_EXCEEDED = 'quota_exceeded';
+/** A key scoped without the feature asked for: fixed in ElevenLabs, not here. */
+const MISSING_PERMISSIONS = 'missing_permissions';
 
 /** Why a call failed, from the status ElevenLabs answered with and what its body said. */
 export const voiceReasonOf = (status: number, complaint: Complaint): VoiceFailureReason =>
-  complaint.status === QUOTA_EXCEEDED ? 'credit' : (REASON_BY_STATUS[status] ?? 'upstream');
+  complaint.status === QUOTA_EXCEEDED
+    ? 'credit'
+    : complaint.status === MISSING_PERMISSIONS
+      ? 'permission'
+      : (REASON_BY_STATUS[status] ?? 'upstream');
 
 /**
  * A failed call, written here from a reason and a scrubbed detail, never from

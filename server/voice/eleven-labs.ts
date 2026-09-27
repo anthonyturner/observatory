@@ -21,6 +21,12 @@ export interface Speech {
   readonly contentType: string;
 }
 
+/** A recording to turn into text, as the page recorded it. */
+export interface Clip {
+  readonly audio: Uint8Array<ArrayBuffer>;
+  readonly contentType: string;
+}
+
 /** The ElevenLabs account one key pays for. */
 export interface ElevenLabs {
   /** False with no key: every call then fails with the reason `key`, sending nothing. */
@@ -28,6 +34,8 @@ export interface ElevenLabs {
   /** The account's voices, by name. */
   voices(): Promise<Voice[]>;
   speak(request: SpeakRequest): Promise<Speech>;
+  /** The words in a recording, by ElevenLabs Scribe; empty when there were none. */
+  hear(clip: Clip): Promise<string>;
 }
 
 export interface ElevenLabsOptions {
@@ -41,8 +49,10 @@ interface Call {
   readonly path: string;
   readonly accept: string;
   readonly timeoutMs: number;
-  /** Sent as JSON in a POST; a call without one is a GET. */
+  /** Sent as JSON in a POST; a call without one (or a form) is a GET. */
   readonly body?: unknown;
+  /** Sent as multipart form data in a POST, for a recording. */
+  readonly form?: FormData;
 }
 
 const ELEVENLABS = {
@@ -54,6 +64,12 @@ const ELEVENLABS = {
     format: 'mp3_44100_128',
     contentType: 'audio/mpeg',
     timeoutMs: 15000,
+  },
+  hearing: {
+    path: '/speech-to-text',
+    model: 'scribe_v1',
+    // A recording of up to 30 s takes a few seconds to turn round.
+    timeoutMs: 20000,
   },
 };
 
@@ -96,6 +112,12 @@ function voicesOf(body: unknown): Voice[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function heardOf(body: unknown): string {
+  const text = isObject(body) ? body['text'] : undefined;
+  if (typeof text !== 'string') throw new ElevenLabsError('shape', null, 'no text');
+  return text.trim();
+}
+
 const speechPath = (voice: string): string =>
   `${ELEVENLABS.speech.path}${encodeURIComponent(voice)}?output_format=${ELEVENLABS.speech.format}`;
 
@@ -115,11 +137,12 @@ export function elevenLabs(options: ElevenLabsOptions): ElevenLabs {
   async function sendOnce(call: Call, apiKey: string): Promise<Response> {
     const headers: Record<string, string> = { 'xi-api-key': apiKey, accept: call.accept };
     if (call.body !== undefined) headers['content-type'] = JSON_TYPE;
+    const body = call.form ?? (call.body === undefined ? undefined : JSON.stringify(call.body));
     try {
       return await send(ELEVENLABS.base + call.path, {
-        method: call.body === undefined ? 'GET' : 'POST',
+        method: body === undefined ? 'GET' : 'POST',
         headers,
-        body: call.body === undefined ? undefined : JSON.stringify(call.body),
+        body,
         signal: AbortSignal.timeout(call.timeoutMs),
       });
     } catch (error) {
@@ -165,5 +188,19 @@ export function elevenLabs(options: ElevenLabsOptions): ElevenLabs {
     return { audio, contentType: response.headers.get('content-type') || speech.contentType };
   }
 
-  return { isOn: Boolean(key), voices, speak };
+  async function hear(clip: Clip): Promise<string> {
+    const { hearing } = ELEVENLABS;
+    const form = new FormData();
+    form.append('model_id', hearing.model);
+    form.append('file', new Blob([clip.audio], { type: clip.contentType }), 'clip');
+    const response = await request({
+      path: hearing.path,
+      accept: JSON_TYPE,
+      timeoutMs: hearing.timeoutMs,
+      form,
+    });
+    return heardOf(await bodyOf(response, (answered) => answered.json()));
+  }
+
+  return { isOn: Boolean(key), voices, speak, hear };
 }

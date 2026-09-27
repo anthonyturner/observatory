@@ -8,6 +8,7 @@ import { SpeakSwitch } from './speak-switch';
 import { TalkSession, PressKind, TAP_MS } from './talk-session';
 import { TalkState } from './talk-state';
 import { Transcriber } from './transcriber';
+import { ElevenLabsHearing, HearingFailed } from './eleven-labs-hearing';
 import { TranscriptSender } from './transcript-sender';
 import { VoiceError, kindOf } from './voice-error';
 import { VoiceLevel } from './voice-level';
@@ -56,6 +57,7 @@ const CUT_OFF: Ending = {
 export class PushToTalk {
   private readonly mic = inject(MICROPHONE);
   private readonly transcriber = inject(Transcriber);
+  private readonly hearing = inject(ElevenLabsHearing);
   private readonly consent = inject(DownloadConsent);
   private readonly status = inject(VoiceStatus);
   private readonly narration = inject(VoiceNarration);
@@ -125,8 +127,10 @@ export class PushToTalk {
     return true;
   }
 
-  /** Loads the model if the browser has it; asks first if it must download. */
+  /** Loads the model if the browser has it; asks first if it must download.
+   *  While ElevenLabs hears, no model is needed at all. */
   private async isModelReady(talk: TalkSession): Promise<boolean> {
+    if (this.hearing.isAvailable()) return true;
     const model = this.transcriber.model;
     if (model.isLoading()) return true;
     const isCached = await model.isCached();
@@ -213,6 +217,12 @@ export class PushToTalk {
 
   /** A model that failed to load has said so already. */
   private transcriptionFailed(error: unknown): void {
+    if (error instanceof HearingFailed) {
+      const words = `ElevenLabs couldn’t turn that into text: ${error.words}. Press the mic again to use the speech model in this browser.`;
+      this.status.showTrouble(words);
+      this.narration.echo(words);
+      return;
+    }
     if (this.modelTrouble) return;
     const words = kindOf(error) === 'model' ? STILL_LOADING : NOT_TURNED;
     this.status.showTrouble(words);

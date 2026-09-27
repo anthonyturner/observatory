@@ -34,13 +34,17 @@ export class ChosenEngine implements SpeechEngine {
     return this.current().warmUp(request);
   }
 
-  async synthesize(sentence: string): Promise<SpokenClip> {
+  parts(text: string): string[] {
+    return this.current().parts(text);
+  }
+
+  async synthesize(part: string): Promise<SpokenClip> {
     const engine = this.current();
     try {
-      return await engine.synthesize(sentence);
+      return await engine.synthesize(part);
     } catch (error: unknown) {
       if (engine !== this.engines.elevenlabs) throw error;
-      return this.speakInKokoro(sentence, error);
+      return this.speakInKokoro(part, error);
     }
   }
 
@@ -52,9 +56,10 @@ export class ChosenEngine implements SpeechEngine {
     return this.engines[this.active.speaker().engine];
   }
 
-  /** ElevenLabs failed mid-reply: Kokoro takes over from this sentence. A
-   *  Kokoro that must first ask to download leaves Speak off till it may. */
-  private async speakInKokoro(sentence: string, error: unknown): Promise<SpokenClip> {
+  /** ElevenLabs failed mid-reply: Kokoro takes over from this piece, cut to
+   *  its own sentences and played as one. A Kokoro that must first ask to
+   *  download leaves Speak off till it may. */
+  private async speakInKokoro(part: string, error: unknown): Promise<SpokenClip> {
     this.engines.elevenlabs.release();
     this.active.fallBack(failedWith(error));
     const kokoro = this.engines.kokoro;
@@ -64,6 +69,19 @@ export class ChosenEngine implements SpeechEngine {
       this.preference.turnOffForVisit();
       throw error;
     }
-    return kokoro.synthesize(sentence);
+    const clips: SpokenClip[] = [];
+    for (const sentence of kokoro.parts(part)) clips.push(await kokoro.synthesize(sentence));
+    return joinedClips(clips);
   }
+}
+
+/** Clips made one after another, as one; they share Kokoro's rate. */
+export function joinedClips(clips: readonly SpokenClip[]): SpokenClip {
+  const audio = new Float32Array(clips.reduce((length, clip) => length + clip.audio.length, 0));
+  let at = 0;
+  for (const clip of clips) {
+    audio.set(clip.audio, at);
+    at += clip.audio.length;
+  }
+  return { audio, rate: clips[0]?.rate ?? 0 };
 }

@@ -34,3 +34,15 @@ function cutPoint(sentence: string): number {
   const space = sentence.lastIndexOf(' ', SENTENCE_MAX);
   return space > 0 ? space : SENTENCE_MAX;
 }
+
+/** `text` as its sentences, joined into pieces of at most `maxChars` each. */
+export function joinedSentences(text: string, maxChars: number): string[] {
+  const pieces: string[] = [];
+  for (const sentence of sentences(text)) {
+    const last = pieces.length - 1;
+    const joined = last >= 0 ? `${pieces[last]} ${sentence}` : sentence;
+    if (last >= 0 && joined.length <= maxChars) pieces[last] = joined;
+    else pieces.push(sentence);
+  }
+  return pieces;
+}

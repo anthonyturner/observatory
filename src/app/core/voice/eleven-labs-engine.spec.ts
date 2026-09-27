@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { AUDIO_DECODER, AudioDecoder } from './audio-decoder';
-import { ElevenLabsEngine } from './eleven-labs-engine';
+import { ELEVENLABS_PART_CHARS, ElevenLabsEngine } from './eleven-labs-engine';
 import { ELEVENLABS_SPEECH, ElevenLabsRefusal, ElevenLabsSpeech } from './eleven-labs-speech';
 import { ADAM, ELEVENLABS_ON, fakeCatalog } from './testing/voice-catalog-fixture';
 import { CatalogState } from './voice-catalog.types';
@@ -65,5 +65,17 @@ describe('ElevenLabsEngine', () => {
 
     await expect(engine.synthesize('Hello.')).rejects.toBeInstanceOf(VoiceError);
     expect(speech.speak).not.toHaveBeenCalled();
+  });
+
+  it('asks for a whole reply at once, up to its piece size, so it is one breath', () => {
+    const { engine } = setUp();
+    const long = `${'Word '.repeat(170).trim()}.`;
+
+    expect(engine.parts('The build is green. Three are ready.')).toEqual([
+      'The build is green. Three are ready.',
+    ]);
+    const pieces = engine.parts(`${long} ${long}`);
+    expect(pieces.length).toBeGreaterThan(1);
+    expect(pieces.every((piece) => piece.length <= ELEVENLABS_PART_CHARS)).toBe(true);
   });
 });

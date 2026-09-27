@@ -61,7 +61,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Ask',
     meaning:
-      'Type a request and press Enter. Plainly named app actions are matched by keyword; Jev answers the rest, looking up your projects, usage or the web as it needs, and remembers this visit’s conversation. A web answer lists its sources under it: click one to read it in a floating window you can drag and resize (Ctrl-click opens a tab instead). Each reply says which tier it took and how.',
+      'Type a request and press Enter. Plainly named app actions are matched by keyword; Jev answers the rest, thinking with Claude Code on your own subscription and looking up your projects, usage or the web as it needs, and remembers this visit’s conversation. A web answer lists its sources under it: click one to read it in a floating window you can drag and resize (Ctrl-click opens a tab instead). Each reply says which tier it took and how.',
   },
   {
     term: 'Arcs',

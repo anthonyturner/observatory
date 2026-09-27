@@ -54,10 +54,11 @@ const withoutCredentials = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv =>
 
 /** A batch shim starts only through cmd.exe, as one line of fixed flags. That
  *  is safe only because the prompt never reaches it: it goes on stdin. */
-const commandLine = (claude: ClaudeCommand): [string, readonly string[]] =>
-  claude.isShim
-    ? [`"${claude.file}" ${CLAUDE_ARGS.map(cmdArg).join(' ')}`, []]
-    : [claude.file, CLAUDE_ARGS];
+const commandLine = (
+  claude: ClaudeCommand,
+  args: readonly string[],
+): [string, readonly string[]] =>
+  claude.isShim ? [`"${claude.file}" ${args.map(cmdArg).join(' ')}`, []] : [claude.file, args];
 
 function asRunProcess(child: ChildProcess): RunProcess {
   const { stdin, stdout, stderr } = child;
@@ -83,9 +84,22 @@ export function claudeLauncher(
   context: LaunchContext = NODE_CONTEXT,
 ): Launch | null {
   if (!claude) return null;
-  const [command, args] = commandLine(claude);
-  return (folder) =>
-    asRunProcess(
+  const start = claudeStarter(claude, context);
+  return (folder) => start(folder, CLAUDE_ARGS);
+}
+
+/** Starts Claude Code in a folder with fixed flags, as a run does: without the
+ *  server's credentials, and through cmd.exe only for a batch shim, where each
+ *  flag must pass `cmdArg`. Anything a person wrote goes on stdin, never here. */
+export type ClaudeStarter = (folder: string, flags: readonly string[]) => RunProcess;
+
+export function claudeStarter(
+  claude: ClaudeCommand,
+  context: LaunchContext = NODE_CONTEXT,
+): ClaudeStarter {
+  return (folder, flags) => {
+    const [command, args] = commandLine(claude, flags);
+    return asRunProcess(
       context.spawn(command, args, {
         cwd: folder,
         env: withoutCredentials(context.env),
@@ -96,4 +110,5 @@ export function claudeLauncher(
         stdio: ['pipe', 'pipe', 'pipe'],
       }),
     );
+  };
 }

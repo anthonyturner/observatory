@@ -14,11 +14,13 @@ export interface AssistantApi {
 /** The site answered, but not with what the router sends. */
 class UnreadableAnswer extends Error {}
 
-/** The router is not this viewer's: a visitor to the hosted preview. */
-export class AssistantRefused extends Error {}
+/** This site has no assistant: it answers only on the owner's own machine,
+ *  so the hosted site has none, for anyone. Not a failure. */
+export class AssistantAbsent extends Error {}
 
 const ROUTE_URL = '/api/route';
-const HTTP_FORBIDDEN = 403;
+/** Refused, or not there at all: either way there is no assistant here. */
+const NO_ASSISTANT: ReadonlySet<number> = new Set([403, 404]);
 /** The API accepts writes only with this header, which no other site can add. */
 const WRITE_HEADERS = new HttpHeaders({ 'x-observatory': '1' });
 
@@ -47,8 +49,8 @@ async function answerOf<T>(
   try {
     body = await firstValueFrom(answer);
   } catch (error: unknown) {
-    if (error instanceof HttpErrorResponse && error.status === HTTP_FORBIDDEN) {
-      throw new AssistantRefused(`${ROUTE_URL} is the owner's`);
+    if (error instanceof HttpErrorResponse && NO_ASSISTANT.has(error.status)) {
+      throw new AssistantAbsent(`${ROUTE_URL} is not on this site`);
     }
     throw error;
   }

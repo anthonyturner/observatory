@@ -1,8 +1,5 @@
 import { type ApiReads, cachedReads } from '../app/api-reads.ts';
-import { ownerRoutes, withAssistant } from '../app/api-routes.ts';
-import { jevAssistant } from '../assistant/jev-assistant.ts';
-import { ALL_SHELLS } from '../assistant/shell-commands.ts';
-import { SKILLS } from '../assistant/skills-table.ts';
+import { ownerRoutes } from '../app/api-routes.ts';
 import { uncheckedCollisions } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
 import type { RepoRef } from '../github/github-reader.ts';
@@ -14,8 +11,6 @@ import { type ApiHandler, createApiHandler, json } from '../http/api-handler.ts'
 import { withoutCode } from '../queue/pull-detail.ts';
 import type { Store } from '../store/store.ts';
 import { upstashStore } from '../store/upstash-store.ts';
-import { elevenLabs } from '../voice/eleven-labs.ts';
-import { withVoiceRoutes } from '../voice/voice-routes.ts';
 import { storeTriageStore } from '../triage/triage-store.ts';
 import { machineRoutes } from './machine-routes.ts';
 import {
@@ -121,21 +116,10 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
     changed: ({ repo, number }) => reads.forgetPull(repo, number),
     now: Date.now,
   });
-  const assistant = jevAssistant({
-    key: config.openRouterKey,
-    reads,
-    // No skills.json here: the starters only.
-    skills: async () => SKILLS,
-    where: 'hosted',
-    shells: ALL_SHELLS,
-    runner: null,
-  });
-  // Built into the owner's table so visitorRoutes refuses them with every other owner route:
-  // every call to either can cost the owner money.
-  const owner = withVoiceRoutes(withAssistant(ownerRoutes(reads, triage, editor), assistant), {
-    voice: elevenLabs({ key: config.elevenLabs.key }),
-    preferredVoice: config.elevenLabs.preferredVoice,
-  });
+  // No assistant and no voice here, for anyone: Jev reads the owner's projects
+  // and proposes work in them, so it answers only on the owner's own machine
+  // (ADR-0006). Keys set on the hosted site are never read.
+  const owner = ownerRoutes(reads, triage, editor);
   const machines = machineRoutes({
     reads,
     store,

@@ -4,7 +4,7 @@ import { ASK_CHANNEL, AskChannel } from './ask-channel';
 import { AskBoxFocus } from './ask-box-focus';
 import { AskDraft } from './ask-draft';
 import { AskOutcome, FAILED, outcomeOf } from './ask-outcome';
-import { ASSISTANT_API, AssistantRefused } from './assistant-api';
+import { ASSISTANT_API, AssistantAbsent } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { Conversation } from './conversation';
 import { RoutePick, RouteReply, RouteRequest, Skill, Source } from './assistant.types';
@@ -24,6 +24,9 @@ const ACTION_TIER = 1;
  *  goes without the conversation. */
 const withPick = (request: RouteRequest, pick: RoutePick): RouteRequest =>
   request.skill ? { skill: request.skill, pick } : { text: request.text, pick };
+
+/** Why there is no assistant on this site. */
+export const ELSEWHERE = 'Jev runs only on the owner’s own computer, not on this site.';
 
 /**
  * Home's assistant: sends a request to the router and shows what it decided.
@@ -165,7 +168,7 @@ export class AskFeed implements AskChannel {
       return reply;
     } catch (error: unknown) {
       this.ended.next(FAILED);
-      if (error instanceof AssistantRefused) this.showRefused(entryId);
+      if (error instanceof AssistantAbsent) this.showAbsent(entryId);
       else this.showNoAnswer(entryId, request);
       return null;
     } finally {
@@ -243,11 +246,11 @@ export class AskFeed implements AskChannel {
     this.log.setActions(entryId, [{ kind: 'send', label: 'Try again', request }]);
   }
 
-  /** The hosted preview's visitor: no assistant here, which is not a failure. */
-  private showRefused(entryId: number): void {
-    this.info.noteRefused();
+  /** No assistant on this site, which is not a failure. */
+  private showAbsent(entryId: number): void {
+    this.info.noteAbsent();
     this.log.setChip(entryId, NO_ANSWER_CHIP);
-    this.log.say(entryId, noting('This is a preview; the assistant is the owner’s.'));
+    this.log.say(entryId, noting(ELSEWHERE));
   }
 
   private leave(entryId: number): void {

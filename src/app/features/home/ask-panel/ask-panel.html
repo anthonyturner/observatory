@@ -1,12 +1,7 @@
 <app-hud-section heading="Ask" note="type or talk">
   <div class="stack">
-    @if (isOwnersOnly()) {
-      <p class="preview-note">
-        The assistant belongs to the owner.
-        @if (session.signInUrl(); as signIn) {
-          <a [href]="signIn">Sign in</a>
-        }
-      </p>
+    @if (isElsewhere()) {
+      <p class="preview-note">{{ elsewhere }}</p>
     } @else {
       <app-voice-controls />
       <app-ask-bar

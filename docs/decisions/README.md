@@ -50,3 +50,4 @@ ADR when the project decides differently.
 | [0002](0002-track-work-in-github-only.md) | Track work in GitHub only | Accepted |
 | [0003](0003-agent-autonomy.md) | Agent autonomy | Accepted |
 | [0005](0005-run-tier-3-tasks-on-the-local-site-only.md) | Run tier-3 tasks on the local site only, after a confirmed proposal | Accepted |
+| [0006](0006-keep-the-assistant-on-the-local-site-only.md) | Keep the assistant on the local site only | Accepted |

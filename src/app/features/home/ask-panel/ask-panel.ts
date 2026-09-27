@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { AskBoxFocus } from '../../../core/assistant/ask-box-focus';
 import { AskDraft } from '../../../core/assistant/ask-draft';
-import { AskFeed } from '../../../core/assistant/ask-feed';
+import { AskFeed, ELSEWHERE } from '../../../core/assistant/ask-feed';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
 import { Conversation } from '../../../core/assistant/conversation';
 import { jevOffNote } from '../../../core/assistant/jev-off-note';
@@ -11,7 +11,6 @@ import { ReplyLog } from '../../../core/assistant/reply-log';
 import { ReplySpeech } from '../../../core/assistant/reply-speech';
 import { PROJECTS } from '../../../core/projects/projects-source';
 import { compareProjects } from '../../../core/projects/severity';
-import { ViewerSession } from '../../../core/session/viewer-session';
 import { codeSpans } from '../../../core/text/inline-code';
 import { HudSection } from '../../../shared/hud-section/hud-section';
 import { AskBar } from '../ask-bar/ask-bar';
@@ -38,7 +37,6 @@ const WORKING = 'Working out how to handle it';
 })
 export class AskPanel {
   protected readonly feed = inject(AskFeed);
-  protected readonly session = inject(ViewerSession);
   protected readonly focus = inject(AskBoxFocus);
   protected readonly speech = inject(ReplySpeech);
   protected readonly replyFocus = inject(ReplyFocus);
@@ -50,9 +48,8 @@ export class AskPanel {
   protected readonly conversation = inject(Conversation);
   private readonly bar = viewChild(AskBar);
 
-  protected readonly isOwnersOnly = computed(
-    () => this.session.isVisitor() || this.info.isRefused(),
-  );
+  protected readonly isElsewhere = this.info.isElsewhere;
+  protected readonly elsewhere = ELSEWHERE;
   protected readonly isKeywordsOnly = computed(() => this.info.jev() === 'off');
   protected readonly status = computed(() => (this.feed.busy() ? WORKING : ''));
   protected readonly shown = computed(() => this.log.entries().slice(0, REPLIES_SHOWN));

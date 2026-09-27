@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { ASSISTANT_API, AssistantRefused } from './assistant-api';
+import { ViewerSession } from '../session/viewer-session';
+import { ASSISTANT_API, AssistantAbsent } from './assistant-api';
 import { AssistantStatus, JevState, SiteWhere, Skill } from './assistant.types';
 
 /** The skills as far as Home knows them. Only a known empty list is "none";
@@ -18,11 +19,12 @@ export class AssistantInfo {
   private readonly unanswered = signal(false);
   /** Every reply says whether Jev is on, so a stale answer mends itself. */
   private readonly jevSince = signal<JevState | null>(null);
-  private readonly refused = signal(false);
+  private readonly session = inject(ViewerSession);
+  private readonly absent = signal(false);
 
-  /** The router refused this viewer: a visitor to the hosted preview, for
-   *  whom there is no assistant rather than a broken one. */
-  readonly isRefused = this.refused.asReadonly();
+  /** No assistant here: it answers only on the owner's own machine. The
+   *  session says so for the hosted site; the API's answer says so too. */
+  readonly isElsewhere = computed(() => this.absent() || this.session.access() !== 'local');
 
   readonly jev = computed(() => this.jevSince() ?? this.answer()?.jev ?? null);
   readonly where = computed<SiteWhere | null>(() => this.answer()?.where ?? null);
@@ -43,14 +45,14 @@ export class AssistantInfo {
       this.jevSince.set(null);
       this.unanswered.set(false);
     } catch (error: unknown) {
-      if (error instanceof AssistantRefused) this.refused.set(true);
+      if (error instanceof AssistantAbsent) this.absent.set(true);
       // Unknown, not none: the skills panel says so and offers Try again.
       else this.unanswered.set(true);
     }
   }
 
-  noteRefused(): void {
-    this.refused.set(true);
+  noteAbsent(): void {
+    this.absent.set(true);
   }
 
   noteJev(state: JevState): void {

@@ -14,7 +14,6 @@ import { AskFeed } from '../../../core/assistant/ask-feed';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
 import { Skill } from '../../../core/assistant/assistant.types';
 import { ReplyFocus } from '../../../core/assistant/reply-focus';
-import { ViewerSession } from '../../../core/session/viewer-session';
 import { HudSection } from '../../../shared/hud-section/hud-section';
 import { SkillTile } from '../skill-tile/skill-tile';
 
@@ -37,7 +36,6 @@ const STILL_NOT_LOADED =
 })
 export class SkillsPanel {
   private readonly info = inject(AssistantInfo);
-  private readonly session = inject(ViewerSession);
   protected readonly feed = inject(AskFeed);
   private readonly replyFocus = inject(ReplyFocus);
   private readonly injector = inject(Injector);
@@ -47,9 +45,7 @@ export class SkillsPanel {
   private readonly retrying = signal(false);
   private readonly hasRetried = signal(false);
 
-  protected readonly isOwnersOnly = computed(
-    () => this.session.isVisitor() || this.info.isRefused(),
-  );
+  protected readonly isElsewhere = this.info.isElsewhere;
   protected readonly state = this.info.skills;
   protected readonly isExpanded = this.expanded.asReadonly();
   protected readonly isRetrying = this.retrying.asReadonly();

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActiveVoice } from './active-voice';
-import { ChosenEngine, SPEECH_ENGINES } from './chosen-engine';
+import { ChosenEngine, SPEECH_ENGINES, joinedClips } from './chosen-engine';
 import { SpeakPreference } from './speak-preference';
 import { FakeSpeechEngine } from './testing/fake-speech-engine';
 import { ELEVENLABS_ON, fakeCatalog } from './testing/voice-catalog-fixture';
@@ -104,5 +104,36 @@ describe('ChosenEngine', () => {
     kokoro.failure = failure;
 
     await expect(engine.synthesize('Hello.')).rejects.toBe(failure);
+  });
+
+  it('cuts the reply as the engine that will speak it does', async () => {
+    const { engine, elevenlabs } = setUp('elevenlabs');
+    elevenlabs.parts = (text) => [text];
+    await engine.warmUp(REQUEST);
+
+    expect(engine.parts('One. Two.')).toEqual(['One. Two.']);
+  });
+
+  it('speaks a failed ElevenLabs piece in Kokoro sentence by sentence, as one clip', async () => {
+    const { engine, kokoro, elevenlabs } = setUp('elevenlabs');
+    await engine.warmUp(REQUEST);
+    elevenlabs.failure = new VoiceError('rate limited', 'run');
+
+    const clip = await engine.synthesize('One. Two.');
+
+    expect(kokoro.said).toEqual(['One.', 'Two.']);
+    expect(clip.audio.length).toBe(kokoro.clip.audio.length * 2);
+  });
+});
+
+describe('joinedClips', () => {
+  it('plays clips one after another as one', () => {
+    const clip = joinedClips([
+      { audio: new Float32Array([1, 2]), rate: 24_000 },
+      { audio: new Float32Array([3]), rate: 24_000 },
+    ]);
+
+    expect([...clip.audio]).toEqual([1, 2, 3]);
+    expect(clip.rate).toBe(24_000);
   });
 });

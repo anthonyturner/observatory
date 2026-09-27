@@ -8,6 +8,8 @@ import { OpenRouterError } from './open-router-error.ts';
 import type { JevAnswers, OpenRouter } from './open-router.ts';
 import { proposer } from './proposal.ts';
 import { quickReply } from './quick-reply.ts';
+import { webReply } from './web-reply.ts';
+import { wantsWeb } from './web-words.ts';
 import type {
   AssistantStatus,
   JevSwitch,
@@ -74,6 +76,8 @@ export function assistantRouter(options: AssistantOptions): AssistantRouter {
         return actionReply(decision.action, decision.project, projects);
       case 'quick':
         return quickReply(models, text, warn);
+      case 'look':
+        return webReply(models, text, warn);
       case 'propose':
         return proposals.propose({ prompt: text, project: decision.project, projects });
       case 'unsure':
@@ -87,6 +91,7 @@ export function assistantRouter(options: AssistantOptions): AssistantRouter {
     if (pick.project != null && !project) throw new BadRequest('bad pick: no such project');
     if (pick.action) return actionReply(pick.action, project, projects);
     if (pick.tier === 2) return quickReply(models, text, warn);
+    if (pick.tier === 'web') return webReply(models, text, warn);
     return proposals.propose({ prompt: text, project, projects });
   }
 
@@ -122,6 +127,9 @@ export function assistantRouter(options: AssistantOptions): AssistantRouter {
     if (match.action) {
       return { via: 'keyword', ...actionReply(match.action, match.project, projects) };
     }
+    // News and searches need no Jev to recognise, and a web answer says itself
+    // when there is no key to pay for one.
+    if (wantsWeb(text)) return { via: 'keyword', ...(await webReply(models, text, warn)) };
     if (!models.isOn) {
       const can = { quickAnswers: false, proposals: where === 'local' };
       return { via: 'keyword', ...fallbackReply(match, JEV_OFF, can) };

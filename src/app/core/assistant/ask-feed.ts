@@ -6,7 +6,7 @@ import { AskDraft } from './ask-draft';
 import { AskOutcome, FAILED, outcomeOf } from './ask-outcome';
 import { ASSISTANT_API, AssistantRefused } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
-import { RouteReply, RouteRequest, Skill } from './assistant.types';
+import { RouteReply, RouteRequest, Skill, Source } from './assistant.types';
 import { PageJump } from './page-jump';
 import { Proposal, ProposalSlot, RunProposal, commandProposalOf, runProposalOf } from './proposal';
 import { NO_ANSWER_CHIP, WAITING_CHIP, chipOf } from './reply-chip';
@@ -161,8 +161,8 @@ export class AskFeed implements AskChannel {
   private show(entryId: number, reply: RouteReply, request: RouteRequest, ms: number): void {
     this.log.setChip(entryId, chipOf(reply, ms));
     if (reply.tier === 1) this.showAction(entryId, reply);
-    else if (reply.tier === 2 && reply.failed) this.showFailedAnswer(entryId, reply.failed);
-    else if (reply.tier === 2) this.showAnswer(entryId, reply.text ?? '');
+    else if (reply.tier === 2 && reply.failed) this.showFailedAnswer(entryId, reply);
+    else if (reply.tier === 2) this.showAnswer(entryId, reply.text ?? '', reply.sources ?? []);
     // A task that comes with options is asking which project to run it in.
     else if (reply.tier === 3 && !reply.ask.length) this.showProposal(entryId, reply);
     else this.showOptions(entryId, reply, request);
@@ -174,17 +174,20 @@ export class AskFeed implements AskChannel {
     if (reply.op !== 'stop') this.speakSaid(entryId, 1);
   }
 
-  private showFailedAnswer(entryId: number, failed: string): void {
+  private showFailedAnswer(entryId: number, reply: RouteReply): void {
     const asked = this.log.find(entryId)?.asked ?? '';
-    this.log.say(entryId, noting(`Couldn’t get a quick answer: ${failed}.`));
+    const what = reply.web ? 'look it up on the web' : 'get a quick answer';
+    this.log.say(entryId, noting(`Couldn’t ${what}: ${reply.failed ?? ''}.`));
+    const pick = { tier: reply.web ? 'web' : 2 };
     this.log.setActions(entryId, [
-      { kind: 'send', label: 'Try again', request: { text: asked, pick: { tier: 2 } } },
+      { kind: 'send', label: 'Try again', request: { text: asked, pick } },
     ]);
     this.speakSaid(entryId, 2);
   }
 
-  private showAnswer(entryId: number, text: string): void {
-    this.log.say(entryId, answering(text));
+  /** Only the words are read aloud; a web answer's sources are listed, not spoken. */
+  private showAnswer(entryId: number, text: string, sources: readonly Source[]): void {
+    this.log.say(entryId, answering(text, sources));
     this.speech.speak(text, entryId, 2);
   }
 

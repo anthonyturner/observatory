@@ -17,6 +17,8 @@ const TIER_CHIP: Readonly<Record<ReplyTier, { readonly pips: string; readonly ki
   2: { pips: '●●○', kind: 'Quick answer' },
   3: { pips: '●●●', kind: 'Proposal' },
 };
+/** A quick answer looked up on the web says so. */
+const WEB_KIND = 'Web answer';
 const NO_TIER_PIPS = '○○○';
 const PERCENT = 100;
 const MS_PER_SECOND = 1000;
@@ -45,7 +47,7 @@ function tierWords(reply: RouteReply, tier: ReplyTier, took: string): string[] {
   const how = howOf(reply);
   return [
     `Tier ${tier}`,
-    TIER_CHIP[tier].kind,
+    reply.web ? WEB_KIND : TIER_CHIP[tier].kind,
     ...(reply.failed ? ['failed'] : []),
     reply.by ? `${how} → ${reply.by}` : how,
     took,

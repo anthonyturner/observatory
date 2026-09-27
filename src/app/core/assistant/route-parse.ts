@@ -11,6 +11,7 @@ import {
   ShellCommand,
   SiteWhere,
   Skill,
+  Source,
 } from './assistant.types';
 
 const JEV_STATES: readonly JevState[] = ['on', 'off'];
@@ -42,6 +43,13 @@ function parseOption(value: unknown): AskOption | null {
   if (!isObject(value) || !isText(value['label'])) return null;
   const pick = parsePick(value['pick']);
   return pick ? { label: value['label'], pick } : null;
+}
+
+/** A cited page, http(s) only: a link is followed on a click, so nothing else gets one. */
+function parseSource(value: unknown): Source | null {
+  if (!isObject(value) || !isText(value['url']) || !/^https?:\/\//.test(value['url'])) return null;
+  const title = fieldOf(value, 'title', isText);
+  return { title: title ?? value['url'], url: value['url'] };
 }
 
 function parseCommand(value: unknown): ShellCommand | null {
@@ -94,6 +102,8 @@ export function parseRouteReply(body: unknown): RouteReply | null {
     text: text('text'),
     by: text('by'),
     failed: text('failed'),
+    web: fieldOf(body, 'web', (value): value is boolean => value === true),
+    sources: listOf(body['sources'], parseSource),
     note: text('note'),
     question: text('question'),
     ask: listOf(body['ask'], parseOption),

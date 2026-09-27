@@ -21,7 +21,7 @@ function pickOf(pick: Json): Pick {
     return { action: pick['action'], project };
   }
   const tier = pick['tier'];
-  if (tier !== 2 && tier !== 3) throw new BadRequest('bad pick');
+  if (tier !== 2 && tier !== 3 && tier !== 'web') throw new BadRequest('bad pick');
   return { tier, project };
 }
 

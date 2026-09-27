@@ -111,4 +111,23 @@ describe('parseRouteReply', () => {
     expect(parseRouteReply('nope')).toBeNull();
     expect(parseRouteReply([])).toBeNull();
   });
+
+  it('reads a web answer and its sources, keeping only http(s) links', () => {
+    const reply = parseRouteReply({
+      tier: 2,
+      web: true,
+      text: 'New models shipped.',
+      sources: [
+        { title: 'Lab A', url: 'https://example.com/a' },
+        { url: 'https://example.org/b' },
+        { title: 'Bad', url: 'javascript:alert(1)' },
+        'nope',
+      ],
+    });
+    expect(reply?.web).toBe(true);
+    expect(reply?.sources).toEqual([
+      { title: 'Lab A', url: 'https://example.com/a' },
+      { title: 'https://example.org/b', url: 'https://example.org/b' },
+    ]);
+  });
 });

@@ -52,7 +52,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Fog',
-        'The sky fogs over as its data ages: nothing for six hours, full by three days. The badge by the title says how old it is; Refresh clears it.',
+        'Fog means what you see may be out of date. The sky fogs over as its data ages: clear for six hours, full by three days. If refreshing fails, it fogs at once, thinly, and thickens to full an hour after the last good read, so a broken feed never passes for a quiet one. Issues, Usage and Logs each fog by the age of their own data. The badge by the title says how old it is; Refresh clears it.',
       ],
       [
         'Timeline',

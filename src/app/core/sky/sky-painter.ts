@@ -3,6 +3,7 @@ import { CoreView } from '../instrument/core-view';
 import { resolveColour } from '../instrument/palette';
 import { Comet, CometFlight, flightAt } from './comets';
 import { Flare, flareAt, flaresFrom } from './flares';
+import { StarTrails } from './star-trails';
 
 /** Where the sky is centred and how big it is. */
 export interface SkyView {
@@ -11,6 +12,8 @@ export interface SkyView {
   readonly pixelRatio: number;
   readonly poleX: number;
   readonly poleY: number;
+  /** The core's radius, which the star trails thin out near. */
+  readonly coreRadius: number;
 }
 
 interface SkyInks {
@@ -33,6 +36,8 @@ const FLARE_WIDTH_PX = 2.2;
 const FLARE_LIFE_S = 3;
 /** A comet's head is a little wider than its tail. */
 const HEAD_GROWTH = 1.3;
+/** The core's size before one is measured, for where the trails thin out. */
+const DEFAULT_CORE_RADIUS = 120;
 
 /** Where the sky glows from: the core, or where a core would be before one is measured. */
 export function skyViewOf(
@@ -45,6 +50,7 @@ export function skyViewOf(
     pixelRatio: Math.min(viewport.pixelRatio || 1, 2),
     poleX: view?.poleX ?? viewport.width / 2,
     poleY: view?.poleY ?? viewport.height * 0.4,
+    coreRadius: view?.radius ?? DEFAULT_CORE_RADIUS,
   };
 }
 
@@ -65,8 +71,9 @@ export const SKY_CANVAS = new InjectionToken<(host: HTMLElement) => SkyCanvas>('
   factory: () => (host) => new SkyPainter(host),
 });
 
-/** Paints the night behind Home: a green glow round the core, a rain of
- *  comets in their projects' colours, a vignette and grain. */
+/** Paints the night behind Home: a green glow round the core, star trails
+ *  turning about it, a rain of comets in their projects' colours, a vignette
+ *  and grain. */
 export class SkyPainter implements SkyCanvas {
   private readonly canvas: HTMLCanvasElement;
   private readonly context: CanvasRenderingContext2D | null;
@@ -74,6 +81,7 @@ export class SkyPainter implements SkyCanvas {
   private readonly grain: HTMLCanvasElement;
   private readonly colours = new Map<string, string>();
   private readonly host: HTMLElement;
+  private readonly trails: StarTrails;
   private view: SkyView | null = null;
   private comets: readonly Comet[] = [];
   private flares: Flare[] = [];
@@ -88,6 +96,7 @@ export class SkyPainter implements SkyCanvas {
     this.inks = readInks(host);
     this.host = host;
     this.grain = grainTile(document);
+    this.trails = new StarTrails(document);
   }
 
   canDraw(): boolean {
@@ -122,6 +131,7 @@ export class SkyPainter implements SkyCanvas {
     context.globalCompositeOperation = 'source-over';
     context.globalAlpha = 1;
     this.paintNight(context, view);
+    this.trails.draw(context, view, time);
     this.paintComets(context, view, time);
     this.paintFlares(context, view, time);
     this.paintVignette(context, view);

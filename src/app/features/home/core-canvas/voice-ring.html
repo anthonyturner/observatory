@@ -1,0 +1,39 @@
+@if (ring(); as ring) {
+  <svg
+    class="ring"
+    [class.sweep]="ring.kind === 'sweep'"
+    [attr.width]="ring.size"
+    [attr.height]="ring.size"
+    [attr.viewBox]="'0 0 ' + ring.size + ' ' + ring.size"
+    [style.left.px]="ring.x"
+    [style.top.px]="ring.y"
+  >
+    <circle
+      class="line"
+      [attr.cx]="ring.size / 2"
+      [attr.cy]="ring.size / 2"
+      [attr.r]="ring.radius"
+    />
+    @if (ring.kind === 'sweep') {
+      <g class="spinner" [style.transform-origin]="ring.size / 2 + 'px ' + ring.size / 2 + 'px'">
+        @for (arc of tail(); track $index) {
+          <circle
+            class="tail"
+            [attr.cx]="ring.size / 2"
+            [attr.cy]="ring.size / 2"
+            [attr.r]="ring.radius"
+            [attr.stroke-dasharray]="arc.dash"
+            [attr.stroke-dashoffset]="arc.offset"
+            [attr.opacity]="arc.opacity"
+          />
+        }
+        <circle
+          class="dot"
+          [attr.cx]="ring.size / 2 + ring.radius"
+          [attr.cy]="ring.size / 2"
+          r="2.6"
+        />
+      </g>
+    }
+  </svg>
+}

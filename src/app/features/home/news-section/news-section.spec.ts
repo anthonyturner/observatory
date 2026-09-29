@@ -15,6 +15,7 @@ const item = (title: string, tool = false): NewsItem => ({
   publishedAt: '2026-09-28T09:00:00Z',
   summary: tool ? ['Claude Code 3 writes and runs its own tests.'] : [],
   image: tool ? 'https://news.example/cc3.png' : null,
+  video: null,
   tool,
 });
 const ready = (unread: string[] = []): NewsState => ({
@@ -60,20 +61,14 @@ describe('NewsSection', () => {
     expect(texts(element, '.meta')[1]).toBe('Blog · 3h');
   });
 
-  it('shows a thumbnail where the story has one, and drops one that will not load', () => {
-    const { element, fixture } = render(ready());
-    const thumbs = (): HTMLImageElement[] =>
-      Array.from(element.querySelectorAll<HTMLImageElement>('img.thumb'));
+  it('shows the picture of a story that has one', () => {
+    const { element } = render(ready());
 
-    expect(thumbs().map((img) => img.getAttribute('src'))).toEqual([
-      'https://news.example/cc3.png',
-    ]);
-    expect(thumbs()[0].alt).toBe('');
-
-    thumbs()[0].dispatchEvent(new Event('error'));
-    fixture.detectChanges();
-
-    expect(thumbs()).toEqual([]);
+    expect(
+      Array.from(element.querySelectorAll('app-news-media img')).map((img) =>
+        img.getAttribute('src'),
+      ),
+    ).toEqual(['https://news.example/cc3.png']);
   });
 
   it('names the feeds it could not read', () => {

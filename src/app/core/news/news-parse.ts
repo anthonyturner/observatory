@@ -1,9 +1,16 @@
 import { fieldOf, isObject, isText, listOf } from '../json/json-fields';
-import { NewsItem, NewsReport } from './news.types';
+import { NewsItem, NewsReport, NewsVideo } from './news.types';
 
 const isWebUrl = (value: unknown): value is string => isText(value) && /^https?:\/\//i.test(value);
 /** Pictures are https only, so the page never loads one in the clear. */
 const isHttpsUrl = (value: unknown): value is string => isText(value) && /^https:\/\//i.test(value);
+
+function parseVideo(value: unknown): NewsVideo | null {
+  if (!isObject(value)) return null;
+  const kind = value['kind'];
+  const url = fieldOf(value, 'url', isHttpsUrl);
+  return url && (kind === 'embed' || kind === 'file') ? { kind, url } : null;
+}
 
 function parseItem(value: unknown): NewsItem | null {
   if (!isObject(value)) return null;
@@ -18,6 +25,7 @@ function parseItem(value: unknown): NewsItem | null {
     publishedAt: fieldOf(value, 'publishedAt', isText) ?? null,
     summary: listOf(value['summary'], (paragraph) => (isText(paragraph) ? paragraph : null)),
     image: fieldOf(value, 'image', isHttpsUrl) ?? null,
+    video: parseVideo(value['video']),
     tool: value['tool'] === true,
   };
 }

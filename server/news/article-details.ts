@@ -1,7 +1,9 @@
 import type { PageFetcher } from '../reader/page-fetch.ts';
 import { readablePage } from '../reader/readable.ts';
 import { pageImage } from './news-image.ts';
+import { pageVideo } from './news-video.ts';
 import { summaryFrom } from './news-summary.ts';
+import type { NewsVideo } from './news-types.ts';
 
 /** What a story's own page gives Home where its feed did not. */
 export interface ArticleDetails {
@@ -9,6 +11,8 @@ export interface ArticleDetails {
   readonly summary: string[];
   /** Its sharing picture, https only; null where it has none. */
   readonly image: string | null;
+  /** Its sharing video, YouTube, Vimeo or a file; null where it has none. */
+  readonly video: NewsVideo | null;
 }
 
 /** Reads the story at a web address; empty details when it cannot. Never throws. */
@@ -22,14 +26,14 @@ const REMEMBERED = 400;
 const timeout = (ms: number): Promise<never> =>
   new Promise((_, reject) => setTimeout(() => reject(new Error('too slow')), ms).unref());
 
-/** The opening paragraphs and sharing picture of each story, read once through the
+/** The opening paragraphs, sharing picture and video of each story, read once through the
  *  reader's fetch, which refuses addresses on this machine or its network. */
 export function articleReader(fetchPage: PageFetcher): ArticleReader {
   const remembered = new Map<string, ArticleDetails>();
   return async (url) => {
     const known = remembered.get(url);
     if (known) return known;
-    let details: ArticleDetails = { summary: [], image: null };
+    let details: ArticleDetails = { summary: [], image: null, video: null };
     try {
       const page = await Promise.race([fetchPage(new URL(url)), timeout(ARTICLE_TIMEOUT_MS)]);
       const read = readablePage(page.html, page.url, page.headers);
@@ -39,6 +43,7 @@ export function articleReader(fetchPage: PageFetcher): ArticleReader {
       details = {
         summary: read.isThin ? [] : summaryFrom(paragraphs),
         image: pageImage(page.html, page.url),
+        video: pageVideo(page.html, page.url),
       };
     } catch {
       // Unreadable (a paywall, a PDF, a refusal): the headline stands alone.

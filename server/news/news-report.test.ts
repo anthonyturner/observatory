@@ -4,6 +4,7 @@ import { parseFeed } from './feed-parse.ts';
 import { isToolNews, newsReport } from './news-report.ts';
 import { feedImage, pageImage } from './news-image.ts';
 import { summaryFrom } from './news-summary.ts';
+import { embedOf, feedVideo, pageVideo } from './news-video.ts';
 import type { NewsSource } from './news-types.ts';
 
 const NOW = Date.parse('2026-09-28T12:00:00Z');
@@ -28,6 +29,7 @@ describe('parseFeed', () => {
         publishedAt: '2026-09-28T09:00:00.000Z',
         summary: [],
         image: null,
+        video: null,
       },
     ]);
   });
@@ -45,6 +47,7 @@ describe('parseFeed', () => {
         publishedAt: '2026-09-27T10:00:00.000Z',
         summary: [],
         image: null,
+        video: null,
       },
     ]);
   });
@@ -55,7 +58,14 @@ describe('parseFeed', () => {
       '<item><title>Bad link</title><link>javascript:alert(1)</link></item>' +
       '<item><title>Undated</title><link>https://a.example/u</link><pubDate>soon</pubDate></item></rss>';
     assert.deepEqual(parseFeed(xml), [
-      { title: 'Undated', url: 'https://a.example/u', publishedAt: null, summary: [], image: null },
+      {
+        title: 'Undated',
+        url: 'https://a.example/u',
+        publishedAt: null,
+        summary: [],
+        image: null,
+        video: null,
+      },
     ]);
   });
 });
@@ -160,6 +170,88 @@ describe('story pictures', () => {
   });
 });
 
+describe('story videos', () => {
+  const youtube = { kind: 'embed', url: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ' };
+
+  it('embeds YouTube and Vimeo however the address is written', () => {
+    for (const url of [
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10',
+      'https://youtu.be/dQw4w9WgXcQ',
+      'https://m.youtube.com/shorts/dQw4w9WgXcQ',
+      '//www.youtube.com/embed/dQw4w9WgXcQ?rel=0',
+    ])
+      assert.deepEqual(embedOf(url), youtube, url);
+    assert.deepEqual(embedOf('https://vimeo.com/123456789'), {
+      kind: 'embed',
+      url: 'https://player.vimeo.com/video/123456789',
+    });
+  });
+
+  it('embeds nothing else', () => {
+    assert.equal(embedOf('https://evil.example/embed/dQw4w9WgXcQ'), null);
+    assert.equal(embedOf('https://www.youtube.com/watch?v=short'), null);
+    assert.equal(embedOf('https://www.youtube.com/channel/abc'), null);
+  });
+
+  it('finds a video from the story link, a player, an iframe, or a video file', () => {
+    assert.deepEqual(feedVideo('', 'https://youtu.be/dQw4w9WgXcQ'), youtube);
+    assert.deepEqual(
+      feedVideo('<media:player url="https://www.youtube.com/embed/dQw4w9WgXcQ"/>', null),
+      youtube,
+    );
+    assert.deepEqual(
+      feedVideo(
+        '<description>&lt;iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ"&gt;&lt;/iframe&gt;</description>',
+        'https://blog.example/post',
+      ),
+      youtube,
+    );
+    assert.deepEqual(
+      feedVideo('<enclosure url="https://cdn.example/clip.mp4" type="video/mp4"/>', null),
+      { kind: 'file', url: 'https://cdn.example/clip.mp4' },
+    );
+    assert.equal(
+      feedVideo('<enclosure url="http://cdn.example/clip.mp4" type="video/mp4"/>', null),
+      null,
+    );
+    assert.equal(
+      feedVideo('<enclosure url="https://cdn.example/a.mp3" type="audio/mpeg"/>', null),
+      null,
+    );
+  });
+
+  it('reads a page video: an embed where it is YouTube, a file where the page says so', () => {
+    assert.deepEqual(
+      pageVideo(
+        '<meta property="og:video" content="https://www.youtube.com/embed/dQw4w9WgXcQ">',
+        'https://b.example/',
+      ),
+      youtube,
+    );
+    assert.deepEqual(
+      pageVideo(
+        '<meta property="og:video" content="/v/clip.mp4"><meta property="og:video:type" content="video/mp4">',
+        'https://b.example/post',
+      ),
+      { kind: 'file', url: 'https://b.example/v/clip.mp4' },
+    );
+    assert.equal(
+      pageVideo(
+        '<meta property="og:video" content="https://player.example/x">',
+        'https://b.example/',
+      ),
+      null,
+    );
+  });
+
+  it('is part of a parsed feed item', () => {
+    const [item] = parseFeed(
+      '<rss><item><title>Demo</title><link>https://www.youtube.com/watch?v=dQw4w9WgXcQ</link></item></rss>',
+    );
+    assert.deepEqual(item.video, youtube);
+  });
+});
+
 describe('isToolNews', () => {
   it('spots launches, releases and kinds of tool', () => {
     assert.ok(isToolNews('Anthropic releases Claude Code 3'));
@@ -226,7 +318,11 @@ describe('newsReport', () => {
     const asked: string[] = [];
     const report = await newsReport(sources, fetcher, NOW, async (url) => {
       asked.push(url);
-      return { summary: [`Opening of ${url}`], image: `https://img.example/${asked.length}.png` };
+      return {
+        summary: [`Opening of ${url}`],
+        image: `https://img.example/${asked.length}.png`,
+        video: null,
+      };
     });
     assert.deepEqual(report.engineering[0].summary, ['Opening of https://eng.example/mono']);
     assert.match(report.engineering[0].image ?? '', /^https:\/\/img\.example\//);
@@ -248,7 +344,7 @@ describe('newsReport', () => {
       NOW,
       async (url) => {
         asked.push(url);
-        return { summary: ['From the page'], image: 'https://img.example/page.png' };
+        return { summary: ['From the page'], image: 'https://img.example/page.png', video: null };
       },
     );
     assert.equal(report.engineering[0].image, 'https://eng.example/mono.jpg');

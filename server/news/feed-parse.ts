@@ -1,10 +1,11 @@
 import { decodeEntities } from '../reader/readable.ts';
 import { feedImage } from './news-image.ts';
+import { feedVideo } from './news-video.ts';
 import type { FeedItem } from './news-types.ts';
 import { feedSummary, withoutTitle } from './news-summary.ts';
 
 // RSS 2.0 and Atom both, read with patterns rather than an XML parser: a
-// headline, its link, its date, a summary and a picture are all Home needs.
+// headline, its link, its date, a summary, a picture and a video are all Home needs.
 
 const blocks = (xml: string, tag: string): string[] =>
   xml.match(new RegExp(`<${tag}\\b[\\s\\S]*?<\\/${tag}>`, 'gi')) ?? [];
@@ -63,37 +64,44 @@ function isoTime(value: string | null): string | null {
 }
 
 function item(
+  entry: string,
   title: string | null,
   url: string | null,
   when: string | null,
   summary: string[],
-  image: string | null,
 ): FeedItem | null {
   const link = webUrl(url);
   return title && link
-    ? { title, url: link, publishedAt: isoTime(when), summary: withoutTitle(summary, title), image }
+    ? {
+        title,
+        url: link,
+        publishedAt: isoTime(when),
+        summary: withoutTitle(summary, title),
+        image: feedImage(entry),
+        video: feedVideo(entry, link),
+      }
     : null;
 }
 
 /** Every headline in an RSS or Atom feed that has a title and a web link, in feed order,
- *  with its summary and picture where the feed gives them. */
+ *  with its summary, picture and video where the feed gives them. */
 export function parseFeed(xml: string): FeedItem[] {
   const rss = blocks(xml, 'item').map((entry) =>
     item(
+      entry,
       text(entry, 'title'),
       text(entry, 'link') ?? text(entry, 'guid'),
       text(entry, 'pubDate') ?? text(entry, 'dc:date'),
       summaryOf(entry, ['description', 'content:encoded']),
-      feedImage(entry),
     ),
   );
   const atom = blocks(xml, 'entry').map((entry) =>
     item(
+      entry,
       text(entry, 'title'),
       atomLink(entry),
       text(entry, 'published') ?? text(entry, 'updated'),
       summaryOf(entry, ['summary', 'content']),
-      feedImage(entry),
     ),
   );
   return [...rss, ...atom].filter((each): each is FeedItem => each !== null);

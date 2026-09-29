@@ -1,4 +1,4 @@
-import { LimitWindow, TokenDay, UsageDocument } from '../../../core/usage/usage-document';
+import { LimitWindow, UsageDocument, workTokensOf } from '../../../core/usage/usage-document';
 import { UsageState } from '../../../core/usage/usage-reader';
 import {
   ageOf,
@@ -51,12 +51,9 @@ export function usageMeters(state: UsageState, now: number, locale?: string): Us
   };
 }
 
-const dayTotal = (row: TokenDay): number =>
-  Object.values(row.families).reduce((sum, count) => sum + count, 0);
-
 function tokensToday(document: UsageDocument, now: number): VitalReading {
   const rows = document.tokens?.rows ?? [];
-  const series = rows.map(dayTotal);
+  const series = rows.map(workTokensOf);
   const age = ageOf(document.generatedAt, now);
   const todayIndex = rows.findIndex((row) => row.day === localDayKey(now));
   if (todayIndex < 0) return { ...TOKENS_LABEL, value: null, age, note: 'not read today', series };

@@ -18,13 +18,15 @@ import { ProgressFeed } from '../../../core/projects/progress-feed';
 import { PROJECTS } from '../../../core/projects/projects-source';
 import { SKY_CANVAS, SkyCanvas, skyViewOf } from '../../../core/sky/sky-painter';
 import { cometsFor } from '../../../core/sky/comets';
+import { TrailActivity } from '../../../core/sky/trail-activity';
 import { TrailSpeed } from '../../../core/sky/trail-speed';
 
 /** Comets move fast enough to need a steady rate, but no more than the core's. */
 const SKY_FPS = 30;
 
 /** The night behind every page: fixed, decorative, and never takes a pointer.
- *  One comet per open issue falls through it, in its project's colour. */
+ *  One comet per open issue falls through it, in its project's colour, and the
+ *  star trails turn with the day's activity. */
 @Component({
   selector: 'app-sky-backdrop',
   template: '',
@@ -40,7 +42,10 @@ export class SkyBackdrop {
   private readonly errors = inject(ErrorHandler);
   private readonly projects = inject(PROJECTS);
   private readonly progress = inject(ProgressFeed);
-  private readonly trailSpeed = inject(TrailSpeed).multiplier;
+  private readonly lever = inject(TrailSpeed).multiplier;
+  private readonly activity = inject(TrailActivity).pace;
+  /** Today's activity sets the trails' pace; the Spin lever scales it. */
+  private readonly trailSpeed = computed(() => this.lever() * this.activity());
   private flaredFor = 0;
   /** Empty until the projects are read: no comets, rather than a made-up count. */
   private readonly comets = computed(() => cometsFor(this.projects()));

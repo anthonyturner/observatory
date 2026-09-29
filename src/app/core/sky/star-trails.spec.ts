@@ -1,4 +1,4 @@
-import { TRAIL_TURN, advanceTurn, trailReach, trailStars } from './star-trails';
+import { TRAIL_TURN, advanceTurn, surgeAt, surgeFrom, trailReach, trailStars } from './star-trails';
 
 describe('trailStars', () => {
   it('gives the same 600 faint stars on every load', () => {
@@ -43,5 +43,26 @@ describe('advanceTurn', () => {
 
   it('never leaps a long gap in one frame', () => {
     expect(advanceTurn(0, 40, 1)).toBeCloseTo(0.25 * TRAIL_TURN);
+  });
+});
+
+describe('spin-ups', () => {
+  it('start in proportion to the work done, and halve every four seconds', () => {
+    const surge = surgeFrom(null, 2, 10);
+
+    expect(surgeAt(surge, 10)).toBe(6);
+    expect(surgeAt(surge, 14)).toBeCloseTo(3);
+    expect(surgeAt(surge, 40)).toBeLessThan(0.05);
+  });
+
+  it('add to what is left of the last one, up to a cap', () => {
+    const first = surgeFrom(null, 1, 0);
+
+    expect(surgeAt(surgeFrom(first, 1, 4), 4)).toBeCloseTo(4.5);
+    expect(surgeAt(surgeFrom(first, 50, 4), 4)).toBe(12);
+  });
+
+  it('are nothing when there has been none', () => {
+    expect(surgeAt(null, 99)).toBe(0);
   });
 });

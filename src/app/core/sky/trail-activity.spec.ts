@@ -39,11 +39,11 @@ describe('activityPace', () => {
     expect(activityPace([...usualWeek, day(0, 100)], justAfterMidnight)).toBe(1.2);
   });
 
-  it('keeps the natural pace with too few working days to know what usual is', () => {
-    expect(activityPace([day(2, 0), day(1, 1000), day(0, 5000)], NOON)).toBe(1);
+  it('cannot say with too few working days to know what usual is', () => {
+    expect(activityPace([day(2, 0), day(1, 1000), day(0, 5000)], NOON)).toBeNull();
   });
 
-  it('keeps the natural pace when the usage has no row for today', () => {
-    expect(activityPace(usualWeek, NOON)).toBe(1);
+  it('cannot say when the usage has no row for today', () => {
+    expect(activityPace(usualWeek, NOON)).toBeNull();
   });
 });

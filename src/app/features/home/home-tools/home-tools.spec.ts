@@ -68,10 +68,17 @@ describe('HomeTools', () => {
   });
 
   it('says in the lever’s tooltip how busy today is', () => {
-    TestBed.overrideProvider(TrailActivity, { useValue: { pace: signal(1.8) } });
+    TestBed.overrideProvider(TrailActivity, { useValue: { measured: signal(1.8) } });
     const { element } = render();
 
     expect(element.querySelector('.spin')?.getAttribute('title')).toContain('1.8× a usual day');
+  });
+
+  it('says so when there is no usage to measure today by', () => {
+    TestBed.overrideProvider(TrailActivity, { useValue: { measured: signal(null) } });
+    const { element } = render();
+
+    expect(element.querySelector('.spin')?.getAttribute('title')).toContain('no Claude Code usage');
   });
 
   it('ends with ?, which opens help and shows it pressed', () => {

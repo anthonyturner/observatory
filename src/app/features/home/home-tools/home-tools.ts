@@ -23,11 +23,13 @@ export class HomeTools {
   protected readonly refreshing = signal(false);
   protected readonly lastStop = TRAIL_SPEEDS.length - 1;
   protected readonly spinLabel = computed(() => `${this.spin.multiplier()}×`);
-  private readonly activity = inject(TrailActivity).pace;
-  protected readonly spinHint = computed(
-    () =>
-      `How fast the star trails turn. 1× is today's pace: ${this.activity()}× a usual day's Claude Code work so far`,
-  );
+  private readonly activity = inject(TrailActivity).measured;
+  protected readonly spinHint = computed(() => {
+    const pace = this.activity();
+    return pace === null
+      ? 'How fast the star trails turn. 1× is their natural pace: there is no Claude Code usage to compare today with'
+      : `How fast the star trails turn. 1× is today's pace: ${pace}× a usual day's Claude Code work so far`;
+  });
   protected readonly motionHint = computed(() =>
     this.motion.choice() === 'auto'
       ? 'Following your system setting — click to override'

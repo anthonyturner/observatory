@@ -15,6 +15,7 @@ import { CORE_MOOD } from '../instrument/core-tokens';
 import { uneaseOf } from './ambient-score';
 import { LitProject } from '../projects/lit-project';
 import { PROJECTS } from '../projects/projects-source';
+import { TalkState } from '../voice/talk-state';
 import { AmbientPlayer, AmbientSynth } from './ambient-synth';
 import { homeVoicesOf } from './home-voices';
 
@@ -49,6 +50,7 @@ export class SoundPreference {
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly mood = inject(CORE_MOOD);
+  private readonly talk = inject(TalkState);
   private player: AmbientPlayer | null = null;
 
   readonly isOn: Signal<boolean> = this.wanted.asReadonly();
@@ -59,6 +61,11 @@ export class SoundPreference {
     effect(() => {
       const unease = uneaseOf(this.mood());
       this.player?.setUnease?.(unease);
+    });
+    // The music steps back while someone talks, so the mic hears them rather than it.
+    effect(() => {
+      const talking = this.talk.isTalking();
+      this.player?.setDucked?.(talking);
     });
   }
 
@@ -72,6 +79,7 @@ export class SoundPreference {
   private play(): void {
     this.player ??= this.makePlayer();
     this.player.setUnease?.(uneaseOf(this.mood()));
+    this.player.setDucked?.(this.talk.isTalking());
     this.player.start().catch((error: unknown) => this.errors.handleError(error));
   }
 

@@ -4,6 +4,7 @@ import { CoreMood } from '../instrument/core-mood';
 import { CORE_MOOD } from '../instrument/core-tokens';
 import { AmbientPlayer } from './ambient-synth';
 import { AMBIENT_PLAYER, SoundPreference } from './sound-preference';
+import { TalkState } from '../voice/talk-state';
 
 const KEY = 'observatory.sound';
 
@@ -11,6 +12,7 @@ class FakePlayer implements AmbientPlayer {
   starts = 0;
   stops = 0;
   unease: number | null = null;
+  ducked: boolean | null = null;
   constructor(private readonly fails = false) {}
   start(): Promise<void> {
     this.starts++;
@@ -25,6 +27,9 @@ class FakePlayer implements AmbientPlayer {
   setUnease(level: number): void {
     this.unease = level;
   }
+  setDucked(ducked: boolean): void {
+    this.ducked = ducked;
+  }
 }
 
 const CALM: CoreMood = { name: 'calm', stress: 0, reason: 'nothing blocked' };
@@ -38,11 +43,39 @@ function setup(player = new FakePlayer(), mood = signal<CoreMood>(CALM)) {
       { provide: ErrorHandler, useValue: { handleError: (e: unknown) => errors.push(e) } },
     ],
   });
-  return { sound: TestBed.inject(SoundPreference), player, errors, mood };
+  return {
+    sound: TestBed.inject(SoundPreference),
+    talk: TestBed.inject(TalkState),
+    player,
+    errors,
+    mood,
+  };
 }
 
 describe('SoundPreference', () => {
   beforeEach(() => localStorage.clear());
+
+  it('ducks the score while the mic has a turn, and lifts it after', () => {
+    const { sound, talk, player } = setup();
+    sound.toggle();
+    expect(player.ducked).toBe(false);
+    talk.begin();
+    TestBed.tick();
+    expect(player.ducked).toBe(true);
+    talk.end();
+    TestBed.tick();
+    expect(player.ducked).toBe(false);
+    expect(sound.isOn()).toBe(true);
+  });
+
+  it('starts a score ducked when it is turned on mid-turn, and never starts one for talking', () => {
+    const { sound, talk, player } = setup();
+    talk.begin();
+    TestBed.tick();
+    expect(player.starts).toBe(0);
+    sound.toggle();
+    expect(player.ducked).toBe(true);
+  });
 
   it('starts off and plays nothing', () => {
     const { sound, player } = setup();

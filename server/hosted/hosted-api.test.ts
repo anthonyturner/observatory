@@ -209,7 +209,7 @@ describe('hostedApi', () => {
       ...ENV,
       PUBLIC_PREVIEW: 'all',
       OPENROUTER_API_KEY: 'sk-or-test',
-      ELEVENLABS_API_KEY: 'eleven-test',
+      ELEVENLABS_OBSERVATORY_KEY: 'eleven-test',
     });
     const post = (path: string, body: object, cookie?: string) =>
       handle(

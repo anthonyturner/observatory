@@ -9,7 +9,9 @@ export interface ElevenLabsSettings {
 }
 
 export const ELEVENLABS_ENV = {
-  key: 'ELEVENLABS_API_KEY',
+  /** Not the shared `ELEVENLABS_API_KEY`: other apps set that machine-wide,
+   *  and the environment wins over the file. */
+  key: 'ELEVENLABS_OBSERVATORY_KEY',
   voice: 'ELEVENLABS_VOICE_ID',
 } as const;
 

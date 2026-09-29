@@ -42,8 +42,9 @@ proposal, with the same limits pr-starmap set:
   which would read the prompt's `%`, `&` and quotes as its own syntax. The run
   keeps the owner's own permission rules and hooks: there is no
   `--dangerously-skip-permissions`, and `-p` refuses a tool the rules do not
-  allow. The server's own credentials (`OPENROUTER_API_KEY`, `ELEVENLABS_API_KEY`,
-  `OBSERVATORY_PUSH_TOKEN`, `SESSION_SECRET`) are removed from its environment.
+  allow. The server's own credentials (`OPENROUTER_API_KEY`,
+  `ELEVENLABS_OBSERVATORY_KEY`, `OBSERVATORY_PUSH_TOKEN`, `SESSION_SECRET`) are
+  removed from its environment.
 - **Limits.** One run at a time. A run stops at 30 minutes. Cancel kills the
   process and everything it started (`taskkill /T /F` on Windows, the process
   group elsewhere), and so does the API stopping. A run's output is held in

@@ -163,6 +163,6 @@ server.listen(port, '127.0.0.1', () => {
   console.log(
     voiceSettings.key
       ? 'The ElevenLabs voice is on.'
-      : 'The ElevenLabs voice is off: no ELEVENLABS_API_KEY.',
+      : 'The ElevenLabs voice is off: no ELEVENLABS_OBSERVATORY_KEY.',
   );
 });

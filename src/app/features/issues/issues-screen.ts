@@ -154,8 +154,9 @@ export class IssuesScreen {
     }
   }
 
-  refresh(repo: string): void {
-    this.feed.refresh(repo);
+  /** `fresh` reads GitHub now rather than the API's cache, for Refresh. */
+  refresh(repo: string, fresh = false): void {
+    this.feed.refresh(repo, fresh);
   }
 
   /** Comets are open issues; the filter means nothing on the closed list. */

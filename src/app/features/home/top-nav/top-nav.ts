@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { PAGE_REFRESH } from '../../../core/projects/projects-refresh';
 import { SoundPreference } from '../../../core/sound/sound-preference';
 import { HelpState } from '../../../shared/help/help-state';
 import { SectionJump } from '../../../shared/section-jump/section-jump';
@@ -31,10 +32,22 @@ export class TopNav {
   protected readonly motion = inject(MotionPreference);
   protected readonly sound = inject(SoundPreference);
   protected readonly sections = inject(SectionJump);
+  private readonly page = inject(PAGE_REFRESH);
+  protected readonly refreshing = signal(false);
   protected readonly jumps = JUMPS;
   protected readonly motionHint = computed(() =>
     this.motion.choice() === 'auto'
       ? 'Following your system setting — click to override'
       : 'Overriding your system setting — click to switch',
   );
+
+  /** Every project read again from GitHub now, not from the API's cache. */
+  protected async refresh(): Promise<void> {
+    this.refreshing.set(true);
+    try {
+      await this.page.refresh();
+    } finally {
+      this.refreshing.set(false);
+    }
+  }
 }

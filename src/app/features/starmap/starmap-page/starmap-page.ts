@@ -637,8 +637,8 @@ export class StarmapPage {
       return;
     }
     this.refreshing.set(true);
-    this.feed.refresh(this.repo());
-    this.issues.refresh(this.repo());
+    this.feed.refresh(this.repo(), true);
+    this.issues.refresh(this.repo(), true);
   }
 
   /** A point on the timeline: the refresh there, or now. */

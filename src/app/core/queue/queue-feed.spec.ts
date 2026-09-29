@@ -46,4 +46,15 @@ describe('QueueFeed', () => {
 
     expect(feed.state()).toEqual({ status: 'unreachable' });
   });
+
+  it('asks for a fresh read only when Refresh does', () => {
+    const { http, feed } = setUp();
+
+    feed.refresh('me/a');
+    http.expectOne('/api/queue?repo=me/a').flush({ generatedAt: 'x', repo: 'me/a', items: [] });
+    feed.refresh('me/a', true);
+    http
+      .expectOne('/api/queue?repo=me/a&fresh=1')
+      .flush({ generatedAt: 'y', repo: 'me/a', items: [] });
+  });
 });

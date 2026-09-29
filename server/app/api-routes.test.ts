@@ -39,6 +39,11 @@ const queue: QueueReport = {
 const forgotten: string[] = [];
 const reads = {
   queue: async () => queue,
+  projects: async () => ({ generatedAt: 'x', projects: [] }),
+  issues: async (repo: string) => ({ repo, issues: [] }),
+  forgetProjects: () => forgotten.push('projects'),
+  forgetQueue: (repo: string) => forgotten.push(`queue ${repo}`),
+  forgetIssues: (repo: string) => forgotten.push(`issues ${repo}`),
   pull: async (repo: string, number: number) => ({ repo, number }),
   issue: async (repo: string, number: number) => ({ repo, issue: number }),
   forgetIssue: (repo: string, number: number) => forgotten.push(`issue ${repo}#${number}`),
@@ -106,6 +111,19 @@ describe('ownerRoutes', () => {
     await get('/api/pull?repo=me/app&number=7');
     await get('/api/pull?repo=me/app&number=7&fresh=1');
     assert.deepEqual(forgotten, ['me/app#7']);
+  });
+
+  it('reads the projects, a queue and its issues afresh only when Refresh asks', async () => {
+    forgotten.length = 0;
+    await get('/api/projects');
+    await get('/api/queue?repo=me/app');
+    await get('/api/issues?repo=me/app');
+    assert.deepEqual(forgotten, []);
+
+    await get('/api/projects?fresh=1');
+    await get('/api/queue?repo=me/app&fresh=1');
+    await get('/api/issues?repo=me/app&fresh=1');
+    assert.deepEqual(forgotten, ['projects', 'queue me/app', 'issues me/app']);
   });
 
   it('lists a repository’s labels', async () => {

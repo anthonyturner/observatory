@@ -14,7 +14,6 @@ import { projectsReport } from '../projects/projects-report.ts';
 import { type PullDetail, pullDetailOf } from '../queue/pull-detail.ts';
 import { type QueueReport, queueReport } from '../queue/queue-report.ts';
 import type { UsageReport } from '../usage/usage-types.ts';
-import { cached } from '../util/cached.ts';
 import { cachedByKey, keyedCache } from '../util/cached-by-key.ts';
 
 /** GitHub is read at most this often; the page asks every few minutes. */
@@ -33,6 +32,9 @@ const LOGS_TTL_MS = 5 * 60_000;
 const AGENTS_TTL_MS = 5 * 60_000;
 /** The ledger moves a day at a time; ten minutes is fresh enough. */
 const LEDGER_TTL_MS = 10 * 60_000;
+
+/** The projects report's one key in its cache. */
+const ALL_PROJECTS = 'all';
 
 /** Where the reports come from: the same code here and hosted, with different sources. */
 export interface ReadSources {
@@ -57,9 +59,15 @@ export interface HistoryReport {
 /** Every report the API answers with, each read no more often than it needs. */
 export interface ApiReads {
   projects(): Promise<ProjectsReport>;
+  /** The next read of the projects goes to GitHub, not the cache. */
+  forgetProjects(): void;
   /** Also records a frame of the star map's memory when one is due. */
   queue(repo: string): Promise<QueueReport>;
+  /** The next read of this queue goes to GitHub, not the cache. */
+  forgetQueue(repo: string): void;
   issues(repo: string): Promise<IssuesReport>;
+  /** The next read of these issues goes to GitHub, not the cache. */
+  forgetIssues(repo: string): void;
   /** One issue with its description, for the issue window. */
   issue(repo: string, number: number): Promise<IssueDetail>;
   /** The next read of this issue goes to GitHub, not the cache. */
@@ -82,13 +90,16 @@ export function cachedReads(sources: ReadSources): ApiReads {
   const { github, history } = sources;
   // Each read from GitHub may add a frame to the star map's memory. A failure to
   // record is logged, never passed on: the queue itself was read.
-  const queueOf = cachedByKey(async (repo) => {
+  const queueOf = keyedCache(async (repo) => {
     const report = await queueReport(github, repo);
     await recordFrame(report, history, github, Date.now()).catch((error: unknown) =>
       console.error(`Could not record ${repo}'s history:`, error),
     );
     return report;
   }, QUEUE_TTL_MS);
+  // One answer for every project, kept under a single key so it can be dropped.
+  const projectsOf = keyedCache(() => projectsReport(github), PROJECTS_TTL_MS);
+  const issuesOf = keyedCache((repo) => issuesReport(github, repo), QUEUE_TTL_MS);
   const numberKey = (repo: string, number: number): string => `${repo}#${number}`;
   const issueOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
@@ -105,9 +116,12 @@ export function cachedReads(sources: ReadSources): ApiReads {
   }, PULL_TTL_MS);
 
   return {
-    projects: cached(() => projectsReport(github), PROJECTS_TTL_MS),
-    queue: queueOf,
-    issues: cachedByKey((repo) => issuesReport(github, repo), QUEUE_TTL_MS),
+    projects: () => projectsOf.read(ALL_PROJECTS),
+    forgetProjects: () => projectsOf.forget(ALL_PROJECTS),
+    queue: (repo) => queueOf.read(repo),
+    forgetQueue: (repo) => queueOf.forget(repo),
+    issues: (repo) => issuesOf.read(repo),
+    forgetIssues: (repo) => issuesOf.forget(repo),
     issue: (repo, number) => issueOf.read(numberKey(repo, number)),
     forgetIssue: (repo, number) => issueOf.forget(numberKey(repo, number)),
     pull: (repo, number) => pullOf.read(numberKey(repo, number)),

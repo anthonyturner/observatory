@@ -1,8 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { MotionPreference } from '../../../core/motion/motion-preference';
-import { PAGE_REFRESH } from '../../../core/projects/projects-refresh';
-import { HelpState } from '../../../shared/help/help-state';
 import { TopNav } from './top-nav';
 
 describe('TopNav', () => {
@@ -35,58 +32,5 @@ describe('TopNav', () => {
     expect(document.activeElement).toBe(news);
     expect(click.defaultPrevented).toBe(true);
     news.remove();
-  });
-
-  it('reads every project again from Refresh, saying so while it does', async () => {
-    let finish!: () => void;
-    const refresh = vi.fn(() => new Promise<'done'>((done) => (finish = () => done('done'))));
-    TestBed.overrideProvider(PAGE_REFRESH, { useValue: { refresh } });
-    const fixture = TestBed.createComponent(TopNav);
-    fixture.detectChanges();
-    const button = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
-    ).find((b) => b.textContent?.includes('Refresh'));
-
-    button?.click();
-    fixture.detectChanges();
-    expect(refresh).toHaveBeenCalledTimes(1);
-    expect(button?.textContent?.trim()).toBe('Refreshing…');
-    expect(button?.disabled).toBe(true);
-
-    finish();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    expect(button?.textContent?.trim()).toBe('Refresh');
-  });
-
-  it('opens help from the ? button and shows it pressed', () => {
-    const fixture = TestBed.createComponent(TopNav);
-    fixture.detectChanges();
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      'button[aria-label="Help"]',
-    );
-
-    button?.click();
-    fixture.detectChanges();
-
-    expect(TestBed.inject(HelpState).isOpen()).toBe(true);
-    expect(button?.getAttribute('aria-pressed')).toBe('true');
-  });
-
-  it('switches motion from the Motion button and says which way it is', () => {
-    localStorage.clear();
-    const fixture = TestBed.createComponent(TopNav);
-    fixture.detectChanges();
-    const button = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
-    ).find((b) => b.textContent?.includes('Motion'));
-    const wasStill = TestBed.inject(MotionPreference).isStill();
-
-    button?.click();
-    fixture.detectChanges();
-
-    expect(TestBed.inject(MotionPreference).isStill()).toBe(!wasStill);
-    expect(button?.textContent?.trim()).toBe(wasStill ? 'Motion on' : 'Motion off');
-    expect(button?.getAttribute('aria-pressed')).toBe(String(wasStill));
   });
 });

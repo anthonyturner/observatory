@@ -8,6 +8,7 @@ import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { CoreStateFeed } from '../../../core/core-state/core-state-feed';
 import { HOME_HELP_KEYS, homeHelpEntries } from '../help/help-content';
+import { HomeTools } from '../home-tools/home-tools';
 import { RunDockPanel } from '../run-dock/run-dock';
 import { SkillsPanel } from '../skills-panel/skills-panel';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
@@ -33,6 +34,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
     NewsSection,
     HelpCard,
     RunDockPanel,
+    HomeTools,
   ],
   providers: [SoundPreference],
   hostDirectives: [HelpShortcuts, CoreStateFeed],

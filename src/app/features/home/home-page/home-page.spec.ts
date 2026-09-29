@@ -13,6 +13,7 @@ const NO_SKY: SkyCanvas = {
   setComets: () => undefined,
   flare: () => undefined,
   setView: () => undefined,
+  setTrailSpeed: () => undefined,
   paint: () => undefined,
   dispose: () => undefined,
 };

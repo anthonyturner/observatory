@@ -1,9 +1,9 @@
-import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { SoundPreference } from '../../../core/sound/sound-preference';
 import { HelpState } from '../../../shared/help/help-state';
+import { SectionJump } from '../../../shared/section-jump/section-jump';
 import { RunPill } from '../run-pill/run-pill';
 
 /** A section further down Home that the menu jumps to. */
@@ -30,21 +30,11 @@ export class TopNav {
   protected readonly help = inject(HelpState);
   protected readonly motion = inject(MotionPreference);
   protected readonly sound = inject(SoundPreference);
-  private readonly document = inject(DOCUMENT);
+  protected readonly sections = inject(SectionJump);
   protected readonly jumps = JUMPS;
   protected readonly motionHint = computed(() =>
     this.motion.choice() === 'auto'
       ? 'Following your system setting — click to override'
       : 'Overriding your system setting — click to switch',
   );
-
-  /** Scrolls to the section, gliding unless motion is off, and moves focus there so the
-   *  keyboard carries on from it. The address is left as it is. */
-  protected jumpTo(event: MouseEvent, id: string): void {
-    const section = this.document.getElementById(id);
-    if (!section || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    event.preventDefault();
-    section.scrollIntoView({ behavior: this.motion.isStill() ? 'auto' : 'smooth', block: 'start' });
-    section.focus({ preventScroll: true });
-  }
 }

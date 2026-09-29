@@ -1,7 +1,7 @@
 <app-run-pill />
 <nav class="group jumps" aria-label="Jump to">
   @for (jump of jumps; track jump.id) {
-    <a [href]="'#' + jump.id" [title]="jump.hint" (click)="jumpTo($event, jump.id)"
+    <a [href]="'#' + jump.id" [title]="jump.hint" (click)="sections.follow($event, jump.id)"
       >{{ jump.label }} <span aria-hidden="true">&darr;</span></a
     >
   }

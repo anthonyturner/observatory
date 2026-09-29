@@ -5,6 +5,7 @@ import { Reader } from '../../../core/reader/reader-service';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { ageOf } from '../../../core/usage/usage-format';
+import { TopLink } from '../../../shared/section-jump/top-link';
 
 /** What a column says in place of headlines, by where the news stands. */
 const WAITING_MESSAGE: Record<Exclude<NewsState['status'], 'ready'>, string> = {
@@ -24,6 +25,7 @@ const MINUTE_MS = 60_000;
 /** Below the HUD, above the projects: the latest AI news, tools first, and the latest in software engineering. */
 @Component({
   selector: 'app-news-section',
+  imports: [TopLink],
   templateUrl: './news-section.html',
   styleUrl: './news-section.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

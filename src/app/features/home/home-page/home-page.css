@@ -9,6 +9,11 @@
   flex-direction: column;
 }
 
+/* The Top link lands here; focus moves for the keyboard, not to be drawn. */
+.hud:focus {
+  outline: none;
+}
+
 .hud-body {
   display: flex;
   flex-direction: column;

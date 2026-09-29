@@ -12,6 +12,7 @@ import { ProjectJump } from '../../../core/projects/project-jump';
 import { ProjectsState } from '../../../core/projects/projects-feed';
 import { PROJECTS, PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { compareProjects, severitySummary } from '../../../core/projects/severity';
+import { TopLink } from '../../../shared/section-jump/top-link';
 import { ProjectCard } from '../project-card/project-card';
 
 /** What the section says in place of cards, by where the projects stand. */
@@ -26,7 +27,7 @@ const PROJECT_PARAM = 'project';
 /** Below the HUD: a card per project, blocked first. */
 @Component({
   selector: 'app-fleet-section',
-  imports: [ProjectCard],
+  imports: [ProjectCard, TopLink],
   templateUrl: './fleet-section.html',
   styleUrl: './fleet-section.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -11,6 +11,7 @@
     @if (unread(); as unread) {
       <span class="sub note">{{ unread }}</span>
     }
+    <app-top-link />
   </div>
   <div class="columns">
     @for (column of columns(); track column.id) {

@@ -12,6 +12,7 @@
     "typecheck:server": "tsc -p server",
     "lint": "ng lint",
     "usage:import-history": "node server/usage/import-history.ts",
+    "agents:import-history": "node server/agents/import-history.ts",
     "push": "node server/push.ts",
     "prepare": "husky"
   },

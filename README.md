@@ -135,7 +135,14 @@ files on this machine, so it listens on loopback only:
   ```
 
   The capture swallows every error, so a hook failure never breaks a tool call.
-  Until it has recorded a pull request, the Agents panel says so.
+  Until it has recorded a pull request, the Agents panel says so. Point the
+  command at a checkout that stays put (the main one, not a worktree).
+
+  Coming from pr-starmap? Its hook wrote the same records into each
+  repository's `.claude/queue/handoffs.jsonl`. `npm run agents:import-history`
+  copies them in once, from every repository beside this one (or from the files
+  you name), skipping any already recorded. Install this hook before removing
+  pr-starmap's plugin, or handoffs in between go unrecorded.
 
 - **News** (Home's News section, below the projects) comes from free public
   RSS and Atom feeds, read by the API at most every half hour with no key and

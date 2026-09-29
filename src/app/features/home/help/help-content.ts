@@ -56,7 +56,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Sound',
     meaning:
-      'An ambient score made in this browser as you listen, with a hum that pulses with the core. Each project on the ring chimes in its own slow rhythm, busier with more open work, in an instrument that says its state and from where its dot sits; pointing at a project plays its motif. A low, wavering unease rises under it as projects strain. Off until you turn it on, and remembered.',
+      'A trance track made in this browser as you listen: a steady beat, a rolling bass, a pumping pad and a glassy lead melody over four chords. Pointing at a project plays a short motif from where its dot sits. As projects strain, the beat gets busier and the arpeggio climbs. Off until you turn it on, and remembered.',
   },
   {
     term: 'News',

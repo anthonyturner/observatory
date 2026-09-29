@@ -32,14 +32,12 @@ export interface Pluck {
   readonly severity: SeverityId;
   readonly pan: number;
   readonly level: number;
-  /** Stretches the note's decay: Home's chimes ring longer than the orrery's plucks. */
-  readonly ring?: number;
 }
 
 /** One plucked note in a severity's instrument, into the room and the echo. */
 export function pluck(rig: Rig, note: Pluck): void {
   const instrument = INSTRUMENTS[note.severity];
-  const decay = instrument.decay * (note.ring ?? 1);
+  const { decay } = instrument;
   if (instrument.isNoise) {
     noiseBurst(rig, {
       at: note.at,

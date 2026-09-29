@@ -1,8 +1,7 @@
 import { BAR_S, STEP_S, TONIC, barAt } from './ambient-score';
-import { seededRandom } from '../instrument/seeded-random';
 import { GrooveHit, STEPS, buildsAt, grooveFor } from './trance-groove';
 
-const bar = barAt(1, seededRandom(1));
+const bar = barAt(1);
 const offsetsOf = (hits: readonly GrooveHit[], kind: GrooveHit['kind']): number[] =>
   hits.filter((hit) => hit.kind === kind).map((hit) => Math.round(hit.offsetS / STEP_S));
 

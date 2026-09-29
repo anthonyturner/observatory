@@ -29,6 +29,9 @@ export interface AmbientPlayer {
   /** How uneasy to sound, 0 calm to 1 strained; glides there. A score with
    *  no unease of its own leaves this out. */
   setUnease?(level: number): void;
+  /** Whether to sit low under someone talking into the mic; glides there.
+   *  A score with no mic on its page leaves this out. */
+  setDucked?(ducked: boolean): void;
 }
 
 /** Bars are written this far ahead on the audio clock, so a busy page or a
@@ -40,6 +43,11 @@ const FADE_OUT_S = 0.8;
 /** How long after fading out the audio device is released. */
 const SUSPEND_AFTER_MS = 4000;
 const MASTER_LEVEL = 0.9;
+/** Under a voice the score drops to about a sixth, clear of the words but still there. */
+const DUCKED_SHARE = 0.15;
+/** Down fast, so the first word is clean; back up gently once the turn ends. */
+const DUCK_DOWN_S = 0.25;
+const DUCK_UP_S = 0.9;
 /** A tighter room than an ambient score's, so the beat stays crisp, and a
  *  dotted-eighth echo on the tempo: the arpeggio's trance ripple. */
 const HOME_ROOM: RoomShape = {
@@ -66,6 +74,8 @@ export class AmbientSynth implements AmbientPlayer {
 
   private rig: Rig | null = null;
   private uneaseLevel = 0;
+  private isDucked = false;
+  private isPlaying = false;
   private timer: ReturnType<typeof setInterval> | null = null;
   private suspendTimer: ReturnType<typeof setTimeout> | null = null;
   private nextBarAt = 0;
@@ -75,7 +85,8 @@ export class AmbientSynth implements AmbientPlayer {
     const rig = (this.rig ??= buildRig(HOME_ROOM));
     if (this.suspendTimer) clearTimeout(this.suspendTimer);
     if (rig.context.state === 'suspended') await rig.context.resume();
-    this.fadeTo(MASTER_LEVEL, FADE_IN_S);
+    this.isPlaying = true;
+    this.fadeTo(this.playingLevel(), FADE_IN_S);
     if (this.timer) return;
     this.nextBarAt = rig.context.currentTime + 0.1;
     this.barIndex = 0;
@@ -88,7 +99,15 @@ export class AmbientSynth implements AmbientPlayer {
     this.uneaseLevel = level;
   }
 
+  setDucked(ducked: boolean): void {
+    if (ducked === this.isDucked) return;
+    this.isDucked = ducked;
+    // A stopped score stays silent: ducking only moves one that is playing.
+    if (this.isPlaying) this.fadeTo(this.playingLevel(), ducked ? DUCK_DOWN_S : DUCK_UP_S);
+  }
+
   stop(): void {
+    this.isPlaying = false;
     if (!this.rig) return;
     this.fadeTo(0, FADE_OUT_S);
     this.suspendTimer = setTimeout(() => this.release(), SUSPEND_AFTER_MS);
@@ -107,6 +126,10 @@ export class AmbientSynth implements AmbientPlayer {
     // Closing only frees the audio device sooner; if it fails, it idles silent.
     this.rig?.context.close().catch(() => undefined);
     this.rig = null;
+  }
+
+  private playingLevel(): number {
+    return MASTER_LEVEL * (this.isDucked ? DUCKED_SHARE : 1);
   }
 
   private fadeTo(level: number, seconds: number): void {

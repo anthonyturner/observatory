@@ -620,9 +620,11 @@ export class StarmapPage {
     if (star) this.sound.ping(false);
   }
 
+  /** A click on a comet opens its card, with the soft tone a picked star gives. */
   protected pickComet(comet: Comet): void {
     this.openPull.set(null);
     this.selectedComet.set(comet);
+    this.sound.ping(false);
   }
 
   protected goTo(number: number): void {

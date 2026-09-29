@@ -6,6 +6,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { BehaviorSubject, of } from 'rxjs';
 import { AMBIENT_PLAYER } from '../../../core/sound/sound-preference';
 import { anIssue } from '../../../core/issues/testing/issues-fixture';
+import { StarmapSound } from '../sound/starmap-sound';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapPage } from './starmap-page';
 
@@ -279,6 +280,17 @@ describe('StarmapPage', () => {
     expect(post.request.body).toEqual({ repo: 'me/a', number: 9, action: 'snooze', days: 7 });
     post.flush({});
     http.expectOne('/api/queue?repo=me/a');
+  });
+
+  it('pings softly when a comet is picked, as it does for a star', () => {
+    const { fixture } = render();
+    const ping = vi.spyOn(TestBed.inject(StarmapSound), 'ping');
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    sky.pickedComet.emit({ key: 'me/a#4' } as never);
+
+    expect(ping).toHaveBeenCalledWith(false);
   });
 
   it('offers a visitor to the hosted preview no triage to change', () => {

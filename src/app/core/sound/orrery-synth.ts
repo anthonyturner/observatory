@@ -21,6 +21,11 @@ export interface OrreryListening {
 
 /** A shorter room than Home's, with a dotted-eighth echo: the delay that
  *  makes a plain arpeggio sound like it is travelling somewhere. */
+/** pr-starmap's orrery started at a volume of 0.6. */
+export const DEFAULT_VOLUME = 0.6;
+/** Loudness is heard on a curve, so the slider is squared, as pr-starmap did. */
+export const orreryGain = (volume: number): number => volume * volume * 2.2;
+
 const ORRERY_ROOM: RoomShape = {
   reverbS: 3.2,
   reverbDecay: 2.2,
@@ -29,8 +34,7 @@ const ORRERY_ROOM: RoomShape = {
   echoFeedback: 0.34,
   echoFloorHz: 500,
   echoLevel: 0.5,
-  // Loudness is heard on a curve: pr-starmap's default volume of 0.6, squared.
-  outLevel: 0.6 * 0.6 * 2.2,
+  outLevel: orreryGain(DEFAULT_VOLUME),
 };
 /** Notes are written this far ahead on the audio clock, so a busy frame or a
  *  slow timer never makes the rhythm stumble. */
@@ -44,6 +48,9 @@ const FADE_OUT_S = 0.75;
 const SUSPEND_AFTER_MS = 1200;
 const MOTIF_LEAD_S = 0.02;
 
+/** The glide when the volume slider moves, so dragging it never clicks. */
+const VOLUME_GLIDE_S = 0.04;
+
 /** pr-starmap's orrery score on the Web Audio API. */
 export class OrrerySynth implements AmbientPlayer {
   private rig: Rig | null = null;
@@ -52,11 +59,16 @@ export class OrrerySynth implements AmbientPlayer {
   private nextAt = 0;
   private step = 0;
   private lastPicked: string | null = null;
+  private volume = DEFAULT_VOLUME;
 
   constructor(private readonly listening: OrreryListening) {}
 
   async start(): Promise<void> {
-    const rig = (this.rig ??= buildRig(ORRERY_ROOM));
+    if (!this.rig) {
+      this.rig = buildRig(ORRERY_ROOM);
+      this.rig.out.gain.value = orreryGain(this.volume);
+    }
+    const rig = this.rig;
     if (this.suspendTimer) clearTimeout(this.suspendTimer);
     if (rig.context.state === 'suspended') await rig.context.resume();
     fadeTo(rig, 1, FADE_IN_S);
@@ -65,6 +77,13 @@ export class OrrerySynth implements AmbientPlayer {
     this.step = 0;
     this.lastPicked = this.listening.picked();
     this.timer = setInterval(() => this.tick(), TICK_MS);
+  }
+
+  setVolume(volume: number): void {
+    this.volume = Math.min(1, Math.max(0, volume));
+    const rig = this.rig;
+    if (!rig) return;
+    rig.out.gain.setTargetAtTime(orreryGain(this.volume), rig.context.currentTime, VOLUME_GLIDE_S);
   }
 
   stop(): void {

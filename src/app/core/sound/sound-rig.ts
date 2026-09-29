@@ -8,6 +8,8 @@ export interface Rig {
   /** Into the echo, and on to the bus. */
   readonly echo: AudioNode;
   readonly noise: AudioBuffer;
+  /** After the limiter: the volume. */
+  readonly out: GainNode;
 }
 
 /** The room a score plays in. */
@@ -60,7 +62,7 @@ export function buildRig(room: RoomShape): Rig {
   echoOut.gain.value = room.echoLevel;
   delay.connect(echoOut).connect(bus);
 
-  return { context, master, bus, echo: delay, noise: whiteNoise(context) };
+  return { context, master, bus, echo: delay, noise: whiteNoise(context), out };
 }
 
 /** Glides the whole score to `level` over about `seconds`. */

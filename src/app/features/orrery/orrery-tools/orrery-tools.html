@@ -1,32 +1,61 @@
-<div class="group" role="group" aria-label="Zoom">
-  <button type="button" aria-label="Zoom out" title="Zoom out (−)" (click)="zoomOut.emit()">
-    &minus;
+<div class="tools">
+  <div class="group" role="group" aria-label="Zoom">
+    <button type="button" aria-label="Zoom out" title="Zoom out (−)" (click)="zoomOut.emit()">
+      &minus;
+    </button>
+    <button type="button" aria-label="Zoom in" title="Zoom in (+)" (click)="zoomIn.emit()">
+      +
+    </button>
+    <button type="button" title="Frame every world" (click)="fit.emit()">Fit</button>
+  </div>
+  <div class="group">
+    <button
+      type="button"
+      title="Rebuild every world from GitHub now"
+      [disabled]="refreshing()"
+      [attr.aria-busy]="refreshing()"
+      (click)="refresh.emit()"
+    >
+      {{ refreshing() ? 'Refreshing…' : 'Refresh' }}
+    </button>
+    <button type="button" [attr.aria-pressed]="isMoving()" (click)="motion.toggle()">
+      Motion {{ isMoving() ? 'on' : 'off' }}
+    </button>
+    <button
+      type="button"
+      [attr.aria-pressed]="sound.isOn()"
+      [title]="
+        sound.isOn() ? 'The system is playing: click to silence' : 'Hear the system play itself'
+      "
+      (click)="sound.toggle()"
+    >
+      Sound {{ sound.isOn() ? 'on' : 'off' }}
+    </button>
+    @if (sound.isOn()) {
+      <label class="vol" title="Volume"
+        ><span aria-hidden="true">vol</span
+        ><input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          aria-label="Volume"
+          [value]="volumePercent()"
+          (input)="onVolume($event)"
+      /></label>
+    }
+    <button
+      type="button"
+      aria-label="Help"
+      title="What am I looking at? (?)"
+      [attr.aria-pressed]="help.isOpen()"
+      (click)="help.toggle()"
+    >
+      ?
+    </button>
+  </div>
+  <span class="hint">{{ hint() }}</span>
+  <button type="button" class="fold" [attr.aria-expanded]="!folded()" (click)="toggleFold()">
+    Controls <span aria-hidden="true">&#9662;</span>
   </button>
-  <button type="button" aria-label="Zoom in" title="Zoom in (+)" (click)="zoomIn.emit()">+</button>
-  <button type="button" title="Frame every world" (click)="fit.emit()">Fit</button>
 </div>
-<div class="group">
-  <button type="button" [attr.aria-pressed]="isMoving()" (click)="motion.toggle()">
-    Motion {{ isMoving() ? 'on' : 'off' }}
-  </button>
-  <button
-    type="button"
-    [attr.aria-pressed]="sound.isOn()"
-    [title]="
-      sound.isOn() ? 'The system is playing: click to silence' : 'Hear the system play itself'
-    "
-    (click)="sound.toggle()"
-  >
-    Sound {{ sound.isOn() ? 'on' : 'off' }}
-  </button>
-  <button
-    type="button"
-    aria-label="Help"
-    title="What am I looking at? (?)"
-    [attr.aria-pressed]="help.isOpen()"
-    (click)="help.toggle()"
-  >
-    ?
-  </button>
-</div>
-<span class="hint">{{ hint() }}</span>

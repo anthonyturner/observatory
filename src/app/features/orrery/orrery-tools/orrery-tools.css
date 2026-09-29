@@ -1,4 +1,11 @@
 :host {
+  display: block;
+  /* Free to shrink inside the HUD's row, so the groups wrap on a phone. */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tools {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -53,6 +60,73 @@ button[aria-pressed='true'] {
   font-size: 11px;
   letter-spacing: 0.05em;
   color: var(--muted);
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.vol {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-right: 1px solid var(--edge-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.vol:last-child {
+  border-right: 0;
+}
+
+.vol input {
+  width: 96px;
+  accent-color: var(--flow);
+  cursor: pointer;
+}
+
+.vol input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+/* On a phone the tools wrap into rows and cover the lower sky; Controls folds
+   them down to itself. Only on a small screen, narrow or short. */
+.fold {
+  display: none;
+}
+
+@media (max-width: 720px), (max-height: 500px) {
+  .fold {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 15px;
+    border: 1px solid var(--edge-soft);
+    border-radius: 10px;
+    background: var(--panel);
+    backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  .fold span {
+    color: var(--flow);
+    transition: transform 0.2s;
+  }
+
+  .fold[aria-expanded='false'] span {
+    transform: rotate(180deg);
+  }
+
+  :host([data-folded]) .tools > :not(.fold) {
+    display: none;
+  }
 }
 
 @media (max-width: 720px) {

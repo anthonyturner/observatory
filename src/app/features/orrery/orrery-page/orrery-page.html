@@ -36,5 +36,11 @@
 <app-help-card title="Orrery" [entries]="helpEntries" [keys]="helpKeys" />
 
 <footer class="hud bottom">
-  <app-orrery-tools (zoomOut)="canvas.zoomOut()" (zoomIn)="canvas.zoomIn()" (fit)="canvas.fit()" />
+  <app-orrery-tools
+    [refreshing]="refreshing()"
+    (zoomOut)="canvas.zoomOut()"
+    (zoomIn)="canvas.zoomIn()"
+    (fit)="canvas.fit()"
+    (refresh)="refresh()"
+  />
 </footer>

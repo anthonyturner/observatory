@@ -56,6 +56,25 @@ describe('OrreryPage', () => {
     expect(element.querySelector('a.home')?.getAttribute('href')).toBe('/');
   });
 
+  it('fogs the sky and says so once the projects report is old, and not before', () => {
+    const fresh = render(ready([project('a', 2)])).element;
+    expect(fresh.querySelector('.stale')).toBeNull();
+    expect(fresh.querySelector('app-fog-veil .veil')).toBeNull();
+    TestBed.resetTestingModule();
+
+    const old: ProjectsState = {
+      status: 'ready',
+      report: {
+        generatedAt: new Date(Date.now() - 30 * 3_600_000).toISOString(),
+        projects: [project('a', 2)],
+        directives: [],
+      },
+    };
+    const { element } = render(old);
+    expect(element.querySelector('.stale')?.textContent).toContain('fogged · 30 hours old');
+    expect(element.querySelector('app-fog-veil .veil')).not.toBeNull();
+  });
+
   it('says it is reading instead of drawing an empty system', () => {
     expect(render({ status: 'reading' }).element.querySelector('.state')?.textContent).toContain(
       'Reading your projects',

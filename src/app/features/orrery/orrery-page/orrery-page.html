@@ -1,9 +1,17 @@
 <app-orrery-canvas #canvas [worlds]="worlds()" [(selected)]="selected" (open)="openQueue($event)" />
+<app-fog-veil class="fog" [level]="fog().level" />
 
 <header class="hud top">
   <div class="brand">
     <h1>Orrery</h1>
     <span class="stamp">{{ stamp() }}</span>
+    @if (fog().age; as age) {
+      <span
+        class="stale"
+        title="The data has not been refreshed for a while. Refresh on Home clears the fog."
+        >fogged · {{ age }} old</span
+      >
+    }
   </div>
   <nav class="links" aria-label="Page">
     <app-help-button />

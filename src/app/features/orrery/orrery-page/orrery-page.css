@@ -117,3 +117,24 @@ h1 {
     min-height: 44px;
   }
 }
+
+/* Over the sky, under the HUD, and never in the way of a drag. */
+.fog {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Said once, beside the stamp, when the sky has fogged over. */
+.stale {
+  padding: 2px 9px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

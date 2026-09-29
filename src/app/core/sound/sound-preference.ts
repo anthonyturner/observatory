@@ -36,6 +36,8 @@ export const AMBIENT_PLAYER = new InjectionToken<() => AmbientPlayer>('AMBIENT_P
 });
 
 const STORAGE_KEY = 'observatory.sound';
+const VOLUME_KEY = 'observatory.sound.volume';
+const DEFAULT_VOLUME = 0.6;
 const GESTURES = ['pointerdown', 'keydown'] as const;
 
 /** Whether the page's score plays. Off until asked for: browsers refuse
@@ -54,6 +56,9 @@ export class SoundPreference {
   private player: AmbientPlayer | null = null;
 
   readonly isOn: Signal<boolean> = this.wanted.asReadonly();
+  private readonly level = signal(readStoredVolume());
+  /** How loud, 0 to 1, for a page with a volume slider. */
+  readonly volume: Signal<number> = this.level.asReadonly();
 
   constructor() {
     if (this.wanted()) this.resume();
@@ -76,8 +81,16 @@ export class SoundPreference {
     else this.player?.stop();
   }
 
+  setVolume(volume: number): void {
+    const level = Math.min(1, Math.max(0, volume));
+    this.level.set(level);
+    storeVolume(level);
+    this.player?.setVolume?.(level);
+  }
+
   private play(): void {
     this.player ??= this.makePlayer();
+    this.player.setVolume?.(this.level());
     this.player.setUnease?.(uneaseOf(this.mood()));
     this.player.setDucked?.(this.talk.isTalking());
     this.player.start().catch((error: unknown) => this.errors.handleError(error));
@@ -117,6 +130,24 @@ function readStoredChoice(): boolean {
 function storeChoice(isOn: boolean): void {
   try {
     localStorage.setItem(STORAGE_KEY, isOn ? 'on' : 'off');
+  } catch {
+    return;
+  }
+}
+
+/** The volume last chosen, or the default where there is none or storage is blocked. */
+function readStoredVolume(): number {
+  try {
+    const stored = Number(localStorage.getItem(VOLUME_KEY) ?? Number.NaN);
+    return stored >= 0 && stored <= 1 ? stored : DEFAULT_VOLUME;
+  } catch {
+    return DEFAULT_VOLUME;
+  }
+}
+
+function storeVolume(volume: number): void {
+  try {
+    localStorage.setItem(VOLUME_KEY, String(volume));
   } catch {
     return;
   }

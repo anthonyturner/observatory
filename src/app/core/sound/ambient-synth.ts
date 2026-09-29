@@ -32,6 +32,9 @@ export interface AmbientPlayer {
   /** Whether to sit low under someone talking into the mic; glides there.
    *  A score with no mic on its page leaves this out. */
   setDucked?(ducked: boolean): void;
+  /** How loud, 0 to 1, from the page's volume slider; glides there. A score
+   *  with no slider on its page leaves this out. */
+  setVolume?(volume: number): void;
 }
 
 /** Bars are written this far ahead on the audio clock, so a busy page or a

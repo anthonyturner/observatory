@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { orreryStamp } from '../../../core/orrery/orrery-stamp';
 import { DataAge } from '../../../core/projects/data-age';
+import { PAGE_REFRESH } from '../../../core/projects/projects-refresh';
 import { FogVeil } from '../../../shared/night-sky/fog-veil';
 import { layoutWorlds } from '../../../core/orrery/world-layout';
 import { PROJECTS, PROJECTS_STATE } from '../../../core/projects/projects-source';
@@ -47,6 +48,8 @@ export class OrreryPage {
   );
   /** The sky fogs over as the projects report ages, as on Home. */
   protected readonly fog = inject(DataAge).fog;
+  private readonly page = inject(PAGE_REFRESH);
+  protected readonly refreshing = signal(false);
   protected readonly stamp = computed(() => orreryStamp(this.state(), this.now().getTime()));
   protected readonly waiting = computed(() => {
     const state = this.state();
@@ -64,5 +67,15 @@ export class OrreryPage {
   /** Home opens at the project's card, which Home brings into view. */
   protected showOnHome(repo: string): void {
     void this.router.navigate(['/'], { queryParams: { project: repo } });
+  }
+
+  /** Every world rebuilt from GitHub now, not from the API's cache; the fog clears with it. */
+  protected async refresh(): Promise<void> {
+    this.refreshing.set(true);
+    try {
+      await this.page.refresh();
+    } finally {
+      this.refreshing.set(false);
+    }
   }
 }

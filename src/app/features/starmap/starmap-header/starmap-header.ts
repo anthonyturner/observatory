@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { UpLink } from '../../../shared/up-link/up-link';
 import { LegendChip, fmtN } from '../starmap-view';
 
 /** The top of the star map: the way up to the orrery, the title, what the sky
  *  is and how old, and the legend that narrows it. */
 @Component({
   selector: 'app-starmap-header',
-  imports: [RouterLink],
+  imports: [UpLink],
   templateUrl: './starmap-header.html',
   styleUrl: './starmap-header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

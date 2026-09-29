@@ -19,5 +19,14 @@
   >
     Sound {{ sound.isOn() ? 'on' : 'off' }}
   </button>
+  <button
+    type="button"
+    aria-label="Help"
+    title="What am I looking at? (?)"
+    [attr.aria-pressed]="help.isOpen()"
+    (click)="help.toggle()"
+  >
+    ?
+  </button>
 </div>
 <span class="hint">{{ hint() }}</span>

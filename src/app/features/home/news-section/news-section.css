@@ -82,9 +82,35 @@ h3 {
 
 .item {
   display: grid;
-  gap: 3px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
   padding: 9px 0;
   border-top: 1px solid var(--edge-soft);
+}
+
+.story {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+}
+
+/* A picture of the story, beside it; decorative, since the headline says what it is. */
+.thumb {
+  width: 96px;
+  height: 64px;
+  margin-top: 3px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 8px;
+  background: var(--glass-strong);
+  object-fit: cover;
+}
+
+@media (max-width: 420px) {
+  .thumb {
+    width: 72px;
+    height: 48px;
+  }
 }
 
 .item:first-child {

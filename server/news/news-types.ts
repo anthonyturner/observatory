@@ -18,6 +18,8 @@ export interface FeedItem {
   readonly publishedAt: string | null;
   /** A paragraph or two about the story; empty where none could be found. */
   readonly summary: readonly string[];
+  /** A thumbnail for the story, https only; null where none was found. */
+  readonly image: string | null;
 }
 
 /** One headline as Home shows it. */

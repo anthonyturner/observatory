@@ -1,5 +1,6 @@
 import { seededRandom } from '../../../core/instrument/seeded-random';
 import { growth, worldPosition } from '../../../core/orrery/orbit';
+import { depthAt } from '../../../core/orrery/orrery-camera';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld } from '../../../core/orrery/pick-world';
 import { FieldStar, starField } from '../../../core/orrery/star-field';
@@ -16,18 +17,20 @@ import {
   paintGrain,
   paintVignette,
 } from '../../../shared/night-sky/night-sky';
-import { paintBackground, paintDial } from './sky-painter';
+import { paintBackground, paintDial, paintHouses3D } from './sky-painter';
 import { paintSun, paintSunLabel } from './sun-painter';
 import {
   MIN_WORLD_RADIUS,
   PlacedWorld,
+  paintComets,
   paintOrbit,
+  paintSelection,
   paintWorld,
   paintWorldLabel,
 } from './world-painter';
 
 /** The dial sits this far beyond the outermost orbit. */
-const DIAL_BEYOND_ORBIT = 100;
+export const DIAL_BEYOND_ORBIT = 100;
 const GRAIN_SEED = 20260926;
 
 /** One frame's inputs. */
@@ -104,15 +107,64 @@ export class OrreryScene {
       }));
   }
 
-  private place(world: OrreryWorld, frame: SceneFrame): PlacedWorld {
+  /** Over the 3D view: what stays sharp through its bloom, the comets, the
+   *  names, the house names and the selection ring, placed as the 3D camera
+   *  sees them. Returns where each world landed, for picking. */
+  drawOverlay(ctx: CanvasRenderingContext2D, frame: SceneFrame): DrawnWorld[] {
+    const { view, camera, time, isStill } = frame;
+    const { scale } = camera.current;
+    const placed = this.worlds.map((world) => this.place(world, frame, true));
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const world of placed)
+      if (world.grow > 0) paintComets(ctx, world, time, isStill, this.palette);
+    ctx.restore();
+
+    const [sunX, sunY] = camera.toScreenAt(0, 0, 0, view);
+    const sun = sunRadius(this.worlds) * scale;
+    paintSunLabel(ctx, sunX, sunY, sun, openTotal(this.worlds), scale, this.palette);
+    for (const world of placed) paintWorldLabel(ctx, world, scale, this.palette);
+    if (this.worlds.length) {
+      const dial = outermostOrbit(this.worlds) + DIAL_BEYOND_ORBIT;
+      paintHouses3D(ctx, camera, view, dial, time, this.palette);
+    }
+    for (const world of placed) {
+      if (!world.isSelected || world.grow <= 0) continue;
+      ctx.save();
+      paintSelection(ctx, world, time, this.palette);
+      ctx.restore();
+    }
+
+    // A world behind the sun's disc is hidden by it, so it cannot be picked there.
+    return placed
+      .filter((world) => world.grow > 0.1)
+      .filter((world) => !(world.z < 0 && Math.hypot(world.x - sunX, world.y - sunY) < sun))
+      .map((world) => ({
+        key: world.world.project.repo,
+        x: world.x,
+        y: world.y,
+        radius: world.radius,
+      }));
+  }
+
+  private place(
+    world: OrreryWorld,
+    frame: SceneFrame,
+    inDepth = false,
+  ): PlacedWorld & { z: number } {
     const position = worldPosition(world, frame.time);
-    const [x, y] = frame.camera.toScreen(position.x, position.y, frame.view);
+    const { camera, view } = frame;
+    const [x, y] = inDepth
+      ? camera.toScreenAt(position.x, position.y, position.z, view)
+      : camera.toScreen(position.x, position.y, view);
+    const depth = inDepth ? depthAt(position.z) : 1;
     const grow = growth(world, frame.sinceShown);
     return {
       world,
       x,
       y,
-      radius: Math.max(world.radius * frame.camera.current.scale, MIN_WORLD_RADIUS) * grow,
+      z: position.z,
+      radius: Math.max(world.radius * camera.current.scale * depth, MIN_WORLD_RADIUS) * grow,
       grow,
       color: this.palette.channels(world.color),
       sunward: Math.atan2(-position.y, -position.x),

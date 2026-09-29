@@ -20,4 +20,11 @@ describe('starField', () => {
     expect(Math.min(...levels)).toBeGreaterThanOrEqual(0.2);
     expect(Math.max(...levels)).toBeLessThanOrEqual(1);
   });
+
+  it('sits every star far behind the system for the 3D sky', () => {
+    for (const star of starField()) {
+      expect(star.z).toBeLessThanOrEqual(-12000);
+      expect(star.z).toBeGreaterThanOrEqual(-42000);
+    }
+  });
 });

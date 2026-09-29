@@ -1,4 +1,4 @@
-import { OrreryCamera, clampScale } from './orrery-camera';
+import { CAMERA_DISTANCE, depthAt, OrreryCamera, clampScale } from './orrery-camera';
 
 const view = { width: 1000, height: 800 };
 
@@ -76,5 +76,16 @@ describe('OrreryCamera', () => {
   it('never zooms beyond its limits', () => {
     expect(clampScale(100)).toBe(3);
     expect(clampScale(0)).toBe(0.04);
+  });
+
+  it('draws a point toward the viewer a little larger and further out, as the 3D camera does', () => {
+    const camera = new OrreryCamera({ x: 0, y: 0, scale: 1 });
+    const view = { width: 1000, height: 800 };
+
+    expect(camera.toScreenAt(100, 50, 0, view)).toEqual(camera.toScreen(100, 50, view));
+    const [x] = camera.toScreenAt(100, 0, 600, view);
+    expect(x).toBeCloseTo(500 + 100 * depthAt(600));
+    expect(depthAt(600)).toBeCloseTo(CAMERA_DISTANCE / (CAMERA_DISTANCE - 600));
+    expect(depthAt(-600)).toBeLessThan(1);
   });
 });

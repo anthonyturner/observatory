@@ -14,7 +14,9 @@
 }
 
 /* The canvas takes every gesture itself: drag, pinch and scroll. */
+/* Positioned, so it stays over the 3D view's canvas, which is placed before it. */
 canvas {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;

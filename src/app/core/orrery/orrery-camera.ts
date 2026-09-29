@@ -31,6 +31,13 @@ const FIT_CHROME_HEIGHT = 200;
 /** An orbit is drawn this much taller than flat, at most. */
 const FIT_ORBIT_HEIGHT = 1.35;
 
+/** How far the 3D camera stands from the plane, in orrery units: far enough
+ *  that the system looks nearly flat, near enough that depth still shows. */
+export const CAMERA_DISTANCE = 24000;
+
+/** How much larger a point `z` toward the viewer draws under the 3D camera. */
+export const depthAt = (z: number): number => CAMERA_DISTANCE / (CAMERA_DISTANCE - z);
+
 export const clampScale = (scale: number): number =>
   Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
 
@@ -52,6 +59,13 @@ export class OrreryCamera {
       (x - current.x) * current.scale + view.width / 2,
       (y - current.y) * current.scale + view.height / 2,
     ];
+  }
+
+  /** Screen position of a point `z` toward the viewer, as the 3D camera sees it. */
+  toScreenAt(x: number, y: number, z: number, view: Viewport): readonly [number, number] {
+    const { current } = this;
+    const scale = current.scale * depthAt(z);
+    return [(x - current.x) * scale + view.width / 2, (y - current.y) * scale + view.height / 2];
   }
 
   /** Orrery position under a screen point. */

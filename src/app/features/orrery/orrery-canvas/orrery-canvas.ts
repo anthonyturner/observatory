@@ -19,8 +19,9 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld, pickWorld } from '../../../core/orrery/pick-world';
 import { OrreryWorld, outermostOrbit } from '../../../core/orrery/world-layout';
-import { readOrreryPalette } from './orrery-palette';
-import { OrreryScene } from './orrery-scene';
+import { OrreryPalette, readOrreryPalette } from './orrery-palette';
+import { OrreryScene, SceneFrame } from './orrery-scene';
+import type { OrreryWebGL } from './webgl/orrery-webgl';
 
 const FRAMES_PER_SECOND = 30;
 /** Retina and beyond cost more than they show on a moving sky. */
@@ -44,7 +45,9 @@ interface Press {
 
 /**
  * The orrery on a full-window canvas: drag to pan, scroll or pinch to zoom,
- * hover a world to show its card, click to pin it.
+ * hover a world to show its card, click to pin it. It draws in 2D at once and
+ * in 3D once Three.js has loaded and can draw, with the labels kept on the 2D
+ * canvas over it; losing the 3D view for any reason goes back to 2D for good.
  */
 @Component({
   selector: 'app-orrery-canvas',
@@ -71,6 +74,10 @@ export class OrreryCanvas {
   private readonly camera = new OrreryCamera();
   private readonly teardown: (() => void)[] = [];
   private scene: OrreryScene | null = null;
+  private palette: OrreryPalette | null = null;
+  /** The 3D view, once it has loaded and while it can draw. */
+  private webgl: OrreryWebGL | null = null;
+  private isStopped = false;
   private context: CanvasRenderingContext2D | null = null;
   private loop: FrameLoop | null = null;
   private view: Viewport = { width: 0, height: 0 };
@@ -92,6 +99,7 @@ export class OrreryCanvas {
     effect(() => {
       const worlds = this.worlds();
       this.scene?.setWorlds(worlds);
+      this.webgl?.setWorlds(worlds);
       if (worlds.length && this.shownAt === null) this.showSystem();
       this.loop?.kick();
     });
@@ -131,7 +139,8 @@ export class OrreryCanvas {
     const canvas = this.canvas().nativeElement;
     this.context = canvas.getContext('2d');
     if (!this.context) return;
-    this.scene = new OrreryScene(this.document, readOrreryPalette(canvas));
+    this.palette = readOrreryPalette(canvas);
+    this.scene = new OrreryScene(this.document, this.palette);
     this.scene.setWorlds(this.worlds());
     this.loop = new FrameLoop({
       scheduler: {
@@ -148,6 +157,35 @@ export class OrreryCanvas {
     if (this.worlds().length && this.shownAt === null) this.showSystem();
     this.listen(canvas);
     this.loop.kick();
+    void this.upgrade(canvas);
+  }
+
+  /** Loads the 3D view and moves to it where it can draw; anything that goes
+   *  wrong, from the download to a shader, keeps the 2D orrery. */
+  private async upgrade(canvas: HTMLCanvasElement): Promise<void> {
+    try {
+      const { OrreryWebGL } = await import('./webgl/orrery-webgl');
+      if (this.isStopped || !this.palette) return;
+      const webgl = new OrreryWebGL(this.document, this.palette, () => this.dropWebgl());
+      webgl.mount(canvas);
+      webgl.setWorlds(this.worlds());
+      webgl.resize(this.view.width, this.view.height, this.pixelRatio());
+      this.webgl = webgl;
+      this.loop?.kick();
+    } catch (error: unknown) {
+      console.warn('The 3D orrery is unavailable; drawing in 2D.', error);
+    }
+  }
+
+  private dropWebgl(): void {
+    const failed = this.webgl;
+    this.webgl = null;
+    try {
+      failed?.dispose();
+    } catch {
+      // The context may already be gone.
+    }
+    this.loop?.kick();
   }
 
   private showSystem(): void {
@@ -176,16 +214,33 @@ export class OrreryCanvas {
     const ratio = this.pixelRatio();
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, this.view.width, this.view.height);
-    this.drawn = this.scene.draw(ctx, {
+    const frame: SceneFrame = {
       view: this.view,
       camera: this.camera,
       time,
       sinceShown: isStill || this.shownAt === null ? FULLY_GROWN_S : wall - this.shownAt,
       isStill,
       selectedKey: this.selected(),
-    });
+    };
+    this.drawn = this.drawFrame(ctx, frame);
     // Worlds move under a still pointer, so what it rests on can change.
     if (this.pointer && !this.press) this.hoverAt(this.pointer.x, this.pointer.y);
+  }
+
+  /** In 3D with the labels over it, or, where 3D cannot draw, all in 2D. */
+  private drawFrame(ctx: CanvasRenderingContext2D, frame: SceneFrame) {
+    const scene = this.scene!;
+    if (this.webgl) {
+      try {
+        this.webgl.frame(frame);
+        return scene.drawOverlay(ctx, frame);
+      } catch (error: unknown) {
+        console.warn('The 3D orrery stopped drawing; drawing in 2D.', error);
+        this.dropWebgl();
+        ctx.clearRect(0, 0, frame.view.width, frame.view.height);
+      }
+    }
+    return scene.draw(ctx, frame);
   }
 
   private pixelRatio(): number {
@@ -201,6 +256,7 @@ export class OrreryCanvas {
     canvas.width = Math.floor(this.view.width * ratio);
     canvas.height = Math.floor(this.view.height * ratio);
     this.scene?.resize(this.view);
+    this.webgl?.resize(this.view.width, this.view.height, ratio);
     this.loop?.kick();
   }
 
@@ -368,7 +424,9 @@ export class OrreryCanvas {
   }
 
   private stop(): void {
+    this.isStopped = true;
     this.loop?.stop();
+    this.dropWebgl();
     this.cancelHide();
     for (const undo of this.teardown) undo();
   }

@@ -25,6 +25,8 @@ export interface LookInput {
   /** Real seconds, for easing. */
   readonly wall: number;
   readonly isStill: boolean;
+  /** How loud the voice is, 0 to 1, which a state with a `swell` brightens with. */
+  readonly voiceLevel?: number;
 }
 
 /** How quickly a change of state settles: about a quarter of a second to most of the way. */
@@ -45,7 +47,9 @@ export function nextLook(previous: CoreLook | null, input: LookInput): CoreLook 
   const settle =
     isStill || !previous ? 1 : 1 - Math.exp(-Math.max(0, input.wall - previous.wall) * SETTLE_RATE);
   const toward = (from: number, to: number): number => from + (to - from) * settle;
-  const glow = toward(previous?.glow ?? state.glow, state.glow);
+  // Still, the core holds its state's glow; the level shows in the voice block.
+  const swell = isStill ? 0 : (state.swell ?? 0) * (input.voiceLevel ?? 0);
+  const glow = toward(previous?.glow ?? state.glow, state.glow * (1 + swell));
   const step = previous ? Math.min(MAX_SPIN_STEP_S, Math.max(0, input.time - previous.time)) : 0;
   const pulse = isStill
     ? 1

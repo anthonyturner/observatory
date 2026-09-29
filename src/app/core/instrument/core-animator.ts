@@ -56,6 +56,7 @@ export class CoreAnimator {
       time: frame.time,
       wall: frame.wall,
       isStill: frame.isStill,
+      voiceLevel: frame.voiceLevel,
     });
     const sinceStart = frame.wall - this.startWall;
     this.current = {

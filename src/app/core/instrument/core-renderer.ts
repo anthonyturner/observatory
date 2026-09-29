@@ -23,6 +23,8 @@ export interface CoreFrame {
   readonly mood: CoreMood;
   /** Real seconds since a new projects report arrived, or null before the first. */
   readonly sinceRefresh: number | null;
+  /** How loud the voice is, 0 to 1: the mic while listening, the reply while speaking. */
+  readonly voiceLevel: number;
 }
 
 /** Draws the core. The 2D and 3D renderers both implement it, so choosing

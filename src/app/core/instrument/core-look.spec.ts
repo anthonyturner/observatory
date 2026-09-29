@@ -9,6 +9,34 @@ function first(isStill = false): CoreLook {
 }
 
 describe('nextLook', () => {
+  it('brightens a listening core with the voice, and holds it still when motion is off', () => {
+    const at = (voiceLevel: number, isStill = false): number =>
+      nextLook(null, {
+        state: CORE_STATES.listening,
+        tint: GREEN,
+        time: 0,
+        wall: 10,
+        isStill,
+        voiceLevel,
+      }).glow;
+
+    expect(at(0)).toBe(CORE_STATES.listening.glow);
+    expect(at(1)).toBeCloseTo(CORE_STATES.listening.glow * 1.5);
+    expect(at(1, true)).toBe(CORE_STATES.listening.glow);
+  });
+
+  it('does not swell a state without a swell, whatever the level', () => {
+    const look = nextLook(null, {
+      state: CORE_STATES.idle,
+      tint: GREEN,
+      time: 0,
+      wall: 10,
+      isStill: false,
+      voiceLevel: 1,
+    });
+    expect(look.glow).toBe(CORE_STATES.idle.glow);
+  });
+
   it('takes the state’s look at once on the first frame', () => {
     const look = first();
     expect(look.tint).toEqual(GREEN);

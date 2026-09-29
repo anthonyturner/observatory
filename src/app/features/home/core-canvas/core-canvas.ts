@@ -18,11 +18,13 @@ import { CORE_MOOD, CORE_RENDERER, CORE_STATE } from '../../../core/instrument/c
 import { CoreView, coreViewOf } from '../../../core/instrument/core-view';
 import { FrameLoop, FrameScheduler } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { VoiceLevel } from '../../../core/voice/voice-level';
 import { LitProject } from '../../../core/projects/lit-project';
 import { PROJECTS, PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { BeadBurst } from './bead-burst';
 import { DataFog } from './data-fog';
 import { BeadLabel } from './bead-label';
+import { VoiceRing } from './voice-ring';
 
 /** The backdrop's budget: speech models will share the graphics card with it. */
 const FPS_SHOWN = 30;
@@ -34,8 +36,8 @@ const FPS_TOUCHED = 60;
 /** Draws the core behind the HUD, at the anchor's place, following it as the page scrolls. */
 @Component({
   selector: 'app-core-canvas',
-  imports: [BeadLabel, BeadBurst, DataFog],
-  template: '<app-data-fog /><app-bead-burst /><app-bead-label />',
+  imports: [BeadLabel, BeadBurst, DataFog, VoiceRing],
+  template: '<app-data-fog /><app-bead-burst /><app-voice-ring /><app-bead-label />',
   styleUrl: './core-canvas.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { 'aria-hidden': 'true' },
@@ -59,6 +61,7 @@ export class CoreCanvas {
   private readonly hand = inject(CoreHand);
   private readonly lit = inject(LitProject);
   private readonly geometry = inject(CoreGeometry);
+  private readonly voice = inject(VoiceLevel);
   private readonly renderer = inject(CORE_RENDERER)();
   private readonly teardown: (() => void)[] = [];
   private loop: FrameLoop | null = null;
@@ -134,6 +137,7 @@ export class CoreCanvas {
       litKey: this.lit.key(),
       mood: this.mood(),
       sinceRefresh: this.refreshWall === null ? null : wall - this.refreshWall,
+      voiceLevel: this.voice.level(),
     });
   }
 

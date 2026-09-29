@@ -1,0 +1,59 @@
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ring {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.line {
+  fill: none;
+  stroke: var(--voice-ring);
+  stroke-width: 1.4;
+  opacity: 0.8;
+}
+
+.sweep .line {
+  opacity: 0.5;
+}
+
+.tail {
+  fill: none;
+  stroke: var(--voice-ring-sweep);
+  stroke-width: 2;
+}
+
+.dot {
+  fill: var(--voice-ring-sweep);
+}
+
+/* A turn every 2.4 seconds, as pr-starmap's 2.6 radians a second. */
+.spinner {
+  animation: sweep 2.42s linear infinite;
+}
+
+@keyframes sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Still: the ring holds, dashed while transcribing, and nothing sweeps. */
+:host(.still) .sweep .line {
+  stroke-dasharray: 3 6;
+}
+
+:host(.still) .spinner {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

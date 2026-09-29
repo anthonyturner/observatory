@@ -38,6 +38,9 @@
   --core-error: var(--bad);
   --core-listening: #8fffb4;
   --core-transcribing: #c4ffdc;
+  /* The voice ring round the core's centre, and the dot that sweeps it. */
+  --voice-ring: #8ea2ff;
+  --voice-ring-sweep: #ffffff;
   --core-speaking: #b4ffd2;
   /* The mood blends toward these: warm as projects strain, grey while unknown. */
   --core-uneasy: #ffb35c;

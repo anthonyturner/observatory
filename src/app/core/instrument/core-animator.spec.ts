@@ -22,6 +22,7 @@ function frame(overrides: Partial<CoreFrame> = {}): CoreFrame {
     litKey: null,
     mood: { name: 'calm', stress: 0, reason: 'nothing blocked' },
     sinceRefresh: null,
+    voiceLevel: 0,
     ...overrides,
   };
 }

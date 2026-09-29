@@ -37,7 +37,9 @@ export interface TierMoment {
 
 /** `tint` and `glow` are what a still core shows, so every state must read
  *  by colour and brightness alone. `breathe` and `period` are its pulse,
- *  `turn` its spin and `ripple` a wave out through the network. */
+ *  `turn` its spin and `ripple` a wave out through the network. `swell` is how
+ *  much brighter it grows with the voice at full level: the mic while it
+ *  listens, the reply while it speaks. */
 export interface CoreState {
   readonly tint: CoreInk;
   readonly glow: number;
@@ -45,6 +47,7 @@ export interface CoreState {
   readonly period: number;
   readonly turn: number;
   readonly ripple: number;
+  readonly swell?: number;
   readonly tiers: (moment: TierMoment) => TierLevels;
 }
 
@@ -107,6 +110,7 @@ export const CORE_STATES: Readonly<Record<CoreStateId, CoreState>> = {
     period: 1.2,
     turn: 1,
     ripple: 0,
+    swell: 0.5,
     tiers: steady(0.1),
   },
   transcribing: {
@@ -126,6 +130,7 @@ export const CORE_STATES: Readonly<Record<CoreStateId, CoreState>> = {
     period: 3,
     turn: 1,
     ripple: 0,
+    swell: 0.6,
     tiers: ({ spokenTier }) => tiersOf((tier) => (tier === spokenTier ? 1 : 0.14)),
   },
   // A task running, which can take half an hour: the tier-3 arc pulses; still, it holds lit.

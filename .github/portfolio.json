@@ -1,3 +1,9 @@
 {
-  "title": "Observatory"
+  "title": "Observatory",
+  "image": "https://observatory-nu-ten.vercel.app/portfolio/observatory-poster.jpg",
+  "video": {
+    "src": "https://observatory-nu-ten.vercel.app/portfolio/observatory-demo.mp4",
+    "poster": "https://observatory-nu-ten.vercel.app/portfolio/observatory-poster.jpg",
+    "caption": "The Observatory home screen: each project is a bead on the orrery, with blocked work first."
+  }
 }

@@ -33,6 +33,22 @@ main {
   padding: 0 20px calc(64px + env(safe-area-inset-bottom, 0px));
 }
 
+/* Home's tools along the foot of the screen, where the orrery and the star map
+   keep theirs. Only the tools themselves take the pointer. */
+.foot {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.foot > * {
+  pointer-events: auto;
+}
+
 /* Wide and tall enough: the HUD fits one screen in three columns. */
 @media (min-width: 1024px) and (min-height: 600px) {
   .hud {
@@ -52,7 +68,8 @@ main {
       'left core skills'
       'left core ask';
     gap: 14px 28px;
-    padding: 2px 28px 10px;
+    /* Clear of the tools along the foot. */
+    padding: 2px 28px 64px;
   }
 
   app-core-panel {
@@ -108,6 +125,11 @@ main {
 
 @media (max-width: 720px) {
   main {
+    /* The tools wrap onto two rows on a phone; the page ends clear of both. */
+    padding: 0 16px calc(120px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .foot {
     padding-inline: 16px;
   }
 }

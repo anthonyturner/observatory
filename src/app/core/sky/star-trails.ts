@@ -1,7 +1,8 @@
 import { seededRandom } from '../instrument/seeded-random';
 
 // A long exposure: each star is a short arc about the pole, drawn once into an
-// image that turns once every twenty minutes, calm and only just noticeable. A
+// image that turns once every twenty minutes, calm and only just noticeable,
+// unless Home's Spin lever sets another pace. A
 // still sky keeps the arcs, because the arcs are the drawing, not the motion.
 // The pole is where the core sits before any scrolling, so the trails stay put
 // as the page scrolls and the core rises past them. Near the core they thin
@@ -11,6 +12,8 @@ const TRAIL_COUNT = 600;
 const TRAIL_SEED = 8675309;
 /** One turn every twenty minutes, in radians a second. */
 export const TRAIL_TURN = (Math.PI * 2) / (20 * 60);
+/** Capped, so a sky back from a pause, or from holding still, does not whirl round to catch up. */
+const MAX_TURN_STEP_S = 0.25;
 const DEG = Math.PI / 180;
 const TINTS = ['#ffffff', '#dce8ff', '#bcd2ff', '#fff0d6', '#ffd9b8'];
 /** One star in this many is a bright one. */
@@ -66,6 +69,11 @@ export function trailReach(width: number, height: number, poleX: number, poleY: 
   return Math.hypot(Math.max(poleX, width - poleX), Math.max(poleY, height - poleY)) + 40;
 }
 
+/** The sky's turn after `stepS` more seconds at `speed` times the natural pace. */
+export function advanceTurn(turn: number, stepS: number, speed: number): number {
+  return turn + Math.min(Math.max(stepS, 0), MAX_TURN_STEP_S) * TRAIL_TURN * speed;
+}
+
 /** A canvas adds light in screen space, which a faint arc needs lifted to show. */
 const lift = (alpha: number): number =>
   Math.min(1, 1.055 * Math.pow(Math.max(0, alpha), 1 / 2.4) - 0.055);
@@ -85,10 +93,13 @@ export class StarTrails {
   private painted: readonly PaintedStar[] = [];
   private spanPx = 0;
   private paintedFor = '';
+  /** Summed frame by frame rather than read off the clock, so a new speed carries on from here. */
+  private turn = 0;
+  private lastTime: number | null = null;
 
   constructor(private readonly document: Document) {}
 
-  /** Draws the turned arcs and their twinkling heads about the pole. */
+  /** Draws the arcs, turned `speed` times the natural pace, and their twinkling heads. */
   draw(
     context: CanvasRenderingContext2D,
     sky: {
@@ -100,13 +111,16 @@ export class StarTrails {
       coreRadius: number;
     },
     time: number,
+    speed: number,
   ): void {
+    this.turn = advanceTurn(this.turn, time - (this.lastTime ?? time), speed);
+    this.lastTime = time;
     const reach = trailReach(sky.width, sky.height, sky.poleX, sky.poleY);
     this.paintIfNeeded(reach, sky.coreRadius, sky.pixelRatio);
     if (!this.image) return;
     context.save();
     context.translate(sky.poleX, sky.poleY);
-    context.rotate(-time * TRAIL_TURN);
+    context.rotate(-this.turn);
     context.globalCompositeOperation = 'lighter';
     const span = this.spanPx;
     context.drawImage(this.image, -span, -span, span * 2, span * 2);

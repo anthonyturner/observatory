@@ -5,6 +5,11 @@
 .fleet {
   max-width: 1180px;
   margin: 0 auto;
+  scroll-margin-top: 16px;
+}
+
+.fleet:focus {
+  outline: none;
 }
 
 .head {

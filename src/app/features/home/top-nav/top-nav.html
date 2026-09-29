@@ -1,4 +1,11 @@
 <app-run-pill />
+<nav class="group jumps" aria-label="Jump to">
+  @for (jump of jumps; track jump.id) {
+    <a [href]="'#' + jump.id" [title]="jump.hint" (click)="jumpTo($event, jump.id)"
+      >{{ jump.label }} <span aria-hidden="true">&darr;</span></a
+    >
+  }
+</nav>
 <a class="link" routerLink="/orrery">Orrery <span aria-hidden="true">&rsaquo;</span></a>
 <div class="group" role="group" aria-label="Tools">
   <button type="button" title="Rebuild every project's counts from GitHub now">Refresh</button>

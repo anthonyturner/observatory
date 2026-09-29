@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { parseFeed } from './feed-parse.ts';
 import { isToolNews, newsReport } from './news-report.ts';
+import { summaryFrom } from './news-summary.ts';
 import type { NewsSource } from './news-types.ts';
 
 const NOW = Date.parse('2026-09-28T12:00:00Z');
@@ -20,7 +21,12 @@ describe('parseFeed', () => {
       rss([['Rust &amp; <b>Go</b>', 'https://a.example/1', 'Mon, 28 Sep 2026 09:00:00 GMT']]),
     );
     assert.deepEqual(items, [
-      { title: 'Rust & Go', url: 'https://a.example/1', publishedAt: '2026-09-28T09:00:00.000Z' },
+      {
+        title: 'Rust & Go',
+        url: 'https://a.example/1',
+        publishedAt: '2026-09-28T09:00:00.000Z',
+        summary: [],
+      },
     ]);
   });
 
@@ -35,6 +41,7 @@ describe('parseFeed', () => {
         title: 'Claude Code 3.0',
         url: 'https://blog.example/post?a=1&b=2',
         publishedAt: '2026-09-27T10:00:00.000Z',
+        summary: [],
       },
     ]);
   });
@@ -45,8 +52,52 @@ describe('parseFeed', () => {
       '<item><title>Bad link</title><link>javascript:alert(1)</link></item>' +
       '<item><title>Undated</title><link>https://a.example/u</link><pubDate>soon</pubDate></item></rss>';
     assert.deepEqual(parseFeed(xml), [
-      { title: 'Undated', url: 'https://a.example/u', publishedAt: null },
+      { title: 'Undated', url: 'https://a.example/u', publishedAt: null, summary: [] },
     ]);
+  });
+});
+
+describe('feed summaries', () => {
+  const story = 'Acme shipped a new coding agent today that writes and runs its own tests.';
+
+  it('takes an escaped RSS description, leaving out captions and boilerplate', () => {
+    const escaped =
+      '&lt;figure&gt;&lt;figcaption&gt;A photo credit that is long enough to count&lt;/figcaption&gt;&lt;/figure&gt;' +
+      `&lt;p&gt;${story}&lt;/p&gt;&lt;p&gt;The post Acme appeared first on The Blog, a long line.&lt;/p&gt;`;
+    const [item] = parseFeed(
+      `<rss><item><title>Acme</title><link>https://a.example/a</link><description>${escaped}</description></item></rss>`,
+    );
+    assert.deepEqual(item.summary, [story]);
+  });
+
+  it('skips a description that is only links, and uses the full content instead', () => {
+    const xml =
+      '<rss><item><title>Acme</title><link>https://a.example/a</link>' +
+      '<description><![CDATA[<a href="https://news.example/1">Comments</a>]]></description>' +
+      `<content:encoded><![CDATA[<p>${story}</p><p>${story}</p><p>${story}</p>]]></content:encoded></item></rss>`;
+    assert.deepEqual(parseFeed(xml)[0].summary, [story, story]);
+  });
+
+  it('drops the link lists Hacker News searches give', () => {
+    const xml =
+      '<rss><item><title>Acme</title><link>https://a.example/a</link><description><![CDATA[' +
+      '<p>Article URL: <a href="https://a.example/a">https://a.example/a/with/a/long/path</a></p>' +
+      '<p>Comments URL: <a href="https://news.example/1">https://news.example/item?id=1</a></p>' +
+      ']]></description></item></rss>';
+    assert.deepEqual(parseFeed(xml)[0].summary, []);
+  });
+
+  it('leaves out a paragraph that only repeats the headline', () => {
+    const xml =
+      '<rss><item><title>Acme ships agents</title><link>https://a.example/a</link>' +
+      `<description><![CDATA[<p>Acme ships agents!</p><p>${story}</p>]]></description></item></rss>`;
+    assert.deepEqual(parseFeed(xml)[0].summary, [story]);
+  });
+
+  it('cuts a long paragraph at a sentence', () => {
+    const long = `${'This sentence is here to be long. '.repeat(20)}`;
+    const [cut] = summaryFrom([long]);
+    assert.ok(cut.length <= 420 && cut.endsWith('.'), cut);
   });
 });
 
@@ -110,6 +161,16 @@ describe('newsReport', () => {
         ['Thoughts on AI and jobs', false],
       ],
     );
+  });
+
+  it('reads a summary from the story itself only where the feed gave none', async () => {
+    const asked: string[] = [];
+    const report = await newsReport(sources, fetcher, NOW, async (url) => {
+      asked.push(url);
+      return [`Opening of ${url}`];
+    });
+    assert.deepEqual(report.engineering[0].summary, ['Opening of https://eng.example/mono']);
+    assert.equal(asked.length, report.ai.length + report.engineering.length);
   });
 
   it('lists a story once, under AI, and names the feeds it could not read', async () => {

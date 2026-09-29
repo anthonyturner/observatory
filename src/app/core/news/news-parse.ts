@@ -14,6 +14,7 @@ function parseItem(value: unknown): NewsItem | null {
     url,
     source,
     publishedAt: fieldOf(value, 'publishedAt', isText) ?? null,
+    summary: listOf(value['summary'], (paragraph) => (isText(paragraph) ? paragraph : null)),
     tool: value['tool'] === true,
   };
 }

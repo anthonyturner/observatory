@@ -95,6 +95,9 @@ const assistant = jevAssistant({
   },
 });
 
+// Read once at start, so the first visit to Home finds the news and its summaries waiting.
+const news = cachedNews();
+
 const voiceSettings = localElevenLabs();
 const voice = {
   voice: elevenLabs({ key: voiceSettings.key }),
@@ -123,10 +126,7 @@ const server = createApiServer(
           withReaderRoutes(
             withVoiceRoutes(
               withAssistant(
-                withRunsRoutes(
-                  withNewsRoutes(ownerRoutes(reads, triage, editor), cachedNews()),
-                  runner,
-                ),
+                withRunsRoutes(withNewsRoutes(ownerRoutes(reads, triage, editor), news), runner),
                 assistant,
               ),
               voice,
@@ -153,6 +153,7 @@ server.on('error', (error: NodeJS.ErrnoException) => {
 });
 
 server.listen(port, '127.0.0.1', () => {
+  void news().catch(() => undefined);
   console.log(`Observatory API on http://127.0.0.1:${port}`);
   console.log(
     claude

@@ -5,6 +5,8 @@ export interface NewsItem {
   readonly source: string;
   /** ISO time, or null where the feed gave none. */
   readonly publishedAt: string | null;
+  /** A paragraph or two about the story; empty where none could be found. */
+  readonly summary: readonly string[];
   /** A new or updated tool, which the AI section lists first. */
   readonly tool: boolean;
 }

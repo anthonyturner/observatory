@@ -16,6 +16,8 @@ export interface FeedItem {
   readonly url: string;
   /** ISO time, or null where the feed gives none that parses. */
   readonly publishedAt: string | null;
+  /** A paragraph or two about the story; empty where none could be found. */
+  readonly summary: readonly string[];
 }
 
 /** One headline as Home shows it. */

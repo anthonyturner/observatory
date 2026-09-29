@@ -6,10 +6,10 @@ import { SeverityId } from '../projects/severity';
 import { BAR_S, Bar, TONIC } from './ambient-score';
 import { INSTRUMENT_LEVEL, WorldVoice, euclid, pulsesFor } from './orrery-score';
 
-/* Home's score plays the projects too, but as the Orrery's calm cousin: no
-   beat and no bass, just each project on the ring chiming a slow Euclidean
-   rhythm across the eight-second bar, in its severity's instrument, from where
-   its dot sits. Busier projects chime more; the worst chime highest. */
+/* Home's score plays the projects too: each project on the ring chimes a
+   Euclidean rhythm on the beats of the bar, over the groove, in its severity's
+   instrument, from where its dot sits. Busier projects chime more; the worst
+   chime highest. */
 
 /** One chime in a bar. */
 export interface Chime {

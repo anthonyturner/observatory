@@ -46,7 +46,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Core',
     meaning:
-      'Drag the ball to turn it; flick it and it coasts. The points near your pointer light up. With the core focused, the arrow keys turn it.',
+      'Drag the ball to turn it; flick it and it coasts. The points near your pointer light up. With the core focused, the arrow keys turn it. Click it without dragging (or press Enter) to talk, and again to send, as the mic does; where voice cannot run, it opens the ask box instead.',
   },
   {
     term: 'Motion',

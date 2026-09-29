@@ -16,7 +16,7 @@ import { uneaseOf } from './ambient-score';
 import { LitProject } from '../projects/lit-project';
 import { PROJECTS } from '../projects/projects-source';
 import { AmbientPlayer, AmbientSynth } from './ambient-synth';
-import { homeVoicesOf } from './home-chimes';
+import { homeVoicesOf } from './home-voices';
 
 /** Makes the player the Sound button drives. */
 export const AMBIENT_PLAYER = new InjectionToken<() => AmbientPlayer>('AMBIENT_PLAYER', {

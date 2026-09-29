@@ -18,6 +18,7 @@ import { ProgressFeed } from '../../../core/projects/progress-feed';
 import { PROJECTS } from '../../../core/projects/projects-source';
 import { SKY_CANVAS, SkyCanvas, skyViewOf } from '../../../core/sky/sky-painter';
 import { cometsFor } from '../../../core/sky/comets';
+import { TrailSpeed } from '../../../core/sky/trail-speed';
 
 /** Comets move fast enough to need a steady rate, but no more than the core's. */
 const SKY_FPS = 30;
@@ -39,6 +40,7 @@ export class SkyBackdrop {
   private readonly errors = inject(ErrorHandler);
   private readonly projects = inject(PROJECTS);
   private readonly progress = inject(ProgressFeed);
+  private readonly trailSpeed = inject(TrailSpeed).multiplier;
   private flaredFor = 0;
   /** Empty until the projects are read: no comets, rather than a made-up count. */
   private readonly comets = computed(() => cometsFor(this.projects()));
@@ -52,6 +54,11 @@ export class SkyBackdrop {
       // Read before the painter exists too, or the effect never learns to rerun.
       const comets = this.comets();
       this.painter?.setComets(comets);
+      this.loop?.kick();
+    });
+    effect(() => {
+      const speed = this.trailSpeed();
+      this.painter?.setTrailSpeed(speed);
       this.loop?.kick();
     });
     effect(() => {
@@ -84,6 +91,7 @@ export class SkyBackdrop {
     }
     this.painter = painter;
     painter.setComets(this.comets());
+    painter.setTrailSpeed(this.trailSpeed());
     this.place();
     const window = this.document.defaultView;
     this.loop = new FrameLoop({

@@ -39,47 +39,12 @@
   overflow: hidden;
 }
 
-button {
-  min-width: 42px;
-  min-height: 34px;
-  padding: 0 13px;
-  border: 0;
-  border-right: 1px solid var(--edge-soft);
-  background: transparent;
-  color: var(--muted);
-  font-family: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition:
-    color 0.2s,
-    background 0.2s;
-}
-
-button:last-child {
-  border-right: 0;
-}
-
-button:hover {
-  color: var(--ink);
-  background: var(--flow-tint);
-}
-
-button:focus-visible {
-  outline-offset: -2px;
-}
-
-button[aria-pressed='true'] {
-  color: var(--ink);
-  background: var(--flow-tint-strong);
-}
-
 @media (max-width: 720px) {
   :host {
     flex-wrap: wrap;
   }
 
-  .link,
-  button {
+  .link {
     min-width: 44px;
     min-height: 44px;
   }

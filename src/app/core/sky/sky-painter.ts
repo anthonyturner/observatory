@@ -62,6 +62,8 @@ export interface SkyCanvas {
   /** Sends `count` green comets into the core, from the next frame. */
   flare(count: number): void;
   setView(view: SkyView): void;
+  /** How fast the star trails turn, as a multiple of their natural pace. */
+  setTrailSpeed(speed: number): void;
   paint(time: number, isStill: boolean): void;
   dispose(): void;
 }
@@ -86,6 +88,7 @@ export class SkyPainter implements SkyCanvas {
   private comets: readonly Comet[] = [];
   private flares: Flare[] = [];
   private flaresWaiting = 0;
+  private trailSpeed = 1;
 
   constructor(host: HTMLElement) {
     const document = host.ownerDocument;
@@ -111,6 +114,10 @@ export class SkyPainter implements SkyCanvas {
     this.flaresWaiting += count;
   }
 
+  setTrailSpeed(speed: number): void {
+    this.trailSpeed = speed;
+  }
+
   setView(view: SkyView): void {
     if (
       view.width !== this.view?.width ||
@@ -131,7 +138,7 @@ export class SkyPainter implements SkyCanvas {
     context.globalCompositeOperation = 'source-over';
     context.globalAlpha = 1;
     this.paintNight(context, view);
-    this.trails.draw(context, view, time);
+    this.trails.draw(context, view, time, this.trailSpeed);
     this.paintComets(context, view, time);
     this.paintFlares(context, view, time);
     this.paintVignette(context, view);

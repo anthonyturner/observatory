@@ -1,0 +1,91 @@
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 9px;
+}
+
+.group {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+button {
+  min-width: 42px;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 0;
+  border-right: 1px solid var(--edge-soft);
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+button:last-child {
+  border-right: 0;
+}
+
+button:hover {
+  color: var(--ink);
+  background: var(--flow-tint);
+}
+
+button:focus-visible {
+  outline-offset: -2px;
+}
+
+button[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--flow-tint-strong);
+}
+
+.spin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  cursor: pointer;
+}
+
+.spin input {
+  width: 96px;
+  accent-color: var(--flow);
+  cursor: pointer;
+}
+
+.spin input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+/* Wide enough for "100×", so the lever does not shift as it moves. */
+.spin output {
+  min-width: 4ch;
+  color: var(--muted);
+  text-transform: none;
+}
+
+@media (max-width: 720px) {
+  button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .spin {
+    min-height: 44px;
+  }
+}

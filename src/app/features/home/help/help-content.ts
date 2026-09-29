@@ -54,6 +54,11 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
       'Follows your system’s reduced-motion setting until you press it; then it remembers your choice. Off, everything holds still.',
   },
   {
+    term: 'Spin',
+    meaning:
+      'The Spin lever at the foot of the screen sets how fast the star trails turn about the core: from still, through their natural once every twenty minutes (1×), up to a hundred times that. Remembered. With Motion off they hold still whatever it says.',
+  },
+  {
     term: 'Sound',
     meaning:
       'A trance track made in this browser as you listen: a steady beat, a rolling bass, a pumping pad and a glassy lead melody over four chords. Pointing at a project plays a short motif from where its dot sits. As projects strain, the beat gets busier and the arpeggio climbs. Off until you turn it on, and remembered.',

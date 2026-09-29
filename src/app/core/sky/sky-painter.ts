@@ -59,7 +59,8 @@ export function skyViewOf(
 export interface SkyCanvas {
   canDraw(): boolean;
   setComets(comets: readonly Comet[]): void;
-  /** Sends `count` green comets into the core, from the next frame. */
+  /** Sends `count` green comets into the core, and spins the star trails up
+   *  for them, from the next frame. */
   flare(count: number): void;
   setView(view: SkyView): void;
   /** How fast the star trails turn, as a multiple of their natural pace. */
@@ -138,6 +139,7 @@ export class SkyPainter implements SkyCanvas {
     context.globalCompositeOperation = 'source-over';
     context.globalAlpha = 1;
     this.paintNight(context, view);
+    if (this.flaresWaiting > 0) this.trails.spinUp(this.flaresWaiting, time);
     this.trails.draw(context, view, time, this.trailSpeed);
     this.paintComets(context, view, time);
     this.paintFlares(context, view, time);

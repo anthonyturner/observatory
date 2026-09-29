@@ -1,6 +1,8 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { PAGE_REFRESH } from '../../../core/projects/projects-refresh';
+import { TrailActivity } from '../../../core/sky/trail-activity';
 import { TRAIL_SPEEDS, TrailSpeed } from '../../../core/sky/trail-speed';
 import { HelpState } from '../../../shared/help/help-state';
 import { HomeTools } from './home-tools';
@@ -63,6 +65,13 @@ describe('HomeTools', () => {
     expect(TestBed.inject(TrailSpeed).multiplier()).toBe(25);
     expect(element.querySelector('.spin output')?.textContent).toBe('25×');
     expect(lever?.getAttribute('aria-valuetext')).toBe('25×');
+  });
+
+  it('says in the lever’s tooltip how busy today is', () => {
+    TestBed.overrideProvider(TrailActivity, { useValue: { pace: signal(1.8) } });
+    const { element } = render();
+
+    expect(element.querySelector('.spin')?.getAttribute('title')).toContain('1.8× a usual day');
   });
 
   it('ends with ?, which opens help and shows it pressed', () => {

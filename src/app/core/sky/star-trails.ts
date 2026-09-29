@@ -2,7 +2,8 @@ import { seededRandom } from '../instrument/seeded-random';
 
 // A long exposure: each star is a short arc about the pole, drawn once into an
 // image that turns once every twenty minutes, calm and only just noticeable,
-// unless Home's Spin lever sets another pace. A
+// at the speed it is given: Home's activity pace times its Spin lever. Work
+// getting done spins it up for a moment on top of that. A
 // still sky keeps the arcs, because the arcs are the drawing, not the motion.
 // The pole is where the core sits before any scrolling, so the trails stay put
 // as the page scrolls and the core rises past them. Near the core they thin
@@ -74,6 +75,32 @@ export function advanceTurn(turn: number, stepS: number, speed: number): number 
   return turn + Math.min(Math.max(stepS, 0), MAX_TURN_STEP_S) * TRAIL_TURN * speed;
 }
 
+/** A spin-up: how much faster than its speed the sky turned when it began, and when. */
+export interface TrailSurge {
+  readonly peak: number;
+  readonly startS: number;
+}
+
+/** Each thing done adds this much speed, as a multiple of the sky's own, up to the cap. */
+const SURGE_PER_DONE = 3;
+const MAX_SURGE = 12;
+/** A spin-up halves every this many seconds, so it has all but gone in half a minute. */
+const SURGE_HALF_LIFE_S = 4;
+
+/** How much faster than its speed the sky turns at `time`, from a spin-up. */
+export function surgeAt(surge: TrailSurge | null, time: number): number {
+  if (!surge) return 0;
+  return surge.peak * 0.5 ** (Math.max(time - surge.startS, 0) / SURGE_HALF_LIFE_S);
+}
+
+/** A new spin-up for `done` things, on top of whatever is left of the last one. */
+export function surgeFrom(previous: TrailSurge | null, done: number, time: number): TrailSurge {
+  return {
+    peak: Math.min(surgeAt(previous, time) + done * SURGE_PER_DONE, MAX_SURGE),
+    startS: time,
+  };
+}
+
 /** A canvas adds light in screen space, which a faint arc needs lifted to show. */
 const lift = (alpha: number): number =>
   Math.min(1, 1.055 * Math.pow(Math.max(0, alpha), 1 / 2.4) - 0.055);
@@ -96,10 +123,16 @@ export class StarTrails {
   /** Summed frame by frame rather than read off the clock, so a new speed carries on from here. */
   private turn = 0;
   private lastTime: number | null = null;
+  private surge: TrailSurge | null = null;
 
   constructor(private readonly document: Document) {}
 
-  /** Draws the arcs, turned `speed` times the natural pace, and their twinkling heads. */
+  /** Spins the sky up for `done` things finished, from scene time `time`. */
+  spinUp(done: number, time: number): void {
+    this.surge = surgeFrom(this.surge, done, time);
+  }
+
+  /** Draws the arcs, turned `speed` times the natural pace plus any spin-up, and their twinkling heads. */
   draw(
     context: CanvasRenderingContext2D,
     sky: {
@@ -113,7 +146,8 @@ export class StarTrails {
     time: number,
     speed: number,
   ): void {
-    this.turn = advanceTurn(this.turn, time - (this.lastTime ?? time), speed);
+    const step = time - (this.lastTime ?? time);
+    this.turn = advanceTurn(this.turn, step, speed * (1 + surgeAt(this.surge, time)));
     this.lastTime = time;
     const reach = trailReach(sky.width, sky.height, sky.poleX, sky.poleY);
     this.paintIfNeeded(reach, sky.coreRadius, sky.pixelRatio);

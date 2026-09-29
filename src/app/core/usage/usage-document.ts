@@ -57,6 +57,10 @@ export interface TokenDay {
   readonly subagents: number;
 }
 
+/** A day's work tokens across every model family. */
+export const workTokensOf = (row: TokenDay): number =>
+  Object.values(row.families).reduce((sum, count) => sum + count, 0);
+
 export interface TokenTotals {
   readonly tokens: number;
   readonly cacheRead: number;

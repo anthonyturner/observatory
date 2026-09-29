@@ -1,107 +1,136 @@
 import { HelpEntry, HelpKey } from '../../../shared/help/help-entry';
 
 const TIER_3 = 'Tier 3';
+/** What each thing in the scene stands for, first, then how to work Home. */
+const SKY = 'The sky';
+const USING = 'Using Home';
 
 const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
-    term: 'Order',
+    term: 'Dots',
     meaning:
-      'Blocked first, then the ones GitHub has not worked out or could not read, then the rest.',
-  },
-  {
-    term: 'Counts',
-    meaning:
-      'On your own machine a card can differ for a few minutes from the project’s star map. Refresh brings them level.',
+      'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name; click a dot to go to its card. A dot fades, with a slow grey pulsing ring, once its oldest pull request has sat untouched for a week.',
+    section: SKY,
   },
   {
     term: 'Comets',
     meaning:
       'Each comet falling behind the core is one open issue, in its project’s colour. More issues make a heavier rain; closing one takes its comet away.',
+    section: SKY,
   },
   {
-    term: 'Mood',
+    term: 'Trails',
     meaning:
-      'The core’s mood follows your projects: calm, slow green when nothing is blocked; quicker, deeper breathing, warming toward amber, as blocked projects and stuck PRs pile up. Grey until the projects are read. The line under CLAUDE says why.',
+      'The faint arcs turning counterclockwise round the core, like a long-exposure photograph of stars circling the pole star. The arcs are the same on every visit; their pace is your day. Today’s Claude Code work, against a usual working day by this time of day, sets it: twice as busy turns twice as fast, between half and four times. With no usage to read they keep a steady once every twenty minutes. Work done since the last refresh spins them up for a moment.',
+    section: SKY,
+  },
+  {
+    term: 'Spin',
+    meaning:
+      'The Spin lever at the foot of the screen scales the trails’ pace: 1× is today’s pace (point at the lever to see how busy today is), 0× holds them still, and they go up to a hundred times faster. Remembered. With Motion off they hold still whatever it says.',
+    section: SKY,
+  },
+  {
+    term: 'Progress',
+    meaning:
+      'When a refresh shows issues closed or pull requests merged since the last one, that project’s dot bursts green, green comets flare into the core, one per thing done, and the star trails spin up for a moment.',
+    section: SKY,
   },
   {
     term: 'Ripple',
     meaning:
       'A wave rolls across the floor each time fresh project data arrives, about every five minutes. No ripple for a long while means the data has stopped coming.',
-  },
-  {
-    term: 'Progress',
-    meaning:
-      'When a refresh shows issues closed or pull requests merged since the last one, that project’s dot bursts green and green comets flare into the core, one per thing done.',
+    section: SKY,
   },
   {
     term: 'Fog',
     meaning:
       'Home fogs over as its project data ages: nothing for six hours, full by three days. A line under the core says how old the data is. Fresh data clears it.',
+    section: SKY,
   },
   {
-    term: 'Dots',
+    term: 'Mood',
     meaning:
-      'One dot per project on the ring round the core, in card order clockwise from twelve: blocked first, ringed. A bigger dot has more open work. Point at a dot, or at its card, to see its name; click a dot to go to its card. A dot fades, with a slow grey pulsing ring, once its oldest pull request has sat untouched for a week.',
+      'The core’s mood follows your projects: calm, slow green when nothing is blocked; quicker, deeper breathing, warming toward amber, as blocked projects and stuck PRs pile up. Grey until the projects are read. The line under CLAUDE says why.',
+    section: SKY,
+  },
+  {
+    term: 'Order',
+    meaning:
+      'Blocked first, then the ones GitHub has not worked out or could not read, then the rest.',
+    section: USING,
+  },
+  {
+    term: 'Counts',
+    meaning:
+      'On your own machine a card can differ for a few minutes from the project’s star map. Refresh brings them level.',
+    section: USING,
   },
   {
     term: 'Core',
     meaning:
       'Drag the ball to turn it; flick it and it coasts. The points near your pointer light up. With the core focused, the arrow keys turn it. Click it without dragging (or press Enter) to talk, and again to send, as the mic does; where voice cannot run, it opens the ask box instead.',
+    section: USING,
   },
   {
     term: 'Motion',
     meaning:
       'Follows your system’s reduced-motion setting until you press it; then it remembers your choice. Off, everything holds still.',
-  },
-  {
-    term: 'Spin',
-    meaning:
-      'The Spin lever at the foot of the screen sets how fast the star trails turn about the core: from still, through their natural once every twenty minutes (1×), up to a hundred times that. Remembered. With Motion off they hold still whatever it says.',
+    section: USING,
   },
   {
     term: 'Sound',
     meaning:
       'A trance track made in this browser as you listen: a steady beat, a rolling bass, a pumping pad and a glassy lead melody over four chords. Pointing at a project plays a short motif from where its dot sits. As projects strain, the beat gets busier and the arpeggio climbs. Off until you turn it on, and remembered.',
+    section: USING,
   },
   {
     term: 'News',
     meaning:
       'Above the projects (News in the menu jumps there): the latest AI news, new tools for building software first (marked tool), and the latest in software engineering, each with a paragraph or two from the feed or the story itself, from public feeds such as Simon Willison, the GitHub Changelog, Hacker News and InfoQ. Read every half hour, no AI credits spent. Click a headline to read it in the floating window (Ctrl-click opens a tab).',
+    section: USING,
   },
   {
     term: 'Ask',
     meaning:
       'Type a request and press Enter. Plainly named app actions are matched by keyword; Jev answers the rest, thinking with Claude Code on your own subscription and looking up your projects, usage or the web as it needs, and remembers this visit’s conversation. A web answer lists its sources under it: click one to read it in a floating window you can drag and resize (Ctrl-click opens a tab instead). Each reply says which tier it took and how.',
+    section: USING,
   },
   {
     term: 'Arcs',
     meaning:
       'The three arcs round the ball are the tiers. They light in turn while Home works a request out, then the tier the reply took stays lit for a moment.',
+    section: USING,
   },
   {
     term: 'Tier 1',
     meaning:
       '●○○ An app action: open a page, refresh, help. Matched without calling any model when you name it plainly.',
+    section: USING,
   },
   {
     term: 'Tier 2',
     meaning:
       '●●○ Jev’s answer, from Claude Haiku. It looks up your projects and usage itself, remembers this visit’s conversation, and can be wrong.',
+    section: USING,
   },
   {
     term: TIER_3,
     meaning:
       '●●● Work in a project. Home shows the command that runs it as a Claude Code task, for you to run in the project’s folder.',
+    section: USING,
   },
   {
     term: 'Talk',
     meaning:
       'Press Tap to talk once to start and again to stop, or hold it and let go to send. With ElevenLabs on, your recording is turned into text by ElevenLabs, on your ElevenLabs credits; otherwise a speech model in this browser does it, and no audio leaves it.',
+    section: USING,
   },
   {
     term: 'Speak',
     meaning:
       'Reads actions and Jev’s answers aloud, in this browser. Off until you turn it on, and remembered.',
+    section: USING,
   },
 ];
 
@@ -111,41 +140,49 @@ const RUN_HELP_ENTRIES: readonly HelpEntry[] = [
     term: TIER_3,
     meaning:
       '●●● Work in a project. Home shows the task, the project folder it would run in and the command, and runs it as a Claude Code task only when you press Run. When no project is named, it asks which.',
+    section: USING,
   },
   {
     term: 'Run',
     meaning:
       'Run arms after a moment, then a click, or Enter or Space on Run itself, starts the task. Nothing else does: not Enter anywhere else, and never your voice. A proposal lasts 5 minutes, and one task runs at a time.',
+    section: USING,
   },
   {
     term: 'Task',
     meaning:
       'A running task has a panel on the right: its state, its time against the 30-minute limit, and what Claude Code does as it happens. It runs with your own Claude Code permissions and hooks. Hide folds the panel into the pill at the top; the core shows Working while it runs.',
+    section: USING,
   },
   {
     term: 'Tools',
     meaning:
       'Each tool Claude uses is one line: its name and what it was called with, marked ○ while it runs, ✓ once it worked, ✕ if it failed. Press a line to see the call and what came back. Claude’s own words read as plain text between them. The run ends with a green block (the result, the time, the cost and the turns), or a red one if it stopped with an error.',
+    section: USING,
   },
   {
     term: 'Refused',
     meaning:
       'An amber Not allowed block, marked ⊘, is a tool Claude wanted that your Claude Code settings don’t allow. It was not done, and Claude carried on without it; the count sits under the title. A dashed Expected block is one of your own hooks asking Claude to write where a run from Home can’t: skipped, and nothing to worry about.',
+    section: USING,
   },
   {
     term: 'Hooks',
     meaning:
       'Your own Claude Code hooks run in every task. They fold into one Hooks line; press it for each hook and how it went.',
+    section: USING,
   },
   {
     term: 'Recent',
     meaning:
       'Recent runs, under the output, lists the task running now and the last five that finished since the local site started, with their time and cost. Press one to read it again; Back returns to the current run. With no task running, the pill at the top opens them. Reloading the page picks a running task up where this tab left it.',
+    section: USING,
   },
   {
     term: 'Cancel',
     meaning:
       'Cancel run stops the task and everything it started, at once. Changes it already made stay made. Esc never cancels a task.',
+    section: USING,
   },
 ];
 

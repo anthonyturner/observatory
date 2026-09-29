@@ -4,6 +4,6 @@
   "video": {
     "src": "https://observatory-nu-ten.vercel.app/portfolio/observatory-demo.mp4",
     "poster": "https://observatory-nu-ten.vercel.app/portfolio/observatory-poster.jpg",
-    "caption": "The Observatory home screen: each project is a bead on the orrery, with blocked work first."
+    "caption": "A silent walkthrough of the live preview: turning sound and motion on and off, spinning up the star trails, then the news feed, the orrery and one project's star map with its list, issues, logs, usage, replay, merge plan and agents views."
   }
 }

@@ -89,7 +89,8 @@ function unlisted(items: readonly NewsItem[], listed: Set<string>): NewsItem[] {
 /** Stories read at once, so a slow site holds up only its own. */
 const ARTICLE_READS_AT_ONCE = 6;
 
-/** `item` with what its feed left out, a summary or a picture, read from the story itself. */
+/** `item` with what its feed left out, a summary or a picture, read from the story itself,
+ *  and the page's video too where the feed named none. */
 async function completed(item: NewsItem, readArticle: ArticleReader): Promise<NewsItem> {
   if (item.summary.length && item.image) return item;
   const details = await readArticle(item.url);
@@ -97,6 +98,7 @@ async function completed(item: NewsItem, readArticle: ArticleReader): Promise<Ne
     ...item,
     summary: item.summary.length ? item.summary : withoutTitle(details.summary, item.title),
     image: item.image ?? details.image,
+    video: item.video ?? details.video,
   };
 }
 

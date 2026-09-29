@@ -7,6 +7,7 @@ const item = {
   publishedAt: '2026-09-28T09:00:00Z',
   summary: ['Claude Code 3 writes and runs its own tests.'],
   image: 'https://blog.example/cc3.png',
+  video: { kind: 'embed', url: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ' },
   tool: true,
 };
 
@@ -45,6 +46,19 @@ describe('parseNewsReport', () => {
     });
 
     expect(report?.ai.map((each) => each.image)).toEqual([null, null]);
+  });
+
+  it('keeps only an https video of a known kind', () => {
+    const report = parseNewsReport({
+      ai: [
+        { ...item, video: { kind: 'embed', url: 'http://www.youtube-nocookie.com/embed/x' } },
+        { ...item, video: { kind: 'page', url: 'https://a.example/' } },
+        { ...item, video: 'https://a.example/clip.mp4' },
+      ],
+      engineering: [],
+    });
+
+    expect(report?.ai.map((each) => each.video)).toEqual([null, null, null]);
   });
 
   it('is null for anything that is not a news report', () => {

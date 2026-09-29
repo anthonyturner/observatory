@@ -1,0 +1,32 @@
+@if (embed(); as player) {
+  <iframe
+    class="frame"
+    [src]="player"
+    [title]="'Video: ' + title()"
+    loading="lazy"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allow="encrypted-media; picture-in-picture; fullscreen"
+    allowfullscreen
+  ></iframe>
+} @else if (file(); as clip) {
+  <video
+    class="frame"
+    [src]="clip"
+    [attr.poster]="image()"
+    [attr.aria-label]="'Video: ' + title()"
+    controls
+    playsinline
+    preload="none"
+    (error)="fail('video')"
+  ></video>
+} @else if (picture(); as src) {
+  <img
+    class="frame"
+    [src]="src"
+    alt=""
+    loading="lazy"
+    decoding="async"
+    referrerpolicy="no-referrer"
+    (error)="fail('image')"
+  />
+}

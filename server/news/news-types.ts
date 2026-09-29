@@ -10,6 +10,13 @@ export interface NewsSource {
   readonly only?: RegExp;
 }
 
+/** A story's video: a YouTube or Vimeo player to embed, or a video file to play. */
+export interface NewsVideo {
+  readonly kind: 'embed' | 'file';
+  /** https only; an embed is always youtube-nocookie.com or player.vimeo.com. */
+  readonly url: string;
+}
+
 /** One headline as a feed gives it. */
 export interface FeedItem {
   readonly title: string;
@@ -20,6 +27,8 @@ export interface FeedItem {
   readonly summary: readonly string[];
   /** A thumbnail for the story, https only; null where none was found. */
   readonly image: string | null;
+  /** A video to play in the story; null where it has none. */
+  readonly video: NewsVideo | null;
 }
 
 /** One headline as Home shows it. */

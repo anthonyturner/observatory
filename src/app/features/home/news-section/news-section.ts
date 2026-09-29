@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { NEWS_STATE } from '../../../core/news/news-feed';
 import { NewsItem, NewsState } from '../../../core/news/news.types';
 import { Reader } from '../../../core/reader/reader-service';
@@ -6,6 +6,7 @@ import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { ageOf } from '../../../core/usage/usage-format';
 import { TopLink } from '../../../shared/section-jump/top-link';
+import { NewsMedia } from '../news-media/news-media';
 
 /** What a column says in place of headlines, by where the news stands. */
 const WAITING_MESSAGE: Record<Exclude<NewsState['status'], 'ready'>, string> = {
@@ -25,7 +26,7 @@ const MINUTE_MS = 60_000;
 /** Below the HUD, above the projects: the latest AI news, tools first, and the latest in software engineering. */
 @Component({
   selector: 'app-news-section',
-  imports: [TopLink],
+  imports: [NewsMedia, TopLink],
   templateUrl: './news-section.html',
   styleUrl: './news-section.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,9 +38,6 @@ export class NewsSection {
   private readonly clock = inject(Clock);
   /** Ages move a minute at a time, so the list is not redrawn every second. */
   private readonly minute = computed(() => Math.floor(this.clock.now().getTime() / MINUTE_MS));
-
-  /** Pictures that would not load, which show no box rather than a broken one. */
-  protected readonly broken = signal<ReadonlySet<string>>(new Set());
 
   protected readonly waiting = computed(() => {
     const { status } = this.state();
@@ -72,10 +70,6 @@ export class NewsSection {
     return item.publishedAt
       ? `${item.source} · ${ageOf(item.publishedAt, this.minute() * MINUTE_MS)}`
       : item.source;
-  }
-
-  protected hideBroken(image: string): void {
-    this.broken.update((broken) => new Set(broken).add(image));
   }
 
   /** On this machine a plain click reads the story in the floating reader;

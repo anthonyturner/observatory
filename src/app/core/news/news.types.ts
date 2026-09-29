@@ -1,3 +1,9 @@
+/** A story's video: a YouTube or Vimeo player to embed, or an https video file to play. */
+export interface NewsVideo {
+  readonly kind: 'embed' | 'file';
+  readonly url: string;
+}
+
 /** One headline, as the API's `GET /api/news` gives it. */
 export interface NewsItem {
   readonly title: string;
@@ -9,6 +15,8 @@ export interface NewsItem {
   readonly summary: readonly string[];
   /** A thumbnail for the story, https only; null where none was found. */
   readonly image: string | null;
+  /** A video to play in the story; null where it has none. */
+  readonly video: NewsVideo | null;
   /** A new or updated tool, which the AI section lists first. */
   readonly tool: boolean;
 }

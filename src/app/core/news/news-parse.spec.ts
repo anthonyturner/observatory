@@ -5,6 +5,7 @@ const item = {
   url: 'https://blog.example/cc3',
   source: 'Blog',
   publishedAt: '2026-09-28T09:00:00Z',
+  summary: ['Claude Code 3 writes and runs its own tests.'],
   tool: true,
 };
 

@@ -13,6 +13,7 @@ const item = (title: string, tool = false): NewsItem => ({
   url: `https://news.example/${encodeURIComponent(title)}`,
   source: 'Blog',
   publishedAt: '2026-09-28T09:00:00Z',
+  summary: tool ? ['Claude Code 3 writes and runs its own tests.'] : [],
   tool,
 });
 const ready = (unread: string[] = []): NewsState => ({
@@ -54,6 +55,7 @@ describe('NewsSection', () => {
       'Monorepos at scale',
     ]);
     expect(texts(element, '.tool')).toEqual(['tool']);
+    expect(texts(element, '.summary')).toEqual(['Claude Code 3 writes and runs its own tests.']);
     expect(texts(element, '.meta')[1]).toBe('Blog · 3h');
   });
 

@@ -17,7 +17,7 @@ import { SoundPreference } from '../../../core/sound/sound-preference';
 import { RunDock } from '../../../core/runs/run-dock';
 import { RunsStore } from '../../../core/runs/runs-store';
 
-/** Home: the HUD over the sky, then the projects and the news below the fold, and a
+/** Home: the HUD over the sky, then the news and the projects below the fold, and a
  *  task's panel beside them. It lays the sections out and nothing more. */
 @Component({
   selector: 'app-home-page',

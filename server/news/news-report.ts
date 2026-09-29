@@ -1,4 +1,6 @@
+import type { ArticleSummary } from './article-summary.ts';
 import { parseFeed } from './feed-parse.ts';
+import { withoutTitle } from './news-summary.ts';
 import type { NewsItem, NewsReport, NewsSource, NewsTopic } from './news-types.ts';
 
 /** Reads one feed's XML; throws when it cannot. */
@@ -84,11 +86,37 @@ function unlisted(items: readonly NewsItem[], listed: Set<string>): NewsItem[] {
   return fresh;
 }
 
-/** The newest headlines from every source. AI is listed first, so a story in both is AI news. */
+/** Stories read at once for their summaries, so a slow site holds up only its own. */
+const SUMMARY_READS_AT_ONCE = 6;
+
+/** `items` with a summary read from each story whose feed gave none. */
+async function withSummaries(
+  items: readonly NewsItem[],
+  summarize: ArticleSummary,
+): Promise<NewsItem[]> {
+  const done = [...items];
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < done.length) {
+      const at = next++;
+      if (!done[at].summary.length)
+        done[at] = {
+          ...done[at],
+          summary: withoutTitle(await summarize(done[at].url), done[at].title),
+        };
+    }
+  };
+  await Promise.all(Array.from({ length: SUMMARY_READS_AT_ONCE }, worker));
+  return done;
+}
+
+/** The newest headlines from every source. AI is listed first, so a story in both is AI news.
+ *  With `summarize`, a story whose feed gave no summary gets its opening paragraphs. */
 export async function newsReport(
   sources: readonly NewsSource[],
   fetchFeed: FeedFetcher,
   now: number,
+  summarize?: ArticleSummary,
 ): Promise<NewsReport> {
   const reads = await readAll(sources, fetchFeed);
   const unread = new Set<string>();
@@ -111,7 +139,15 @@ export async function newsReport(
   const rest = aiNews.filter((item) => !item.tool).slice(0, SECTION_SIZE - tools.length);
   const ai = list([...tools, ...rest]);
   const engineering = list(unlisted(byTopic.engineering, listed).slice(0, SECTION_SIZE));
-  return { ai, engineering, unread: [...unread], readAt: new Date(now).toISOString() };
+  const [summedAi, summedEngineering] = summarize
+    ? await Promise.all([withSummaries(ai, summarize), withSummaries(engineering, summarize)])
+    : [ai, engineering];
+  return {
+    ai: summedAi,
+    engineering: summedEngineering,
+    unread: [...unread],
+    readAt: new Date(now).toISOString(),
+  };
 }
 
 const FETCH_TIMEOUT_MS = 10_000;

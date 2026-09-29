@@ -84,3 +84,32 @@ button[aria-pressed='true'] {
     min-height: 44px;
   }
 }
+
+.jumps a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 13px;
+  border-right: 1px solid var(--edge-soft);
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.jumps a:last-child {
+  border-right: 0;
+}
+
+.jumps a span {
+  color: var(--flow);
+}
+
+.jumps a:hover,
+.jumps a:focus-visible {
+  color: var(--ink);
+  background: var(--flow-tint);
+}

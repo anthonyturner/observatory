@@ -61,7 +61,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'News',
     meaning:
-      'Below the projects: the latest AI news, new tools for building software first (marked tool), and the latest in software engineering, from public feeds such as Simon Willison, the GitHub Changelog, Hacker News and InfoQ. Read every half hour, no AI credits spent. Click a headline to read it in the floating window (Ctrl-click opens a tab).',
+      'Above the projects (News in the menu jumps there): the latest AI news, new tools for building software first (marked tool), and the latest in software engineering, each with a paragraph or two from the feed or the story itself, from public feeds such as Simon Willison, the GitHub Changelog, Hacker News and InfoQ. Read every half hour, no AI credits spent. Click a headline to read it in the floating window (Ctrl-click opens a tab).',
   },
   {
     term: 'Ask',

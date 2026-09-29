@@ -21,7 +21,7 @@ interface NewsColumn {
 
 const MINUTE_MS = 60_000;
 
-/** Below the projects: the latest AI news, tools first, and the latest in software engineering. */
+/** Below the HUD, above the projects: the latest AI news, tools first, and the latest in software engineering. */
 @Component({
   selector: 'app-news-section',
   templateUrl: './news-section.html',

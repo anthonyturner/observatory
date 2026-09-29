@@ -53,6 +53,12 @@ export interface NewsEffect3D {
   readonly onHead?: (head: [number, number]) => void;
 }
 
+/** A traced fault and the other windows where the same fault fires. */
+export interface LogThreads {
+  readonly traced: SkyStar;
+  readonly twins: readonly SkyStar[];
+}
+
 /**
  * Something a sky draws besides its stars: comets, collision threads, the
  * merge plan, the changes. Each hook runs at the point pr-starmap drew it.
@@ -73,6 +79,8 @@ export interface SkyLayer {
   pick?(sx: number, sy: number): unknown;
   /** Bursts for the 3D scene to play, where the 2D sky would draw them itself. */
   effects3D?(frame: SkyFrame): NewsEffect3D[];
+  /** Log threads for the 3D scene to draw in depth, where the 2D sky draws them flat. */
+  threads3D?(frame: SkyFrame): LogThreads | null;
 }
 
 /** A renderer: pr-starmap's contract of mount, setScene, frame, pick, toScreen, resize, dispose. */

@@ -25,6 +25,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { CameraController } from './camera-controller';
 import { Kit, Owned, vec } from './gpu-kit';
 import { NewsEffects3D } from './news-3d';
+import { Threads3D } from './threads-3d';
 import {
   drawClusterLabel,
   drawFog,
@@ -223,6 +224,8 @@ function buildScene3D(
     toScreen: (x, y, z) => camera.project(x, y, z),
   });
 
+  const threads = new Threads3D(scene, kit);
+
   const updateLine = (object: Line, members: readonly SkyStar[]): void => {
     const p = object.geometry.attributes['position'];
     members.forEach((s, i) => p.setXYZ(i, s.ax, -s.ay, s.az));
@@ -269,9 +272,15 @@ function buildScene3D(
       (flow.material as LineDashedMaterial).scale = cam.scale;
       dashTime.value = t * 30;
       news.update(f.layers.flatMap((layer) => layer.effects3D?.(f) ?? []));
+      // Log threads follow the same fault across windows, bowed in 3D.
+      threads.update(
+        f.layers.map((layer) => layer.threads3D?.(f) ?? null).find((each) => each !== null) ?? null,
+        cam.scale,
+      );
     },
     dispose(): void {
       news.dispose();
+      threads.dispose();
     },
   };
 }

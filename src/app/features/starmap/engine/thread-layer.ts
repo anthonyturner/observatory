@@ -1,6 +1,5 @@
 import { WORLD } from './sky-model';
-import { SkyFrame, SkyLayer } from './sky-frame';
-import { SkyStar } from './sky-model';
+import { LogThreads, SkyFrame, SkyLayer } from './sky-frame';
 
 /** How far each thread bows toward the middle of the sky. */
 const BOW_TO_CENTRE = 0.35;
@@ -9,14 +8,15 @@ const BOW_TO_CENTRE = 0.35;
  * The same fault in other windows: threads out of the traced star, bowed
  * toward the centre so threads to neighbours on the ring arc rather than cross
  * the constellations between. One shared cause firing everywhere reads at once.
+ * The 3D sky draws them in its scene instead (`threads3D`), bowed back into depth.
  */
 export class ThreadLayer implements SkyLayer {
   /** The traced star and its twins, found by whoever knows what a fault is. */
-  trace: { readonly traced: SkyStar; readonly twins: readonly SkyStar[] } | null = null;
+  trace: LogThreads | null = null;
 
   beneath(c: CanvasRenderingContext2D, f: SkyFrame): void {
     const trace = this.trace;
-    if (f.chart !== 'logs' || !trace?.twins.length) return;
+    if (f.renderer === 'webgl' || f.chart !== 'logs' || !trace?.twins.length) return;
     const { traced, twins } = trace;
     const [x0, y0] = f.toScreen(traced.ax, traced.ay, traced.az);
     const [mx, my] = f.toScreen(WORLD.w / 2, WORLD.h / 2);
@@ -36,5 +36,9 @@ export class ThreadLayer implements SkyLayer {
     }
     c.stroke();
     c.restore();
+  }
+
+  threads3D(f: SkyFrame): LogThreads | null {
+    return f.chart === 'logs' && this.trace?.twins.length ? this.trace : null;
   }
 }

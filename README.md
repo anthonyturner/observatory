@@ -155,7 +155,6 @@ files on this machine, so it listens on loopback only:
   and the Stack Overflow Blog. The list is `server/news/news-sources.ts`. The
   hosted site reads the same feeds.
 
-
 ### Home's assistant (Jev)
 
 `POST /api/route` answers a request typed or spoken on Home, and

@@ -19,7 +19,7 @@ describe('StarmapHeader', () => {
   it('leads up to every project, and names the sky', () => {
     const { element } = render();
 
-    expect(element.querySelector('a.up')?.getAttribute('href')).toBe('/orrery');
+    expect(element.querySelector('app-up-link a')?.getAttribute('href')).toBe('/orrery');
     expect(element.querySelector('h1')?.textContent).toBe('Review Queue');
     expect(element.querySelector('.stale')).toBeNull();
   });

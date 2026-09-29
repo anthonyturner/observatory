@@ -2,21 +2,20 @@
 <app-fog-veil class="fog" [level]="fog().level" />
 
 <header class="hud top">
-  <div class="brand">
-    <h1>Orrery</h1>
-    <span class="stamp">{{ stamp() }}</span>
-    @if (fog().age; as age) {
-      <span
-        class="stale"
-        title="The data has not been refreshed for a while. Refresh on Home clears the fog."
-        >fogged · {{ age }} old</span
-      >
-    }
+  <div>
+    <app-up-link to="/" label="Home" />
+    <div class="brand">
+      <h1>Orrery</h1>
+      <span class="stamp">{{ stamp() }}</span>
+      @if (fog().age; as age) {
+        <span
+          class="stale"
+          title="The data has not been refreshed for a while. Refresh on Home clears the fog."
+          >fogged · {{ age }} old</span
+        >
+      }
+    </div>
   </div>
-  <nav class="links" aria-label="Page">
-    <app-help-button />
-    <a class="home" routerLink="/"><span aria-hidden="true">&lsaquo;</span> Home</a>
-  </nav>
 </header>
 
 @if (waiting(); as message) {

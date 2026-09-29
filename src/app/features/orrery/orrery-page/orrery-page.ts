@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { orreryStamp } from '../../../core/orrery/orrery-stamp';
+import { DataAge } from '../../../core/projects/data-age';
+import { FogVeil } from '../../../shared/night-sky/fog-veil';
 import { layoutWorlds } from '../../../core/orrery/world-layout';
 import { PROJECTS, PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { Clock } from '../../../core/time/clock';
@@ -22,7 +24,7 @@ const WAITING_MESSAGE = {
 /** The orrery: every project as a world in one system, round a sun of open work. */
 @Component({
   selector: 'app-orrery-page',
-  imports: [UpLink, OrreryCanvas, OrreryTools, WorldCard, HelpCard],
+  imports: [UpLink, OrreryCanvas, OrreryTools, WorldCard, HelpCard, FogVeil],
   hostDirectives: [HelpShortcuts],
   providers: [provideOrrerySound()],
   templateUrl: './orrery-page.html',
@@ -43,6 +45,8 @@ export class OrreryPage {
   protected readonly selectedWorld = computed(
     () => this.worlds().find((world) => world.project.repo === this.selected()) ?? null,
   );
+  /** The sky fogs over as the projects report ages, as on Home. */
+  protected readonly fog = inject(DataAge).fog;
   protected readonly stamp = computed(() => orreryStamp(this.state(), this.now().getTime()));
   protected readonly waiting = computed(() => {
     const state = this.state();

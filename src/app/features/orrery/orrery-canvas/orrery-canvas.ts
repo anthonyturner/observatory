@@ -22,6 +22,7 @@ import { OrreryWorld, outermostOrbit } from '../../../core/orrery/world-layout';
 import { OrreryPalette, readOrreryPalette } from './orrery-palette';
 import { OrreryScene, SceneFrame } from './orrery-scene';
 import type { OrreryWebGL } from './webgl/orrery-webgl';
+import { CardHover } from './card-hover';
 
 const FRAMES_PER_SECOND = 30;
 /** Retina and beyond cost more than they show on a moving sky. */
@@ -31,8 +32,6 @@ const CLICK_SLOP_PX = 5;
 const WHEEL_ZOOM = 1.16;
 const KEY_ZOOM = 1.2;
 const KEY_PAN_PX = 90;
-/** A hover card lingers this long, so the pointer can travel to it. */
-const HIDE_DELAY_MS = 380;
 /** Worlds that grew in before a still page drew are shown full-grown. */
 const FULLY_GROWN_S = 60;
 
@@ -88,7 +87,11 @@ export class OrreryCanvas {
   private lastWall: number | null = null;
   private pointer: { x: number; y: number } | null = null;
   private pinned: string | null = null;
-  private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly cardHover = new CardHover({
+    selected: () => this.selected(),
+    select: (key) => this.selected.set(key),
+    isPinned: () => this.pinned !== null,
+  });
   private pinch: number | null = null;
   protected press: Press | null = null;
   /** Signals, so the cursor follows: the canvas changes them outside any template event. */
@@ -127,12 +130,12 @@ export class OrreryCanvas {
 
   /** The card is under the pointer: keep it. */
   holdCard(): void {
-    this.cancelHide();
+    this.cardHover.hold();
   }
 
   /** The pointer left the card: let it go, unless it was pinned. */
   releaseCard(): void {
-    if (!this.pinned) this.hideSoon();
+    this.cardHover.release();
   }
 
   private start(): void {
@@ -325,7 +328,7 @@ export class OrreryCanvas {
   private onPointerLeave(): void {
     this.pointer = null;
     this.isOverWorld.set(false);
-    if (!this.pinned) this.hideSoon();
+    this.cardHover.release();
   }
 
   private onWheel(event: WheelEvent): void {
@@ -386,12 +389,7 @@ export class OrreryCanvas {
   private hoverAt(x: number, y: number): void {
     const key = pickWorld(this.drawn, x, y);
     this.isOverWorld.set(key !== null);
-    if (key) {
-      this.cancelHide();
-      if (key !== this.selected() && !this.pinned) this.selected.set(key);
-    } else if (this.selected() && !this.pinned) {
-      this.hideSoon();
-    }
+    this.cardHover.over(key);
   }
 
   /** A click opens the world's review queue. A touch screen has no hover, so
@@ -399,7 +397,7 @@ export class OrreryCanvas {
    *  A click on empty sky clears the card. */
   private clickAt(x: number, y: number, isTouch: boolean): void {
     const key = pickWorld(this.drawn, x, y);
-    this.cancelHide();
+    this.cardHover.cancel();
     const isFirstTap = isTouch && key !== this.selected();
     if (key && !isFirstTap) {
       this.open.emit(key);
@@ -409,25 +407,11 @@ export class OrreryCanvas {
     this.selected.set(key);
   }
 
-  /** Started once; a hide already pending is left to run, not restarted each frame. */
-  private hideSoon(): void {
-    if (this.hideTimer) return;
-    this.hideTimer = setTimeout(() => {
-      this.hideTimer = null;
-      if (!this.pinned) this.selected.set(null);
-    }, HIDE_DELAY_MS);
-  }
-
-  private cancelHide(): void {
-    if (this.hideTimer) clearTimeout(this.hideTimer);
-    this.hideTimer = null;
-  }
-
   private stop(): void {
     this.isStopped = true;
     this.loop?.stop();
     this.dropWebgl();
-    this.cancelHide();
+    this.cardHover.cancel();
     for (const undo of this.teardown) undo();
   }
 }

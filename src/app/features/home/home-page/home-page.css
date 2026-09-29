@@ -41,6 +41,9 @@ main {
   bottom: 0;
   left: 0;
   z-index: 5;
+  /* A row, so the tools are as wide as their buttons and the rest of the strip
+     lets the pointer through to the page. */
+  display: flex;
   padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
 }

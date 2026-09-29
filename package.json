@@ -14,6 +14,7 @@
     "usage:import-history": "node server/usage/import-history.ts",
     "agents:import-history": "node server/agents/import-history.ts",
     "push": "node server/push.ts",
+    "queue": "node server/queue/queue-cli.ts",
     "prepare": "husky"
   },
   "private": true,

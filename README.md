@@ -274,6 +274,28 @@ Without a key the voice is off, makes no call, and the page falls back to
 Kokoro. The key is sent to ElevenLabs only, in its own header, and scrubbed
 from every error and log line. Like Jev, the voice is local only.
 
+## The review queue in a terminal
+
+The star map's review queue, as text, with the same triage:
+
+```bash
+npm run queue                                  # the queue for the checkout you ran it from
+npm run queue -- owner/repo                    # or any repository
+npm run queue -- owner/repo all                # dismissed and snoozed ones too, marked
+npm run queue -- owner/repo seen 12            # also: unseen, dismiss, restore
+npm run queue -- owner/repo snooze 12 3        # hidden for three days
+npm run queue -- owner/repo --json             # for a script, or an agent
+```
+
+It lists open pull requests blocked first (cannot merge, checks failing,
+mergeability unknown, no issue linked, waiting on you, then ones already
+seen), each with the issue it closes and how long it has sat idle. It reads
+GitHub through `gh` and keeps triage in the same store as the local site
+(`~/.claude/observatory/`), so the star map shows a snooze made here at its
+next read, and the other way round. A dismissal covers the pull request as it
+stood: a later push brings it back. Like the site, it only triages; it never
+merges, closes or pushes.
+
 ## Run: tier-3 work on this machine
 
 A request that means work in a project, such as reading or changing code, can

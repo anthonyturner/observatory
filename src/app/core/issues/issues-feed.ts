@@ -48,9 +48,10 @@ export class IssuesFeed {
       .subscribe((state) => this.keep(state));
   }
 
-  /** Reads them again now, keeping what is shown until the answer comes. */
-  refresh(repo: string): void {
-    this.fetch(repo).subscribe((state) => this.keep(state));
+  /** Reads them again now, keeping what is shown until the answer comes;
+   *  `fresh`, from GitHub rather than the API's cache, for Refresh. */
+  refresh(repo: string, fresh = false): void {
+    this.fetch(repo, fresh).subscribe((state) => this.keep(state));
   }
 
   private keep(read: IssuesState): void {
@@ -59,8 +60,9 @@ export class IssuesFeed {
     );
   }
 
-  private fetch(repo: string): Observable<IssuesState> {
-    return this.http.get<unknown>(ISSUES_URL, { params: { repo } }).pipe(
+  private fetch(repo: string, fresh = false): Observable<IssuesState> {
+    const params: Record<string, string> = fresh ? { repo, fresh: '1' } : { repo };
+    return this.http.get<unknown>(ISSUES_URL, { params }).pipe(
       map((body): IssuesState => {
         const report = parseIssuesReport(body);
         return report ? { status: 'ready', report } : { status: 'unreachable' };

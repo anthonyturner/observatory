@@ -8,7 +8,15 @@
 </nav>
 <a class="link" routerLink="/orrery">Orrery <span aria-hidden="true">&rsaquo;</span></a>
 <div class="group" role="group" aria-label="Tools">
-  <button type="button" title="Rebuild every project's counts from GitHub now">Refresh</button>
+  <button
+    type="button"
+    title="Rebuild every project's counts from GitHub now"
+    [disabled]="refreshing()"
+    [attr.aria-busy]="refreshing()"
+    (click)="refresh()"
+  >
+    {{ refreshing() ? 'Refreshing…' : 'Refresh' }}
+  </button>
   <button
     type="button"
     [attr.aria-pressed]="!motion.isStill()"

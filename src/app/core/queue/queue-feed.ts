@@ -40,9 +40,12 @@ export class QueueFeed {
   }
 
   /** Reads the queue again now, keeping what is shown until the answer comes:
-   *  after a triage action, which the API merges in on every read. */
-  refresh(repo: string): void {
-    this.fetch(repo).subscribe((state) => this.current.update((now) => nextQueueState(now, state)));
+   *  after a triage action, which the API merges in on every read, or, `fresh`,
+   *  from GitHub rather than the API's cache, for Refresh. */
+  refresh(repo: string, fresh = false): void {
+    this.fetch(repo, fresh).subscribe((state) =>
+      this.current.update((now) => nextQueueState(now, state)),
+    );
   }
 
   /** Starts reading `repo`'s queue, in place of any it was reading. */
@@ -57,8 +60,9 @@ export class QueueFeed {
       .subscribe((state) => this.current.update((now) => nextQueueState(now, state)));
   }
 
-  private fetch(repo: string) {
-    return this.http.get<unknown>(QUEUE_URL, { params: { repo } }).pipe(
+  private fetch(repo: string, fresh = false) {
+    const params: Record<string, string> = fresh ? { repo, fresh: '1' } : { repo };
+    return this.http.get<unknown>(QUEUE_URL, { params }).pipe(
       map((body): QueueState => {
         const report = parseQueueReport(body);
         return report ? { status: 'ready', report } : { status: 'unreachable' };

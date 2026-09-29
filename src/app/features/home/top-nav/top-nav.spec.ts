@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { PAGE_REFRESH } from '../../../core/projects/projects-refresh';
 import { HelpState } from '../../../shared/help/help-state';
 import { TopNav } from './top-nav';
 
@@ -34,6 +35,28 @@ describe('TopNav', () => {
     expect(document.activeElement).toBe(news);
     expect(click.defaultPrevented).toBe(true);
     news.remove();
+  });
+
+  it('reads every project again from Refresh, saying so while it does', async () => {
+    let finish!: () => void;
+    const refresh = vi.fn(() => new Promise<'done'>((done) => (finish = () => done('done'))));
+    TestBed.overrideProvider(PAGE_REFRESH, { useValue: { refresh } });
+    const fixture = TestBed.createComponent(TopNav);
+    fixture.detectChanges();
+    const button = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
+    ).find((b) => b.textContent?.includes('Refresh'));
+
+    button?.click();
+    fixture.detectChanges();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(button?.textContent?.trim()).toBe('Refreshing…');
+    expect(button?.disabled).toBe(true);
+
+    finish();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(button?.textContent?.trim()).toBe('Refresh');
   });
 
   it('opens help from the ? button and shows it pressed', () => {

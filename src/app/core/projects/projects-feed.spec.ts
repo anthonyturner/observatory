@@ -30,4 +30,14 @@ describe('ProjectsFeed', () => {
 
     expect(feed.state()).toEqual({ status: 'unreachable' });
   });
+
+  it('reads from GitHub, not the cache, when asked to read now', async () => {
+    const { feed, http } = setUp();
+    http.expectOne('/api/projects').flush({ generatedAt: 'x', projects: [] });
+
+    const read = feed.readNow();
+    http.expectOne('/api/projects?fresh=1').flush({ generatedAt: 'y', projects: [] });
+
+    expect(await read).toBe(true);
+  });
 });

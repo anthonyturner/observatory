@@ -12,6 +12,8 @@ export type ProjectsState =
 
 /** Observatory's own API, which reads GitHub as the signed-in `gh` account. */
 const PROJECTS_URL = '/api/projects';
+/** Asks the API to read GitHub now rather than answer from its cache. */
+const FRESH = { fresh: '1' };
 /** The API reads GitHub at most every five minutes, so asking more often gains nothing. */
 const REFRESH_MS = 5 * 60_000;
 
@@ -33,15 +35,16 @@ export class ProjectsFeed {
       .subscribe((state) => this.current.set(state));
   }
 
-  /** Reads them again now, between the regular reads; true when they were read. */
+  /** Reads them again now, from GitHub rather than the API's cache, between the
+   *  regular reads; true when they were read. */
   async readNow(): Promise<boolean> {
-    const state = await firstValueFrom(this.fetch());
+    const state = await firstValueFrom(this.fetch(FRESH));
     this.current.set(state);
     return state.status === 'ready';
   }
 
-  private fetch() {
-    return this.http.get<unknown>(PROJECTS_URL).pipe(
+  private fetch(params: Record<string, string> = {}) {
+    return this.http.get<unknown>(PROJECTS_URL, { params }).pipe(
       map((body): ProjectsState => {
         const report = parseProjectsReport(body);
         return report ? { status: 'ready', report } : { status: 'unreachable' };

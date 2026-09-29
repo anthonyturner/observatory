@@ -8,11 +8,13 @@ Observatory is a rebuild of [pr-starmap](https://github.com/anthonyturner/pr-sta
 whose pages grew into single HTML files thousands of lines long. It is being
 migrated one small piece at a time into typed, tested Angular components.
 
-> **Status:** Home, the Orrery and each project's review queue are built. Home's
-> project cards, usage meters, directives and top bar, every world on the
-> Orrery, and the review queue's star map show live data from GitHub and
-> Claude Code; the assistant panel and the skills are there to look
-> at but not connected yet.
+> **Status:** Home, the Orrery and each project's star map are built, and all
+> of them show live data from GitHub and Claude Code: project cards, usage,
+> directives, news, the review queue, issues, logs and agent report cards.
+> Jev, Home's assistant, answers typed or spoken requests and proposes work
+> that can run on this machine. What pr-starmap still has that Observatory
+> doesn't: Home's star trails and the core's voice ring, and the Orrery's 3D
+> view and fog.
 
 ## Stack
 
@@ -153,7 +155,6 @@ files on this machine, so it listens on loopback only:
   and the Stack Overflow Blog. The list is `server/news/news-sources.ts`. The
   hosted site reads the same feeds.
 
-Skills are still sample data.
 
 ### Home's assistant (Jev)
 
@@ -170,11 +171,13 @@ Home there shows one line in place of Ask, voice and skills.
 - **Commands, instantly.** A request that names an app action in so many words
   ("open the orrery", "open the logs for observatory", "refresh") is matched by
   keyword, with no model call, so it is instant, free, and works with no key.
-- **Everything else goes to Jev**, an agent on Claude Haiku
-  (`anthropic/claude-haiku-4.5`) through OpenRouter. It answers any question in
-  plain words suited to being read aloud, and remembers the conversation: the
-  page keeps the last 12 turns of this visit and sends them with each request
-  (the server keeps nothing). **New conversation** makes Jev forget them.
+- **Everything else goes to Jev**, an agent on Claude Haiku. Where `claude` is
+  on the PATH, Jev runs `claude -p` on your own Claude Code subscription, with
+  no other account to pay; otherwise it uses OpenRouter, if a key is set (see
+  below). It answers any question in plain words suited to being read aloud,
+  and remembers the conversation: the page keeps the last 12 turns of this
+  visit and sends them with each request (the server keeps nothing). **New
+  conversation** makes Jev forget them.
 
 Jev uses the dashboard as its tools, so it looks up the owner's data rather
 than guessing:
@@ -182,8 +185,9 @@ than guessing:
 - **Looks up**: the projects and their open pull requests counted by what
   blocks them; one project's open pull requests (bucket, days idle, whether it
   links an issue); its open issues; Claude Code usage and the plan's limits;
-  and the web, for news or anything current, through OpenRouter's web search
-  (the page lists the sources under the answer and never reads them aloud).
+  and the web, for news or anything current, through Claude Code's web search
+  and fetch (or OpenRouter's web search, on OpenRouter). The page lists the
+  sources under the answer and never reads them aloud.
 - **Does**: opens a page (the Orrery, Home, a project's star map, Issues, Logs
   or Usage), refreshes, opens the help card, and proposes a Claude Code task
   in a project.
@@ -192,21 +196,27 @@ than guessing:
   machine's shell. The proposal also carries a one-use token for **Run** (see
   below); nothing runs until you press it, and never from speech.
 
-Each request takes at most six rounds of tool calls and 45 seconds. If
-OpenRouter fails, Home says why and falls back to keyword matches.
+On Claude Code, Jev's tools reach it through a small MCP server on the local
+API that lives for one request, and `claude -p` runs restricted: your own
+settings, hooks and plugins are ignored, every tool that reads files or runs
+commands is refused, it works in an empty scratch folder, and it is stopped
+after 90 seconds. On OpenRouter a request takes at most six rounds of tool
+calls and 45 seconds. Either way, if the model fails, Home says why and falls
+back to keyword matches.
 
-**Turning Jev on.** Jev needs an
-[OpenRouter](https://openrouter.ai/) key, which pays for it. Locally, put it
-in `~/.claude/observatory/.env` (outside the checkout, so no commit can carry
-it) or set it in the environment:
+**Turning Jev on.** Install Claude Code and sign in, so `claude` is on the
+PATH when the API starts; Jev then thinks on your subscription. Without it,
+Jev can use an [OpenRouter](https://openrouter.ai/) key instead, which pays
+for it. Locally, put the key in `~/.claude/observatory/.env` (outside the
+checkout, so no commit can carry it) or set it in the environment:
 
 ```
 OPENROUTER_API_KEY=<your key>
 ```
 
-Without a key, Jev is off and says so: only keyword matches work, and a
-request can still be proposed as a command. The key is sent to OpenRouter only, and scrubbed from
-every error and log line.
+With neither, Jev is off and says so: only keyword matches work, and a request
+can still be proposed as a command. An OpenRouter key is sent to OpenRouter
+only, and scrubbed from every error and log line.
 
 **Skills** are fixed requests, one tile each on Home, each proposed as tier-3
 work. The starters (triage the review queue, what's blocked, stale pull
@@ -232,15 +242,18 @@ most 24 skills in all.
 
 ### The reply voice (ElevenLabs)
 
-Home reads its replies aloud. [ElevenLabs](https://elevenlabs.io/) is a second
-voice beside the one the page runs itself (Kokoro), picked on the page.
+Home reads its replies aloud in an [ElevenLabs](https://elevenlabs.io/) voice,
+with Kokoro, which runs in the page itself, standing in whenever ElevenLabs
+can't speak. ElevenLabs also hears you: `POST /api/voice/hear` turns a spoken
+request into words with its Scribe model, with Whisper, in the page, standing
+in. Hearing needs the key's speech-to-text permission.
 `GET /api/voice` says whether it is on and lists the account's voices (kept for
 ten minutes), and `POST /api/voice/speak` turns one sentence of up to 1,000
 characters into MP3 audio in a chosen voice, with the `eleven_flash_v2_5` model.
 
 **Picking the voice.** Under Speak in Home's voice block, choose "Kokoro · in
 this browser" or ElevenLabs and one of the account's voices. The choice is kept
-per browser, in local storage (`observatory.voice`), and starts as Kokoro. A
+per browser, in local storage (`observatory.voice`), and starts as ElevenLabs. A
 voice no longer on the account falls back to the default; when ElevenLabs is
 off, not available or fails, the option says why, the status line says so once,
 and Kokoro speaks for the rest of the visit.

@@ -1,8 +1,10 @@
-import { BAR_S, BREATH_S, Bar, Ping, barAt, hz } from './ambient-score';
+import { BAR_S, BEAT_S, Bar, Ping, barAt, hz } from './ambient-score';
 import { Chime, chimesFor, homeMotif } from './home-chimes';
-import { pluck } from './instruments';
+import { bass, pluck } from './instruments';
 import { WorldVoice } from './orrery-score';
 import { Rig, RoomShape, buildRig, envelope, fadeTo, playFor } from './sound-rig';
+import { GrooveHit, grooveFor } from './trance-groove';
+import { clap, hat, kick, pumpingPad, supersawPluck } from './trance-instruments';
 
 /** What Home's score listens to, read afresh every bar. */
 export interface HomeListening {
@@ -39,27 +41,24 @@ const FADE_OUT_S = 0.8;
 /** How long after fading out the audio device is released. */
 const SUSPEND_AFTER_MS = 4000;
 const MASTER_LEVEL = 0.9;
-/** A long room, and a dotted-eighth echo at a slow pulse: pings travel rather than repeat. */
+/** A tighter room than an ambient score's, so the beat stays crisp, and a
+ *  dotted-eighth echo on the tempo: the arpeggio's trance ripple. */
 const HOME_ROOM: RoomShape = {
-  reverbS: 5,
-  reverbDecay: 2.4,
-  wet: 0.55,
-  echoS: 0.75,
-  echoFeedback: 0.42,
+  reverbS: 3.2,
+  reverbDecay: 2.6,
+  wet: 0.35,
+  echoS: BEAT_S * 0.75,
+  echoFeedback: 0.38,
   echoFloorHz: 600,
   echoLevel: 1,
   outLevel: 1,
 };
-const PAD_LEVEL = 0.03;
-const PAD_DETUNE_CENTS = 8;
-const PAD_CUTOFF_HZ = 700;
-const DRONE_LEVEL = 0.07;
-const DRONE_CUTOFF_HZ = 220;
-const DRONE_BREATH_HZ = 140;
+const PAD_LEVEL = 0.02;
+const ARP_DECAY_S = BEAT_S * 0.4;
 /** An inharmonic partial is what makes a sine read as struck glass. */
 const BELL_PARTIAL = 2.76;
 const PING_DECAY_S = 3.2;
-const SWEEP_LEVEL = 0.012;
+const SWEEP_LEVEL = 0.02;
 /* The uneasy layer: a tritone and a minor ninth over the root, low and
    filtered, wavering. Quiet at its loudest: it should be felt more than heard. */
 const UNEASE_INTERVALS = [6, 13] as const;
@@ -69,16 +68,13 @@ const UNEASE_WAVER_HZ = 0.25;
 const UNEASE_WAVER_SPREAD_HZ = 1.5;
 const UNEASE_GLIDE_S = 3;
 
-interface Drone {
+interface Unease {
   stop(): void;
   retune(bar: Bar, at: number): void;
-}
-
-interface Unease extends Drone {
   setLevel(level: number, at: number): void;
 }
 
-/** The ambient score on the Web Audio API: generated live, never a recording. */
+/** Home's score on the Web Audio API, a trance groove generated live, never a recording. */
 export class AmbientSynth implements AmbientPlayer {
   private lastLit: string | null = null;
   private currentBar: Bar | null = null;
@@ -86,7 +82,6 @@ export class AmbientSynth implements AmbientPlayer {
   constructor(private readonly listening: HomeListening = NOBODY) {}
 
   private rig: Rig | null = null;
-  private drone: Drone | null = null;
   private unease: Unease | null = null;
   private uneaseLevel = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -102,7 +97,6 @@ export class AmbientSynth implements AmbientPlayer {
     if (this.timer) return;
     this.nextBarAt = rig.context.currentTime + 0.1;
     this.barIndex = 0;
-    this.drone = startDrone(rig);
     this.unease = startUnease(rig);
     this.unease.setLevel(this.uneaseLevel, rig.context.currentTime);
     this.timer = setInterval(() => this.schedule(), TICK_MS);
@@ -123,8 +117,6 @@ export class AmbientSynth implements AmbientPlayer {
   private release(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
-    this.drone?.stop();
-    this.drone = null;
     this.unease?.stop();
     this.unease = null;
     // Suspending only frees the audio device early; if it fails, it idles silent.
@@ -151,7 +143,12 @@ export class AmbientSynth implements AmbientPlayer {
     // A timer held back past the bar would otherwise play every missed bar at once.
     if (this.nextBarAt < context.currentTime) this.nextBarAt = context.currentTime + 0.1;
     while (this.nextBarAt < context.currentTime + LOOKAHEAD_S) {
-      this.playBar(rig, barAt(this.barIndex, Math.random, this.uneaseLevel), this.nextBarAt);
+      this.playBar(
+        rig,
+        this.barIndex,
+        barAt(this.barIndex, Math.random, this.uneaseLevel),
+        this.nextBarAt,
+      );
       this.nextBarAt += BAR_S;
       this.barIndex++;
     }
@@ -167,10 +164,11 @@ export class AmbientSynth implements AmbientPlayer {
     homeMotif(voice, this.currentBar).forEach((chime) => playChime(rig, chime, at));
   }
 
-  private playBar(rig: Rig, bar: Bar, at: number): void {
-    this.drone?.retune(bar, at);
+  private playBar(rig: Rig, index: number, bar: Bar, at: number): void {
     this.unease?.retune(bar, at);
-    pad(rig, bar, at);
+    const groove = grooveFor(index, bar, this.uneaseLevel);
+    pad(rig, bar, groove, at);
+    groove.forEach((hit) => playHit(rig, hit, at + hit.offsetS));
     this.currentBar = bar;
     const voices = this.listening.voices();
     // Before the projects are read, the old random pings stand in for them.
@@ -193,35 +191,6 @@ function playChime(rig: Rig, chime: Chime, barAt: number): void {
     level: chime.level,
     ring: CHIME_RING,
   });
-}
-
-/** Two sines an octave apart through a filter that opens and closes with the core's breath. */
-function startDrone({ context, bus }: Rig): Drone {
-  const filter = context.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = DRONE_CUTOFF_HZ;
-  const breath = context.createOscillator();
-  breath.frequency.value = 1 / BREATH_S;
-  const depth = context.createGain();
-  depth.gain.value = DRONE_BREATH_HZ;
-  breath.connect(depth).connect(filter.frequency);
-  const gain = context.createGain();
-  gain.gain.value = DRONE_LEVEL;
-  filter.connect(gain).connect(bus);
-  const voices = [0, 12].map((octave) => {
-    const oscillator = context.createOscillator();
-    oscillator.type = octave ? 'sawtooth' : 'sine';
-    oscillator.connect(filter);
-    return { oscillator, octave };
-  });
-  [breath, ...voices.map((voice) => voice.oscillator)].forEach((node) => node.start());
-  return {
-    stop: () => [breath, ...voices.map((voice) => voice.oscillator)].forEach((node) => node.stop()),
-    retune: (bar, at) =>
-      voices.forEach(({ oscillator, octave }) =>
-        oscillator.frequency.setTargetAtTime(hz(bar.root + octave), at, 1.5),
-      ),
-  };
 }
 
 /** The uneasy layer under the score, silent while calm. Its loudness and its
@@ -265,29 +234,42 @@ function startUnease({ context, bus }: Rig): Unease {
   };
 }
 
-/** A bar-long chord of detuned saws, swelling in and overlapping the next. */
-function pad({ context, bus }: Rig, bar: Bar, at: number): void {
-  const filter = context.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = PAD_CUTOFF_HZ;
-  const gain = envelope(context, {
+/** A bar-long supersaw chord, pumping on every kick. */
+function pad(rig: Rig, bar: Bar, groove: readonly GrooveHit[], at: number): void {
+  pumpingPad(rig, {
     at,
-    attack: BAR_S * 0.4,
+    notes: bar.pad,
     level: PAD_LEVEL,
-    end: at + BAR_S * 1.3,
+    lengthS: BAR_S,
+    beats: groove.filter((hit) => hit.kind === 'kick').map((hit) => hit.offsetS),
   });
-  filter.connect(gain).connect(bus);
-  const oscillators = bar.pad.flatMap((midi) =>
-    [-PAD_DETUNE_CENTS, PAD_DETUNE_CENTS].map((detune) => {
-      const oscillator = context.createOscillator();
-      oscillator.type = 'sawtooth';
-      oscillator.frequency.value = hz(midi);
-      oscillator.detune.value = detune;
-      oscillator.connect(filter);
-      return oscillator;
-    }),
-  );
-  playFor(oscillators, [filter, gain], { at, end: at + BAR_S * 1.35 });
+}
+
+/** One hit of the groove, in its instrument. */
+function playHit(rig: Rig, hit: GrooveHit, at: number): void {
+  switch (hit.kind) {
+    case 'kick':
+      kick(rig, at, hit.level);
+      return;
+    case 'clap':
+      clap(rig, at, hit.level);
+      return;
+    case 'hat':
+      hat(rig, at, hit.level, hit.open);
+      return;
+    case 'bass':
+      bass(rig, at, hit.midi, BEAT_S / 4);
+      return;
+    case 'arp':
+      supersawPluck(rig, {
+        at,
+        midi: hit.midi,
+        level: hit.level,
+        pan: hit.pan,
+        decay: ARP_DECAY_S,
+      });
+      return;
+  }
 }
 
 /** One struck-glass note, panned, into the room and the echo. */
@@ -313,7 +295,7 @@ function playPing({ context, bus, echo }: Rig, ping: Ping, at: number): void {
   playFor(tones, [gain, pan, partial], { at, end: at + PING_DECAY_S + 0.1 });
 }
 
-/** A quiet band of noise rising across the bar: the scanner. */
+/** A band of noise rising across the whole bar: the riser into the next chord. */
 function sweep({ context, bus, noise }: Rig, at: number): void {
   const source = context.createBufferSource();
   source.buffer = noise;
@@ -322,13 +304,13 @@ function sweep({ context, bus, noise }: Rig, at: number): void {
   filter.type = 'bandpass';
   filter.Q.value = 6;
   filter.frequency.setValueAtTime(300, at);
-  filter.frequency.exponentialRampToValueAtTime(3800, at + BAR_S * 0.8);
+  filter.frequency.exponentialRampToValueAtTime(6000, at + BAR_S);
   const gain = envelope(context, {
     at,
-    attack: BAR_S * 0.4,
+    attack: BAR_S * 0.95,
     level: SWEEP_LEVEL,
-    end: at + BAR_S * 0.85,
+    end: at + BAR_S,
   });
   source.connect(filter).connect(gain).connect(bus);
-  playFor([source], [filter, gain], { at, end: at + BAR_S * 0.9 });
+  playFor([source], [filter, gain], { at, end: at + BAR_S + 0.05 });
 }

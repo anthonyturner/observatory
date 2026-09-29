@@ -29,7 +29,7 @@ describe('ambient score', () => {
     }
   });
 
-  it('puts the drone two octaves under the chord root', () => {
+  it('puts the root two octaves under the chord', () => {
     expect(barAt(1, seededRandom(1)).root).toBe(TONIC - 24 + CHORDS[1][0]);
   });
 

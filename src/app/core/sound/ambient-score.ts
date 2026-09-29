@@ -1,6 +1,6 @@
 /* The score: what plays in each bar, as plain data, so the choices can be
-   tested without an audio device. Slow on purpose: a bar lasts eight
-   seconds, and the loop of four chords half a minute. */
+   tested without an audio device. A trance tempo: each chord holds for four
+   measures, sixteen beats, and the loop of four chords lasts about half a minute. */
 
 /** i – VI – III – VII in D minor: Dm, B♭, F, C. It never quite comes home,
  *  which is what keeps a loop this long from sounding like one. */
@@ -13,9 +13,13 @@ export const CHORDS: readonly (readonly number[])[] = [
 
 /** D3, as a MIDI note. */
 export const TONIC = 50;
-export const BAR_S = 8;
-/** The core breathes on a six-second period when idle; the drone breathes with it. */
-export const BREATH_S = 6;
+export const BPM = 137;
+export const BEAT_S = 60 / BPM;
+export const BEATS_PER_BAR = 16;
+/** A "bar" here is one chord: four measures of four beats. */
+export const BAR_S = BEAT_S * BEATS_PER_BAR;
+/** Sixteenth notes: the grid everything in the groove lands on. */
+export const STEP_S = BEAT_S / 4;
 
 /** A bell-like ping: when in the bar, which note, and where in the room. */
 export interface Ping {
@@ -30,7 +34,7 @@ export interface Bar {
   readonly chord: readonly number[];
   /** The bar's pad notes, as MIDI. */
   readonly pad: readonly number[];
-  /** The drone's root, two octaves down. */
+  /** The chord's root, two octaves down: the bass plays an octave above it. */
   readonly root: number;
   readonly pings: readonly Ping[];
   /** A quiet filtered sweep across the bar, every few bars. */
@@ -64,7 +68,7 @@ export function barAt(index: number, random: () => number, unease = 0): Bar {
     const tone = chord[Math.floor(random() * chord.length)];
     const octave = PING_OCTAVES[Math.floor(random() * PING_OCTAVES.length)];
     return {
-      offsetS: random() * PING_WINDOW_S,
+      offsetS: Math.floor((random() * PING_WINDOW_S) / STEP_S) * STEP_S,
       midi: TONIC + octave + tone,
       pan: (random() * 2 - 1) * MAX_PAN,
       level: PING_LEVEL * (0.5 + random() * 0.5),

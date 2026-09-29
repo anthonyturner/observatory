@@ -36,6 +36,7 @@ import { localElevenLabs } from './voice/eleven-labs-settings.ts';
 import { HEAR_PATH, SPEAK_PATH, VOICE_PATH, withVoiceRoutes } from './voice/voice-routes.ts';
 import { fetchPage } from './reader/page-fetch.ts';
 import { READ_PATH, withReaderRoutes } from './reader/reader-routes.ts';
+import { cachedNews, withNewsRoutes } from './news/news-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -121,7 +122,13 @@ const server = createApiServer(
         withLocalSession(
           withReaderRoutes(
             withVoiceRoutes(
-              withAssistant(withRunsRoutes(ownerRoutes(reads, triage, editor), runner), assistant),
+              withAssistant(
+                withRunsRoutes(
+                  withNewsRoutes(ownerRoutes(reads, triage, editor), cachedNews()),
+                  runner,
+                ),
+                assistant,
+              ),
               voice,
             ),
             fetchPage,

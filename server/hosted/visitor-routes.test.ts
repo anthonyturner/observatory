@@ -9,6 +9,7 @@ const owner: RouteTable = {
     '/api/usage': async () => ({ secret: 'usage' }),
     '/api/logs': async () => ({ faults: [{ text: 'mail bob@example.com bounced' }] }),
     '/api/something-new': async () => ({ owner: 'only' }),
+    '/api/news': async () => ({ ai: [], engineering: [] }),
   },
   post: { '/api/triage': async () => ({}), '/api/another-write': async () => ({}) },
 };
@@ -42,6 +43,13 @@ describe('visitorRoutes', () => {
 
     assert.equal(response.status, 200);
     assert.equal(await response.json(), null);
+  });
+
+  it('shows the news, which is public headlines', async () => {
+    const response = await get(visitor(false), '/api/news');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ai: [], engineering: [] });
   });
 
   it('refuses every write', async () => {

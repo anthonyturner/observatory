@@ -137,6 +137,15 @@ files on this machine, so it listens on loopback only:
   The capture swallows every error, so a hook failure never breaks a tool call.
   Until it has recorded a pull request, the Agents panel says so.
 
+- **News** (Home's News section, below the projects) comes from free public
+  RSS and Atom feeds, read by the API at most every half hour with no key and
+  no AI: AI news from Simon Willison, the GitHub Changelog (its AI items),
+  Hacker News, Hugging Face, OpenAI, Google AI, The Verge and TechCrunch, with
+  headlines about new tools listed first; software engineering from Hacker
+  News, Lobsters, the GitHub Blog, InfoQ, The Pragmatic Engineer, Martin Fowler
+  and the Stack Overflow Blog. The list is `server/news/news-sources.ts`. The
+  hosted site reads the same feeds.
+
 Skills are still sample data.
 
 ### Home's assistant (Jev)

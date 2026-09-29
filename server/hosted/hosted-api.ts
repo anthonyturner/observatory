@@ -1,5 +1,6 @@
 import { type ApiReads, cachedReads } from '../app/api-reads.ts';
 import { ownerRoutes } from '../app/api-routes.ts';
+import { cachedNews, withNewsRoutes } from '../news/news-routes.ts';
 import { uncheckedCollisions } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
 import type { RepoRef } from '../github/github-reader.ts';
@@ -119,7 +120,7 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
   // No assistant and no voice here, for anyone: Jev reads the owner's projects
   // and proposes work in them, so it answers only on the owner's own machine
   // (ADR-0006). Keys set on the hosted site are never read.
-  const owner = ownerRoutes(reads, triage, editor);
+  const owner = withNewsRoutes(ownerRoutes(reads, triage, editor), cachedNews());
   const machines = machineRoutes({
     reads,
     store,

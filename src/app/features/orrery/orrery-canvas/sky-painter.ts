@@ -1,4 +1,5 @@
-import { Viewport } from '../../../core/orrery/orrery-camera';
+import { orbitPoint } from '../../../core/orrery/orbit';
+import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { rgba } from '../../../shared/night-sky/night-sky';
 import { OrreryPalette } from './orrery-palette';
 
@@ -104,5 +105,30 @@ export function paintDial(
       );
     });
   }
+  ctx.restore();
+}
+
+/** The house names round the 3D dial, on its turning plane: the 3D scene draws
+ *  the rings and ticks, and the names stay sharp on the canvas over it. */
+export function paintHouses3D(
+  ctx: CanvasRenderingContext2D,
+  camera: OrreryCamera,
+  view: Viewport,
+  radius: number,
+  time: number,
+  palette: OrreryPalette,
+): void {
+  if (camera.current.scale <= HOUSE_LABEL_SCALE) return;
+  ctx.save();
+  ctx.globalAlpha = 0.42;
+  ctx.fillStyle = rgba(palette.muted);
+  ctx.font = `italic 300 12px ${palette.fontSerif}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  HOUSES.forEach((house, index) => {
+    const point = orbitPoint(radius * 1.07, index * 30 * DEG + time * DIAL_TURN);
+    const [x, y] = camera.toScreenAt(point.x, point.y, point.z, view);
+    ctx.fillText(house, x, y);
+  });
   ctx.restore();
 }

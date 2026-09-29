@@ -150,7 +150,7 @@ function paintMoons(
 }
 
 /** Comets: unclaimed issues, each tail streaming away from its world. */
-function paintComets(
+export function paintComets(
   c: CanvasRenderingContext2D,
   placed: PlacedWorld,
   time: number,
@@ -187,7 +187,7 @@ function paintComets(
 }
 
 /** A turning dashed ring with four ticks round the chosen world. */
-function paintSelection(
+export function paintSelection(
   c: CanvasRenderingContext2D,
   placed: PlacedWorld,
   time: number,

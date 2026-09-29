@@ -8,6 +8,8 @@ export interface FieldStar {
   readonly alpha: number;
   /** How much of the camera's movement it follows: far stars move less. */
   readonly depth: number;
+  /** How far behind the system it sits in the 3D sky, in orrery units (negative). */
+  readonly z: number;
   readonly phase: number;
   /** How fast it twinkles. */
   readonly rate: number;
@@ -30,6 +32,7 @@ export function starField(count = FIELD_STARS): FieldStar[] {
     radius: random() * 1.2 + 0.2,
     alpha: random() * 0.4 + 0.06,
     depth: 0.28 + random() * 0.38,
+    z: -12000 - random() * 30000,
     phase: random() * Math.PI * 2,
     rate: 0.3 + random() * 1.8,
     tint: Math.floor(random() * FIELD_TINT_COUNT),

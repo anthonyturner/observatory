@@ -1,4 +1,4 @@
-import type { ArticleSummary } from './article-summary.ts';
+import type { ArticleReader } from './article-details.ts';
 import { parseFeed } from './feed-parse.ts';
 import { withoutTitle } from './news-summary.ts';
 import type { NewsItem, NewsReport, NewsSource, NewsTopic } from './news-types.ts';
@@ -86,37 +86,44 @@ function unlisted(items: readonly NewsItem[], listed: Set<string>): NewsItem[] {
   return fresh;
 }
 
-/** Stories read at once for their summaries, so a slow site holds up only its own. */
-const SUMMARY_READS_AT_ONCE = 6;
+/** Stories read at once, so a slow site holds up only its own. */
+const ARTICLE_READS_AT_ONCE = 6;
 
-/** `items` with a summary read from each story whose feed gave none. */
-async function withSummaries(
+/** `item` with what its feed left out, a summary or a picture, read from the story itself. */
+async function completed(item: NewsItem, readArticle: ArticleReader): Promise<NewsItem> {
+  if (item.summary.length && item.image) return item;
+  const details = await readArticle(item.url);
+  return {
+    ...item,
+    summary: item.summary.length ? item.summary : withoutTitle(details.summary, item.title),
+    image: item.image ?? details.image,
+  };
+}
+
+/** `items`, each completed from its own page where its feed gave no summary or picture. */
+async function withDetails(
   items: readonly NewsItem[],
-  summarize: ArticleSummary,
+  readArticle: ArticleReader,
 ): Promise<NewsItem[]> {
   const done = [...items];
   let next = 0;
   const worker = async (): Promise<void> => {
     while (next < done.length) {
       const at = next++;
-      if (!done[at].summary.length)
-        done[at] = {
-          ...done[at],
-          summary: withoutTitle(await summarize(done[at].url), done[at].title),
-        };
+      done[at] = await completed(done[at], readArticle);
     }
   };
-  await Promise.all(Array.from({ length: SUMMARY_READS_AT_ONCE }, worker));
+  await Promise.all(Array.from({ length: ARTICLE_READS_AT_ONCE }, worker));
   return done;
 }
 
 /** The newest headlines from every source. AI is listed first, so a story in both is AI news.
- *  With `summarize`, a story whose feed gave no summary gets its opening paragraphs. */
+ *  With `readArticle`, a story whose feed gave no summary or picture gets them from its page. */
 export async function newsReport(
   sources: readonly NewsSource[],
   fetchFeed: FeedFetcher,
   now: number,
-  summarize?: ArticleSummary,
+  readArticle?: ArticleReader,
 ): Promise<NewsReport> {
   const reads = await readAll(sources, fetchFeed);
   const unread = new Set<string>();
@@ -139,12 +146,12 @@ export async function newsReport(
   const rest = aiNews.filter((item) => !item.tool).slice(0, SECTION_SIZE - tools.length);
   const ai = list([...tools, ...rest]);
   const engineering = list(unlisted(byTopic.engineering, listed).slice(0, SECTION_SIZE));
-  const [summedAi, summedEngineering] = summarize
-    ? await Promise.all([withSummaries(ai, summarize), withSummaries(engineering, summarize)])
+  const [fullAi, fullEngineering] = readArticle
+    ? await Promise.all([withDetails(ai, readArticle), withDetails(engineering, readArticle)])
     : [ai, engineering];
   return {
-    ai: summedAi,
-    engineering: summedEngineering,
+    ai: fullAi,
+    engineering: fullEngineering,
     unread: [...unread],
     readAt: new Date(now).toISOString(),
   };

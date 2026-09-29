@@ -1,9 +1,10 @@
 import { decodeEntities } from '../reader/readable.ts';
+import { feedImage } from './news-image.ts';
 import type { FeedItem } from './news-types.ts';
 import { feedSummary, withoutTitle } from './news-summary.ts';
 
 // RSS 2.0 and Atom both, read with patterns rather than an XML parser: a
-// headline, its link, its date and a summary are all Home needs.
+// headline, its link, its date, a summary and a picture are all Home needs.
 
 const blocks = (xml: string, tag: string): string[] =>
   xml.match(new RegExp(`<${tag}\\b[\\s\\S]*?<\\/${tag}>`, 'gi')) ?? [];
@@ -66,15 +67,16 @@ function item(
   url: string | null,
   when: string | null,
   summary: string[],
+  image: string | null,
 ): FeedItem | null {
   const link = webUrl(url);
   return title && link
-    ? { title, url: link, publishedAt: isoTime(when), summary: withoutTitle(summary, title) }
+    ? { title, url: link, publishedAt: isoTime(when), summary: withoutTitle(summary, title), image }
     : null;
 }
 
 /** Every headline in an RSS or Atom feed that has a title and a web link, in feed order,
- *  with its summary where the feed gives one. */
+ *  with its summary and picture where the feed gives them. */
 export function parseFeed(xml: string): FeedItem[] {
   const rss = blocks(xml, 'item').map((entry) =>
     item(
@@ -82,6 +84,7 @@ export function parseFeed(xml: string): FeedItem[] {
       text(entry, 'link') ?? text(entry, 'guid'),
       text(entry, 'pubDate') ?? text(entry, 'dc:date'),
       summaryOf(entry, ['description', 'content:encoded']),
+      feedImage(entry),
     ),
   );
   const atom = blocks(xml, 'entry').map((entry) =>
@@ -90,6 +93,7 @@ export function parseFeed(xml: string): FeedItem[] {
       atomLink(entry),
       text(entry, 'published') ?? text(entry, 'updated'),
       summaryOf(entry, ['summary', 'content']),
+      feedImage(entry),
     ),
   );
   return [...rss, ...atom].filter((each): each is FeedItem => each !== null);

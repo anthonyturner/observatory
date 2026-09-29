@@ -2,6 +2,8 @@ import { fieldOf, isObject, isText, listOf } from '../json/json-fields';
 import { NewsItem, NewsReport } from './news.types';
 
 const isWebUrl = (value: unknown): value is string => isText(value) && /^https?:\/\//i.test(value);
+/** Pictures are https only, so the page never loads one in the clear. */
+const isHttpsUrl = (value: unknown): value is string => isText(value) && /^https:\/\//i.test(value);
 
 function parseItem(value: unknown): NewsItem | null {
   if (!isObject(value)) return null;
@@ -15,6 +17,7 @@ function parseItem(value: unknown): NewsItem | null {
     source,
     publishedAt: fieldOf(value, 'publishedAt', isText) ?? null,
     summary: listOf(value['summary'], (paragraph) => (isText(paragraph) ? paragraph : null)),
+    image: fieldOf(value, 'image', isHttpsUrl) ?? null,
     tool: value['tool'] === true,
   };
 }

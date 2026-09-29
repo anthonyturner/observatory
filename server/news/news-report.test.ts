@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { parseFeed } from './feed-parse.ts';
 import { isToolNews, newsReport } from './news-report.ts';
+import { feedImage, pageImage } from './news-image.ts';
 import { summaryFrom } from './news-summary.ts';
 import type { NewsSource } from './news-types.ts';
 
@@ -26,6 +27,7 @@ describe('parseFeed', () => {
         url: 'https://a.example/1',
         publishedAt: '2026-09-28T09:00:00.000Z',
         summary: [],
+        image: null,
       },
     ]);
   });
@@ -42,6 +44,7 @@ describe('parseFeed', () => {
         url: 'https://blog.example/post?a=1&b=2',
         publishedAt: '2026-09-27T10:00:00.000Z',
         summary: [],
+        image: null,
       },
     ]);
   });
@@ -52,7 +55,7 @@ describe('parseFeed', () => {
       '<item><title>Bad link</title><link>javascript:alert(1)</link></item>' +
       '<item><title>Undated</title><link>https://a.example/u</link><pubDate>soon</pubDate></item></rss>';
     assert.deepEqual(parseFeed(xml), [
-      { title: 'Undated', url: 'https://a.example/u', publishedAt: null, summary: [] },
+      { title: 'Undated', url: 'https://a.example/u', publishedAt: null, summary: [], image: null },
     ]);
   });
 });
@@ -98,6 +101,62 @@ describe('feed summaries', () => {
     const long = `${'This sentence is here to be long. '.repeat(20)}`;
     const [cut] = summaryFrom([long]);
     assert.ok(cut.length <= 420 && cut.endsWith('.'), cut);
+  });
+});
+
+describe('story pictures', () => {
+  const entry = (inside: string): string =>
+    `<rss><item><title>Acme</title><link>https://a.example/a</link>${inside}</item></rss>`;
+
+  it('takes a media thumbnail, an image media:content or an image enclosure', () => {
+    assert.equal(
+      parseFeed(entry('<media:thumbnail url="https://i.example/t.jpg" width="120"/>'))[0].image,
+      'https://i.example/t.jpg',
+    );
+    assert.equal(
+      feedImage(
+        '<media:content url="https://i.example/v.mp4" medium="video"/>' +
+          '<media:content url="https://i.example/c.png" medium="image"/>',
+      ),
+      'https://i.example/c.png',
+    );
+    assert.equal(
+      feedImage('<enclosure url="https://i.example/e.jpg" type="image/jpeg" length="1"/>'),
+      'https://i.example/e.jpg',
+    );
+  });
+
+  it('falls back to the first real picture in the description, escaped or not', () => {
+    const escaped =
+      '<description>&lt;img src="https://t.example/pixel.gif" width="1" height="1"&gt;' +
+      '&lt;p&gt;Text&lt;/p&gt;&lt;img src="https://i.example/p.jpg?a=1&amp;amp;b=2"&gt;</description>';
+    assert.equal(parseFeed(entry(escaped))[0].image, 'https://i.example/p.jpg?a=1&b=2');
+  });
+
+  it('keeps only https pictures, and none where the feed has none', () => {
+    assert.equal(feedImage('<media:thumbnail url="http://i.example/t.jpg"/>'), null);
+    assert.equal(parseFeed(entry('<description>Plain words</description>'))[0].image, null);
+  });
+
+  it("reads a page's sharing picture, resolving a relative one against the page", () => {
+    const html =
+      '<head><meta name="twitter:image" content="https://i.example/tw.png">' +
+      '<meta property="og:image" content="/cover.png"></head>';
+    assert.equal(pageImage(html, 'https://blog.example/post/1'), 'https://blog.example/cover.png');
+    assert.equal(
+      pageImage(
+        '<meta name="twitter:image" content="https://i.example/tw.png">',
+        'https://b.example/',
+      ),
+      'https://i.example/tw.png',
+    );
+    assert.equal(
+      pageImage(
+        '<meta property="og:image" content="http://i.example/x.png">',
+        'https://b.example/',
+      ),
+      null,
+    );
   });
 });
 
@@ -163,14 +222,37 @@ describe('newsReport', () => {
     );
   });
 
-  it('reads a summary from the story itself only where the feed gave none', async () => {
+  it('reads a summary and picture from the story itself where the feed gave none', async () => {
     const asked: string[] = [];
     const report = await newsReport(sources, fetcher, NOW, async (url) => {
       asked.push(url);
-      return [`Opening of ${url}`];
+      return { summary: [`Opening of ${url}`], image: `https://img.example/${asked.length}.png` };
     });
     assert.deepEqual(report.engineering[0].summary, ['Opening of https://eng.example/mono']);
+    assert.match(report.engineering[0].image ?? '', /^https:\/\/img\.example\//);
     assert.equal(asked.length, report.ai.length + report.engineering.length);
+  });
+
+  it('keeps what the feed gave and does not read a story it already has in full', async () => {
+    const full: Record<string, string> = {
+      eng:
+        '<rss><item><title>Monorepos at scale</title><link>https://eng.example/mono</link>' +
+        '<pubDate>Mon, 28 Sep 2026 07:00:00 GMT</pubDate>' +
+        '<description>Big repositories need their own tools, and the teams that run them say so.</description>' +
+        '<media:thumbnail url="https://eng.example/mono.jpg"/></item></rss>',
+    };
+    const asked: string[] = [];
+    const report = await newsReport(
+      [{ name: 'Eng blog', url: 'eng', topic: 'engineering' }],
+      async (url) => full[url],
+      NOW,
+      async (url) => {
+        asked.push(url);
+        return { summary: ['From the page'], image: 'https://img.example/page.png' };
+      },
+    );
+    assert.equal(report.engineering[0].image, 'https://eng.example/mono.jpg');
+    assert.deepEqual(asked, []);
   });
 
   it('lists a story once, under AI, and names the feeds it could not read', async () => {

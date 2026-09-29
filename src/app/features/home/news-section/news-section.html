@@ -25,23 +25,36 @@
           <ol class="items">
             @for (item of column.items; track item.url) {
               <li class="item">
-                <a
-                  class="title"
-                  [href]="item.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  (click)="readHere($event, item.url)"
-                  >{{ item.title }}</a
-                >
-                @for (paragraph of item.summary; track $index) {
-                  <p class="summary">{{ paragraph }}</p>
-                }
-                <span class="meta">
-                  @if (item.tool) {
-                    <span class="tool">tool</span>
+                <div class="story">
+                  <a
+                    class="title"
+                    [href]="item.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    (click)="readHere($event, item.url)"
+                    >{{ item.title }}</a
+                  >
+                  @for (paragraph of item.summary; track $index) {
+                    <p class="summary">{{ paragraph }}</p>
                   }
-                  {{ sourceAndAge(item) }}
-                </span>
+                  <span class="meta">
+                    @if (item.tool) {
+                      <span class="tool">tool</span>
+                    }
+                    {{ sourceAndAge(item) }}
+                  </span>
+                </div>
+                @if (item.image && !broken().has(item.image)) {
+                  <img
+                    class="thumb"
+                    [src]="item.image"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    referrerpolicy="no-referrer"
+                    (error)="hideBroken(item.image)"
+                  />
+                }
               </li>
             } @empty {
               <li class="empty">No headlines from the last ten days.</li>

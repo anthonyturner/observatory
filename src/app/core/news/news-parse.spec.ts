@@ -6,6 +6,7 @@ const item = {
   source: 'Blog',
   publishedAt: '2026-09-28T09:00:00Z',
   summary: ['Claude Code 3 writes and runs its own tests.'],
+  image: 'https://blog.example/cc3.png',
   tool: true,
 };
 
@@ -32,6 +33,18 @@ describe('parseNewsReport', () => {
     });
 
     expect(report?.ai.length).toBe(1);
+  });
+
+  it('keeps only an https picture', () => {
+    const report = parseNewsReport({
+      ai: [
+        { ...item, image: 'http://blog.example/cc3.png' },
+        { ...item, image: 42 },
+      ],
+      engineering: [],
+    });
+
+    expect(report?.ai.map((each) => each.image)).toEqual([null, null]);
   });
 
   it('is null for anything that is not a news report', () => {

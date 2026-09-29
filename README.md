@@ -243,9 +243,13 @@ it in the environment, with the voice to start in if you like (a voice id from
 your ElevenLabs account; otherwise the first one listed):
 
 ```
-ELEVENLABS_API_KEY=<your key>
+ELEVENLABS_OBSERVATORY_KEY=<your key>
 ELEVENLABS_VOICE_ID=<optional voice id>
 ```
+
+The key has a name of its own rather than the usual `ELEVENLABS_API_KEY`,
+which other tools read, so a machine-wide key set for one of them cannot
+override Observatory's. `ELEVENLABS_API_KEY` is ignored.
 
 Without a key the voice is off, makes no call, and the page falls back to
 Kokoro. The key is sent to ElevenLabs only, in its own header, and scrubbed

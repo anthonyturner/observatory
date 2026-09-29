@@ -31,7 +31,8 @@ function recordingSpawner(): { spawn: Spawner; calls: Spawned[] } {
 const ENV = {
   PATH: 'C:/bin',
   OPENROUTER_API_KEY: 'k',
-  ELEVENLABS_API_KEY: 'x',
+  ELEVENLABS_OBSERVATORY_KEY: 'x',
+  ELEVENLABS_API_KEY: 'y',
   Observatory_Push_Token: 't',
   HOME: 'h',
 };

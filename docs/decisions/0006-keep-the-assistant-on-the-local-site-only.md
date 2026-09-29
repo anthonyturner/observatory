@@ -23,8 +23,8 @@ The assistant exists **only on the local site**:
 
 - The hosted API has no `/api/route`, `/api/voice` or `/api/voice/speak`,
   for anyone, the owner included; they answer 404. Its configuration no longer
-  reads `OPENROUTER_API_KEY`, `ELEVENLABS_API_KEY` or `ELEVENLABS_VOICE_ID`,
-  so a key set on Vercel by mistake changes nothing.
+  reads `OPENROUTER_API_KEY`, `ELEVENLABS_OBSERVATORY_KEY` or
+  `ELEVENLABS_VOICE_ID`, so a key set on Vercel by mistake changes nothing.
 - On the hosted site, Home shows one line in place of Ask, voice and skills;
   the page hides them when the session is not local, or when the API answers
   that there is no assistant.

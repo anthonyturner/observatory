@@ -35,6 +35,8 @@ export interface LaunchContext {
 /** The server's own credentials, which a run has no business holding. */
 const WITHHELD_ENV = new Set([
   'OPENROUTER_API_KEY',
+  'ELEVENLABS_OBSERVATORY_KEY',
+  // Observatory's old name for its key, still set on some machines.
   'ELEVENLABS_API_KEY',
   'OBSERVATORY_PUSH_TOKEN',
   'SESSION_SECRET',

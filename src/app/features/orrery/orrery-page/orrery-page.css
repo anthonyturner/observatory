@@ -60,38 +60,6 @@ h1 {
   color: var(--muted);
 }
 
-.links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.home {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--edge-soft);
-  border-radius: 10px;
-  background: var(--panel);
-  color: var(--ink);
-  font-size: 12px;
-  text-decoration: none;
-  transition:
-    border-color 0.2s,
-    background 0.2s;
-}
-
-.home span {
-  color: var(--flow);
-}
-
-.home:hover {
-  border-color: var(--flow);
-  background: var(--flow-tint);
-}
-
 .state {
   position: fixed;
   top: 50%;
@@ -111,9 +79,5 @@ h1 {
 @media (max-width: 720px) {
   h1 {
     font-size: 28px;
-  }
-
-  .home {
-    min-height: 44px;
   }
 }

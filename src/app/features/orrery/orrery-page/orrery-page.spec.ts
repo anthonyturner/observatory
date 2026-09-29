@@ -36,10 +36,10 @@ function render(state: ProjectsState) {
 }
 
 describe('OrreryPage', () => {
-  it('explains the system from its Help button and ?', () => {
+  it('explains the system from the toolbar’s ? button and the ? key', () => {
     const { fixture, element } = render(ready([project('a', 2)]));
 
-    element.querySelector<HTMLButtonElement>('app-help-button button')?.click();
+    element.querySelector<HTMLButtonElement>('app-orrery-tools button[aria-label="Help"]')?.click();
     fixture.detectChanges();
     expect(element.querySelector('#help-title')?.textContent).toBe('Orrery');
 
@@ -53,7 +53,7 @@ describe('OrreryPage', () => {
 
     expect(element.querySelector('h1')?.textContent).toBe('Orrery');
     expect(element.querySelector('.stamp')?.textContent).toContain('2 worlds · 5 open');
-    expect(element.querySelector('a.home')?.getAttribute('href')).toBe('/');
+    expect(element.querySelector('app-up-link a')?.getAttribute('href')).toBe('/');
   });
 
   it('says it is reading instead of drawing an empty system', () => {

@@ -1,0 +1,43 @@
+:host {
+  display: block;
+  width: fit-content;
+  margin-bottom: 9px;
+}
+
+a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px 4px 9px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+
+a:hover {
+  color: var(--ink);
+  border-color: var(--flow);
+  transform: translateX(-2px);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+span {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--flow);
+}

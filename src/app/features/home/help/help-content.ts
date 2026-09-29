@@ -59,6 +59,11 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
       'An ambient score made in this browser as you listen, with a hum that pulses with the core. Each project on the ring chimes in its own slow rhythm, busier with more open work, in an instrument that says its state and from where its dot sits; pointing at a project plays its motif. A low, wavering unease rises under it as projects strain. Off until you turn it on, and remembered.',
   },
   {
+    term: 'News',
+    meaning:
+      'Below the projects: the latest AI news, new tools for building software first (marked tool), and the latest in software engineering, from public feeds such as Simon Willison, the GitHub Changelog, Hacker News and InfoQ. Read every half hour, no AI credits spent. Click a headline to read it in the floating window (Ctrl-click opens a tab).',
+  },
+  {
     term: 'Ask',
     meaning:
       'Type a request and press Enter. Plainly named app actions are matched by keyword; Jev answers the rest, thinking with Claude Code on your own subscription and looking up your projects, usage or the web as it needs, and remembers this visit’s conversation. A web answer lists its sources under it: click one to read it in a floating window you can drag and resize (Ctrl-click opens a tab instead). Each reply says which tier it took and how.',

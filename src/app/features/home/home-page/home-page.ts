@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { AskPanel } from '../ask-panel/ask-panel';
 import { CorePanel } from '../core-panel/core-panel';
 import { FleetSection } from '../fleet-section/fleet-section';
+import { NewsSection } from '../news-section/news-section';
 import { ReaderWindow } from '../../reader/reader-window/reader-window';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
@@ -16,7 +17,7 @@ import { SoundPreference } from '../../../core/sound/sound-preference';
 import { RunDock } from '../../../core/runs/run-dock';
 import { RunsStore } from '../../../core/runs/runs-store';
 
-/** Home: the HUD over the sky, then the projects below the fold, and a
+/** Home: the HUD over the sky, then the projects and the news below the fold, and a
  *  task's panel beside them. It lays the sections out and nothing more. */
 @Component({
   selector: 'app-home-page',
@@ -29,6 +30,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
     VitalsPanel,
     SkillsPanel,
     FleetSection,
+    NewsSection,
     HelpCard,
     RunDockPanel,
   ],

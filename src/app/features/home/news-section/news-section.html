@@ -1,0 +1,44 @@
+<section class="news" aria-labelledby="news-title" [attr.aria-busy]="waiting() !== null">
+  <div class="head">
+    <h2 id="news-title">News</h2>
+    <span class="sub">AI and software engineering</span>
+    @if (unread(); as unread) {
+      <span class="sub note">{{ unread }}</span>
+    }
+  </div>
+  <div class="columns">
+    @for (column of columns(); track column.id) {
+      <div class="column" [attr.aria-labelledby]="'news-' + column.id">
+        <h3 [id]="'news-' + column.id">
+          {{ column.title }} <span class="sub">{{ column.sub }}</span>
+        </h3>
+        @if (waiting(); as message) {
+          <p class="empty" role="status">{{ message }}</p>
+        } @else {
+          <ol class="items">
+            @for (item of column.items; track item.url) {
+              <li class="item">
+                <a
+                  class="title"
+                  [href]="item.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  (click)="readHere($event, item.url)"
+                  >{{ item.title }}</a
+                >
+                <span class="meta">
+                  @if (item.tool) {
+                    <span class="tool">tool</span>
+                  }
+                  {{ sourceAndAge(item) }}
+                </span>
+              </li>
+            } @empty {
+              <li class="empty">No headlines from the last ten days.</li>
+            }
+          </ol>
+        }
+      </div>
+    }
+  </div>
+</section>

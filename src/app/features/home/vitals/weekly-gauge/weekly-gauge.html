@@ -12,6 +12,9 @@
     }
   </p>
   <p class="note">{{ usage().note }}</p>
+  @if (usage().today; as today) {
+    <p class="note today">{{ today }}</p>
+  }
   <div class="meter" aria-hidden="true">
     @if (fillPercent() !== null) {
       <div class="fill" [style.width.%]="fillPercent()"></div>

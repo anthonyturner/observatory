@@ -69,6 +69,7 @@ describe('usageMeters', () => {
 
     expect(weekly.percentUsed).toBe(62);
     expect(weekly.note).toMatch(/^resets \w{3} \d\d:\d\d · on pace for 88%$/);
+    expect(weekly.today).toMatch(/^today unknown · no reading yet today/);
   });
 
   it('calls a window that has reset unknown, and says when it was last read', () => {

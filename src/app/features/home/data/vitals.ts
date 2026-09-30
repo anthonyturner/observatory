@@ -22,6 +22,8 @@ export interface VitalReading {
 export interface WeeklyUsage {
   readonly percentUsed: number | null;
   readonly note: string;
+  /** How much of the week today has used, while the week is current. */
+  readonly today?: string;
 }
 
 /** One item from the top of the blocked-first queue. */

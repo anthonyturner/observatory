@@ -1,6 +1,7 @@
 import { rememberProjects, resolveProject } from './checkout-projects.ts';
 import { messagesSince } from './log-cache.ts';
 import { limitsFrom, readSamples } from './limit-windows.ts';
+import { throttledLiveLimits } from './live-limits.ts';
 import { type ProjectOf, projectUsage } from './project-usage.ts';
 import { dayKeys, tokenDays, windowStart } from './token-days.ts';
 import { modelUsage, tokenTotals, topTools } from './usage-breakdown.ts';
@@ -16,6 +17,8 @@ export interface UsageSources {
   readonly cacheFile: string;
   /** Which project a session's working directory belongs to. */
   readonly projectOf: ProjectOf;
+  /** Records a fresh limit reading before the samples are read, if it can. */
+  readonly refreshLimits?: () => Promise<void>;
 }
 
 export const DEFAULT_SOURCES: UsageSources = {
@@ -23,6 +26,7 @@ export const DEFAULT_SOURCES: UsageSources = {
   samplesFile: SAMPLES_FILE,
   cacheFile: LOG_CACHE_FILE,
   projectOf: resolveProject,
+  refreshLimits: throttledLiveLimits(),
 };
 
 /** Claude Code usage: the limit windows from the recorded readings, and a
@@ -31,6 +35,7 @@ export async function usageReport(
   sources = DEFAULT_SOURCES,
   now = Date.now(),
 ): Promise<UsageReport> {
+  await sources.refreshLimits?.();
   const messages = await messagesSince(
     sources.logsDir,
     windowStart(now, REPORT_DAYS),

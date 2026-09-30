@@ -54,9 +54,12 @@ files on this machine, so it listens on loopback only:
 
 - **Tokens** come from Claude Code's session logs in `~/.claude/projects`, each
   reply counted once, by local day and model family.
-- **Limits** come from your status line, the one place Claude Code reports
-  them. Add this to a Node status line script, where `status` is the JSON it
-  was given on stdin:
+- **Limits** are read by the API every few minutes from the usage endpoint
+  `/usage` itself reads, with the Claude Code sign-in in
+  `~/.claude/.credentials.json` (the token is never logged or sent anywhere
+  else). That endpoint is undocumented, so your status line can record them
+  too; the status line never runs in the VS Code extension's chat. Add this to
+  a Node status line script, where `status` is the JSON it was given on stdin:
 
   ```js
   import('file:///path/to/observatory/server/usage/limit-recorder.ts')

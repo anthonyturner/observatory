@@ -87,6 +87,11 @@
   color: var(--muted);
 }
 
+.today {
+  margin-top: -4px;
+  color: var(--ink-soft);
+}
+
 .meter {
   position: relative;
   height: 14px;

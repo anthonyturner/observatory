@@ -17,9 +17,10 @@
 } @else {
   <app-usage-section heading="Plan limits" small="not recorded yet">
     <p class="note">
-      No readings of your plan limits yet. Claude Code reports the weekly and five-hour percentages
-      that <code>/usage</code> shows to one program only, the status line. Add this line to a Node
-      status line script, after it has parsed its input as <code>status</code>:
+      No readings of your plan limits yet. The local site reads the weekly and five-hour percentages
+      that <code>/usage</code> shows while it runs and you are signed in to Claude Code. The status
+      line can record them too: add this line to a Node status line script, after it has parsed its
+      input as <code>status</code>:
     </p>
     <pre class="code">{{ recordLine }}</pre>
     <p class="note">Limits exist only on a Pro or Max plan. The token counts below need neither.</p>

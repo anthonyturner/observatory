@@ -9,6 +9,7 @@ import {
   weekdayTime,
 } from '../../../core/usage/usage-format';
 import { HOT_PERCENT, VitalReading, WeeklyUsage } from './vitals';
+import { weekToday } from './week-today';
 
 /** The three meters Home draws from Claude Code's usage. */
 export interface UsageMeters {
@@ -118,5 +119,5 @@ function weeklyLimit(document: UsageDocument, now: number, locale?: string): Wee
     };
   }
   const pace = week.projection ? ` · on pace for ${formatPercent(week.projection.atReset)}%` : '';
-  return { percentUsed: week.pct, note: `resets ${resetsAt}${pace}` };
+  return { percentUsed: week.pct, note: `resets ${resetsAt}${pace}`, today: weekToday(week, now) };
 }

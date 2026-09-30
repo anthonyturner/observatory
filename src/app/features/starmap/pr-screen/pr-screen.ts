@@ -20,6 +20,7 @@ import { SheetMarkdown } from './sheet-markdown/sheet-markdown';
 import { checkRows, commitRows, commitsNote, fileRows } from './sheet-rows/sheet-row';
 import { SheetRows } from './sheet-rows/sheet-rows';
 import { NO_COUNTS, SHEET_TABS, SheetTab, kickerOf, routeOf, tabCounts } from './sheet-view';
+import { AgentLanes } from '../../../shared/agent-lanes/agent-lanes';
 
 /** Where the screen is left when dragged, per viewer, as pr-starmap keeps it. */
 const PLACE_KEY = 'queue.sheetPos';
@@ -32,7 +33,7 @@ const TYPING = 'input, textarea, select';
  */
 @Component({
   selector: 'app-pr-screen',
-  imports: [Draggable, SheetHeader, SheetMarkdown, SheetRows, SheetDiff, SheetEditor],
+  imports: [Draggable, SheetHeader, SheetMarkdown, SheetRows, SheetDiff, SheetEditor, AgentLanes],
   providers: [PullDetailFeed, PullEdits],
   templateUrl: './pr-screen.html',
   styleUrl: './pr-screen.css',

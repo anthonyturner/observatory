@@ -31,6 +31,7 @@ import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { fileHandoffStore } from './agents/handoff-store.ts';
 import { usageReport } from './usage/usage-report.ts';
+import { agentUsageReport } from './agents/agent-usage-report.ts';
 import { elevenLabs } from './voice/eleven-labs.ts';
 import { localElevenLabs } from './voice/eleven-labs-settings.ts';
 import { HEAR_PATH, SPEAK_PATH, VOICE_PATH, withVoiceRoutes } from './voice/voice-routes.ts';
@@ -53,6 +54,7 @@ const reads = cachedReads({
   history: fileHistoryStore(),
   collisions: (repo) => collisionsReport(github, clones, merger, repo),
   usage: () => usageReport(),
+  agentUsage: () => agentUsageReport(),
   logs: (repo) => logsReport(logsConfig, logFolder, repo, new Date()),
   handoffs: async () => handoffs.read(),
 });

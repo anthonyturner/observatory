@@ -18,7 +18,11 @@ describe('TopNav', () => {
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
     const links = Array.from(element.querySelectorAll<HTMLAnchorElement>('.jumps a'));
-    expect(links.map((link) => link.getAttribute('href'))).toEqual(['#news', '#projects']);
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '#news',
+      '#projects',
+      '#agents',
+    ]);
 
     const news = document.createElement('section');
     news.id = 'news';

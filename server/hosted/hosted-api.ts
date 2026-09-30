@@ -104,6 +104,8 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
       // No clone here: the pairs are worked out from the files pull requests share.
       collisions: (repo) => uncheckedCollisions(github, repo),
       usage: async () => usageFrom(await store.get(USAGE_KEY)),
+      // Agent runs are read from session logs on the owner's machine; none are pushed yet.
+      agentUsage: async () => null,
       logs: async () => LOGS_NOT_PUSHED,
       // Handoffs are recorded on the owner's machine; the hosted site has none yet.
       handoffs: async () => [],

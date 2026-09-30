@@ -1,0 +1,149 @@
+<section
+  id="agents"
+  class="agents"
+  tabindex="-1"
+  aria-labelledby="agents-title"
+  [attr.aria-busy]="reading()"
+>
+  <div class="head">
+    <h2 id="agents-title">Agents</h2>
+    <span class="sub">last 30 days</span>
+    @if (!waiting()) {
+      <span class="sub sum">{{ summary() }}</span>
+    }
+    <app-top-link />
+  </div>
+
+  @if (waiting(); as message) {
+    <p class="empty" role="status">{{ message }}</p>
+  } @else {
+    <div class="filters" role="group" aria-label="What the charts show">
+      @if (filter().project; as project) {
+        <button
+          type="button"
+          class="chip"
+          (click)="clear('project')"
+          [attr.aria-label]="'Show every project, not only ' + project"
+        >
+          {{ project }} <span aria-hidden="true">×</span>
+        </button>
+      }
+      @if (filter().agent; as agent) {
+        <button
+          type="button"
+          class="chip"
+          (click)="clear('agent')"
+          [attr.aria-label]="'Show every agent, not only ' + agent"
+        >
+          {{ agent }} <span aria-hidden="true">×</span>
+        </button>
+      }
+      @if (dayName(); as day) {
+        <button
+          type="button"
+          class="chip"
+          (click)="clear('day')"
+          [attr.aria-label]="'Show every day, not only ' + day"
+        >
+          {{ day }} <span aria-hidden="true">×</span>
+        </button>
+      }
+      @if (!filter().project && !filter().agent && !filter().day) {
+        <span class="hint">Click a moon, a bar, a day or a cell to narrow the charts.</span>
+      }
+    </div>
+
+    <div class="panels">
+      <article class="panel">
+        <h3>Agent orrery</h3>
+        <p class="use">
+          Use it for the morning glance: a bigger moon did more work, and its arc shows how full its
+          contexts get against the 200k window.
+        </p>
+        <app-agent-orrery-view
+          [orrery]="orrery()"
+          [picked]="filter().agent"
+          (pick)="pickAgent($event)"
+        />
+      </article>
+
+      <article class="panel">
+        <h3>Who spends the tokens</h3>
+        <p class="use">
+          Use it when you ask who costs what, or whether a change to an agent lowered its cost a
+          run.
+        </p>
+        <app-agent-rank-view
+          [chart]="rank()"
+          [picked]="filter().agent"
+          (pick)="pickAgent($event)"
+        />
+        <details>
+          <summary>Table view</summary>
+          <div class="table">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Agent</th>
+                  <th scope="col" class="num">Runs</th>
+                  <th scope="col" class="num">Tokens</th>
+                  <th scope="col" class="num">A run</th>
+                  <th scope="col" class="num">Peak context</th>
+                  <th scope="col" class="num">Tool uses</th>
+                  <th scope="col" class="num">Time a run</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of rank().table; track row.id) {
+                  <tr>
+                    <td>{{ row.label }}</td>
+                    <td class="num">{{ row.runs }}</td>
+                    <td class="num">{{ row.tokens }}</td>
+                    <td class="num">{{ row.perRun }}</td>
+                    <td class="num">{{ row.peak }}</td>
+                    <td class="num">{{ row.toolUses }}</td>
+                    <td class="num">{{ row.perRunTime }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </article>
+
+      <article class="panel wide">
+        <h3>Tokens by day</h3>
+        <p class="use">
+          Use it when your usage or weekly limit jumps: it shows which day, and which agent drove
+          it. Click a day for its runs.
+        </p>
+        <app-agent-daily-view [chart]="daily()" [picked]="filter().day" (pick)="pickDay($event)" />
+      </article>
+
+      <article class="panel">
+        <h3>How full each context gets</h3>
+        <p class="use">
+          Use it when an agent seems to lose the thread: each dot is a run at its fullest, and a
+          crowd far to the right means its tasks are too big to hold.
+        </p>
+        <app-agent-context-view [chart]="context()" [picked]="filter().agent" />
+      </article>
+
+      <article class="panel">
+        <h3>Agents across projects</h3>
+        <p class="use">
+          Use it when you ask where your effort goes. Click a cell to narrow every chart to that
+          project and agent.
+        </p>
+        <app-agent-grid-view [chart]="grid()" (pick)="pickCell($event)" />
+      </article>
+
+      <article class="panel wide">
+        <h3>{{ listTitle() }}</h3>
+        <app-agent-runs-list [runs]="listed()" [now]="now()" />
+      </article>
+    </div>
+  }
+</section>
+
+<app-usage-tip [tip]="tip()" />

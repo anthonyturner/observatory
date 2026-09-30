@@ -14,6 +14,7 @@ import { projectsReport } from '../projects/projects-report.ts';
 import { type PullDetail, pullDetailOf } from '../queue/pull-detail.ts';
 import { type QueueReport, queueReport } from '../queue/queue-report.ts';
 import type { UsageReport } from '../usage/usage-types.ts';
+import type { AgentUsageReport } from '../agents/agent-usage-report.ts';
 import { cachedByKey, keyedCache } from '../util/cached-by-key.ts';
 
 /** GitHub is read at most this often; the page asks every few minutes. */
@@ -44,6 +45,8 @@ export interface ReadSources {
   readonly collisions: (repo: string) => Promise<CollisionsReport>;
   /** Claude Code usage, or null where none has been read (hosted, before a push). */
   readonly usage: () => Promise<UsageReport | null>;
+  /** Each subagent run's tokens and context, or null where the session logs are not on this machine. */
+  readonly agentUsage: () => Promise<AgentUsageReport | null>;
   /** An app's log folder, folded, for the Log Sky. */
   readonly logs: (repo: string) => Promise<LogSnapshot | LogsUnconfigured>;
   /** Every agent handoff the capture hook recorded; none where nothing records them. */
@@ -81,6 +84,7 @@ export interface ApiReads {
   /** Openings, merges and closures a day for sixty days, rebuilt from GitHub. */
   ledger(repo: string): Promise<Ledger>;
   usage(): Promise<UsageReport | null>;
+  agentUsage(): Promise<AgentUsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
   /** One report card per agent, from the handoffs and the pull requests they opened. */
   agents(repo: string): Promise<AgentsReport>;
@@ -131,6 +135,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     history: async (repo) => ({ repo, frames: await history.read(repo) }),
     ledger: cachedByKey((repo) => ledgerReport(github, repo), LEDGER_TTL_MS),
     usage: sources.usage,
+    agentUsage: sources.agentUsage,
     logs: cachedByKey(sources.logs, LOGS_TTL_MS),
     agents: cachedByKey(
       async (repo) => reportCards(await sources.handoffs(), await github.agentPulls(repo), repo),

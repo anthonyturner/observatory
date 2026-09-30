@@ -20,6 +20,7 @@ import { SheetMarkdown } from '../../starmap/pr-screen/sheet-markdown/sheet-mark
 import { OpenPull, labelChips, pullChips } from '../issue-list';
 import { IssueMeta } from '../issue-meta/issue-meta';
 import { IssueInfo, barLabelOf, kickerOf, metaLineOf } from './issue-window-view';
+import { AgentLanes } from '../../../shared/agent-lanes/agent-lanes';
 
 /** Where the window is left, per viewer, as pr-starmap keeps it. */
 const PLACE_KEY = 'queue.issuePos';
@@ -48,7 +49,7 @@ const isShown = (el: Element | null): el is HTMLElement =>
  */
 @Component({
   selector: 'app-issue-window',
-  imports: [Draggable, IssueMeta, SheetMarkdown],
+  imports: [Draggable, IssueMeta, SheetMarkdown, AgentLanes],
   providers: [IssueDetailFeed],
   templateUrl: './issue-window.html',
   styleUrls: ['./issue-window.css', './issue-window-head.css'],

@@ -70,10 +70,10 @@ describe('HomePage', () => {
     expect(terms).toContain('Fog');
   });
 
-  it('puts the news, then the projects, below the HUD, in the main landmark', () => {
+  it('puts the news, the projects, then the agents below the HUD, in the main landmark', () => {
     const sections = Array.from(render().querySelectorAll('main > *')).map((each) =>
       each.tagName.toLowerCase(),
     );
-    expect(sections).toEqual(['app-news-section', 'app-fleet-section']);
+    expect(sections).toEqual(['app-news-section', 'app-fleet-section', 'app-agents-section']);
   });
 });

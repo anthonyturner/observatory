@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { AgentsSection } from '../agents-section/agents-section';
 import { AskPanel } from '../ask-panel/ask-panel';
 import { CorePanel } from '../core-panel/core-panel';
 import { FleetSection } from '../fleet-section/fleet-section';
@@ -31,6 +32,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
     VitalsPanel,
     SkillsPanel,
     FleetSection,
+    AgentsSection,
     NewsSection,
     HelpCard,
     RunDockPanel,

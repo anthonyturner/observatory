@@ -199,6 +199,10 @@
   --agent-heat-empty: rgba(120, 150, 220, 0.05);
   /* Past the standard 200k context window. */
   --agent-window-band: rgba(250, 178, 25, 0.08);
+  /* A nudge's readout: bright corner brackets on a faint frame, over scanlines. */
+  --nudge-bracket: var(--warm);
+  --nudge-frame: rgba(255, 217, 138, 0.16);
+  --nudge-scan: rgba(255, 217, 138, 0.035);
 
   /* A collision thread: a pair that would conflict. */
   --chart-thread-conflict: var(--bad);

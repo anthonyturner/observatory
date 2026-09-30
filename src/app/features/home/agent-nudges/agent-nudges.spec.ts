@@ -39,11 +39,10 @@ function render(nudges: Nudge[]) {
 
 describe('AgentNudges', () => {
   it('says what happened on each nudge', () => {
-    const { buttons } = render(NUDGES);
+    const { element } = render(NUDGES);
 
-    expect(buttons('.open .text').map((text) => text.textContent)).toEqual(
-      NUDGES.map((n) => n.text),
-    );
+    const texts = Array.from(element.querySelectorAll('.open .text'));
+    expect(texts.map((text) => text.textContent)).toEqual(NUDGES.map((n) => n.text));
   });
 
   it('tags each nudge with the signal it reads', () => {

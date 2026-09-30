@@ -129,6 +129,50 @@ h2 {
   grid-column: 1 / -1;
 }
 
+.panel:focus {
+  outline: none;
+}
+
+/* The chart a reminder opened glows once, so the eye lands on it. */
+.flash {
+  animation: flash 2.4s ease-out;
+}
+
+@keyframes flash {
+  from {
+    border-color: var(--flow);
+    box-shadow: 0 0 0 3px var(--flow-tint);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flash {
+    animation: none;
+    border-color: var(--flow);
+  }
+}
+
+.reminders {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.notify {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.notify input {
+  accent-color: var(--flow);
+}
+
 h3 {
   margin: 0;
   font-family: var(--font-condensed);

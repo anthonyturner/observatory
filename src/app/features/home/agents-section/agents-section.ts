@@ -1,4 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { AgentChart, AgentFocus } from '../../../core/agent-usage/agent-focus';
+import { AgentReminders } from '../../../core/agent-usage/agent-reminders';
+import { Weekday } from '../../../core/agent-usage/agent-review-week';
 import { AgentUsageFeed, AgentUsageState } from '../../../core/agent-usage/agent-usage-feed';
 import { formatTokens } from '../../../core/usage/usage-format';
 import { TipAt, UsageTip } from '../../../shared/charts/usage-tip/usage-tip';
@@ -24,6 +38,17 @@ const WAITING_MESSAGE: Record<Exclude<AgentUsageState['status'], 'ready'>, strin
     'No agent runs to show here: they are read from Claude Code’s logs on the machine that runs Observatory.',
 };
 
+/** The days a weekly review can fall on, Monday first. */
+const WEEKDAYS: readonly { day: Weekday; name: string }[] = [
+  { day: 1, name: 'Monday' },
+  { day: 2, name: 'Tuesday' },
+  { day: 3, name: 'Wednesday' },
+  { day: 4, name: 'Thursday' },
+  { day: 5, name: 'Friday' },
+  { day: 6, name: 'Saturday' },
+  { day: 0, name: 'Sunday' },
+];
+
 /** Below the projects: what each agent you use costs, in six charts that
  *  filter one another, and the runs behind them. */
 @Component({
@@ -45,6 +70,12 @@ const WAITING_MESSAGE: Record<Exclude<AgentUsageState['status'], 'ready'>, strin
 })
 export class AgentsSection {
   private readonly feed = inject(AgentUsageFeed);
+  private readonly document = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
+  protected readonly reminders = inject(AgentReminders);
+  protected readonly weekdays = WEEKDAYS;
+  /** The chart a reminder just opened, outlined for a moment. */
+  protected readonly flashed = signal<AgentChart | null>(null);
 
   protected readonly filter = signal<AgentFilter>(NO_FILTER);
   protected readonly tip = signal<TipAt | null>(null);
@@ -101,6 +132,41 @@ export class AgentsSection {
       work.set(run.project, (work.get(run.project) ?? 0) + run.workTokens);
     return [...work].sort((a, b) => b[1] - a[1]).map(([project]) => project);
   });
+
+  constructor() {
+    // A review step or a nudge asks for a chart: narrow to what it names, then
+    // bring the chart into view once it has drawn.
+    const focus = inject(AgentFocus);
+    effect(() => {
+      const request = focus.request();
+      if (!request) return;
+      untracked(() => {
+        this.filter.update((filter) => ({
+          project: request.project ?? filter.project,
+          agent: request.agent ?? null,
+          day: request.day ?? null,
+        }));
+        this.flashed.set(request.chart);
+      });
+      afterNextRender(
+        () => {
+          const panel = this.document.getElementById(`agents-${request.chart}`);
+          panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          panel?.focus({ preventScroll: true });
+        },
+        { injector: this.injector },
+      );
+    });
+  }
+
+  protected setReminderDay(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.reminders.setDay(value === '' ? null : (Number(value) as Weekday));
+  }
+
+  protected setNotify(event: Event): void {
+    void this.reminders.setNotify((event.target as HTMLInputElement).checked);
+  }
 
   protected pickProject(event: Event): void {
     const project = (event.target as HTMLSelectElement).value || null;

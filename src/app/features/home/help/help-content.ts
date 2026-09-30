@@ -106,7 +106,25 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Routine',
     meaning:
-      'A glance at the orrery each morning. On Friday, By day for the week, then Ranking against last week. When something feels off, Context for an agent that seems lost, or the pipeline on the pull request that dragged.',
+      'A glance at the orrery each morning. On your review day, the Agent review card walks you through By day for the week, then Ranking against last week. When something feels off, Context for an agent that seems lost, or the pipeline on the pull request that dragged.',
+    section: AGENTS,
+  },
+  {
+    term: 'Review',
+    meaning:
+      'From 2pm on your review day (Friday unless you choose another), an Agent review card sits above the tools: By day, then Ranking, then Context, each a click away. Done for this week puts it away until next week; Remind me Monday brings it back at 9 on Monday. With Speak on, Home reads it aloud when it appears.',
+    section: AGENTS,
+  },
+  {
+    term: 'Nudges',
+    meaning:
+      'Chips under the status line when the agent runs show something worth a look, at most one of each kind: an agent near or past the 200k window three times this week (opens Context); a busy day, twice your usual work (By day); an agent costing 30% more a run than before (Ranking); a change that ran a stage again (its issue window, with its pipeline); a project where dev ran and qa never did (the grid). The × rests that kind until tomorrow.',
+    section: AGENTS,
+  },
+  {
+    term: 'Reminders',
+    meaning:
+      'Weekly review, above the charts, chooses the day or turns every agent reminder off. Notify me asks the browser once, then sends a notification when the review is due and Home is in the background. Home has to be open for either: the runs are read on this machine, so nothing can remind you from elsewhere.',
     section: AGENTS,
   },
   {

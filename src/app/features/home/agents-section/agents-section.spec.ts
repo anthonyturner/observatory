@@ -1,4 +1,7 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { AgentFocus } from '../../../core/agent-usage/agent-focus';
+import { TrailActivity } from '../../../core/sky/trail-activity';
 import { of } from 'rxjs';
 import { AGENT_USAGE_READ, AgentUsageState } from '../../../core/agent-usage/agent-usage-feed';
 import { AGENT_NOW, agentRun } from '../../../core/agent-usage/testing/agent-run-fixture';
@@ -20,7 +23,10 @@ const READY: AgentUsageState = {
 
 function render(state: AgentUsageState) {
   TestBed.configureTestingModule({
-    providers: [{ provide: AGENT_USAGE_READ, useValue: () => of(state) }],
+    providers: [
+      { provide: AGENT_USAGE_READ, useValue: () => of(state) },
+      { provide: TrailActivity, useValue: { measured: signal(null), pace: signal(1) } },
+    ],
   });
   const fixture = TestBed.createComponent(AgentsSection);
   fixture.detectChanges();
@@ -76,6 +82,27 @@ describe('AgentsSection', () => {
     element.querySelector<HTMLButtonElement>('.chip')?.click();
     fixture.detectChanges();
     expect(listed(element)).toHaveLength(3);
+  });
+
+  it('opens the chart a reminder asks for, narrowed, and outlines it', () => {
+    const { fixture, element } = render(READY);
+    TestBed.inject(AgentFocus).show({ chart: 'rank', agent: 'pm' });
+    fixture.detectChanges();
+
+    expect(listed(element)).toEqual(['File the issue']);
+    expect(element.querySelector('#agents-rank')?.classList).toContain('flash');
+  });
+
+  it('chooses the review day, or turns reminders off', () => {
+    localStorage.clear();
+    const { fixture, element } = render(READY);
+    const day = element.querySelector<HTMLSelectElement>('#agents-review-day');
+
+    expect(day?.value).toBe('5');
+    day!.value = '';
+    day!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(element.querySelector<HTMLInputElement>('#agents-review-notify')?.disabled).toBe(true);
   });
 
   it('narrows the charts to any project picked from the Project list', () => {

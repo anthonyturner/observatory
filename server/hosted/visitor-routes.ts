@@ -78,6 +78,7 @@ export function visitorRoutes(
       // The owner's usage reads as none rather than as an error, as pr-starmap
       // answers a visitor's read of the owner's own documents.
       '/api/usage': async () => null,
+      '/api/agent-usage': async () => null,
       '/api/projects': async () => visibleProjects(await reads.projects(), await visible()),
       '/api/queue': async (query) =>
         triagedQueue(await reads.queue(await visibleRepo(query)), EMPTY_TRIAGE, Date.now()),

@@ -178,6 +178,28 @@
   --usage-code-wash: rgba(4, 6, 14, 0.7);
   --usage-code-ink: var(--ink-soft);
 
+  /* Agents, in the playbook's pipeline order, then every other agent. The five
+     hues pass the colour-vision checks on this night; they repeat the model
+     hues above, so an agent chart never also colours by model. */
+  --agent-pm: #3987e5;
+  --agent-refine: #d95926;
+  --agent-ux: #199e70;
+  --agent-dev: #c98500;
+  --agent-qa: #d55181;
+  --agent-other: #6b7596;
+  /* The agent grid's ramp: one blue, deep for a little work, bright for a lot. */
+  --agent-heat-1: #184f95;
+  --agent-heat-2: #1c5cab;
+  --agent-heat-3: #256abf;
+  --agent-heat-4: #2a78d6;
+  --agent-heat-5: #3987e5;
+  --agent-heat-6: #5598e7;
+  --agent-heat-7: #6da7ec;
+  --agent-heat-8: #86b6ef;
+  --agent-heat-empty: rgba(120, 150, 220, 0.05);
+  /* Past the standard 200k context window. */
+  --agent-window-band: rgba(250, 178, 25, 0.08);
+
   /* A collision thread: a pair that would conflict. */
   --chart-thread-conflict: var(--bad);
 

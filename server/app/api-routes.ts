@@ -24,6 +24,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
   return {
     get: {
       '/api/usage': () => reads.usage(),
+      '/api/agent-usage': () => reads.agentUsage(),
       '/api/projects': (query) => {
         if (isFresh(query)) reads.forgetProjects();
         return reads.projects();

@@ -1,0 +1,73 @@
+/* What every agent chart shares: its SVG scales to its panel, its words wear
+   the theme's ink, and a mark that is not the picked agent steps back. */
+:host {
+  display: block;
+  min-width: 0;
+  /* On a phone a chart keeps a width its words can be read at, and scrolls
+     sideways inside its panel rather than shrinking them away. */
+  overflow-x: auto;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  min-width: var(--chart-min-width, 0);
+  height: auto;
+  overflow: visible;
+}
+
+text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--muted);
+}
+
+.name {
+  font-size: 12px;
+  fill: var(--ink-soft);
+}
+
+.value {
+  font-size: 12px;
+  fill: var(--ink);
+}
+
+.faint {
+  font-size: 10px;
+  fill: var(--faint);
+}
+
+.grid {
+  stroke: var(--edge-soft);
+}
+
+.baseline {
+  stroke: var(--edge);
+}
+
+.hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.hit:hover {
+  fill: var(--usage-hit-hover);
+}
+
+.mark {
+  transition: opacity 0.2s;
+}
+
+.dim {
+  opacity: 0.28;
+}
+
+.hit:focus-visible,
+.pickable:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.pickable {
+  cursor: pointer;
+}

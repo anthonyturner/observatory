@@ -9,7 +9,7 @@ import {
   Margins,
   gridRow,
   percentY,
-} from './chart-marks';
+} from '../../../../shared/charts/chart-marks';
 
 const HEIGHT = 120;
 const MARGINS: Margins = { left: 40, right: 12, top: 16, bottom: 22 };

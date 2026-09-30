@@ -45,6 +45,13 @@ describe('visitorRoutes', () => {
     assert.equal(await response.json(), null);
   });
 
+  it('reads the owner’s agent runs as none', async () => {
+    const response = await get(visitor(false), '/api/agent-usage');
+
+    assert.equal(response.status, 200);
+    assert.equal(await response.json(), null);
+  });
+
   it('shows the news, which is public headlines', async () => {
     const response = await get(visitor(false), '/api/news');
 

@@ -79,6 +79,7 @@
               <a [href]="url()" target="_blank" rel="noopener">read the rest on GitHub ↗</a>
             </p>
           }
+          <app-agent-lanes [repo]="repo()" [issue]="number()" [pulls]="info().prs ?? []" />
         }
       }
       @case ('failed') {

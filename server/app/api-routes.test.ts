@@ -50,6 +50,14 @@ const reads = {
   forgetPull: (repo: string, number: number) => forgotten.push(`${repo}#${number}`),
   labels: async () => [{ name: 'bug', color: 'd73a4a' }],
   logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
+  agentUsage: async () => ({
+    generatedAt: 'x',
+    days: 30,
+    from: '2026-09-01',
+    runs: [],
+    agents: [],
+    projects: [],
+  }),
 } as unknown as ApiReads;
 
 /** An editor that remembers what it was asked, and changes nothing. */
@@ -168,6 +176,10 @@ describe('ownerRoutes', () => {
     assert.equal(response.status, 200);
     const read = (await get('/api/queue?repo=me/app')) as { items: { isSeen: boolean }[] };
     assert.equal(read.items[0].isSeen, true);
+  });
+
+  it('reads the agent runs of the month', async () => {
+    assert.equal(((await get('/api/agent-usage')) as { days: number }).days, 30);
   });
 
   it('reads a repository’s Log Sky', async () => {

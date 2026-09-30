@@ -75,6 +75,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'A pull request opened since the last refresh shows Request fetch; Refresh re-fetches one that is out of date. The open screen fills in by itself.',
       ],
       [
+        'Pipeline',
+        'Under a pull request’s description, when agents worked on it: each run on its branch or for its issue as a bar in time, with the tokens it spent. Gaps are waits between hand-offs; ↻ marks a stage that ran again.',
+      ],
+      [
         'Drag',
         'Cards and the pull-request screen move by their headers. Double-click a header to put it back.',
       ],
@@ -147,6 +151,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       [
         'Window',
         'The issue’s labels, people and description. Drag it by its top bar; Esc closes it. A description not fetched yet shows Request fetch.',
+      ],
+      [
+        'Pipeline',
+        'Under the issue’s description, when agents worked on it: each run for it as a bar in time, with the tokens it spent. Gaps are waits between hand-offs; ↻ marks a stage that ran again.',
       ],
       ['Tabs', 'Open lists the most recently touched first; Closed, the most recently closed.'],
       ['Label', 'Show only the issues with one label.'],

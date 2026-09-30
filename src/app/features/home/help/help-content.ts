@@ -3,6 +3,7 @@ import { HelpEntry, HelpKey } from '../../../shared/help/help-entry';
 const TIER_3 = 'Tier 3';
 /** What each thing in the scene stands for, first, then how to work Home. */
 const SKY = 'The sky';
+const AGENTS = 'Agents';
 const USING = 'Using Home';
 
 const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
@@ -53,6 +54,60 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
     meaning:
       'The core’s mood follows your projects: calm, slow green when nothing is blocked; quicker, deeper breathing, warming toward amber, as blocked projects and stuck PRs pile up. Grey until the projects are read. The line under CLAUDE says why.',
     section: SKY,
+  },
+  {
+    term: 'Agents',
+    meaning:
+      'Below Projects (Agents in the menu jumps there): what each agent you use cost over the last 30 days, read from Claude Code’s logs on this machine. pm, refine, ux-design, dev and qa each keep one colour in every chart; every other agent (Explore, general-purpose and the rest) is grey Other. Click a moon, a bar, a day or a grid cell to narrow the charts; the chips above them clear it.',
+    section: AGENTS,
+  },
+  {
+    term: 'Orrery',
+    meaning:
+      'Each agent a moon round a small core, pipeline order from the centre out. A bigger moon did more work; the arc round it is its average peak context against the 200k window. Use it for the morning glance.',
+    section: AGENTS,
+  },
+  {
+    term: 'Ranking',
+    meaning:
+      'Work tokens per agent, most first, with its runs and what a run costs; Table view gives every figure. Use it to see who costs what, or whether a change to an agent lowered its cost a run.',
+    section: AGENTS,
+  },
+  {
+    term: 'By day',
+    meaning:
+      'Work tokens a day for 30 days, stacked by agent. Use it when your usage or weekly limit jumps; click a day to list its runs.',
+    section: AGENTS,
+  },
+  {
+    term: 'Context',
+    meaning:
+      'Each run is a dot at its peak context: the most one request carried (its input and cache), not the run’s total. The white tick is the agent’s median. A run past the dashed 200k line was on a 1M-context model. A crowd to the right means an agent’s tasks are too big to hold.',
+    section: AGENTS,
+  },
+  {
+    term: 'Grid',
+    meaning:
+      'Work tokens per agent and project, brighter for more; an empty cell never ran there. Use it to see where your effort goes; click a cell to narrow the charts to that project and light that agent. Every other project is in the Project list above the charts.',
+    section: AGENTS,
+  },
+  {
+    term: 'Runs',
+    meaning:
+      'The runs behind whatever the charts are narrowed to, newest first: the agent, what it was asked, its project, tokens, peak context, time taken and when it ended. #n is the issue it worked on: the one its task names, or for dev, qa and the rest, the one its branch is named for. pm, refine and ux-design run before a change has a branch, so they count only when their task names the issue.',
+    section: AGENTS,
+  },
+  {
+    term: 'Pipeline',
+    meaning:
+      'On a pull request’s screen and in an issue’s window: each agent run on that change as a bar in time. Gaps are waits between hand-offs; ↻ marks a stage that ran again. Use it when a change took too long or cost too much.',
+    section: AGENTS,
+  },
+  {
+    term: 'Routine',
+    meaning:
+      'A glance at the orrery each morning. On Friday, By day for the week, then Ranking against last week. When something feels off, Context for an agent that seems lost, or the pipeline on the pull request that dragged.',
+    section: AGENTS,
   },
   {
     term: 'Order',

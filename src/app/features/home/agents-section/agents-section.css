@@ -1,0 +1,222 @@
+:host {
+  display: block;
+}
+
+.agents {
+  max-width: 1180px;
+  margin: 28px auto 0;
+  scroll-margin-top: 16px;
+}
+
+.agents:focus {
+  outline: none;
+}
+
+/* The heading bar matches the Projects and News sections above it. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin: 0 0 12px;
+  padding: 10px 16px 11px;
+  border: 1px solid var(--edge-soft);
+  border-radius: var(--radius-panel);
+  background: var(--glass-strong);
+}
+
+h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sum {
+  margin-left: auto;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  margin: 0 0 12px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--flow);
+  border-radius: 999px;
+  background: var(--flow-tint);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chip span {
+  color: var(--flow);
+}
+
+.project {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.project select {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.project select:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.panel {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px 16px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+h3 {
+  margin: 0;
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* When to reach for the chart: the reminder of what it is for, always in view. */
+.use {
+  margin: 0;
+  max-width: 70ch;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+details {
+  font-size: 12.5px;
+}
+
+summary {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--flow);
+  cursor: pointer;
+}
+
+.table {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--edge-soft);
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+td {
+  color: var(--ink-soft);
+}
+
+.num {
+  text-align: right;
+}
+
+.swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 7px;
+  border-radius: 2px;
+}
+
+.empty {
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

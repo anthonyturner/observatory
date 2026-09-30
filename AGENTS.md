@@ -70,6 +70,7 @@ authorization and its limits are in
 | review a pull request (self-review by default, per [ADR-0004](docs/decisions/0004-self-review-instead-of-a-qa-agent.md)) | [agent-workflows/qa-review.md](docs/agent-workflows/qa-review.md) |
 | run a grilling session — only when asked for by name | [agent-workflows/grilling.md](docs/agent-workflows/grilling.md) |
 | add, rename or thin an agent skill | [agent-workflows/skills.md](docs/agent-workflows/skills.md) |
+| add a changelog entry, or cut a release | [changelog.md](docs/changelog.md) |
 | record a decision that constrains future work | [decisions/README.md](docs/decisions/README.md) |
 | check what the project is built on | [tech-stack.md](docs/tech-stack.md) |
 

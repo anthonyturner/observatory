@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.3.0",
   "project": {
     "name": "observatory",
     "summary": "Observatory is an Angular dashboard that charts a developer's open pull requests, projects and coding agents as an animated space scene, rebuilt piece by piece from pr-starmap."

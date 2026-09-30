@@ -34,7 +34,7 @@ optional.
    explicitly when manual validation in the running app is still required.
 9. Apply SOLID principles where they solve a real problem; do not force
    abstractions onto trivial code. The shape of the SOLID note a change
-   report carries lives with the stage that writes it — see step 7 of
+   report carries lives with the stage that writes it — see step 8 of
    **Implement and verify** in
    [agent-workflows/implementation.md](agent-workflows/implementation.md).
 10. Before adding a module, service or component, check whether an existing one

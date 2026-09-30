@@ -77,6 +77,8 @@ pull-request body so GitHub closes the issue after merge.
 A pull request is ready when:
 
 - Acceptance criteria are met.
+- A change users would notice has a line under `## [Unreleased]` in
+  `CHANGELOG.md` — see [docs/changelog.md](docs/changelog.md).
 - `npm run build` succeeds.
 - `npm run lint` and `npm test -- --watch=false` pass.
 - Visible changes include screenshots or a recording.

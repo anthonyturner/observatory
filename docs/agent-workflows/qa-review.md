@@ -18,8 +18,10 @@ and file and line references kept as evidence.
    blocking finding rather than picking the version that suits the diff.
 2. Evaluate every acceptance criterion using evidence from the diff and checks.
 3. Review correctness, scope, the stack rules, test coverage of new logic,
-   commit format, PR linkage, secrets, debug artifacts, and comments
-   ([rule 15](../rules.md)) as applicable.
+   commit format, PR linkage, secrets, debug artifacts, comments
+   ([rule 15](../rules.md)), and the `CHANGELOG.md` entry
+   ([../changelog.md](../changelog.md)) as applicable. A user-visible change
+   with no entry, and no reason given for leaving it out, is a finding.
 4. Do not claim a build or test passed without evidence. Mark behavior that
    requires manual testing in the running app.
 5. Report blocking findings first with file and line references. Separate

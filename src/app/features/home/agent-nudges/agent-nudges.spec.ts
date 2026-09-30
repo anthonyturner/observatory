@@ -41,9 +41,18 @@ describe('AgentNudges', () => {
   it('says what happened on each nudge', () => {
     const { buttons } = render(NUDGES);
 
-    expect(buttons('.open').map((button) => button.textContent?.trim())).toEqual(
+    expect(buttons('.open .text').map((text) => text.textContent)).toEqual(
       NUDGES.map((n) => n.text),
     );
+  });
+
+  it('tags each nudge with the signal it reads', () => {
+    const { element } = render(NUDGES);
+
+    expect(Array.from(element.querySelectorAll('.tag')).map((tag) => tag.textContent)).toEqual([
+      'Context',
+      'Rework',
+    ]);
   });
 
   it('opens a chart nudge’s chart, narrowed to what it names', () => {

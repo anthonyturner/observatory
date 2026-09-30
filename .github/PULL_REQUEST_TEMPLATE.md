@@ -9,6 +9,10 @@
 - [ ] `npm test -- --watch=false`
 - [ ] Focused tests or checks (describe below)
 
+## Changelog
+
+- [ ] Entry added under `## [Unreleased]` in `CHANGELOG.md`, or not user-visible because: …
+
 ## Manual testing
 
 - Not required, or describe what was checked by hand in the running app.

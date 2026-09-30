@@ -333,15 +333,18 @@ See **Defect lane** in [pipeline.md](pipeline.md).
    ([rule 6](../rules.md)).
 4. Run `npm run build` plus `npm run lint` and `npm test -- --watch=false`
    as the change warrants ([rule 8](../rules.md)).
-5. Review the complete diff and status for unrelated changes, secrets, and
+5. Add a line under `## [Unreleased]` in `CHANGELOG.md` if a user of the
+   project would notice the change, per [../changelog.md](../changelog.md). If
+   not, say so in the pull-request body.
+6. Review the complete diff and status for unrelated changes, secrets, and
    debug artifacts.
-6. Report every changed file as a repo-relative markdown link with the
+7. Report every changed file as a repo-relative markdown link with the
    changed line range(s), e.g. `[path/to/file:12-18](path/to/file#L12-L18)`
    (whole-file link for new files). Group the list by logical change if the
    work spanned multiple follow-ups in the same session. Note that
    uncommitted line numbers will shift if the diff changes again before
    commit. Also report verification evidence, risks, and manual testing.
-7. Report the SOLID note. This is the only stage that writes one, so the
+8. Report the SOLID note. This is the only stage that writes one, so the
    format lives here; [rule 9](../rules.md) is the judgement about when SOLID
    is worth applying at all, and it points at this step. Name each principle
    you applied, say in a sentence how it is applied in this change, and why it

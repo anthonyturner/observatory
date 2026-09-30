@@ -49,8 +49,9 @@ export function nearLimitNudges(runs: readonly AgentRun[], now: number): Nudge[]
   const since = weekStart(now).getTime();
   const counts = new Map<string, number>();
   for (const run of runs) {
-    if (ended(run) < since || run.peakContext < NEAR_LIMIT_TOKENS) continue;
     const group = groupOf(run.agent).id;
+    // Other pools unrelated ad-hoc agents, so a count across it says nothing about any one.
+    if (!PIPELINE.has(group) || ended(run) < since || run.peakContext < NEAR_LIMIT_TOKENS) continue;
     counts.set(group, (counts.get(group) ?? 0) + 1);
   }
   return [...counts]
@@ -64,14 +65,14 @@ export function nearLimitNudges(runs: readonly AgentRun[], now: number): Nudge[]
     }));
 }
 
-/** Today at twice a usual day's Claude Code work or more, when the pace is known. */
-export function busyDayNudges(pace: number | null, today: string): Nudge[] {
-  if (pace === null || pace < BUSY_PACE) return [];
+/** Today at twice a usual day's Claude Code work or more, when that is known. */
+export function busyDayNudges(ratio: number | null, today: string): Nudge[] {
+  if (ratio === null || ratio < BUSY_PACE) return [];
   return [
     {
       id: `busy-day:${today}`,
       kind: 'busy-day',
-      text: `Busy day: ${pace}× your usual Claude Code work so far`,
+      text: `Busy day: ${ratio}× your usual Claude Code work so far`,
       target: { kind: 'chart', chart: 'daily', day: today },
     },
   ];
@@ -83,6 +84,7 @@ export function pricierNudges(runs: readonly AgentRun[], now: number): Nudge[] {
   const byGroup = new Map<string, { week: number[]; before: number[] }>();
   for (const run of runs) {
     const group = groupOf(run.agent).id;
+    if (!PIPELINE.has(group)) continue;
     const sides = byGroup.get(group) ?? { week: [], before: [] };
     (ended(run) >= since ? sides.week : sides.before).push(run.workTokens);
     byGroup.set(group, sides);
@@ -102,19 +104,23 @@ export function pricierNudges(runs: readonly AgentRun[], now: number): Nudge[] {
     }));
 }
 
-/** Changes whose pipeline ran one of its stages again this week: rework. */
+/** Changes whose pipeline ran one of its stages again this week: rework, the
+ *  most recent first. */
 export function reworkNudges(runs: readonly AgentRun[], now: number): Nudge[] {
   const since = weekStart(now).getTime();
-  const byChange = new Map<string, AgentRun[]>();
+  const byChange = new Map<string, { repo: string; issue: number; runs: AgentRun[] }>();
   for (const run of runs) {
-    if (run.issue === null || run.repo === null) continue;
-    const key = `${run.repo}#${run.issue}`;
-    byChange.set(key, [...(byChange.get(key) ?? []), run]);
+    const { repo, issue } = run;
+    if (issue === null || repo === null) continue;
+    const key = `${repo}#${issue}`;
+    const change = byChange.get(key) ?? { repo, issue, runs: [] };
+    change.runs.push(run);
+    byChange.set(key, change);
   }
-  const nudges: Nudge[] = [];
-  for (const [key, mine] of byChange) {
+  const found: { nudge: Nudge; at: number }[] = [];
+  for (const [key, change] of byChange) {
     const seen = new Set<string>();
-    const repeat = [...mine]
+    const repeat = [...change.runs]
       .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
       .find((run) => {
         const stage = groupOf(run.agent).id;
@@ -123,15 +129,17 @@ export function reworkNudges(runs: readonly AgentRun[], now: number): Nudge[] {
         return again && ended(run) >= since;
       });
     if (!repeat) continue;
-    const stage = groupOf(repeat.agent).id;
-    nudges.push({
-      id: `rework:${key}`,
-      kind: 'rework',
-      text: `#${repeat.issue} in ${repeat.project} ran its ${stage} stage again`,
-      target: { kind: 'issue', repo: repeat.repo as string, issue: repeat.issue as number },
+    found.push({
+      at: ended(repeat),
+      nudge: {
+        id: `rework:${key}`,
+        kind: 'rework',
+        text: `#${change.issue} in ${repeat.project} ran its ${groupOf(repeat.agent).id} stage again`,
+        target: { kind: 'issue', repo: change.repo, issue: change.issue },
+      },
     });
   }
-  return nudges;
+  return found.sort((a, b) => b.at - a.at).map(({ nudge }) => nudge);
 }
 
 /** Projects where dev ran this week and qa did not. */
@@ -157,7 +165,7 @@ export function skippedQaNudges(runs: readonly AgentRun[], now: number): Nudge[]
     }));
 }
 
-/** The strongest nudge of each kind not dismissed today: once one of a kind is
+/** The first nudge of each kind (the strongest, or the most recent for rework) not dismissed today: once one of a kind is
  *  dismissed, that kind rests until tomorrow, so another of it cannot take its place. */
 export function agentNudges(
   runs: readonly AgentRun[],

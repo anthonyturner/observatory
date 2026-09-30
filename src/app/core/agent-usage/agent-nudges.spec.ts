@@ -25,6 +25,12 @@ describe('near the limit', () => {
     expect(nudge.target).toEqual({ kind: 'chart', chart: 'context', agent: 'dev' });
   });
 
+  it('leaves the pooled Other agents out', () => {
+    const other = ['a', 'b', 'c'].map((id) => full(id, THIS_WEEK, 'Explore'));
+
+    expect(nearLimitNudges(other, AGENT_NOW)).toEqual([]);
+  });
+
   it('counts neither last week’s runs nor ones below 160k', () => {
     const runs = [
       full('a', THIS_WEEK),
@@ -38,11 +44,12 @@ describe('near the limit', () => {
 });
 
 describe('busy day', () => {
-  it('nudges from twice a usual day, and not when the pace is unknown', () => {
+  it('nudges from twice a usual day, says how busy it really is, and not when unknown', () => {
     expect(busyDayNudges(1.95, '2026-09-30')).toEqual([]);
     expect(busyDayNudges(null, '2026-09-30')).toEqual([]);
     const [nudge] = busyDayNudges(2, '2026-09-30');
     expect(nudge.text).toBe('Busy day: 2× your usual Claude Code work so far');
+    expect(busyDayNudges(9, '2026-09-30')[0].text).toContain('9×');
     expect(nudge.target).toEqual({ kind: 'chart', chart: 'daily', day: '2026-09-30' });
   });
 });
@@ -66,6 +73,17 @@ describe('getting pricier', () => {
 
     expect(nudge.text).toBe('qa is getting pricier: 130k a run this week, up from 100k');
     expect(nudge.target).toEqual({ kind: 'chart', chart: 'rank', agent: 'qa' });
+  });
+
+  it('leaves the pooled Other agents out', () => {
+    const other = (id: string, hoursAgo: number, workTokens: number) =>
+      runEndingAt(id, hoursAgo, 10, { agent: 'Explore', workTokens });
+    const runs = [
+      ...['b1', 'b2', 'b3'].map((id) => other(id, LAST_WEEK, 10_000)),
+      ...['w1', 'w2', 'w3'].map((id) => other(id, THIS_WEEK, 90_000)),
+    ];
+
+    expect(pricierNudges(runs, AGENT_NOW)).toEqual([]);
   });
 
   it('stays quiet just under the ratio, or on too few runs', () => {
@@ -93,6 +111,20 @@ describe('rework', () => {
 
     expect(nudge.text).toBe('#618 in rivals ran its dev stage again');
     expect(nudge.target).toEqual({ kind: 'issue', repo: 'me/rivals', issue: 618 });
+  });
+
+  it('shows the most recent rework first', () => {
+    const other = (id: string, hoursAgo: number, agent: string) =>
+      runEndingAt(id, hoursAgo, 5, { agent, issue: 700, repo: 'me/rivals', project: 'rivals' });
+    const nudges = reworkNudges(
+      [stage('d1', 40, 'dev'), stage('d2', 30, 'dev'), other('q1', 20, 'qa'), other('q2', 5, 'qa')],
+      AGENT_NOW,
+    );
+
+    expect(nudges.map((nudge) => nudge.id)).toEqual([
+      'rework:me/rivals#700',
+      'rework:me/rivals#618',
+    ]);
   });
 
   it('stays quiet for rework before this week, and for ad-hoc agents run twice', () => {

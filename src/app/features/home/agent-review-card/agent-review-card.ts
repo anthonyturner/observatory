@@ -9,7 +9,7 @@ const STEPS: readonly { chart: AgentChart; title: string; why: string }[] = [
     title: 'Tokens by day',
     why: 'which days were busy, and which agent drove them',
   },
-  { chart: 'rank', title: 'Who spends the tokens', why: 'each agent against last week' },
+  { chart: 'rank', title: 'Who spends the tokens', why: 'which agents cost the most this month' },
   { chart: 'context', title: 'How full each context gets', why: 'any agent near its limit' },
 ];
 

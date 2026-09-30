@@ -133,6 +133,11 @@ h2 {
   outline: none;
 }
 
+.panel:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
 /* The chart a reminder opened glows once, so the eye lands on it. */
 .flash {
   animation: flash 2.4s ease-out;

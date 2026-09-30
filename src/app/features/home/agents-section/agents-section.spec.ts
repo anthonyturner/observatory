@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AgentFocus } from '../../../core/agent-usage/agent-focus';
+import { BROWSER_NOTICES, BrowserNotices } from '../../../core/agent-usage/browser-notices';
 import { TrailActivity } from '../../../core/sky/trail-activity';
 import { of } from 'rxjs';
 import { AGENT_USAGE_READ, AgentUsageState } from '../../../core/agent-usage/agent-usage-feed';
@@ -21,11 +22,22 @@ const READY: AgentUsageState = {
   },
 };
 
+/** A browser without notifications: whatever is asked, they stay off. */
+const REFUSING: BrowserNotices = {
+  permission: () => 'unsupported',
+  request: async () => false,
+  show: () => undefined,
+};
+
 function render(state: AgentUsageState) {
   TestBed.configureTestingModule({
     providers: [
       { provide: AGENT_USAGE_READ, useValue: () => of(state) },
-      { provide: TrailActivity, useValue: { measured: signal(null), pace: signal(1) } },
+      {
+        provide: TrailActivity,
+        useValue: { measured: signal(null), pace: signal(1), ratio: signal(null) },
+      },
+      { provide: BROWSER_NOTICES, useValue: REFUSING },
     ],
   });
   const fixture = TestBed.createComponent(AgentsSection);
@@ -85,12 +97,37 @@ describe('AgentsSection', () => {
   });
 
   it('opens the chart a reminder asks for, narrowed, and outlines it', () => {
+    // jsdom lays nothing out, so it has no scrolling to do.
+    Element.prototype.scrollIntoView = vi.fn();
     const { fixture, element } = render(READY);
     TestBed.inject(AgentFocus).show({ chart: 'rank', agent: 'pm' });
     fixture.detectChanges();
 
     expect(listed(element)).toEqual(['File the issue']);
     expect(element.querySelector('#agents-rank')?.classList).toContain('flash');
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  it('does not replay a chart request when the section is built again, after Back', () => {
+    const { fixture } = render(READY);
+    TestBed.inject(AgentFocus).show({ chart: 'rank', agent: 'pm' });
+    fixture.detectChanges();
+    fixture.destroy();
+
+    const rebuilt = TestBed.createComponent(AgentsSection);
+    rebuilt.detectChanges();
+    expect(listed(rebuilt.nativeElement as HTMLElement)).toHaveLength(3);
+  });
+
+  it('unticks Notify me when the browser will not notify', async () => {
+    localStorage.clear();
+    const { fixture, element } = render(READY);
+    const box = element.querySelector<HTMLInputElement>('#agents-review-notify');
+    box!.click();
+    await fixture.whenStable();
+
+    expect(box?.checked).toBe(false);
   });
 
   it('chooses the review day, or turns reminders off', () => {

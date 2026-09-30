@@ -20,6 +20,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  *  median of earlier days with any work) would have reached by now, pro rata.
  *  Null when the usage cannot say. */
 export function activityPace(rows: readonly TokenDay[], nowMs: number): number | null {
+  const ratio = activityRatio(rows, nowMs);
+  if (ratio === null) return null;
+  const pace = Math.min(Math.max(ratio, QUIETEST_PACE), BUSIEST_PACE);
+  return Math.round(pace * PACE_STEPS) / PACE_STEPS;
+}
+
+/** Today's work over a usual day's by now, unbounded: how busy the day really
+ *  is, where the trails' pace keeps within calm bounds. Null when the usage cannot say. */
+export function activityRatio(rows: readonly TokenDay[], nowMs: number): number | null {
   const today = localDayKey(nowMs);
   const todayRow = rows.find((row) => row.day === today);
   const usual = medianOf(
@@ -31,8 +40,7 @@ export function activityPace(rows: readonly TokenDay[], nowMs: number): number |
   // A document from before today says nothing about today.
   if (!todayRow || usual === null) return null;
   const expected = usual * Math.max(dayShareAt(nowMs), MIN_DAY_SHARE);
-  const pace = Math.min(Math.max(workTokensOf(todayRow) / expected, QUIETEST_PACE), BUSIEST_PACE);
-  return Math.round(pace * PACE_STEPS) / PACE_STEPS;
+  return workTokensOf(todayRow) / expected;
 }
 
 /** How much of the local day has gone, 0 to 1. */
@@ -63,4 +71,11 @@ export class TrailActivity {
   });
   /** The pace the trails turn at: the natural one wherever it is not measured. */
   readonly pace: Signal<number> = computed(() => this.measured() ?? 1);
+  /** How busy today really is, unbounded and to a tenth: 9 on a 9× day, where the pace stops at 4. */
+  readonly ratio: Signal<number | null> = computed(() => {
+    const state = this.usage();
+    if (state.status !== 'ready') return null;
+    const ratio = activityRatio(state.document.tokens?.rows ?? [], this.now().getTime());
+    return ratio === null ? null : Math.round(ratio * 10) / 10;
+  });
 }

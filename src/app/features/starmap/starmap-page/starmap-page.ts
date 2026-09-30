@@ -751,7 +751,6 @@ export class StarmapPage {
     else this.openPull.set(null);
   }
 
-  /** Opens a pull request's full screen, from its card or another screen. */
   /** A link can open one change: `?issue=618` its window, `?pr=623` its screen,
    *  as Home's agent nudges do. Read after the repository's issues reset. */
   private openLinked(): void {
@@ -762,6 +761,7 @@ export class StarmapPage {
     if (Number.isInteger(pull) && pull > 0) this.openSheet(pull);
   }
 
+  /** Opens a pull request's full screen, from its card or another screen. */
   openSheet(number: number): void {
     this.issues.windowIssue.set(null);
     this.sheetPull.set(number);

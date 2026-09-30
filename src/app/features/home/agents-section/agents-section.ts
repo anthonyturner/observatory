@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DOCUMENT,
+  DestroyRef,
   Injector,
   afterNextRender,
   computed,
@@ -37,6 +38,9 @@ const WAITING_MESSAGE: Record<Exclude<AgentUsageState['status'], 'ready'>, strin
   missing:
     'No agent runs to show here: they are read from Claude Code’s logs on the machine that runs Observatory.',
 };
+
+/** How long a chart a reminder opened stays outlined, as its glow fades. */
+const FLASH_MS = 2400;
 
 /** The days a weekly review can fall on, Monday first. */
 const WEEKDAYS: readonly { day: Weekday; name: string }[] = [
@@ -76,6 +80,7 @@ export class AgentsSection {
   protected readonly weekdays = WEEKDAYS;
   /** The chart a reminder just opened, outlined for a moment. */
   protected readonly flashed = signal<AgentChart | null>(null);
+  private flashTimer: ReturnType<typeof setTimeout> | undefined;
 
   protected readonly filter = signal<AgentFilter>(NO_FILTER);
   protected readonly tip = signal<TipAt | null>(null);
@@ -141,15 +146,21 @@ export class AgentsSection {
       const request = focus.request();
       if (!request) return;
       untracked(() => {
+        // Taken, so a section built again later (after Back) does not replay it.
+        focus.clear();
         this.filter.update((filter) => ({
           project: request.project ?? filter.project,
           agent: request.agent ?? null,
           day: request.day ?? null,
         }));
-        this.flashed.set(request.chart);
+        // Off first, so asking for the same chart again replays the outline.
+        this.flashed.set(null);
       });
       afterNextRender(
         () => {
+          this.flashed.set(request.chart);
+          clearTimeout(this.flashTimer);
+          this.flashTimer = setTimeout(() => this.flashed.set(null), FLASH_MS);
           const panel = this.document.getElementById(`agents-${request.chart}`);
           panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           panel?.focus({ preventScroll: true });
@@ -157,6 +168,7 @@ export class AgentsSection {
         { injector: this.injector },
       );
     });
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.flashTimer));
   }
 
   protected setReminderDay(event: Event): void {
@@ -164,8 +176,11 @@ export class AgentsSection {
     this.reminders.setDay(value === '' ? null : (Number(value) as Weekday));
   }
 
-  protected setNotify(event: Event): void {
-    void this.reminders.setNotify((event.target as HTMLInputElement).checked);
+  /** The box is set back to what was saved: a browser that refuses leaves it unticked. */
+  protected async setNotify(event: Event): Promise<void> {
+    const box = event.target as HTMLInputElement;
+    await this.reminders.setNotify(box.checked);
+    box.checked = this.reminders.settings().notify;
   }
 
   protected pickProject(event: Event): void {

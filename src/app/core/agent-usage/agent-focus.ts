@@ -27,4 +27,9 @@ export class AgentFocus {
     this.last++;
     this.request.set({ ...target, id: this.last });
   }
+
+  /** The request has been carried out. */
+  clear(): void {
+    this.request.set(null);
+  }
 }

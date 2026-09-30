@@ -3,7 +3,8 @@ import { rememberProjects, resolveProject } from '../usage/checkout-projects.ts'
 import type { ProjectOf } from '../usage/project-usage.ts';
 import { dayKeys, windowStart } from '../usage/token-days.ts';
 import { SESSION_LOGS_DIR, USAGE_DIR } from '../usage/usage-paths.ts';
-import { type RawAgentRun, type RunCache, fileRunCache, runsSince } from './agent-runs.ts';
+import { type EntryStore, jsonEntryStore } from '../usage/file-cache.ts';
+import { RUN_CACHE_VERSION, type RawAgentRun, runsSince } from './agent-runs.ts';
 
 /** Days of runs the report covers, today included: the usage view's month. */
 export const AGENT_REPORT_DAYS = 30;
@@ -16,6 +17,8 @@ export interface AgentRun extends Omit<RawAgentRun, 'cwd' | 'startedAt' | 'ended
   readonly repo: string | null;
   /** From the description ("issue 442", "#442"), else the branch (`feat/217-…`); null when neither says. */
   readonly issue: number | null;
+  /** The pull request the task names ("QA review PR 648"), or null. */
+  readonly pull: number | null;
   readonly startedAt: string;
   readonly endedAt: string;
   readonly durationMs: number;
@@ -54,21 +57,29 @@ export interface AgentUsageReport {
 
 export interface AgentUsageSources {
   readonly logsDir: string;
-  readonly cache: RunCache;
+  readonly cache: EntryStore<RawAgentRun | null>;
   readonly projectOf: ProjectOf;
 }
 
 export const DEFAULT_AGENT_SOURCES: AgentUsageSources = {
   logsDir: SESSION_LOGS_DIR,
-  cache: fileRunCache(join(USAGE_DIR, 'agent-runs.json')),
+  cache: jsonEntryStore(join(USAGE_DIR, 'agent-runs.json'), RUN_CACHE_VERSION),
   projectOf: resolveProject,
 };
 
 const NAMESPACE = /^[^:]*:/;
 /** A branch named for its issue, as this workflow names them: `<type>/<n>-<topic>`. */
 const BRANCH_ISSUE = /^[a-z]+\/(\d+)-/i;
-/** "issue 442" or "#442", but not "PR #623": a pull request's number is not its issue's. */
-const DESCRIBED_ISSUE = /\bissue\s*#?(\d+)\b|(?<!\b(?:PR|pull request|pull)\s*)#(\d+)\b/i;
+/** "PR #623", "PR 648", "PRs #12", "PR: #12", "pull request #20", "pull-request 9". */
+const PULL_REF = /\b(?:PRs?|pull[\s-]?requests?)\s*:?\s*#?(\d+)\b/gi;
+/** "issue 442" or "#442", once the pull-request references are taken out. */
+const DESCRIBED_ISSUE = /\bissue\s*#?(\d+)\b|#(\d+)\b/i;
+
+/** The pull request a run's task names, as a qa review does: "QA review PR 648". */
+export function pullOf(description: string): number | null {
+  const match = new RegExp(PULL_REF.source, 'i').exec(description);
+  return match ? Number(match[1]) : null;
+}
 
 /** `agent-playbook:dev` and `dev` are one agent; a run that names none is `unknown`. */
 export function agentNameOf(agentType: string | null): string {
@@ -82,7 +93,8 @@ const PLANNING_AGENTS = new Set(['pm', 'refine', 'ux-design']);
 /** The issue a run worked on: the one its task names, else, for an agent that
  *  works on the change's own branch, the one that branch is named for. */
 export function issueOf(agent: string, branch: string | null, description: string): number | null {
-  const described = DESCRIBED_ISSUE.exec(description);
+  // A pull request's number is not its issue's.
+  const described = DESCRIBED_ISSUE.exec(description.replace(PULL_REF, ' '));
   if (described) return Number(described[1] ?? described[2]);
   if (PLANNING_AGENTS.has(agent)) return null;
   const named = BRANCH_ISSUE.exec(branch ?? '');
@@ -121,6 +133,7 @@ export function agentRunOf(raw: RawAgentRun, projectOf: ProjectOf): AgentRun {
     project: project.name,
     repo: project.repo,
     issue: issueOf(agentNameOf(raw.agentType), raw.branch, raw.description),
+    pull: pullOf(raw.description),
     startedAt: new Date(startedAt).toISOString(),
     endedAt: new Date(endedAt).toISOString(),
     durationMs: Math.max(0, endedAt - startedAt),
@@ -163,6 +176,6 @@ export async function agentUsageReport(
   sources = DEFAULT_AGENT_SOURCES,
   now = Date.now(),
 ): Promise<AgentUsageReport> {
-  const raws = runsSince(sources.logsDir, windowStart(now, AGENT_REPORT_DAYS), sources.cache);
+  const raws = await runsSince(sources.logsDir, windowStart(now, AGENT_REPORT_DAYS), sources.cache);
   return agentUsageFrom(raws, rememberProjects(sources.projectOf), now);
 }

@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { RawAgentRun } from './agent-runs.ts';
-import { agentNameOf, agentUsageFrom, issueOf, totalsOf } from './agent-usage-report.ts';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { after } from 'node:test';
+import type { EntryStore, FileEntries } from '../usage/file-cache.ts';
+import {
+  agentNameOf,
+  agentUsageFrom,
+  agentUsageReport,
+  issueOf,
+  pullOf,
+  totalsOf,
+} from './agent-usage-report.ts';
 
 const NOW = new Date(2026, 8, 30, 12, 0).getTime();
 const HOUR = 3_600_000;
@@ -58,14 +70,31 @@ describe('issueOf', () => {
     assert.equal(issueOf('refine', 'feat/618-roster', 'Refine issue 626'), 626);
   });
 
-  it('does not take a pull request’s number for an issue', () => {
+  it('does not take a pull request’s number for an issue, however it is written', () => {
     assert.equal(issueOf('qa', 'feat/618-roster', 'QA reviews PR #623'), 618);
-    assert.equal(issueOf('qa', 'main', 'Review pull request #20'), null);
+    for (const task of [
+      'Review pull request #20',
+      'Check PRs #12',
+      'PR: #12 again',
+      'Read pull-request 9',
+    ]) {
+      assert.equal(issueOf('qa', 'main', task), null, task);
+    }
+    assert.equal(issueOf('qa', 'main', 'QA review of PR 20 for issue 19'), 19);
   });
 
   it('says nothing when neither names one', () => {
     assert.equal(issueOf('Explore', 'main', 'Find activity signals for Home'), null);
     assert.equal(issueOf('dev', 'main', 'Implement roster scale token 468'), null);
+  });
+});
+
+describe('pullOf', () => {
+  it('reads the pull request a task names, as a qa review does', () => {
+    assert.equal(pullOf('QA review PR 648'), 648);
+    assert.equal(pullOf('QA reviews PR #622'), 622);
+    assert.equal(pullOf('Review pull request #20'), 20);
+    assert.equal(pullOf('Implement issue 442'), null);
   });
 });
 
@@ -109,6 +138,23 @@ describe('agentUsageFrom', () => {
     NOW,
   );
 
+  it('keeps a run that ended just inside the window, and drops one that ended just before it', () => {
+    const from = new Date(2026, 8, 1).getTime();
+    const edges = agentUsageFrom(
+      [
+        raw('first', { startedAt: from - HOUR, endedAt: from }),
+        raw('before', { startedAt: from - HOUR, endedAt: from - 1 }),
+      ],
+      projectOf,
+      NOW,
+    );
+
+    assert.deepEqual(
+      edges.runs.map((run) => run.id),
+      ['first'],
+    );
+  });
+
   it('keeps the runs that ended in the month, newest first', () => {
     assert.deepEqual(
       report.runs.map((run) => run.id),
@@ -138,5 +184,90 @@ describe('agentUsageFrom', () => {
         ['observatory', ['pm']],
       ],
     );
+  });
+});
+
+describe('agentUsageReport', () => {
+  const logs = mkdtempSync(join(tmpdir(), 'agent-report-'));
+  after(() => rmSync(logs, { recursive: true, force: true }));
+  const subagents = join(logs, 'e--repos-observatory', 's1', 'subagents');
+  mkdirSync(subagents, { recursive: true });
+  const at = (minutes: number) => new Date(NOW - HOUR + minutes * 60_000).toISOString();
+  const line = (entry: Record<string, unknown>) =>
+    JSON.stringify({
+      sessionId: 's1',
+      cwd: 'E:\\repos\\observatory',
+      gitBranch: 'feat/12-x',
+      ...entry,
+    });
+  const reply = (id: string, minutes: number, input: number, output: number) =>
+    line({
+      type: 'assistant',
+      timestamp: at(minutes),
+      message: {
+        id,
+        model: 'claude-opus-5-5',
+        usage: {
+          input_tokens: input,
+          output_tokens: output,
+          cache_read_input_tokens: 0,
+          cache_creation_input_tokens: 0,
+        },
+        content: [{ type: 'tool_use', name: 'Read' }],
+      },
+    });
+  const transcript = (id: string, agentType: string, description: string, replies: string[]) => {
+    const lines = [line({ type: 'user', timestamp: at(0) }), ...replies];
+    writeFileSync(join(subagents, `agent-${id}.jsonl`), lines.join('\n'));
+    writeFileSync(
+      join(subagents, `agent-${id}.meta.json`),
+      JSON.stringify({ agentType, description }),
+    );
+  };
+  transcript('d1', 'agent-playbook:dev', 'Implement issue 12', [
+    reply('m1', 1, 1_000, 200),
+    reply('m2', 9, 3_000, 300),
+  ]);
+  transcript('q1', 'qa', 'QA review PR 40', [reply('m3', 20, 2_000, 100)]);
+  const memoryStore = (): EntryStore<never> => {
+    let stored: FileEntries<never> = {};
+    return {
+      read: async () => stored,
+      write: async (entries) => {
+        stored = entries;
+      },
+    };
+  };
+
+  it('reads transcripts from disk into runs, tied to issue and pull request, and adds them up', async () => {
+    const report = await agentUsageReport(
+      {
+        logsDir: logs,
+        cache: memoryStore(),
+        projectOf: () => ({ name: 'observatory', repo: 'me/observatory' }),
+      },
+      NOW,
+    );
+    const byId = new Map(report.runs.map((run) => [run.id, run]));
+
+    assert.equal(report.runs.length, 2);
+    assert.deepEqual(
+      [byId.get('d1')?.agent, byId.get('d1')?.issue, byId.get('d1')?.pull],
+      ['dev', 12, null],
+    );
+    assert.deepEqual(
+      [byId.get('q1')?.agent, byId.get('q1')?.issue, byId.get('q1')?.pull],
+      ['qa', 12, 40],
+    );
+    assert.equal(byId.get('d1')?.workTokens, 4_500);
+    assert.equal(byId.get('d1')?.peakContext, 3_000);
+    assert.deepEqual(
+      report.agents.map((agent) => [agent.agent, agent.runs, agent.workTokens]),
+      [
+        ['dev', 1, 4_500],
+        ['qa', 1, 2_100],
+      ],
+    );
+    assert.equal(report.projects[0].repo, 'me/observatory');
   });
 });

@@ -157,8 +157,10 @@ export class AgentLanes {
   readonly repo = input.required<string>();
   /** The issue the change is for, when the screen knows it. */
   readonly issue = input<number | null>(null);
-  /** The pull request's branch, when there is one. */
+  /** The pull request's branch, when there is one: its name gives the issue. */
   readonly branch = input<string | null>(null);
+  /** The pull request's number, which a review's task names ("QA review PR 648"). */
+  readonly pull = input<number | null>(null);
 
   private readonly runs = inject(AgentUsageFeed).runs;
   protected readonly tip = signal<TipAt | null>(null);
@@ -167,6 +169,7 @@ export class AgentLanes {
       runsFor(this.runs(), {
         repo: this.repo(),
         issue: this.issue() ?? issueFromBranch(this.branch()),
+        pull: this.pull(),
       }),
     ),
   );

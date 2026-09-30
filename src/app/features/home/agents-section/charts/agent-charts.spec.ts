@@ -64,7 +64,19 @@ describe('A: rankChart', () => {
     expect(chart.rows[0].value).toBe('400k');
     expect(chart.rows[0].detail).toBe('2 runs · 200k/run');
     expect(chart.rows[0].barWidth).toBeGreaterThan(chart.rows[1].barWidth);
-    expect(chart.table[2].label).toBe('other (general-purpose, Explore)');
+    expect(chart.table.map((row) => row.label)).toEqual([
+      'dev',
+      'pm',
+      'Explore',
+      'general-purpose',
+    ]);
+    expect(chart.table[2].colour).toBe('var(--agent-other)');
+  });
+
+  it('draws empty bars, not broken ones, when the busiest agent logged no tokens', () => {
+    const chart = rankChart([agentRun('z', { workTokens: 0 })]);
+
+    expect(Number.isFinite(chart.rows[0].barWidth)).toBe(true);
   });
 });
 
@@ -93,6 +105,14 @@ describe('C: dailyChart', () => {
   it('covers the month, ending today', () => {
     expect(days).toHaveLength(30);
     expect(days.at(-1)).toBe('2026-09-30');
+  });
+
+  it('names each day once around a clock change, late in the evening', () => {
+    const afterTheChange = windowDays(new Date(2026, 10, 1, 23, 30).getTime(), 30);
+
+    expect(new Set(afterTheChange).size).toBe(30);
+    expect(afterTheChange.at(-1)).toBe('2026-11-01');
+    expect(afterTheChange[0]).toBe('2026-10-03');
   });
 
   it('stacks a day by agent with a gap between colours, rounded only at the top', () => {

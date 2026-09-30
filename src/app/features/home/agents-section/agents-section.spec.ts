@@ -78,6 +78,22 @@ describe('AgentsSection', () => {
     expect(listed(element)).toHaveLength(3);
   });
 
+  it('narrows the charts to any project picked from the Project list', () => {
+    const { fixture, element } = render(READY);
+    const select = element.querySelector<HTMLSelectElement>('#agents-project');
+
+    expect(Array.from(select?.options ?? []).map((option) => option.value)).toEqual([
+      '',
+      'observatory',
+      'RivalsPulse',
+    ]);
+    select!.value = 'RivalsPulse';
+    select!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(listed(element)).toEqual(['Fix the roster']);
+  });
+
   it('narrows every chart to a project picked from the grid', () => {
     const { fixture, element } = render(READY);
     const cell = Array.from(

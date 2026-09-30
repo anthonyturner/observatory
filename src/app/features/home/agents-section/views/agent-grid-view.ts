@@ -14,7 +14,7 @@ export interface GridPick {
     @let c = chart();
     <svg
       [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height"
-      role="img"
+      role="group"
       aria-label="Work tokens per agent and project"
     >
       @for (text of c.columns; track $index) {

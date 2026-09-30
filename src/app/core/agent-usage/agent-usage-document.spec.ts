@@ -28,14 +28,15 @@ describe('parseAgentUsage', () => {
     const bare = { id, agent, startedAt, endedAt, workTokens, peakContext };
     const [run] = parseAgentUsage({ runs: [bare] })?.runs ?? [];
 
-    expect([run.description, run.repo, run.branch, run.issue, run.model, run.toolUses]).toEqual([
-      '',
-      null,
-      null,
-      null,
-      null,
-      0,
-    ]);
+    expect([
+      run.description,
+      run.repo,
+      run.branch,
+      run.issue,
+      run.pull,
+      run.model,
+      run.toolUses,
+    ]).toEqual(['', null, null, null, null, null, 0]);
   });
 
   it('is no report at all for a body without runs, as a hosted visitor gets', () => {

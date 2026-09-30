@@ -46,6 +46,36 @@ export function groupTotals(runs: readonly AgentRun[]): GroupTotals[] {
   });
 }
 
+/** One agent's own runs added up, however its colour is grouped. */
+export interface AgentTotals {
+  readonly agent: string;
+  readonly group: AgentGroup;
+  readonly runs: number;
+  readonly workTokens: number;
+  readonly averageWorkTokens: number;
+  readonly maxPeak: number;
+  readonly toolUses: number;
+  readonly averageMinutes: number;
+}
+
+/** Every agent on its own, most work first: the table names each one, Other included. */
+export function agentTotals(runs: readonly AgentRun[]): AgentTotals[] {
+  const byAgent = new Map<string, AgentRun[]>();
+  for (const run of runs) byAgent.set(run.agent, [...(byAgent.get(run.agent) ?? []), run]);
+  return [...byAgent]
+    .map(([agent, mine]) => ({
+      agent,
+      group: groupOf(agent),
+      runs: mine.length,
+      workTokens: sum(mine, (run) => run.workTokens),
+      averageWorkTokens: sum(mine, (run) => run.workTokens) / mine.length,
+      maxPeak: Math.max(...mine.map((run) => run.peakContext)),
+      toolUses: sum(mine, (run) => run.toolUses),
+      averageMinutes: sum(mine, (run) => run.durationMs) / mine.length / 60_000,
+    }))
+    .sort((a, b) => b.workTokens - a.workTokens);
+}
+
 /** "54 min", "1 h 12 min", "40 s". */
 export function formatMinutes(minutes: number): string {
   if (minutes < 1) return `${Math.round(minutes * 60)} s`;

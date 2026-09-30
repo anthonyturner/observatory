@@ -16,7 +16,7 @@ import { DailyChart } from '../charts/agent-daily';
     @let c = chart();
     <svg
       [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height"
-      role="img"
+      role="group"
       aria-label="Work tokens per day for the last 30 days, stacked by agent"
     >
       @for (line of c.grid; track $index) {
@@ -45,6 +45,8 @@ import { DailyChart } from '../charts/agent-daily';
       }
       @for (segment of c.segments; track $index) {
         <rect
+          class="mark"
+          [class.dim]="agent() && agent() !== segment.group"
           [attr.x]="segment.x"
           [attr.y]="segment.y"
           [attr.width]="segment.width"
@@ -95,6 +97,8 @@ import { DailyChart } from '../charts/agent-daily';
 export class AgentDailyView {
   readonly chart = input.required<DailyChart>();
   readonly picked = input<string | null>(null);
+  /** The agent lit elsewhere, lit here too. */
+  readonly agent = input<string | null>(null);
   readonly pick = output<string>();
 
   constructor() {

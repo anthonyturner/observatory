@@ -14,6 +14,7 @@ export function agentRun(id: string, more: Partial<AgentRun> = {}): AgentRun {
     repo: 'me/observatory',
     branch: 'main',
     issue: null,
+    pull: null,
     startedAt: new Date(AGENT_NOW - 2 * HOUR).toISOString(),
     endedAt: new Date(AGENT_NOW - HOUR).toISOString(),
     durationMs: HOUR,

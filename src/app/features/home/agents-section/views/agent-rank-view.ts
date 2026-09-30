@@ -8,7 +8,7 @@ import { RankChart } from '../charts/agent-rank';
     @let c = chart();
     <svg
       [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height"
-      role="img"
+      role="group"
       aria-label="Work tokens by agent, most first"
     >
       @for (row of c.rows; track row.id) {

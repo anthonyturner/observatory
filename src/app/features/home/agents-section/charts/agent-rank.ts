@@ -1,7 +1,7 @@
 import { AgentRun } from '../../../../core/agent-usage/agent-usage-document';
 import { formatTokens } from '../../../../core/usage/usage-format';
 import { tenth } from '../../../../shared/charts/chart-marks';
-import { formatMinutes, groupName, groupTip, groupTotals } from './agent-stats';
+import { agentTotals, formatMinutes, groupTip, groupTotals } from './agent-stats';
 
 /** One agent's bar, longest first. */
 export interface RankRow {
@@ -15,10 +15,11 @@ export interface RankRow {
   readonly tip: string;
 }
 
-/** A table row: the same figures, for reading without hovering. */
+/** A table row: one agent's figures, every agent on its own, for reading without hovering. */
 export interface RankTableRow {
   readonly id: string;
   readonly label: string;
+  readonly colour: string;
   readonly runs: number;
   readonly tokens: string;
   readonly perRun: string;
@@ -47,7 +48,8 @@ const MIN_BAR = 4;
 /** A: work tokens per agent, most first, with runs and the average a run. */
 export function rankChart(runs: readonly AgentRun[]): RankChart {
   const totals = groupTotals(runs).sort((a, b) => b.workTokens - a.workTokens);
-  const most = totals[0]?.workTokens ?? 1;
+  // Floored, so a month whose busiest agent logged no tokens draws empty bars, not broken ones.
+  const most = Math.max(1, totals[0]?.workTokens ?? 0);
   const room = WIDTH - LABEL_WIDTH - FIGURES;
   return {
     width: WIDTH,
@@ -65,10 +67,11 @@ export function rankChart(runs: readonly AgentRun[]): RankChart {
       detail: `${each.runs.length} runs · ${formatTokens(each.averageWorkTokens)}/run`,
       tip: groupTip(each),
     })),
-    table: totals.map((each) => ({
-      id: each.group.id,
-      label: groupName(each),
-      runs: each.runs.length,
+    table: agentTotals(runs).map((each) => ({
+      id: each.agent,
+      label: each.agent,
+      colour: each.group.colour,
+      runs: each.runs,
       tokens: formatTokens(each.workTokens),
       perRun: formatTokens(each.averageWorkTokens),
       peak: formatTokens(each.maxPeak),

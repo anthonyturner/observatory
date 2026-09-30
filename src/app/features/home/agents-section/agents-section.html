@@ -18,16 +18,17 @@
     <p class="empty" role="status">{{ message }}</p>
   } @else {
     <div class="filters" role="group" aria-label="What the charts show">
-      @if (filter().project; as project) {
-        <button
-          type="button"
-          class="chip"
-          (click)="clear('project')"
-          [attr.aria-label]="'Show every project, not only ' + project"
-        >
-          {{ project }} <span aria-hidden="true">×</span>
-        </button>
-      }
+      <label class="project">
+        <span>Project</span>
+        <select id="agents-project" [value]="filter().project ?? ''" (change)="pickProject($event)">
+          <option value="">All projects</option>
+          @for (project of projects(); track project) {
+            <option [value]="project" [selected]="project === filter().project">
+              {{ project }}
+            </option>
+          }
+        </select>
+      </label>
       @if (filter().agent; as agent) {
         <button
           type="button"
@@ -96,7 +97,9 @@
               <tbody>
                 @for (row of rank().table; track row.id) {
                   <tr>
-                    <td>{{ row.label }}</td>
+                    <td>
+                      <span class="swatch" [style.background]="row.colour"></span>{{ row.label }}
+                    </td>
                     <td class="num">{{ row.runs }}</td>
                     <td class="num">{{ row.tokens }}</td>
                     <td class="num">{{ row.perRun }}</td>
@@ -117,7 +120,12 @@
           Use it when your usage or weekly limit jumps: it shows which day, and which agent drove
           it. Click a day for its runs.
         </p>
-        <app-agent-daily-view [chart]="daily()" [picked]="filter().day" (pick)="pickDay($event)" />
+        <app-agent-daily-view
+          [chart]="daily()"
+          [picked]="filter().day"
+          [agent]="filter().agent"
+          (pick)="pickDay($event)"
+        />
       </article>
 
       <article class="panel">
@@ -132,8 +140,8 @@
       <article class="panel">
         <h3>Agents across projects</h3>
         <p class="use">
-          Use it when you ask where your effort goes. Click a cell to narrow every chart to that
-          project and agent.
+          Use it when you ask where your effort goes. Click a cell to narrow the charts to that
+          project and light that agent.
         </p>
         <app-agent-grid-view [chart]="grid()" (pick)="pickCell($event)" />
       </article>

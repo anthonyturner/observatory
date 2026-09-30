@@ -20,6 +20,17 @@ describe('runsFor', () => {
     ]);
   });
 
+  it('finds a review that names only the pull request, run from main', () => {
+    const review = runEndingAt('review', 0.5, 8, { agent: 'qa', branch: 'main', pull: 40 });
+
+    expect(
+      runsFor([...RUNS, review], { repo: 'me/observatory', issue: 12, pull: 40 }).map(
+        (run) => run.id,
+      ),
+    ).toEqual(['pm', 'dev1', 'qa', 'dev2', 'review']);
+    expect(runsFor([review], { repo: 'me/observatory', issue: null, pull: 40 })).toHaveLength(1);
+  });
+
   it('finds none without an issue, rather than every run with none', () => {
     expect(runsFor(RUNS, { repo: 'me/observatory', issue: null })).toEqual([]);
   });
@@ -51,11 +62,13 @@ describe('lanesChart', () => {
     expect(chart?.lanes[3].tip).toContain('ran again');
   });
 
-  it('keeps each label inside the chart, before the bar when there is no room after it', () => {
+  it('keeps every label whole: its full text fits after, before or inside its bar', () => {
+    const width = (text: string) => text.length * 6.4;
     for (const lane of chart?.lanes ?? []) {
-      if (lane.label.anchor === 'start')
-        expect(lane.label.x).toBeLessThan((chart?.width ?? 0) - 150);
-      else expect(lane.label.x).toBeLessThanOrEqual(lane.x);
+      const { x, text, anchor } = lane.label;
+      if (lane.labelInside) expect(x + width(text)).toBeLessThanOrEqual(lane.x + lane.width);
+      else if (anchor === 'start') expect(x + width(text)).toBeLessThanOrEqual(chart?.width ?? 0);
+      else expect(x - width(text)).toBeGreaterThanOrEqual(chart?.labelX ?? 0);
     }
     expect(chart?.span).toBe('4.1 h');
   });

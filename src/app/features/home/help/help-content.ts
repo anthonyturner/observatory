@@ -88,7 +88,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Grid',
     meaning:
-      'Work tokens per agent and project, brighter for more; an empty cell never ran there. Use it to see where your effort goes; click a cell to narrow every chart to it.',
+      'Work tokens per agent and project, brighter for more; an empty cell never ran there. Use it to see where your effort goes; click a cell to narrow the charts to that project and light that agent. Every other project is in the Project list above the charts.',
     section: AGENTS,
   },
   {

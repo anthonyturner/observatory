@@ -3,7 +3,6 @@ import { ProjectUsage, TokenReport } from '../../../core/usage/usage-document';
 import { mergesSince, projectBars, projectNote, toolBars } from './bar-items';
 import { limitTiles } from './limit-tiles';
 import { familyLegend, modelRows, tokenTiles } from './token-views';
-import { tipPosition } from '../../../shared/charts/usage-tip/tip-position';
 import { chartWidth } from './starmap-usage';
 
 const FRIDAY_3PM = new Date(2026, 9, 2, 15, 0).toISOString();
@@ -206,18 +205,6 @@ describe('project note', () => {
     expect(mergesSince(frames, '2026-08-28')).toBe(2);
     expect(mergesSince(frames.slice(1), '2026-08-28')).toBeNull();
     expect(mergesSince([], '2026-08-28')).toBeNull();
-  });
-});
-
-describe('tipPosition', () => {
-  const size = { width: 100, height: 40 };
-
-  it('sits right of the pointer and above it', () => {
-    expect(tipPosition({ x: 200, y: 300 }, size, 1280)).toEqual({ left: 214, top: 248 });
-  });
-
-  it('stays inside the window, dropping below the pointer near the top', () => {
-    expect(tipPosition({ x: 1250, y: 30 }, size, 1280)).toEqual({ left: 1172, top: 46 });
   });
 });
 

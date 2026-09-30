@@ -11,6 +11,8 @@ import {
 import { niceCeiling } from './agent-stats';
 
 export interface DailySegment extends ChartBox {
+  /** The agent group it stacks, so the picked agent can stay lit. */
+  readonly group: string;
   readonly colour: string;
   /** Only the top of a column is rounded: the data's end, not its base. */
   readonly isTop: boolean;
@@ -39,13 +41,25 @@ const MARGINS = { left: 48, right: 12, top: 12, bottom: 26 };
 const GRID_LINES = 4;
 /** A sliver of sky between stacked colours, so they never touch. */
 const GAP = 2;
-const DAY_MS = 24 * 60 * 60 * 1000;
+const NOON = 12;
 /** Every fifth day is named along the bottom. */
 const LABEL_EVERY = 5;
 
-/** The window's days, oldest first, as local YYYY-MM-DD, ending today. */
+/** The window's days, oldest first, as local YYYY-MM-DD, ending today. Steps
+ *  by calendar day from noon, as the server does, so a clock change can neither
+ *  repeat a day nor skip one. */
 export function windowDays(now: number, days: number): string[] {
-  return Array.from({ length: days }, (_, index) => localDayKey(now - (days - 1 - index) * DAY_MS));
+  const today = new Date(now);
+  return Array.from({ length: days }, (_, index) =>
+    localDayKey(
+      new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - (days - 1 - index),
+        NOON,
+      ).getTime(),
+    ),
+  );
 }
 
 /** "29 Sept": a local YYYY-MM-DD day as the charts name it. */
@@ -119,6 +133,7 @@ export function dailyChart(
           y: top,
           width: tenth(barWidth),
           height: tenth(Math.max(1, bottom - top)),
+          group: part.group.id,
           colour: part.group.colour,
           isTop: order === parts.length - 1,
         };

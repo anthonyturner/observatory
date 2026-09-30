@@ -3,10 +3,11 @@ import { AgentRun } from '../../core/agent-usage/agent-usage-document';
 import { formatTokens } from '../../core/usage/usage-format';
 import { ChartLine, ChartText, tenth } from '../charts/chart-marks';
 
-/** Which change the lanes are for: an issue in a repository. */
+/** Which change the lanes are for: an issue, and its pull request where there is one. */
 export interface LanesFor {
   readonly repo: string;
   readonly issue: number | null;
+  readonly pull?: number | null;
 }
 
 export interface Lane {
@@ -45,8 +46,10 @@ const ROW = 30;
 const AXIS = 24;
 const TICKS = 4;
 const BAR = 16;
-/** A label needs about this much room beside its bar. */
-const LABEL_ROOM = 190;
+/** A label's 10.5px monospaced letters are each this wide, near enough, and
+ *  it keeps this much clear of its bar. */
+const CHAR_WIDTH = 6.4;
+const LABEL_GAP = 6;
 const MIN_BAR = 3;
 const DESCRIPTION_LENGTH = 34;
 
@@ -59,13 +62,18 @@ export function issueFromBranch(branch: string | null): number | null {
   return match ? Number(match[1]) : null;
 }
 
-/** The runs that worked on an issue, oldest first. The server ties each run to
- *  its issue, from its task or the branch it worked on. */
+/** The runs that worked on a change, oldest first: tied by the server to its
+ *  issue (from the task or the branch), or naming its pull request in the task. */
 export function runsFor(runs: readonly AgentRun[], target: LanesFor): AgentRun[] {
-  if (target.issue === null) return [];
+  const { issue, pull = null } = target;
+  if (issue === null && pull === null) return [];
   const repo = target.repo.toLowerCase();
   return runs
-    .filter((run) => run.repo?.toLowerCase() === repo && run.issue === target.issue)
+    .filter(
+      (run) =>
+        run.repo?.toLowerCase() === repo &&
+        ((issue !== null && run.issue === issue) || (pull !== null && run.pull === pull)),
+    )
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 }
 
@@ -95,14 +103,16 @@ function labelFor(
   width: number,
   y: number,
 ): { label: ChartText; inside: boolean } {
+  const need = text.length * CHAR_WIDTH + LABEL_GAP * 2;
   const roomAfter = WIDTH - RIGHT - (start + width);
   const roomBefore = start - LEFT;
-  const after = { x: tenth(start + width + 6), y, text, anchor: 'start' as const };
-  const before = { x: tenth(start - 6), y, text, anchor: 'end' as const };
-  if (roomAfter >= LABEL_ROOM) return { label: after, inside: false };
-  if (roomBefore >= LABEL_ROOM) return { label: before, inside: false };
-  if (width >= LABEL_ROOM)
-    return { label: { x: tenth(start + 6), y, text, anchor: 'start' }, inside: true };
+  const after = { x: tenth(start + width + LABEL_GAP), y, text, anchor: 'start' as const };
+  const before = { x: tenth(start - LABEL_GAP), y, text, anchor: 'end' as const };
+  if (roomAfter >= need) return { label: after, inside: false };
+  if (roomBefore >= need) return { label: before, inside: false };
+  if (width >= need) {
+    return { label: { x: tenth(start + LABEL_GAP), y, text, anchor: 'start' }, inside: true };
+  }
   return { label: roomAfter >= roomBefore ? after : before, inside: false };
 }
 

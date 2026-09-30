@@ -27,7 +27,7 @@
             @if (pull.bodyTruncated) {
               <p class="note warn">Description shortened to fit — the rest is on GitHub.</p>
             }
-            <app-agent-lanes [repo]="repo()" [branch]="pull.head" />
+            <app-agent-lanes [repo]="repo()" [branch]="pull.head" [pull]="number()" />
           }
           @case ('files') {
             <app-sheet-rows [rows]="files()" />

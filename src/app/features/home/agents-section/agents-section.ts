@@ -94,6 +94,19 @@ export class AgentsSection {
     return day ? dayLabel(day) : null;
   });
 
+  /** Every project with a run, the busiest first, for the Project list. */
+  protected readonly projects = computed(() => {
+    const work = new Map<string, number>();
+    for (const run of this.runs())
+      work.set(run.project, (work.get(run.project) ?? 0) + run.workTokens);
+    return [...work].sort((a, b) => b[1] - a[1]).map(([project]) => project);
+  });
+
+  protected pickProject(event: Event): void {
+    const project = (event.target as HTMLSelectElement).value || null;
+    this.filter.update((filter) => ({ ...filter, project }));
+  }
+
   protected pickAgent(agent: string): void {
     this.filter.update((filter) => ({ ...filter, agent: filter.agent === agent ? null : agent }));
   }

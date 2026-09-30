@@ -8,7 +8,7 @@ import { Orrery } from '../charts/agent-orrery';
     @let o = orrery();
     <svg
       [attr.viewBox]="'0 0 ' + o.size + ' ' + o.size"
-      role="img"
+      role="group"
       aria-label="Agents as moons round a core: bigger moons did more work; the arc round each is its average peak context"
     >
       <defs>

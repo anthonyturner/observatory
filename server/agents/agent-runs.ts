@@ -7,8 +7,9 @@
    Claude Code calls both formats internal, so every field is optional: a
    changed format shows as a gap or "unknown", never as a wrong number. */
 
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { basename, dirname } from 'node:path';
+import { type EntryStore, changedSince, fileKey, valuesPerFile } from '../usage/file-cache.ts';
 import { mergeReports, messageOf, sessionLogFiles } from '../usage/session-log.ts';
 import { workTokens } from '../usage/token-days.ts';
 import type { AssistantMessage } from '../usage/usage-types.ts';
@@ -143,83 +144,40 @@ export function* agentTranscripts(logsDir: string): Generator<{ id: string; file
 }
 
 /** Bump when the cached shape changes, so an old cache is read afresh. */
-const CACHE_VERSION = 1;
+export const RUN_CACHE_VERSION = 1;
 
-interface CachedRun {
-  /** Size and modification time of transcript and metadata together. */
-  readonly key: string;
-  readonly run: RawAgentRun | null;
-}
-
-interface CacheFile {
-  readonly version: number;
-  readonly runs: Readonly<Record<string, CachedRun>>;
-}
-
-/** Reads and writes the run cache; a test keeps it in memory. */
-export interface RunCache {
-  read(): Readonly<Record<string, CachedRun>>;
-  write(runs: Record<string, CachedRun>): void;
-}
-
-const keyOf = (path: string): string | null => {
+const readText = async (path: string): Promise<string | null> => {
   try {
-    const stats = statSync(path);
-    return `${stats.size}-${Math.floor(stats.mtimeMs)}`;
+    return await readFile(path, 'utf8');
   } catch {
     return null;
   }
 };
 
-const readText = (path: string): string | null => {
-  try {
-    return readFileSync(path, 'utf8');
-  } catch {
-    return null;
-  }
+const metaOf = (transcript: string): string => transcript.replace(/\.jsonl$/, '.meta.json');
+
+/** A run's key covers its metadata too, which can be written after the transcript. */
+const runKey = async (transcript: string): Promise<string | null> => {
+  const key = await fileKey(transcript);
+  return key === null ? null : `${key}|${await fileKey(metaOf(transcript))}`;
 };
 
 /** Every run whose transcript changed since `from`. Only files changed since
  *  the last call are read again. */
-export function runsSince(logsDir: string, from: number, cache: RunCache): RawAgentRun[] {
-  const cached = cache.read();
-  const next: Record<string, CachedRun> = {};
-  for (const { id, file } of agentTranscripts(logsDir)) {
-    let modified: number;
-    try {
-      modified = statSync(file).mtimeMs;
-    } catch {
-      continue;
-    }
-    if (modified < from) continue;
-    const metaFile = file.replace(/\.jsonl$/, '.meta.json');
-    const key = `${keyOf(file)}|${keyOf(metaFile)}`;
-    const had = cached[file];
-    if (had?.key === key) {
-      next[file] = had;
-      continue;
-    }
-    const lines = (readText(file) ?? '').split('\n').filter(Boolean);
-    next[file] = { key, run: runOf(id, readText(metaFile), lines) };
-  }
-  cache.write(next);
-  return Object.values(next).flatMap(({ run }) => (run ? [run] : []));
-}
-
-/** The cache as a JSON file beside the usage view's own. */
-export function fileRunCache(path: string): RunCache {
-  return {
-    read: () => {
-      try {
-        const cache = JSON.parse(readFileSync(path, 'utf8')) as CacheFile;
-        return cache.version === CACHE_VERSION ? cache.runs : {};
-      } catch {
-        return {};
-      }
-    },
-    write: (runs) => {
-      mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, JSON.stringify({ version: CACHE_VERSION, runs }), 'utf8');
-    },
-  };
+export async function runsSince(
+  logsDir: string,
+  from: number,
+  store: EntryStore<RawAgentRun | null>,
+): Promise<RawAgentRun[]> {
+  const transcripts = [...agentTranscripts(logsDir)];
+  const ids = new Map(transcripts.map(({ id, file }) => [file, id]));
+  const files = await changedSince(
+    transcripts.map(({ file }) => file),
+    from,
+  );
+  const runs = await valuesPerFile(files, store, runKey, async (file) => {
+    const lines = ((await readText(file)) ?? '').split('\n').filter(Boolean);
+    return runOf(ids.get(file) ?? file, await readText(metaOf(file)), lines);
+  });
+  return [...runs.values()].flatMap((run) => (run ? [run] : []));
 }

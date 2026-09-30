@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { type RunCache, agentTranscripts, runOf, runsSince } from './agent-runs.ts';
+import type { EntryStore, FileEntries } from '../usage/file-cache.ts';
+import { type RawAgentRun, agentTranscripts, runOf, runsSince } from './agent-runs.ts';
 
 const user = (at: string, more: Record<string, unknown> = {}): string =>
   JSON.stringify({
@@ -119,14 +120,12 @@ describe('runsSince', () => {
   // The session's own log is not a subagent run.
   writeFileSync(join(dir, 'e--repos-observatory', 's1.jsonl'), LINES.join('\n'));
 
-  const memoryCache = (): RunCache & { writes: number } => {
-    let stored = {};
+  const memoryStore = (): EntryStore<RawAgentRun | null> => {
+    let stored: FileEntries<RawAgentRun | null> = {};
     return {
-      writes: 0,
-      read: () => stored,
-      write(runs) {
-        stored = runs;
-        this.writes++;
+      read: async () => stored,
+      write: async (entries) => {
+        stored = entries;
       },
     };
   };
@@ -138,18 +137,17 @@ describe('runsSince', () => {
     );
   });
 
-  it('reads each run once, then serves it from the cache while its files are unchanged', () => {
-    const cache = memoryCache();
-    const first = runsSince(dir, 0, cache);
-    const cached = cache.read();
-    const second = runsSince(dir, 0, cache);
+  it('reads a run, then serves the very same one from the cache while its files are unchanged', async () => {
+    const store = memoryStore();
+    const [first] = await runsSince(dir, 0, store);
+    const [second] = await runsSince(dir, 0, store);
 
-    assert.equal(first.length, 1);
-    assert.deepEqual(second, first);
-    assert.deepEqual(cache.read(), cached);
+    assert.equal(first.agentType, 'agent-playbook:dev');
+    // The same object, not an equal one: the transcript was not read again.
+    assert.equal(second, first);
   });
 
-  it('skips transcripts last changed before the window', () => {
-    assert.deepEqual(runsSince(dir, Date.now() + 60_000, memoryCache()), []);
+  it('skips transcripts last changed before the window', async () => {
+    assert.deepEqual(await runsSince(dir, Date.now() + 60_000, memoryStore()), []);
   });
 });

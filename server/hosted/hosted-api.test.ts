@@ -201,6 +201,7 @@ describe('hostedApi', () => {
     assert.equal((await get(handle, '/api/pull?repo=ME/Secret&number=7')).status, 404);
     assert.equal((await triage(handle)).status, 403);
     assert.equal(await (await get(handle, '/api/usage')).json(), null);
+    assert.equal(await (await get(handle, '/api/agent-usage')).json(), null);
     assert.equal(JSON.stringify([...store.data]), before);
   });
 

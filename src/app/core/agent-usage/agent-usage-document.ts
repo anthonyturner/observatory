@@ -10,6 +10,8 @@ export interface AgentRun {
   readonly repo: string | null;
   readonly branch: string | null;
   readonly issue: number | null;
+  /** The pull request its task names ("QA review PR 648"), or null. */
+  readonly pull: number | null;
   readonly startedAt: string;
   readonly endedAt: string;
   readonly durationMs: number;
@@ -31,6 +33,7 @@ export interface AgentUsageDocument {
 
 const isCount = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0;
+const isWhole = (value: unknown): value is number => isCount(value) && Number.isInteger(value);
 const textOrNull = (value: unknown): string | null => (isString(value) && value ? value : null);
 
 function parseRun(value: unknown): AgentRun | null {
@@ -38,7 +41,7 @@ function parseRun(value: unknown): AgentRun | null {
   const { id, agent, startedAt, endedAt, workTokens, peakContext } = value;
   if (!isString(id) || !isString(agent) || !isString(startedAt) || !isString(endedAt)) return null;
   if (!isCount(workTokens) || !isCount(peakContext)) return null;
-  const issue = value['issue'];
+  const { issue, pull } = value;
   return {
     id,
     agent,
@@ -46,7 +49,8 @@ function parseRun(value: unknown): AgentRun | null {
     project: isString(value['project']) ? value['project'] : 'unknown',
     repo: textOrNull(value['repo']),
     branch: textOrNull(value['branch']),
-    issue: isCount(issue) && Number.isInteger(issue) ? issue : null,
+    issue: isWhole(issue) ? issue : null,
+    pull: isWhole(pull) ? pull : null,
     startedAt,
     endedAt,
     durationMs: isCount(value['durationMs']) ? value['durationMs'] : 0,

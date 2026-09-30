@@ -165,18 +165,20 @@ export function skippedQaNudges(runs: readonly AgentRun[], now: number): Nudge[]
     }));
 }
 
-/** The first nudge of each kind (the strongest, or the most recent for rework) not dismissed today: once one of a kind is
- *  dismissed, that kind rests until tomorrow, so another of it cannot take its place. */
+/** The first nudge of each kind not dismissed today: the strongest, or for
+ *  rework the most recent. Once one of a kind is dismissed, that kind rests until
+ *  tomorrow, so another of it cannot take its place. `busyRatio` is today's work
+ *  against a usual day's, unbounded. */
 export function agentNudges(
   runs: readonly AgentRun[],
-  pace: number | null,
+  busyRatio: number | null,
   now: number,
   today: string,
   dismissed: ReadonlySet<NudgeKind>,
 ): Nudge[] {
   const kinds = [
     nearLimitNudges(runs, now),
-    busyDayNudges(pace, today),
+    busyDayNudges(busyRatio, today),
     pricierNudges(runs, now),
     reworkNudges(runs, now),
     skippedQaNudges(runs, now),

@@ -201,7 +201,7 @@ export class AgentReminders {
     if (this.speakOn()) void this.voice.speak(REVIEW_WORDS, 1);
     const wanted = this.chosen().notify && this.document.hidden;
     if (wanted && this.notices.permission() === 'granted') {
-      this.notices.show('Agent review', REVIEW_WORDS, `agent-review-${week}`);
+      this.notices.show('Agent review', REVIEW_WORDS, `agent-review-${showing}`);
     }
   }
 

@@ -106,7 +106,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Routine',
     meaning:
-      'A glance at the orrery each morning. On your review day, the Agent review card walks you through By day for the week, then Ranking against last week. When something feels off, Context for an agent that seems lost, or the pipeline on the pull request that dragged.',
+      'A glance at the orrery each morning. On your review day, the Agent review card walks you through By day for the week, then Ranking for which agents cost the most. When something feels off, Context for an agent that seems lost, or the pipeline on the pull request that dragged.',
     section: AGENTS,
   },
   {

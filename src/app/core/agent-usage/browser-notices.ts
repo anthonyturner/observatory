@@ -15,7 +15,13 @@ export const BROWSER_NOTICES = new InjectionToken<BrowserNotices>('BrowserNotice
     const Notice = inject(DOCUMENT).defaultView?.Notification;
     return {
       permission: () => Notice?.permission ?? 'unsupported',
-      request: async () => (Notice ? (await Notice.requestPermission()) === 'granted' : false),
+      request: async () => {
+        try {
+          return Notice ? (await Notice.requestPermission()) === 'granted' : false;
+        } catch {
+          return false;
+        }
+      },
       show: (title, body, tag) => {
         if (!Notice) return;
         try {

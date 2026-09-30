@@ -33,7 +33,7 @@ const items = [
   pull(11, 'unreviewed', { hidden: { reason: 'dismissed' } }),
 ];
 
-function render(fragment: string | null = null) {
+function render(fragment: string | null = null, query: Record<string, string> = {}) {
   const fragments = new BehaviorSubject<string | null>(fragment);
   TestBed.configureTestingModule({
     providers: [
@@ -54,6 +54,7 @@ function render(fragment: string | null = null) {
         useValue: {
           paramMap: of(convertToParamMap({ owner: 'me', repo: 'a' })),
           fragment: fragments,
+          snapshot: { queryParamMap: convertToParamMap(query) },
         },
       },
     ],
@@ -305,5 +306,13 @@ describe('StarmapPage', () => {
     expect(button('Open')).toBeDefined();
     expect(button('Snooze 7d')).toBeUndefined();
     expect(button('Dismiss')).toBeUndefined();
+  });
+
+  it('opens a pull request’s screen, or an issue’s window, from the link', () => {
+    expect(render(null, { pr: '7' }).element.querySelector('app-pr-screen')).not.toBeNull();
+    TestBed.resetTestingModule();
+    expect(render(null, { issue: '12' }).element.querySelector('app-issue-window')).not.toBeNull();
+    TestBed.resetTestingModule();
+    expect(render(null, { pr: 'x' }).element.querySelector('app-pr-screen')).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { TokenDay } from '../usage/usage-document';
 import { localDayKey } from '../usage/usage-format';
-import { BUSIEST_PACE, QUIETEST_PACE, activityPace } from './trail-activity';
+import { BUSIEST_PACE, QUIETEST_PACE, activityPace, activityRatio } from './trail-activity';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Noon, local time: half the day gone. */
@@ -26,6 +26,11 @@ describe('activityPace', () => {
 
   it('turns twice as fast with twice the usual work by now', () => {
     expect(activityPace([...usualWeek, day(0, 1000)], NOON)).toBe(2);
+  });
+
+  it('says how busy the day really is, beyond the pace’s bounds', () => {
+    expect(activityRatio([...usualWeek, day(0, 4_500)], NOON)).toBe(9);
+    expect(activityRatio(usualWeek, NOON)).toBeNull();
   });
 
   it('never goes slower or faster than its bounds', () => {

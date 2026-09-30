@@ -494,6 +494,7 @@ export class StarmapPage {
         this.logs.clear();
         this.logs.watch(repo);
         this.issues.watch(repo);
+        this.openLinked();
       });
     });
     this.issues.openAt(this.fragment());
@@ -748,6 +749,16 @@ export class StarmapPage {
     else if (this.chart() === 'issues') this.issues.picked.set(null);
     else if (this.chart() === 'logs') this.logs.closeCard();
     else this.openPull.set(null);
+  }
+
+  /** A link can open one change: `?issue=618` its window, `?pr=623` its screen,
+   *  as Home's agent nudges do. Read after the repository's issues reset. */
+  private openLinked(): void {
+    const query = this.route.snapshot.queryParamMap;
+    const issue = Number(query.get('issue'));
+    const pull = Number(query.get('pr'));
+    if (Number.isInteger(issue) && issue > 0) this.issues.windowIssue.set(issue);
+    if (Number.isInteger(pull) && pull > 0) this.openSheet(pull);
   }
 
   /** Opens a pull request's full screen, from its card or another screen. */

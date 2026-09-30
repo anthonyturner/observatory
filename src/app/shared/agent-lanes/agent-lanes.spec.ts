@@ -13,18 +13,26 @@ const READY: AgentUsageState = {
     runs: [
       runEndingAt('pm', 3, 5, { agent: 'pm', issue: 12 }),
       runEndingAt('dev', 1, 30, { agent: 'dev', branch: 'feat/12-thing', issue: 12 }),
+      // A review run from main names only the pull request.
+      runEndingAt('qa', 0.5, 8, { agent: 'qa', branch: 'main', pull: 40 }),
     ],
   },
 };
 
-function render(inputs: { issue?: number | null; branch?: string | null }) {
+interface Inputs {
+  readonly issue?: number | null;
+  readonly branch?: string | null;
+  readonly pull?: number | null;
+  readonly pulls?: readonly number[];
+}
+
+function render(inputs: Inputs) {
   TestBed.configureTestingModule({
     providers: [{ provide: AGENT_USAGE_READ, useValue: () => of(READY) }],
   });
   const fixture = TestBed.createComponent(AgentLanes);
   fixture.componentRef.setInput('repo', 'me/observatory');
-  if (inputs.issue !== undefined) fixture.componentRef.setInput('issue', inputs.issue);
-  if (inputs.branch !== undefined) fixture.componentRef.setInput('branch', inputs.branch);
+  for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
   fixture.detectChanges();
   return fixture.nativeElement as HTMLElement;
 }
@@ -37,8 +45,12 @@ describe('AgentLanes', () => {
     expect(element.querySelector('h3')?.textContent).toContain('2 runs');
   });
 
-  it('finds a pull request’s runs from its branch alone', () => {
-    expect(render({ branch: 'feat/12-thing' }).querySelectorAll('.bar')).toHaveLength(2);
+  it('shows a pull request’s pipeline from its branch, with the review that names it', () => {
+    expect(render({ branch: 'feat/12-thing', pull: 40 }).querySelectorAll('.bar')).toHaveLength(3);
+  });
+
+  it('shows an issue’s pipeline with the reviews of its pull requests', () => {
+    expect(render({ issue: 12, pulls: [40] }).querySelectorAll('.bar')).toHaveLength(3);
   });
 
   it('draws nothing at all when no agent worked on the change', () => {

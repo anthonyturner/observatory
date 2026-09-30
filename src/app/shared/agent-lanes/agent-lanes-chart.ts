@@ -7,7 +7,8 @@ import { ChartLine, ChartText, tenth } from '../charts/chart-marks';
 export interface LanesFor {
   readonly repo: string;
   readonly issue: number | null;
-  readonly pull?: number | null;
+  /** Its pull requests: a review names its pull request, not the issue. */
+  readonly pulls?: readonly number[];
 }
 
 export interface Lane {
@@ -65,14 +66,15 @@ export function issueFromBranch(branch: string | null): number | null {
 /** The runs that worked on a change, oldest first: tied by the server to its
  *  issue (from the task or the branch), or naming its pull request in the task. */
 export function runsFor(runs: readonly AgentRun[], target: LanesFor): AgentRun[] {
-  const { issue, pull = null } = target;
-  if (issue === null && pull === null) return [];
+  const { issue, pulls = [] } = target;
+  if (issue === null && !pulls.length) return [];
   const repo = target.repo.toLowerCase();
   return runs
     .filter(
       (run) =>
         run.repo?.toLowerCase() === repo &&
-        ((issue !== null && run.issue === issue) || (pull !== null && run.pull === pull)),
+        ((issue !== null && run.issue === issue) ||
+          (run.pull !== null && pulls.includes(run.pull))),
     )
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 }

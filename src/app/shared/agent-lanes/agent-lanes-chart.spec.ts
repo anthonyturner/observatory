@@ -24,11 +24,13 @@ describe('runsFor', () => {
     const review = runEndingAt('review', 0.5, 8, { agent: 'qa', branch: 'main', pull: 40 });
 
     expect(
-      runsFor([...RUNS, review], { repo: 'me/observatory', issue: 12, pull: 40 }).map(
+      runsFor([...RUNS, review], { repo: 'me/observatory', issue: 12, pulls: [40] }).map(
         (run) => run.id,
       ),
     ).toEqual(['pm', 'dev1', 'qa', 'dev2', 'review']);
-    expect(runsFor([review], { repo: 'me/observatory', issue: null, pull: 40 })).toHaveLength(1);
+    expect(
+      runsFor([review], { repo: 'me/observatory', issue: null, pulls: [39, 40] }),
+    ).toHaveLength(1);
   });
 
   it('finds none without an issue, rather than every run with none', () => {

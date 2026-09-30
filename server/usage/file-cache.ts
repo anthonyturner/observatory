@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 /** What a file gave when last read, and the key that says whether it has changed since. */
@@ -74,8 +74,12 @@ export function jsonEntryStore<T>(path: string, version: number): EntryStore<T> 
     },
     async write(entries) {
       await mkdir(dirname(path), { recursive: true });
-      // Compact: pretty-printed, a month of logs' cache runs to megabytes.
-      await writeFile(path, JSON.stringify({ version, entries }), 'utf8');
+      // Written aside and renamed into place, so two reports writing at once
+      // leave one whole file, never a torn one. Compact: pretty-printed, a
+      // month of logs' cache runs to megabytes.
+      const aside = `${path}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
+      await writeFile(aside, JSON.stringify({ version, entries }), 'utf8');
+      await rename(aside, path);
     },
   };
 }

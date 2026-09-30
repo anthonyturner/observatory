@@ -81,6 +81,8 @@ describe('issueOf', () => {
       assert.equal(issueOf('qa', 'main', task), null, task);
     }
     assert.equal(issueOf('qa', 'main', 'QA review of PR 20 for issue 19'), 19);
+    assert.equal(issueOf('qa', 'main', 'Review PRs #12 and #13'), null);
+    assert.equal(issueOf('qa', 'main', 'Review PRs #12, #13 & #14'), null);
   });
 
   it('says nothing when neither names one', () => {
@@ -229,8 +231,8 @@ describe('agentUsageReport', () => {
     reply('m2', 9, 3_000, 300),
   ]);
   transcript('q1', 'qa', 'QA review PR 40', [reply('m3', 20, 2_000, 100)]);
-  const memoryStore = (): EntryStore<never> => {
-    let stored: FileEntries<never> = {};
+  const memoryStore = (): EntryStore<RawAgentRun | null> => {
+    let stored: FileEntries<RawAgentRun | null> = {};
     return {
       read: async () => stored,
       write: async (entries) => {

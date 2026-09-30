@@ -161,18 +161,21 @@ export class AgentLanes {
   readonly branch = input<string | null>(null);
   /** The pull request's number, which a review's task names ("QA review PR 648"). */
   readonly pull = input<number | null>(null);
+  /** An issue's pull requests, whose reviews belong to its pipeline too. */
+  readonly pulls = input<readonly number[]>([]);
 
   private readonly runs = inject(AgentUsageFeed).runs;
   protected readonly tip = signal<TipAt | null>(null);
-  protected readonly chart = computed(() =>
-    lanesChart(
+  protected readonly chart = computed(() => {
+    const pull = this.pull();
+    return lanesChart(
       runsFor(this.runs(), {
         repo: this.repo(),
         issue: this.issue() ?? issueFromBranch(this.branch()),
-        pull: this.pull(),
+        pulls: pull === null ? this.pulls() : [...this.pulls(), pull],
       }),
-    ),
-  );
+    );
+  });
 
   /** A bar's `data-tip` shows beside the pointer. */
   protected pointAt(event: PointerEvent): void {

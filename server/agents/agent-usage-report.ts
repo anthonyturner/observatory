@@ -71,7 +71,7 @@ const NAMESPACE = /^[^:]*:/;
 /** A branch named for its issue, as this workflow names them: `<type>/<n>-<topic>`. */
 const BRANCH_ISSUE = /^[a-z]+\/(\d+)-/i;
 /** "PR #623", "PR 648", "PRs #12", "PR: #12", "pull request #20", "pull-request 9". */
-const PULL_REF = /\b(?:PRs?|pull[\s-]?requests?)\s*:?\s*#?(\d+)\b/gi;
+const PULL_REF = /\b(?:PRs?|pull[\s-]?requests?)\s*:?\s*#?(\d+)(?:\s*(?:,|&|and)\s*#?\d+)*\b/gi;
 /** "issue 442" or "#442", once the pull-request references are taken out. */
 const DESCRIBED_ISSUE = /\bissue\s*#?(\d+)\b|#(\d+)\b/i;
 

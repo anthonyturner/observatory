@@ -1,5 +1,5 @@
 import { clipLabel } from '../usage-text';
-import { ChartBox, ChartHit, ChartText, tenth } from './chart-marks';
+import { ChartBox, ChartHit, ChartText, tenth } from '../../../../shared/charts/chart-marks';
 
 /** One horizontal bar: a label, a value, and what its tooltip says. */
 export interface BarItem {

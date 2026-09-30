@@ -11,7 +11,7 @@ import {
   Margins,
   gridRow,
   tenth,
-} from './chart-marks';
+} from '../../../../shared/charts/chart-marks';
 import { FAMILIES } from './usage-families';
 
 const HEIGHT = 200;

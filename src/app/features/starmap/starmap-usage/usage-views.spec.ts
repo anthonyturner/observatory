@@ -3,7 +3,7 @@ import { ProjectUsage, TokenReport } from '../../../core/usage/usage-document';
 import { mergesSince, projectBars, projectNote, toolBars } from './bar-items';
 import { limitTiles } from './limit-tiles';
 import { familyLegend, modelRows, tokenTiles } from './token-views';
-import { tipPosition } from './usage-tip/tip-position';
+import { tipPosition } from '../../../shared/charts/usage-tip/tip-position';
 import { chartWidth } from './starmap-usage';
 
 const FRIDAY_3PM = new Date(2026, 9, 2, 15, 0).toISOString();

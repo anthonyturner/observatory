@@ -17,7 +17,7 @@ import { ELEMENT_WIDTH } from '../../../shared/element-width/element-width';
 import { mergesSince, projectBars, projectFor, projectNote, toolBars } from './bar-items';
 import { UsageBarsSection } from './usage-bars/usage-bars';
 import { UsageLimitsSection } from './usage-limits/usage-limits';
-import { TipAt, UsageTip } from './usage-tip/usage-tip';
+import { TipAt, UsageTip } from '../../../shared/charts/usage-tip/usage-tip';
 import { UsageTokensSection } from './usage-tokens/usage-tokens';
 
 /** Charts are drawn at the list's width, within these bounds. */

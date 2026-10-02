@@ -1,14 +1,19 @@
-import { fieldOf, isObject, isText, listOf, oneOf } from '../json/json-fields';
+import { fieldOf, isNumber, isObject, isText, listOf, oneOf } from '../json/json-fields';
 import {
   ArchitectureArea,
   ArchitectureEdge,
   ArchitectureMap,
   ArchitectureNode,
+  EDGE_KINDS,
   INJECTION_STYLES,
   NODE_KINDS,
 } from './architecture.types';
 
+/** A map written before the schema field existed. */
+const FIRST_SCHEMA = 1;
+
 const isKind = oneOf(NODE_KINDS);
+const isEdgeKind = oneOf(EDGE_KINDS);
 const isStyle = oneOf(INJECTION_STYLES);
 const isString = (value: unknown): value is string => typeof value === 'string';
 const textOrNull = (value: unknown): string | null => (isText(value) ? value : null);
@@ -20,6 +25,7 @@ function parseArea(value: unknown): ArchitectureArea | null {
   return id && label ? { id, label } : null;
 }
 
+/** An old map's node has no id: its name was its identity, and its edges refer to it by name. */
 function parseNode(value: unknown): ArchitectureNode | null {
   if (!isObject(value)) return null;
   const name = fieldOf(value, 'name', isText);
@@ -27,23 +33,33 @@ function parseNode(value: unknown): ArchitectureNode | null {
   const file = fieldOf(value, 'file', isText);
   const area = fieldOf(value, 'area', isText);
   if (!name || !kind || !file || !area) return null;
-  const group = fieldOf(value, 'group', isString) ?? '';
-  return { name, kind, file, area, group, providedIn: textOrNull(value['providedIn']) };
+  return {
+    id: fieldOf(value, 'id', isText) ?? name,
+    name,
+    kind,
+    file,
+    area,
+    group: fieldOf(value, 'group', isString) ?? '',
+    providedIn: textOrNull(value['providedIn']),
+    windows: listOf(value['windows'], textOrNull),
+  };
 }
 
+/** An old map's edge has no kind: every edge it holds is an injection. */
 function parseEdge(value: unknown): ArchitectureEdge | null {
   if (!isObject(value)) return null;
   const from = fieldOf(value, 'from', isText);
   const to = fieldOf(value, 'to', isText);
-  const how = fieldOf(value, 'how', isStyle);
-  if (!from || !to || !how) return null;
-  return { from, to, how, members: listOf(value['members'], textOrNull) };
+  const kind = value['kind'] === undefined ? 'injects' : fieldOf(value, 'kind', isEdgeKind);
+  if (!from || !to || !kind) return null;
+  const how = fieldOf(value, 'how', isStyle) ?? null;
+  return { from, to, kind, how, members: listOf(value['members'], textOrNull) };
 }
 
 /** An edge is kept only when both its ends are nodes, so the page never follows one nowhere. */
 function edgesBetween(nodes: readonly ArchitectureNode[], value: unknown): ArchitectureEdge[] {
-  const names = new Set(nodes.map((node) => node.name));
-  return listOf(value, parseEdge).filter(({ from, to }) => names.has(from) && names.has(to));
+  const ids = new Set(nodes.map((node) => node.id));
+  return listOf(value, parseEdge).filter(({ from, to }) => ids.has(from) && ids.has(to));
 }
 
 /** The architecture map, with any entry that does not parse dropped; null when it is not one. */
@@ -53,6 +69,7 @@ export function parseArchitecture(body: unknown): ArchitectureMap | null {
   }
   const nodes = listOf(body['nodes'], parseNode);
   return {
+    schema: fieldOf(body, 'schema', isNumber) ?? FIRST_SCHEMA,
     project: fieldOf(body, 'project', isText) ?? '',
     scannedAt: fieldOf(body, 'scannedAt', isText) ?? '',
     areas: listOf(body['areas'], parseArea),

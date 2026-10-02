@@ -1,7 +1,7 @@
-import { MapEntry, Neighbour, Neighbourhood } from './architecture-graph';
-import { ArchitectureArea } from './architecture.types';
+import { MapEntry, Neighbour, Neighbourhood, linkOf, relationOf } from './architecture-graph';
+import { ArchitectureArea, EdgeKind } from './architecture.types';
 
-/** A member the planet reads from the sun, drawn as a moon round the planet. */
+/** A member read across the planet's link to the sun, drawn as a moon round the planet. */
 export interface Moon {
   readonly member: string;
   readonly x: number;
@@ -16,10 +16,14 @@ export interface Planet {
   readonly moons: readonly Moon[];
   /** Members beyond the moons drawn. */
   readonly hiddenMoons: number;
+  /** The kind of edge its spoke to the sun is drawn as. */
+  readonly link: EdgeKind;
+  /** Every kind of edge joining it to the sun, as words. */
+  readonly relation: string;
 }
 
-/** `uses` holds what the sun injects; `area` holds what injects the sun, one area per band. */
-export type OrbitKind = 'uses' | 'area';
+/** `dependencies` holds what the sun depends on; `area` holds what depends on the sun, one area per band. */
+export type OrbitKind = 'dependencies' | 'area';
 
 export interface Orbit {
   readonly key: string;
@@ -46,7 +50,7 @@ interface Band {
 }
 
 export const SUN_RADIUS = 34;
-export const USES_LABEL = 'Injects';
+export const DEPENDENCIES_LABEL = 'Depends on';
 const FIRST_ORBIT = 130;
 const ORBIT_GAP = 78;
 /** Room along a ring for one planet and its name. */
@@ -81,7 +85,8 @@ function moonsOf(members: readonly string[], size: number): Moon[] {
 
 function planetsOn(ring: number, neighbours: readonly Neighbour[]): Planet[] {
   const radius = radiusOf(ring);
-  return neighbours.map(({ entry, members }, index) => {
+  return neighbours.map((neighbour, index) => {
+    const { entry, members } = neighbour;
     const angle = ring * RING_OFFSET_RAD + (FULL_TURN * index) / neighbours.length;
     const size = round(sizeOf(entry));
     return {
@@ -91,15 +96,17 @@ function planetsOn(ring: number, neighbours: readonly Neighbour[]): Planet[] {
       size,
       moons: moonsOf(members, size),
       hiddenMoons: Math.max(0, members.length - MAX_MOONS),
+      link: linkOf(neighbour),
+      relation: relationOf(neighbour),
     };
   });
 }
 
 function bandsOf(neighbourhood: Neighbourhood, areas: readonly ArchitectureArea[]): Band[] {
-  const uses: Band = {
-    key: 'uses',
-    kind: 'uses',
-    label: USES_LABEL,
+  const dependencies: Band = {
+    key: 'dependencies',
+    kind: 'dependencies',
+    label: DEPENDENCIES_LABEL,
     neighbours: neighbourhood.dependencies,
   };
   const byArea = areas.map(({ id, label }): Band => ({
@@ -108,7 +115,7 @@ function bandsOf(neighbourhood: Neighbourhood, areas: readonly ArchitectureArea[
     label,
     neighbours: neighbourhood.dependents.filter(({ entry }) => entry.node.area === id),
   }));
-  return [uses, ...byArea].filter((band) => band.neighbours.length > 0);
+  return [dependencies, ...byArea].filter((band) => band.neighbours.length > 0);
 }
 
 /** A band's rings, starting at ring `first`: as many as its planets need at that distance. */
@@ -131,7 +138,7 @@ function orbitsOf(band: Band, first: number): Orbit[] {
   return orbits;
 }
 
-/** The centre as a sun: what it injects on the innermost ring, then its dependents by area. */
+/** The centre as a sun: what it depends on, on the innermost ring, then its dependents by area. */
 export function starSystem(
   neighbourhood: Neighbourhood,
   areas: readonly ArchitectureArea[],

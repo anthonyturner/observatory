@@ -5,7 +5,15 @@
       <h1>Architecture</h1>
       <span class="stamp">{{ stamp() }}</span>
     </div>
+    @if (rescanNote(); as note) {
+      <p class="rescan" role="status">{{ note }}</p>
+    }
   </div>
+  <ul class="legend" aria-label="Link kinds">
+    @for (kind of linkKinds; track kind) {
+      <li [attr.data-link]="kind"><span class="swatch" aria-hidden="true"></span>{{ kind }}</li>
+    }
+  </ul>
   <div class="views" role="group" aria-label="View">
     <button
       type="button"
@@ -33,10 +41,12 @@
     <app-node-index
       [entries]="listed()"
       [areas]="areas()"
+      [windows]="windows()"
       [totals]="totals()"
-      [selected]="centreName()"
+      [selected]="centreId()"
       [(query)]="query"
       [(area)]="area"
+      [(window)]="window"
       [(heat)]="heat"
       (pick)="centreOn($event)"
     />
@@ -55,12 +65,15 @@
   </main>
 
   @if (facts(); as facts) {
-    <section class="facts" aria-label="Centre class" [attr.data-heat]="facts.heat">
+    <section class="facts" aria-label="Centre node" [attr.data-heat]="facts.heat">
       <h2>{{ facts.name }}</h2>
       <p class="kind">{{ facts.kind }}</p>
       <p class="file">{{ facts.file }}</p>
       @if (facts.providedIn) {
         <p>providedIn: {{ facts.providedIn }}</p>
+      }
+      @if (facts.windows) {
+        <p>Windows: {{ facts.windows }}</p>
       }
       <p>{{ facts.counts }}</p>
       @if (facts.note) {

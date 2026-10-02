@@ -72,6 +72,31 @@ button:focus-visible {
   color: var(--flow);
 }
 
+.heart {
+  border-right: 1px solid var(--edge-soft);
+  color: var(--faint);
+  font-size: 15px;
+}
+
+.heart[aria-pressed='true'] {
+  color: var(--music-trance-accent);
+}
+
+.source {
+  display: flex;
+  border-left: 1px solid var(--edge-soft);
+}
+
+.source button[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--flow-tint-strong);
+}
+
+.source button:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
 .tracks {
   border-left: 1px solid var(--edge-soft);
 }
@@ -150,6 +175,10 @@ button:focus-visible {
 }
 
 @media (max-width: 720px) {
+  .bar {
+    flex-wrap: wrap;
+  }
+
   .now {
     flex: 1 1 auto;
     width: auto;

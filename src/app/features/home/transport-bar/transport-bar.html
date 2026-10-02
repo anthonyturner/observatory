@@ -2,9 +2,11 @@
   @if (listOpen()) {
     <app-track-list
       id="playlist-tracks"
-      [tracks]="player.tracks"
+      [tracks]="player.tracks()"
       [currentIndex]="player.index()"
+      [favoriteIds]="favoriteIds()"
       (picked)="pick($event)"
+      (favoriteToggled)="favorites.toggle($event)"
     />
   }
   <div #screen class="screen" [class.screen--live]="hasStarted()"></div>
@@ -18,7 +20,7 @@
       type="button"
       class="transport__play"
       [attr.aria-label]="player.isPlaying() ? 'Pause' : 'Play'"
-      [title]="player.isPlaying() ? 'Pause the playlist' : 'Play the trance playlist'"
+      [title]="player.isPlaying() ? 'Pause the playlist' : 'Play the playlist'"
       (click)="toggle()"
     >
       <span aria-hidden="true">{{ player.isPlaying() ? '❚❚' : '▶' }}</span>
@@ -27,10 +29,42 @@
       <span aria-hidden="true">⏭</span>
     </button>
   </div>
+  <button
+    type="button"
+    class="heart"
+    [attr.aria-pressed]="isFavorite()"
+    aria-label="Favourite"
+    [title]="
+      isFavorite() ? 'Remove this track from your favourites' : 'Save this track to your favourites'
+    "
+    (click)="favorites.toggle(player.current())"
+  >
+    <span aria-hidden="true">{{ isFavorite() ? '♥' : '♡' }}</span>
+  </button>
   <p class="now" aria-live="polite">
     <span class="now__title">{{ player.current().title }}</span>
     <span class="now__meta">{{ status() }} · {{ position() }}</span>
   </p>
+  <div class="source" role="group" aria-label="Which list plays">
+    <button
+      type="button"
+      [attr.aria-pressed]="library.source() === 'mix'"
+      title="Play today's shuffled mix"
+      (click)="choose('mix')"
+    >
+      Mix
+    </button>
+    <button
+      type="button"
+      [attr.aria-pressed]="library.source() === 'favorites'"
+      [disabled]="!library.hasFavorites()"
+      [title]="favoritesHint()"
+      (click)="choose('favorites')"
+    >
+      <span aria-hidden="true">♥</span> {{ favorites.count() }}
+      <span class="visually-hidden">favourites</span>
+    </button>
+  </div>
   <button
     type="button"
     class="tracks"

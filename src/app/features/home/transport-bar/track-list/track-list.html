@@ -1,13 +1,23 @@
 <ol aria-label="Tracks">
-  @for (track of tracks(); track track.videoId; let index = $index) {
+  @for (row of rows(); track row.track.videoId; let index = $index) {
     <li>
       <button
         type="button"
-        [attr.aria-current]="index === currentIndex() ? 'true' : null"
+        class="pick"
+        [attr.aria-current]="row.isCurrent ? 'true' : null"
         (click)="picked.emit(index)"
       >
-        <span class="title">{{ track.title }}</span>
-        <span class="artist">{{ track.artist }} · {{ track.genre }}</span>
+        <span class="title">{{ row.track.title }}</span>
+        <span class="artist">{{ row.track.artist }} · {{ row.track.genre }}</span>
+      </button>
+      <button
+        type="button"
+        class="heart"
+        [attr.aria-pressed]="row.isFavorite"
+        [attr.aria-label]="'Favourite: ' + row.track.title"
+        (click)="favoriteToggled.emit(row.track)"
+      >
+        <span aria-hidden="true">{{ row.isFavorite ? '♥' : '♡' }}</span>
       </button>
     </li>
   }

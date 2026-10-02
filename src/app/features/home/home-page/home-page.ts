@@ -14,10 +14,13 @@ import { HomeTools } from '../home-tools/home-tools';
 import { RunDockPanel } from '../run-dock/run-dock';
 import { SkillsPanel } from '../skills-panel/skills-panel';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
+import { MusicSky } from '../music-sky/music-sky';
 import { TopBar } from '../top-bar/top-bar';
 import { TransportBar } from '../transport-bar/transport-bar';
 import { VitalsPanel } from '../vitals-panel/vitals-panel';
 import { SoundPreference } from '../../../core/sound/sound-preference';
+import { MusicPulse } from '../../../core/music-sync/music-pulse';
+import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { RunDock } from '../../../core/runs/run-dock';
 import { RunsStore } from '../../../core/runs/runs-store';
 
@@ -28,6 +31,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
   imports: [
     ReaderWindow,
     SkyBackdrop,
+    MusicSky,
     TopBar,
     CorePanel,
     AskPanel,
@@ -42,7 +46,8 @@ import { RunsStore } from '../../../core/runs/runs-store';
     HomeTools,
     TransportBar,
   ],
-  providers: [SoundPreference],
+  // The bar plays the music and the sky moves with it, so Home holds both for them.
+  providers: [SoundPreference, PlaylistPlayer, MusicPulse],
   hostDirectives: [HelpShortcuts, CoreStateFeed],
   host: { '[class.docked]': 'dock.isOpen()' },
   templateUrl: './home-page.html',

@@ -40,6 +40,16 @@
   >
     Tracks
   </button>
+  <button
+    type="button"
+    class="sync"
+    [attr.aria-pressed]="sync().isOn"
+    [disabled]="sync().isUnavailable"
+    [title]="sync().hint"
+    (click)="toggleSync()"
+  >
+    {{ sync().text }}
+  </button>
   <label class="volume"
     ><span aria-hidden="true">Vol</span
     ><input

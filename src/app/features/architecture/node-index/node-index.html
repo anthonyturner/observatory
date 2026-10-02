@@ -3,7 +3,7 @@
   <input
     #box
     type="search"
-    placeholder="Class name"
+    placeholder="Name"
     autocomplete="off"
     [value]="query()"
     (input)="query.set(box.value)"
@@ -20,12 +20,24 @@
   </select>
 </label>
 
+@if (windows().length) {
+  <label class="field">
+    <span>Window</span>
+    <select #pane (change)="window.set(pane.value || null)">
+      <option value="" [selected]="window() === null">All windows</option>
+      @for (option of windows(); track option) {
+        <option [value]="option" [selected]="window() === option">{{ option }}</option>
+      }
+    </select>
+  </label>
+}
+
 <div class="chips" role="group" aria-label="Show">
   <button type="button" [attr.aria-pressed]="heat() === null" (click)="heat.set(null)">All</button>
   <button
     type="button"
     data-heat="hot"
-    title="Injected by many classes: a change here is felt widely"
+    title="Depended on by many nodes: a change here is felt widely"
     [attr.aria-pressed]="heat() === 'hot'"
     (click)="heat.set('hot')"
   >
@@ -34,7 +46,7 @@
   <button
     type="button"
     data-heat="unused"
-    title="Nothing injects it: candidate dead code"
+    title="Nothing depends on it: candidate dead code"
     [attr.aria-pressed]="heat() === 'unused'"
     (click)="heat.set('unused')"
   >
@@ -45,19 +57,22 @@
 <p class="count" role="status">{{ entries().length }} shown</p>
 
 <ul>
-  @for (entry of entries(); track entry.node.name) {
+  @for (entry of entries(); track entry.node.id) {
     <li>
       <button
         type="button"
         class="row"
         [attr.data-heat]="entry.heat"
         [attr.data-kind]="entry.node.kind"
-        [attr.aria-current]="entry.node.name === selected() ? 'true' : null"
-        (click)="pick.emit(entry.node.name)"
+        [title]="entry.node.file"
+        [attr.aria-current]="entry.node.id === selected() ? 'true' : null"
+        (click)="pick.emit(entry.node.id)"
       >
         <span class="dot" aria-hidden="true"></span>
         <span class="name">{{ entry.node.name }}</span>
-        <span class="uses" [title]="'Injected by ' + entry.dependents">{{ entry.dependents }}</span>
+        <span class="uses" [title]="'Depended on by ' + entry.dependents">{{
+          entry.dependents
+        }}</span>
       </button>
     </li>
   }

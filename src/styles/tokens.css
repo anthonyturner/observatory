@@ -64,6 +64,12 @@
   --flow-wash-strong: rgba(142, 162, 255, 0.1);
   --flow-edge: rgba(142, 162, 255, 0.5);
   --flow-dash: rgba(142, 162, 255, 0.45);
+  /* The architecture map's edges, one colour per kind of link. */
+  --link-injects: var(--flow);
+  --link-uses: var(--ok);
+  --link-provides: var(--sev-waiting);
+  --link-extends: var(--warm);
+  --link-calls: var(--sev-unsettled);
   /* The voice block: green while it listens, red when it cannot. */
   --voice-live-edge: rgba(95, 227, 161, 0.5);
   --voice-live-wash: rgba(95, 227, 161, 0.16);

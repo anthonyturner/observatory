@@ -1,5 +1,12 @@
-import { MapEntry, Neighbour, Neighbourhood, memberUse } from './architecture-graph';
-import { ArchitectureArea } from './architecture.types';
+import {
+  MapEntry,
+  Neighbour,
+  Neighbourhood,
+  linkOf,
+  memberUse,
+  relationOf,
+} from './architecture-graph';
+import { ArchitectureArea, EdgeKind } from './architecture.types';
 
 export type UmlRole = 'dependent' | 'centre' | 'dependency';
 
@@ -8,8 +15,10 @@ export interface UmlLine {
   readonly y: number;
 }
 
-/** One class box: a stereotype, a name, and the members read across its injection. */
+/** One node's box: a stereotype, a name, and the members read across its link. */
 export interface UmlBox {
+  /** Unique within a diagram, even for a node that is both a dependent and a dependency. */
+  readonly key: string;
   readonly entry: MapEntry;
   readonly role: UmlRole;
   readonly stereotype: string;
@@ -19,6 +28,18 @@ export interface UmlBox {
   readonly y: number;
   readonly height: number;
   readonly lines: readonly UmlLine[];
+  /** Every kind of edge joining it to the centre, as words; '' for the centre. */
+  readonly relation: string;
+  /** The kind its link to the centre is drawn as; null for the centre. */
+  readonly link: EdgeKind | null;
+}
+
+/** One edge, drawn from the node that depends to the node depended on. */
+export interface UmlLink {
+  /** The key of the neighbour's box. */
+  readonly key: string;
+  readonly path: string;
+  readonly kind: EdgeKind;
 }
 
 export interface UmlCaption {
@@ -28,8 +49,7 @@ export interface UmlCaption {
 
 export interface UmlDiagram {
   readonly boxes: readonly UmlBox[];
-  /** One path per injection, drawn from the class that injects to the class injected. */
-  readonly links: readonly string[];
+  readonly links: readonly UmlLink[];
   readonly captions: readonly UmlCaption[];
   readonly width: number;
   readonly height: number;
@@ -59,6 +79,8 @@ interface Draft {
   readonly role: UmlRole;
   readonly members: readonly string[];
   readonly limit: number;
+  readonly relation: string;
+  readonly link: EdgeKind | null;
 }
 
 const titleOf = (name: string): string =>
@@ -83,6 +105,7 @@ function boxAt(draft: Draft, y: number, areaLabel: string): UmlBox {
   const lines = linesOf(draft.members, draft.limit);
   const { entry, role } = draft;
   return {
+    key: `${role}:${entry.node.id}`,
     entry,
     role,
     stereotype: `«${entry.node.kind}» ${areaLabel}`,
@@ -91,6 +114,8 @@ function boxAt(draft: Draft, y: number, areaLabel: string): UmlBox {
     y,
     height: heightOf(lines.length),
     lines,
+    relation: draft.relation,
+    link: draft.link,
   };
 }
 
@@ -107,13 +132,27 @@ function stack(drafts: readonly Draft[], labels: ReadonlyMap<string, string>): U
 }
 
 const neighbourDrafts = (neighbours: readonly Neighbour[], role: UmlRole): Draft[] =>
-  neighbours.map(({ entry, members }) => ({ entry, role, members, limit: MAX_NEIGHBOUR_LINES }));
+  neighbours.map((neighbour) => ({
+    entry: neighbour.entry,
+    role,
+    members: neighbour.members,
+    limit: MAX_NEIGHBOUR_LINES,
+    relation: relationOf(neighbour),
+    link: linkOf(neighbour),
+  }));
 
 function centreDraft(neighbourhood: Neighbourhood): Draft {
   const members = memberUse(neighbourhood.dependents).map(({ member, readers }) =>
     readers > 1 ? `${member}  ×${readers}` : member,
   );
-  return { entry: neighbourhood.centre, role: 'centre', members, limit: MAX_CENTRE_LINES };
+  return {
+    entry: neighbourhood.centre,
+    role: 'centre',
+    members,
+    limit: MAX_CENTRE_LINES,
+    relation: '',
+    link: null,
+  };
 }
 
 /** A curve from the right edge of `from` to the left edge of `to`, at each box's header. */
@@ -126,16 +165,19 @@ function linkBetween(from: UmlBox, to: UmlBox): string {
 
 function captionsOf(neighbourhood: Neighbourhood): UmlCaption[] {
   return [
-    { text: `Injected by ${neighbourhood.dependents.length}`, x: COLUMN_X.dependent },
+    { text: `Depended on by ${neighbourhood.dependents.length}`, x: COLUMN_X.dependent },
     { text: 'Centre', x: COLUMN_X.centre },
-    { text: `Injects ${neighbourhood.dependencies.length}`, x: COLUMN_X.dependency },
+    { text: `Depends on ${neighbourhood.dependencies.length}`, x: COLUMN_X.dependency },
   ];
 }
 
 const bottomOf = (boxes: readonly UmlBox[]): number =>
   Math.max(TOP, ...boxes.map((box) => box.y + box.height));
 
-/** The centre between the classes that inject it (left) and the classes it injects (right). */
+const linkAlong = (box: UmlBox, path: string): UmlLink[] =>
+  box.link ? [{ key: box.key, path, kind: box.link }] : [];
+
+/** The centre between the nodes that depend on it (left) and the nodes it depends on (right). */
 export function umlDiagram(
   neighbourhood: Neighbourhood,
   areas: readonly ArchitectureArea[],
@@ -147,8 +189,8 @@ export function umlDiagram(
   const boxes = centre ? [...dependents, centre, ...dependencies] : [];
   const links = centre
     ? [
-        ...dependents.map((box) => linkBetween(box, centre)),
-        ...dependencies.map((box) => linkBetween(centre, box)),
+        ...dependents.flatMap((box) => linkAlong(box, linkBetween(box, centre))),
+        ...dependencies.flatMap((box) => linkAlong(box, linkBetween(centre, box))),
       ]
     : [];
   return {

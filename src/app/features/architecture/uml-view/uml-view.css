@@ -23,9 +23,36 @@ svg {
   stroke-dasharray: 5 4;
 }
 
+/* UML's own shapes: a dashed dependency, a solid line with a hollow triangle for extends. */
+.link[data-link='uses'] {
+  stroke: var(--link-uses);
+  stroke-dasharray: none;
+}
+
+.link[data-link='provides'] {
+  stroke: var(--link-provides);
+  stroke-dasharray: 2 4;
+}
+
+.link[data-link='extends'] {
+  stroke: var(--link-extends);
+  stroke-dasharray: none;
+}
+
+.link[data-link='calls'] {
+  stroke: var(--link-calls);
+  stroke-dasharray: 8 3 2 3;
+}
+
 .arrowhead {
   fill: none;
   stroke: var(--flow);
+  stroke-width: 1.2;
+}
+
+.triangle {
+  fill: var(--void);
+  stroke: var(--link-extends);
   stroke-width: 1.2;
 }
 

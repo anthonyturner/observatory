@@ -1,4 +1,4 @@
-<svg [attr.viewBox]="system().viewBox" role="group" aria-label="Star system of the centre class">
+<svg [attr.viewBox]="system().viewBox" role="group" aria-label="Star system of the centre node">
   @for (orbit of system().orbits; track orbit.key) {
     <circle class="ring" [attr.data-kind]="orbit.kind" [attr.r]="orbit.radius" />
     @if (orbit.label) {
@@ -14,7 +14,17 @@
 
   @for (orbit of system().orbits; track orbit.key) {
     <g class="orbit" [style.animation-duration.s]="orbit.period">
-      @for (planet of orbit.planets; track planet.entry.node.name) {
+      @for (planet of orbit.planets; track planet.entry.node.id) {
+        <line
+          class="spoke"
+          x1="0"
+          y1="0"
+          [attr.x2]="planet.x"
+          [attr.y2]="planet.y"
+          [attr.data-link]="planet.link"
+        />
+      }
+      @for (planet of orbit.planets; track planet.entry.node.id) {
         <g [attr.transform]="'translate(' + planet.x + ' ' + planet.y + ')'">
           <g class="upright" [style.animation-duration.s]="orbit.period">
             <g
@@ -24,9 +34,10 @@
               [attr.data-heat]="planet.entry.heat"
               [attr.data-kind]="planet.entry.node.kind"
               [attr.aria-label]="'Centre on ' + planet.entry.node.name"
-              (click)="pick.emit(planet.entry.node.name)"
-              (keydown.enter)="pick.emit(planet.entry.node.name)"
+              (click)="pick.emit(planet.entry.node.id)"
+              (keydown.enter)="pick.emit(planet.entry.node.id)"
             >
+              <title>{{ planet.entry.node.name }} · {{ planet.relation }}</title>
               <circle class="body" [attr.r]="planet.size" />
               <g class="moons">
                 @for (moon of planet.moons; track moon.member) {

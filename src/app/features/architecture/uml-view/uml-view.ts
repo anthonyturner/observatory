@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { BOX_WIDTH, HEADER_HEIGHT, TOP, UmlDiagram } from '../../../core/architecture/uml-layout';
 
-/** One class as a UML dependency diagram: what injects it, the class, and what it injects. */
+/** One node as a UML dependency diagram: what depends on it, the node, and what it depends on. */
 @Component({
   selector: 'app-uml-view',
   templateUrl: './uml-view.html',
@@ -10,7 +10,7 @@ import { BOX_WIDTH, HEADER_HEIGHT, TOP, UmlDiagram } from '../../../core/archite
 })
 export class UmlView {
   readonly diagram = input.required<UmlDiagram>();
-  /** The name of the class to put at the centre next. */
+  /** The id of the node to put at the centre next. */
   readonly pick = output<string>();
 
   protected readonly boxWidth = BOX_WIDTH;

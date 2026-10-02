@@ -76,6 +76,20 @@ button:focus-visible {
   border-left: 1px solid var(--edge-soft);
 }
 
+.sync {
+  border-left: 1px solid var(--edge-soft);
+}
+
+.sync[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--flow-tint-strong);
+}
+
+.sync:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
 .tracks[aria-expanded='true'] {
   color: var(--ink);
   background: var(--flow-tint-strong);

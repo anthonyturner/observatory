@@ -2,7 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { AmbientPlayer } from '../../../core/sound/ambient-synth';
 import { AMBIENT_PLAYER, SoundPreference } from '../../../core/sound/sound-preference';
 import { VIDEO_PLAYER_FACTORY, VideoPlayer } from '../../../core/playlist/video-player';
-import { PLAYLIST_TRACKS } from '../../../core/playlist/playlist-player';
+import { PLAYLIST_TRACKS, PlaylistPlayer } from '../../../core/playlist/playlist-player';
+import { MusicPulse } from '../../../core/music-sync/music-pulse';
+import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
 import { TransportBar } from './transport-bar';
 
 const silentScore: AmbientPlayer = {
@@ -21,8 +23,19 @@ function render() {
     dispose: vi.fn(),
   };
   const make = vi.fn(() => Promise.resolve(player));
+  const tap: AudioTap = {
+    binHz: 20,
+    binCount: 8,
+    read: vi.fn(),
+    onEnded: vi.fn(),
+    close: vi.fn(),
+  };
+  const openTap = vi.fn(() => Promise.resolve(tap));
   TestBed.configureTestingModule({
     providers: [
+      PlaylistPlayer,
+      MusicPulse,
+      { provide: AUDIO_TAP, useValue: openTap },
       { provide: VIDEO_PLAYER_FACTORY, useValue: make },
       { provide: AMBIENT_PLAYER, useValue: () => silentScore },
     ],
@@ -35,7 +48,17 @@ function render() {
       (b) => b.getAttribute('aria-label') === label || b.textContent?.trim() === label,
     );
   const sound = TestBed.inject(SoundPreference);
-  return { fixture, element, button, make, pauses, sound, tracks: TestBed.inject(PLAYLIST_TRACKS) };
+  return {
+    fixture,
+    element,
+    button,
+    make,
+    pauses,
+    sound,
+    openTap,
+    pulse: TestBed.inject(MusicPulse),
+    tracks: TestBed.inject(PLAYLIST_TRACKS),
+  };
 }
 
 describe('TransportBar', () => {
@@ -78,5 +101,34 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     expect(element.querySelector('app-track-list')).toBeNull();
     expect(element.textContent).toContain(tracks[2].title);
+  });
+
+  it('asks to hear the tab on the first Play of a visit, and only then', async () => {
+    const { fixture, button, openTap } = render();
+    button('Play')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(openTap).toHaveBeenCalledTimes(1);
+    expect(button('Synced')?.getAttribute('aria-pressed')).toBe('true');
+
+    button('Synced')?.click();
+    fixture.detectChanges();
+    button('Play')?.click();
+    expect(openTap).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks again from Sync after sharing was declined', async () => {
+    const { fixture, button, openTap } = render();
+    openTap.mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
+    button('Sync')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(button('Sync')?.title).toContain('declined');
+
+    button('Sync')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(openTap).toHaveBeenCalledTimes(2);
+    expect(button('Synced')).toBeDefined();
   });
 });

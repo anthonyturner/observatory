@@ -10,17 +10,18 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { SoundPreference } from '../../../core/sound/sound-preference';
+import { syncLabelOf } from './sync-label';
 import { TrackList } from './track-list/track-list';
 
-/** Home's playlist along the foot of the screen: the video, the transport and the
- *  volume, with the track list above. It plays instead of the generated score,
- *  never over it. */
+/** Home's playlist along the foot of the screen: the video, the transport, the
+ *  sky's Sync and the volume, with the track list above. It plays instead of the
+ *  generated score, never over it. The page provides the playlist and the pulse. */
 @Component({
   selector: 'app-transport-bar',
   imports: [TrackList],
-  providers: [PlaylistPlayer],
   templateUrl: './transport-bar.html',
   styleUrl: './transport-bar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +30,8 @@ import { TrackList } from './track-list/track-list';
 export class TransportBar {
   protected readonly player = inject(PlaylistPlayer);
   private readonly sound = inject(SoundPreference);
+  private readonly pulse = inject(MusicPulse);
+  protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
   protected readonly listOpen = signal(false);
@@ -47,9 +50,18 @@ export class TransportBar {
     });
   }
 
+  /** The first Play of a visit also asks to hear the tab, inside the same click. */
   protected toggle(): void {
-    if (!this.player.isPlaying()) this.silenceScore();
+    if (!this.player.isPlaying()) {
+      this.silenceScore();
+      this.pulse.listenOnce();
+    }
     this.player.toggle();
+  }
+
+  protected toggleSync(): void {
+    if (this.pulse.isListening()) this.pulse.stop();
+    else this.pulse.listen();
   }
 
   protected next(): void {

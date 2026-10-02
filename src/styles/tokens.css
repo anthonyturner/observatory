@@ -100,6 +100,13 @@
   --sky-mid: #06120b;
   --sky-deep: #020604;
   --sky-vignette: rgba(0, 0, 0, 0.66);
+  /* The playlist's colours over the sky: trance cool and dreamy, techno hot and stark. */
+  --music-trance-primary: #5ee7ff;
+  --music-trance-secondary: #a78bfa;
+  --music-trance-accent: #f0abfc;
+  --music-techno-primary: #ff4d5e;
+  --music-techno-secondary: #ffb347;
+  --music-techno-accent: #f4f4f5;
   /* The fog that thickens as the data ages. */
   --fog-veil: rgb(44, 52, 80);
   --fog-wisp: rgba(150, 162, 200, 0.16);

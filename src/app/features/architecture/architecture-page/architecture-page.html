@@ -1,0 +1,71 @@
+<header class="top">
+  <div>
+    <app-up-link to="/" label="Home" />
+    <div class="brand">
+      <h1>Architecture</h1>
+      <span class="stamp">{{ stamp() }}</span>
+    </div>
+  </div>
+  <div class="views" role="group" aria-label="View">
+    <button
+      type="button"
+      class="abtn"
+      [attr.aria-pressed]="view() === 'star'"
+      (click)="view.set('star')"
+    >
+      Star system
+    </button>
+    <button
+      type="button"
+      class="abtn"
+      [attr.aria-pressed]="view() === 'uml'"
+      (click)="view.set('uml')"
+    >
+      UML
+    </button>
+  </div>
+</header>
+
+@if (waiting(); as message) {
+  <p class="state" role="status">{{ message }}</p>
+} @else {
+  <aside class="index">
+    <app-node-index
+      [entries]="listed()"
+      [areas]="areas()"
+      [totals]="totals()"
+      [selected]="centreName()"
+      [(query)]="query"
+      [(area)]="area"
+      [(heat)]="heat"
+      (pick)="centreOn($event)"
+    />
+  </aside>
+
+  <main class="stage" [attr.data-view]="view()">
+    @if (view() === 'star') {
+      @if (system(); as system) {
+        <app-star-view [system]="system" (pick)="centreOn($event)" />
+      }
+    } @else {
+      @if (diagram(); as diagram) {
+        <app-uml-view [diagram]="diagram" (pick)="centreOn($event)" />
+      }
+    }
+  </main>
+
+  @if (facts(); as facts) {
+    <section class="facts" aria-label="Centre class" [attr.data-heat]="facts.heat">
+      <h2>{{ facts.name }}</h2>
+      <p class="kind">{{ facts.kind }}</p>
+      <p class="file">{{ facts.file }}</p>
+      @if (facts.providedIn) {
+        <p>providedIn: {{ facts.providedIn }}</p>
+      }
+      <p>{{ facts.counts }}</p>
+      @if (facts.note) {
+        <p class="note">{{ facts.note }}</p>
+      }
+    </section>
+  }
+}

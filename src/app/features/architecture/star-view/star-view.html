@@ -1,0 +1,45 @@
+<svg [attr.viewBox]="system().viewBox" role="group" aria-label="Star system of the centre class">
+  @for (orbit of system().orbits; track orbit.key) {
+    <circle class="ring" [attr.data-kind]="orbit.kind" [attr.r]="orbit.radius" />
+    @if (orbit.label) {
+      <text class="ring-label" [attr.y]="-orbit.radius - 8">{{ orbit.label }}</text>
+    }
+  }
+
+  <g class="sun" [attr.data-heat]="system().sun.heat">
+    <circle class="glow" [attr.r]="sunRadius * 2" />
+    <circle class="body" [attr.r]="sunRadius" />
+    <text class="name" [attr.y]="sunRadius + 20">{{ system().sun.node.name }}</text>
+  </g>
+
+  @for (orbit of system().orbits; track orbit.key) {
+    <g class="orbit" [style.animation-duration.s]="orbit.period">
+      @for (planet of orbit.planets; track planet.entry.node.name) {
+        <g [attr.transform]="'translate(' + planet.x + ' ' + planet.y + ')'">
+          <g class="upright" [style.animation-duration.s]="orbit.period">
+            <g
+              class="planet"
+              role="button"
+              tabindex="0"
+              [attr.data-heat]="planet.entry.heat"
+              [attr.data-kind]="planet.entry.node.kind"
+              [attr.aria-label]="'Centre on ' + planet.entry.node.name"
+              (click)="pick.emit(planet.entry.node.name)"
+              (keydown.enter)="pick.emit(planet.entry.node.name)"
+            >
+              <circle class="body" [attr.r]="planet.size" />
+              <g class="moons">
+                @for (moon of planet.moons; track moon.member) {
+                  <circle class="moon" r="2.4" [attr.cx]="moon.x" [attr.cy]="moon.y">
+                    <title>{{ moon.member }}</title>
+                  </circle>
+                }
+              </g>
+              <text class="name" [attr.y]="planet.size + 22">{{ planet.entry.node.name }}</text>
+            </g>
+          </g>
+        </g>
+      }
+    </g>
+  }
+</svg>

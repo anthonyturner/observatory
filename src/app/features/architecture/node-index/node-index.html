@@ -1,0 +1,64 @@
+<label class="field">
+  <span>Search</span>
+  <input
+    #box
+    type="search"
+    placeholder="Class name"
+    autocomplete="off"
+    [value]="query()"
+    (input)="query.set(box.value)"
+  />
+</label>
+
+<label class="field">
+  <span>Area</span>
+  <select #choice (change)="area.set(choice.value || null)">
+    <option value="" [selected]="area() === null">All areas</option>
+    @for (option of areas(); track option.id) {
+      <option [value]="option.id" [selected]="area() === option.id">{{ option.label }}</option>
+    }
+  </select>
+</label>
+
+<div class="chips" role="group" aria-label="Show">
+  <button type="button" [attr.aria-pressed]="heat() === null" (click)="heat.set(null)">All</button>
+  <button
+    type="button"
+    data-heat="hot"
+    title="Injected by many classes: a change here is felt widely"
+    [attr.aria-pressed]="heat() === 'hot'"
+    (click)="heat.set('hot')"
+  >
+    <span class="dot" aria-hidden="true"></span>Hot spots {{ totals().hot }}
+  </button>
+  <button
+    type="button"
+    data-heat="unused"
+    title="Nothing injects it: candidate dead code"
+    [attr.aria-pressed]="heat() === 'unused'"
+    (click)="heat.set('unused')"
+  >
+    <span class="dot" aria-hidden="true"></span>Unused {{ totals().unused }}
+  </button>
+</div>
+
+<p class="count" role="status">{{ entries().length }} shown</p>
+
+<ul>
+  @for (entry of entries(); track entry.node.name) {
+    <li>
+      <button
+        type="button"
+        class="row"
+        [attr.data-heat]="entry.heat"
+        [attr.data-kind]="entry.node.kind"
+        [attr.aria-current]="entry.node.name === selected() ? 'true' : null"
+        (click)="pick.emit(entry.node.name)"
+      >
+        <span class="dot" aria-hidden="true"></span>
+        <span class="name">{{ entry.node.name }}</span>
+        <span class="uses" [title]="'Injected by ' + entry.dependents">{{ entry.dependents }}</span>
+      </button>
+    </li>
+  }
+</ul>

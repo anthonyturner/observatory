@@ -13,6 +13,7 @@
     "lint": "ng lint",
     "usage:import-history": "node server/usage/import-history.ts",
     "agents:import-history": "node server/agents/import-history.ts",
+    "arch:scan": "node server/architecture/scan-cli.ts",
     "push": "node server/push.ts",
     "queue": "node server/queue/queue-cli.ts",
     "prepare": "husky"

@@ -38,6 +38,8 @@ import { HEAR_PATH, SPEAK_PATH, VOICE_PATH, withVoiceRoutes } from './voice/voic
 import { fetchPage } from './reader/page-fetch.ts';
 import { READ_PATH, withReaderRoutes } from './reader/reader-routes.ts';
 import { cachedNews, withNewsRoutes } from './news/news-routes.ts';
+import { fileArchitecture } from './architecture/architecture-file.ts';
+import { withArchitectureRoutes } from './architecture/architecture-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -128,7 +130,13 @@ const server = createApiServer(
           withReaderRoutes(
             withVoiceRoutes(
               withAssistant(
-                withRunsRoutes(withNewsRoutes(ownerRoutes(reads, triage, editor), news), runner),
+                withRunsRoutes(
+                  withNewsRoutes(
+                    withArchitectureRoutes(ownerRoutes(reads, triage, editor), fileArchitecture()),
+                    news,
+                  ),
+                  runner,
+                ),
                 assistant,
               ),
               voice,

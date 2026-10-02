@@ -277,6 +277,48 @@ Without a key the voice is off, makes no call, and the page falls back to
 Kokoro. The key is sent to ElevenLabs only, in its own header, and scrubbed
 from every error and log line. Like Jev, the voice is local only.
 
+### Mail (iCloud and Gmail)
+
+Home's Mail section, above the news, lists the 20 newest messages in your
+iCloud and Gmail inboxes, one tab each: sender, subject, when it arrived and a
+**New** mark on unread mail. `GET /api/mail?account=icloud|gmail` reads one
+inbox over IMAP (the standard protocol mail apps read with), signing in with
+an app password. It opens the Inbox read-only and fetches only each message's
+flags and headers, so nothing Home does marks mail read. A list is kept for a
+minute, and a slow or unreachable server is asked again after five minutes. A
+refused sign-in is not tried again until you press Refresh or restart the site,
+so a wrong password is never retried over and over until the provider locks
+the account.
+Home reads mail only while it is open.
+
+**Turning it on.** Put an address and an app password for each account in
+`~/.claude/observatory/.env`, or set them in the environment, then restart the
+site. The password is never your account's own password:
+
+```
+ICLOUD_MAIL_ADDRESS=<your iCloud address>
+ICLOUD_MAIL_APP_PASSWORD=<an app-specific password>
+GMAIL_ADDRESS=<your Gmail address>
+GMAIL_APP_PASSWORD=<a Google app password>
+```
+
+- **iCloud:** sign in at [account.apple.com](https://account.apple.com), open
+  **Sign-In and Security → App-Specific Passwords**, and make one for
+  Observatory. Two-factor authentication must be on. Apple's own mail
+  settings give the part of the address before the @ as the username: if the
+  full address is refused, try that.
+- **Gmail:** make an app password at
+  [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+  The page appears only once 2-Step Verification is on. Google shows the
+  password in four groups; paste it with or without the spaces.
+
+An account without both settings shows a tab that names them, and makes no
+call. The servers are fixed in code (`imap.mail.me.com` and `imap.gmail.com`,
+port 993, TLS). The passwords go to those servers only, and are kept out of
+every error and log line. Gmail's whole Inbox is listed, Promotions and Social
+included. Like Jev, mail is local only: the hosted site has no mail route, for
+anyone, even with these set there.
+
 ## The review queue in a terminal
 
 The star map's review queue, as text, with the same triage:

@@ -1,0 +1,122 @@
+<section
+  id="mail"
+  class="mail"
+  tabindex="-1"
+  aria-labelledby="mail-title"
+  [attr.aria-busy]="isFirstRead()"
+>
+  <div class="head">
+    <h2 id="mail-title">Mail</h2>
+    <span class="sub">newest first</span>
+    @if (summary(); as summary) {
+      <span class="sub note">{{ summary }}</span>
+    }
+    <app-top-link />
+  </div>
+  @let view = panel();
+  <div class="pane">
+    <div class="bar">
+      <app-tab-strip
+        [name]="tabStrip"
+        label="Mailbox"
+        [panelId]="panelId"
+        [tabs]="tabs()"
+        [selected]="selected()"
+        (selectedChange)="select($event)"
+      />
+      @if (view.kind === 'list' || view.kind === 'empty') {
+        <span class="meta">{{ view.address }} · checked {{ checkedAgo() }}</span>
+      }
+      @if (canRefresh()) {
+        <button
+          type="button"
+          class="refresh"
+          [attr.aria-disabled]="isReading()"
+          (click)="refresh()"
+        >
+          {{ isReading() ? 'Reading…' : 'Refresh' }}
+        </button>
+      }
+    </div>
+    <div
+      class="panel"
+      role="tabpanel"
+      tabindex="0"
+      [id]="panelId"
+      [attr.aria-labelledby]="selectedTabId()"
+    >
+      @switch (view.kind) {
+        @case ('loading') {
+          <p class="state" role="status">{{ view.text }}</p>
+        }
+        @case ('unreachable') {
+          <p class="state">{{ view.text }}</p>
+        }
+        @case ('empty') {
+          <p class="state">{{ view.text }}</p>
+        }
+        @case ('off') {
+          <p class="state">
+            {{ view.label }} isn't set up yet. Add
+            @for (name of view.settings; track name; let last = $last) {
+              <code>{{ name }}</code>
+              @if (!last) {
+                and
+              }
+            }
+            to <code>{{ envFile }}</code
+            >, then restart the site.
+          </p>
+          <p class="state">The password is {{ view.password }}.</p>
+        }
+        @case ('failed') {
+          <p class="state bad">{{ view.lead }}</p>
+          @if (view.settings; as settings) {
+            <p class="state">
+              Check
+              @for (name of settings; track name; let last = $last) {
+                <code>{{ name }}</code>
+                @if (!last) {
+                  and
+                }
+              }
+              in <code>{{ envFile }}</code
+              >.
+            </p>
+          }
+          <p class="state">{{ view.retry }}</p>
+        }
+        @case ('list') {
+          @if (view.problem; as problem) {
+            <p class="problem">{{ problem }} Showing what was read {{ checkedAgo() }}.</p>
+          }
+          <ol class="rows">
+            @for (row of view.rows; track row.uid; let index = $index) {
+              <li class="row" [class.unread]="row.isUnread">
+                <span class="marker">
+                  @if (row.isUnread) {
+                    <span class="dot" aria-hidden="true"></span>New
+                  }
+                </span>
+                <span class="from">{{ row.from }}</span>
+                <span class="subject">{{ row.subject }}</span>
+                @if (row.receivedAt) {
+                  <time class="age" [attr.datetime]="row.receivedAt" [title]="row.fullDate"
+                    >{{ rowAges()[index] }}
+                    @if (rowAges()[index] !== 'now') {
+                      <span class="visually-hidden"> ago</span>
+                    }
+                  </time>
+                }
+              </li>
+            }
+          </ol>
+          @if (view.foot; as foot) {
+            <p class="foot">{{ foot }}</p>
+          }
+        }
+      }
+    </div>
+  </div>
+  <p class="visually-hidden" aria-live="polite">{{ announcement() }}</p>
+</section>

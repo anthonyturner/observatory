@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- A Mail section on Home, on your own machine only, listing the 20 newest messages in your iCloud and Gmail inboxes in one tab each, with unread mail marked New; it only reads, so nothing is marked read ([#252](https://github.com/anthonyturner/observatory/pull/252)).
 - Home's music sky changes its look to a different one every 2 to 3 minutes of a track, at random but the same each time the track plays ([#251](https://github.com/anthonyturner/observatory/pull/251)).
 - A button on the playlist's video that makes it bigger, about a third of a wide window, and back ([#246](https://github.com/anthonyturner/observatory/pull/246)).
 - A seek bar on the playlist with the elapsed time and the track's length: drag to scrub, or skip back 15 seconds and forward 30 ([#244](https://github.com/anthonyturner/observatory/pull/244)).

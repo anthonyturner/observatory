@@ -236,6 +236,34 @@ describe('hostedApi', () => {
     }
   });
 
+  it('has no mail, for anyone, even with every mail setting set', async () => {
+    const mailSettings = {
+      ICLOUD_MAIL_ADDRESS: 'me@icloud.example',
+      ICLOUD_MAIL_APP_PASSWORD: 'icloud-test',
+      GMAIL_ADDRESS: 'me@gmail.example',
+      GMAIL_APP_PASSWORD: 'gmail-test',
+    };
+    const readMail = (
+      handle: ReturnType<typeof site>['handle'],
+      account: string,
+      cookie?: string,
+    ) =>
+      handle(
+        new Request(`${SITE}/api/mail?account=${account}`, {
+          headers: { 'x-observatory': '1', ...(cookie ? { cookie } : {}) },
+        }),
+      );
+    const previewed = site({ ...ENV, ...mailSettings, PUBLIC_PREVIEW: 'all' });
+    const closed = site({ ...ENV, ...mailSettings });
+
+    for (const account of ['icloud', 'gmail']) {
+      for (const cookie of [ownerCookie, undefined]) {
+        assert.equal((await readMail(previewed.handle, account, cookie)).status, 404);
+      }
+      assert.equal((await readMail(closed.handle, account)).status, 401);
+    }
+  });
+
   it('shows a visitor private repositories too with PUBLIC_PREVIEW=all, still read-only', async () => {
     const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
 

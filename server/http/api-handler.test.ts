@@ -27,6 +27,7 @@ describe('createApiHandler', () => {
       '/api/large': async () => ({ ok: true }),
     },
     delete: { '/api/thing': async (query) => ({ removed: query.get('id') }) },
+    guardedGet: { '/api/costly': async (query) => ({ asked: query.get('what') }) },
     bodyLimits: { '/api/large': 64 * 1024 },
   });
   const base = 'http://localhost';
@@ -132,6 +133,38 @@ describe('createApiHandler', () => {
       ).status,
       404,
     );
+  });
+
+  it('answers a guarded GET only with the header, as another site cannot send it', async () => {
+    const read = (headers: Record<string, string>) =>
+      handle(new Request(`${base}/api/costly?what=mail`, { headers }));
+
+    const answered = await read({ 'x-observatory': '1' });
+
+    assert.equal(answered.status, 200);
+    assert.deepEqual(await answered.json(), { asked: 'mail' });
+    assert.equal((await read({})).status, 403);
+    assert.equal(
+      (
+        await handle(
+          new Request(`${base}/api/costly`, { method: 'POST', headers: { 'x-observatory': '1' } }),
+        )
+      ).status,
+      404,
+    );
+  });
+
+  it('keeps the guard on a path listed as both a plain and a guarded GET', async () => {
+    const both = createApiHandler({
+      get: { '/api/twice': async () => ({ open: true }) },
+      guardedGet: { '/api/twice': async () => ({ guarded: true }) },
+      post: {},
+    });
+    const read = (headers: Record<string, string>) =>
+      both(new Request(`${base}/api/twice`, { headers }));
+
+    assert.equal((await read({})).status, 403);
+    assert.deepEqual(await (await read({ 'x-observatory': '1' })).json(), { guarded: true });
   });
 
   it('turns a failing route into a server error, not a crash', async () => {

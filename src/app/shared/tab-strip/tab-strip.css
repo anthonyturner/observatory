@@ -1,0 +1,67 @@
+/* The issue bar's segmented .toolgroup look, with a bar under the selected tab
+   so selection never rests on colour alone. */
+:host {
+  display: inline-block;
+}
+
+.toolgroup {
+  display: flex;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 13px;
+  min-width: 42px;
+  border: 0;
+  border-right: 1px solid var(--edge-soft);
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+button:last-child {
+  border-right: 0;
+}
+
+button:hover {
+  color: var(--ink);
+  background: var(--starmap-hover);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+button[aria-selected='true'] {
+  color: var(--ink);
+  background: var(--starmap-press);
+  border-bottom-color: var(--flow);
+}
+
+b {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+b.bad {
+  color: var(--bad-soft);
+}
+
+@media (max-width: 719px) {
+  button {
+    min-height: 44px;
+  }
+}

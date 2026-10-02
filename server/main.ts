@@ -40,6 +40,12 @@ import { READ_PATH, withReaderRoutes } from './reader/reader-routes.ts';
 import { cachedNews, withNewsRoutes } from './news/news-routes.ts';
 import { fileArchitecture } from './architecture/architecture-file.ts';
 import { withArchitectureRoutes } from './architecture/architecture-routes.ts';
+import { imapInbox } from './mail/imap-inbox.ts';
+import { imapflowClient } from './mail/imapflow-client.ts';
+import { MAIL_PATHS, withMailRoutes } from './mail/mail-routes.ts';
+import { localMailLogin } from './mail/mail-settings.ts';
+import { mailboxes } from './mail/mailboxes.ts';
+import { MAIL_ACCOUNTS } from './mail/mail-types.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -108,6 +114,9 @@ const voice = {
   preferredVoice: voiceSettings.preferredVoice,
 };
 
+const mailLogins = { icloud: localMailLogin('icloud'), gmail: localMailLogin('gmail') };
+const mail = mailboxes({ logins: mailLogins, fetchInbox: imapInbox(imapflowClient) });
+
 // Loopback only: the API reads files from this machine's home folder, acts as
 // the account `gh` is signed in with, and runs Claude Code once the owner
 // confirms a proposal.
@@ -120,6 +129,7 @@ const LOOPBACK_ONLY: ReadonlySet<string> = new Set([
   SPEAK_PATH,
   HEAR_PATH,
   READ_PATH,
+  ...MAIL_PATHS,
 ]);
 
 const server = createApiServer(
@@ -127,21 +137,27 @@ const server = createApiServer(
     guardLoopback(
       createApiHandler(
         withLocalSession(
-          withReaderRoutes(
-            withVoiceRoutes(
-              withAssistant(
-                withRunsRoutes(
-                  withNewsRoutes(
-                    withArchitectureRoutes(ownerRoutes(reads, triage, editor), fileArchitecture()),
-                    news,
+          withMailRoutes(
+            withReaderRoutes(
+              withVoiceRoutes(
+                withAssistant(
+                  withRunsRoutes(
+                    withNewsRoutes(
+                      withArchitectureRoutes(
+                        ownerRoutes(reads, triage, editor),
+                        fileArchitecture(),
+                      ),
+                      news,
+                    ),
+                    runner,
                   ),
-                  runner,
+                  assistant,
                 ),
-                assistant,
+                voice,
               ),
-              voice,
+              fetchPage,
             ),
-            fetchPage,
+            mail,
           ),
         ),
       ),
@@ -175,4 +191,8 @@ server.listen(port, '127.0.0.1', () => {
       ? 'The ElevenLabs voice is on.'
       : 'The ElevenLabs voice is off: no ELEVENLABS_OBSERVATORY_KEY.',
   );
+  const mailStates = MAIL_ACCOUNTS.map(
+    (account) => `${account} ${mailLogins[account] ? 'on' : 'off'}`,
+  );
+  console.log(`Mail: ${mailStates.join(', ')}.`);
 });

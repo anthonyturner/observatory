@@ -13,6 +13,9 @@
 </div>
 
 <main>
+  @if (hasMail()) {
+    <app-mail-section />
+  }
   <app-news-section />
   <app-fleet-section />
   <app-agents-section />

@@ -14,7 +14,9 @@ so a missing line costs more than a long one.
   per-component CSS. Three.js for the 3D core, with a Canvas 2D fallback.
 - API: `server/`, a small Node server in TypeScript, run by Node directly
   (type stripping, no build) on loopback port 4319; `ng serve` proxies `/api`
-  to it (`proxy.conf.json`). Node built-ins only. Tests: `node:test`.
+  to it (`proxy.conf.json`). Node built-ins, plus `imapflow` for reading the
+  owner's iCloud and Gmail inboxes over IMAP (`server/mail/`, local only).
+  Tests: `node:test`.
 - Data: Claude Code usage is live, read from this machine's session logs
   (`~/.claude/projects`) and the status line's limit readings
   (`~/.claude/observatory/usage/`). Projects, open issues and the directives are live from

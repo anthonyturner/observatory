@@ -1,6 +1,7 @@
 import { HelpEntry, HelpKey } from '../../../shared/help/help-entry';
 
 const TIER_3 = 'Tier 3';
+const NEWS = 'News';
 /** What each thing in the scene stands for, first, then how to work Home. */
 const SKY = 'The sky';
 const AGENTS = 'Agents';
@@ -158,7 +159,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
     section: USING,
   },
   {
-    term: 'News',
+    term: NEWS,
     meaning:
       'Above the projects (News in the menu jumps there): the latest AI news, new tools for building software first (marked tool), and the latest in software engineering, each with a paragraph or two from the feed or the story itself, from public feeds such as Simon Willison, the GitHub Changelog, Hacker News and InfoQ. Read every half hour, no AI credits spent. Click a headline to read it in the floating window (Ctrl-click opens a tab).',
     section: USING,
@@ -258,6 +259,19 @@ const RUN_HELP_ENTRIES: readonly HelpEntry[] = [
     section: USING,
   },
 ];
+
+const MAIL_HELP_ENTRY: HelpEntry = {
+  term: 'Mail',
+  meaning:
+    'Above the news (Mail in the menu jumps there): the 20 newest messages in your iCloud and Gmail inboxes, one tab each, newest first. New marks unread mail; Home only reads, and never marks anything read. Refresh reads both again. The settings go in ~/.claude/observatory/.env (the README says how to make an app password). Only on this machine.',
+  section: USING,
+};
+
+/** `entries` with Mail, just before News, for a site that has mail. */
+export function withMailHelp(entries: readonly HelpEntry[]): readonly HelpEntry[] {
+  const news = entries.findIndex((entry) => entry.term === NEWS);
+  return [...entries.slice(0, news), MAIL_HELP_ENTRY, ...entries.slice(news)];
+}
 
 /** Home's help card: with a local runner, tier 3 runs here and says how. */
 export function homeHelpEntries(canRun: boolean): readonly HelpEntry[] {

@@ -4,12 +4,14 @@ import { AgentsSection } from '../agents-section/agents-section';
 import { AskPanel } from '../ask-panel/ask-panel';
 import { CorePanel } from '../core-panel/core-panel';
 import { FleetSection } from '../fleet-section/fleet-section';
+import { MailSection } from '../mail-section/mail-section';
 import { NewsSection } from '../news-section/news-section';
 import { ReaderWindow } from '../../reader/reader-window/reader-window';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { CoreStateFeed } from '../../../core/core-state/core-state-feed';
-import { HOME_HELP_KEYS, homeHelpEntries } from '../help/help-content';
+import { HOME_HELP_KEYS, homeHelpEntries, withMailHelp } from '../help/help-content';
+import { MAIL_SHOWN } from '../../../core/mail/mail-inbox';
 import { HomeTools } from '../home-tools/home-tools';
 import { RunDockPanel } from '../run-dock/run-dock';
 import { SkillsPanel } from '../skills-panel/skills-panel';
@@ -25,7 +27,7 @@ import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { RunDock } from '../../../core/runs/run-dock';
 import { RunsStore } from '../../../core/runs/runs-store';
 
-/** Home: the HUD over the sky, then the news and the projects below the fold, and a
+/** Home: the HUD over the sky, then mail, the news and the projects below the fold, and a
  *  task's panel beside them. It lays the sections out and nothing more. */
 @Component({
   selector: 'app-home-page',
@@ -41,6 +43,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
     FleetSection,
     AgentsSection,
     AgentReviewCard,
+    MailSection,
     NewsSection,
     HelpCard,
     RunDockPanel,
@@ -58,6 +61,11 @@ import { RunsStore } from '../../../core/runs/runs-store';
 export class HomePage {
   protected readonly dock = inject(RunDock);
   private readonly runs = inject(RunsStore);
-  protected readonly helpEntries = computed(() => homeHelpEntries(this.runs.isAvailable()));
+  /** Only once the local API answers for mail: never on the hosted site. */
+  protected readonly hasMail = inject(MAIL_SHOWN);
+  protected readonly helpEntries = computed(() => {
+    const entries = homeHelpEntries(this.runs.isAvailable());
+    return this.hasMail() ? withMailHelp(entries) : entries;
+  });
   protected readonly helpKeys = HOME_HELP_KEYS;
 }

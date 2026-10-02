@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { MAIL_SHOWN } from '../../../core/mail/mail-inbox';
 import { SectionJump } from '../../../shared/section-jump/section-jump';
 import { RunPill } from '../run-pill/run-pill';
 
@@ -9,6 +10,12 @@ interface Jump {
   readonly label: string;
   readonly hint: string;
 }
+
+const MAIL_JUMP: Jump = {
+  id: 'mail',
+  label: 'Mail',
+  hint: 'Jump to your iCloud and Gmail inboxes',
+};
 
 const JUMPS: readonly Jump[] = [
   { id: 'news', label: 'News', hint: 'Jump to the AI and software engineering news' },
@@ -27,5 +34,7 @@ const JUMPS: readonly Jump[] = [
 })
 export class TopNav {
   protected readonly sections = inject(SectionJump);
-  protected readonly jumps = JUMPS;
+  private readonly hasMail = inject(MAIL_SHOWN);
+  /** Mail first, where Home has it: it is the most time-sensitive section. */
+  protected readonly jumps = computed(() => (this.hasMail() ? [MAIL_JUMP, ...JUMPS] : JUMPS));
 }

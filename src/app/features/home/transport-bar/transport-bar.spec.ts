@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { AmbientPlayer } from '../../../core/sound/ambient-synth';
 import { AMBIENT_PLAYER, SoundPreference } from '../../../core/sound/sound-preference';
 import { VIDEO_PLAYER_FACTORY, VideoPlayer } from '../../../core/playlist/video-player';
-import { TRANCE_PLAYLIST } from '../../../core/playlist/trance-playlist';
+import { PLAYLIST_TRACKS } from '../../../core/playlist/playlist-player';
 import { TransportBar } from './transport-bar';
 
 const silentScore: AmbientPlayer = {
@@ -34,16 +34,17 @@ function render() {
     Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find(
       (b) => b.getAttribute('aria-label') === label || b.textContent?.trim() === label,
     );
-  return { fixture, element, button, make, pauses, sound: TestBed.inject(SoundPreference) };
+  const sound = TestBed.inject(SoundPreference);
+  return { fixture, element, button, make, pauses, sound, tracks: TestBed.inject(PLAYLIST_TRACKS) };
 }
 
 describe('TransportBar', () => {
   beforeEach(() => localStorage.clear());
 
   it('shows the first track before anything plays, and loads nothing', () => {
-    const { element, make } = render();
-    expect(element.textContent).toContain(TRANCE_PLAYLIST[0].title);
-    expect(element.textContent).toContain(`1 / ${TRANCE_PLAYLIST.length}`);
+    const { element, make, tracks } = render();
+    expect(element.textContent).toContain(tracks[0].title);
+    expect(element.textContent).toContain(`1 / ${tracks.length}`);
     expect(make).not.toHaveBeenCalled();
   });
 
@@ -65,17 +66,17 @@ describe('TransportBar', () => {
   });
 
   it('opens the track list and plays the one picked', async () => {
-    const { fixture, element, button } = render();
-    const tracks = button('Tracks');
-    tracks?.click();
+    const { fixture, element, button, tracks } = render();
+    const tracksButton = button('Tracks');
+    tracksButton?.click();
     fixture.detectChanges();
-    expect(tracks?.getAttribute('aria-expanded')).toBe('true');
+    expect(tracksButton?.getAttribute('aria-expanded')).toBe('true');
 
     const picks = element.querySelectorAll<HTMLButtonElement>('app-track-list button');
-    expect(picks.length).toBe(TRANCE_PLAYLIST.length);
+    expect(picks.length).toBe(tracks.length);
     picks[2].click();
     fixture.detectChanges();
     expect(element.querySelector('app-track-list')).toBeNull();
-    expect(element.textContent).toContain(TRANCE_PLAYLIST[2].title);
+    expect(element.textContent).toContain(tracks[2].title);
   });
 });

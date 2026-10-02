@@ -10,9 +10,9 @@ import {
 } from './video-player';
 
 const TRACKS: readonly Track[] = [
-  { videoId: 'aaaaaaaaaaa', title: 'One', artist: 'A' },
-  { videoId: 'bbbbbbbbbbb', title: 'Two', artist: 'B' },
-  { videoId: 'ccccccccccc', title: 'Three', artist: 'C' },
+  { videoId: 'aaaaaaaaaaa', title: 'One', artist: 'A', genre: 'trance' },
+  { videoId: 'bbbbbbbbbbb', title: 'Two', artist: 'B', genre: 'trance' },
+  { videoId: 'ccccccccccc', title: 'Three', artist: 'C', genre: 'trance' },
 ];
 
 class FakePlayer implements VideoPlayer {

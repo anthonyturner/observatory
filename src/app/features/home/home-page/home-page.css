@@ -52,6 +52,11 @@ main {
   pointer-events: auto;
 }
 
+/* The playlist keeps the far end of the strip, clear of the tools. */
+app-transport-bar {
+  margin-left: auto;
+}
+
 /* Wide and tall enough: the HUD fits one screen in three columns. */
 @media (min-width: 1024px) and (min-height: 600px) {
   .hud {
@@ -104,6 +109,11 @@ main {
   :host(.docked) main {
     margin-right: 460px;
   }
+
+  /* The playlist at the end of the tools stays clear of the dock too. */
+  :host(.docked) .foot {
+    padding-right: 476px;
+  }
 }
 
 @media (min-width: 1100px) and (min-height: 600px) {
@@ -128,11 +138,20 @@ main {
 
 @media (max-width: 720px) {
   main {
-    /* The tools wrap onto two rows on a phone; the page ends clear of both. */
-    padding: 0 16px calc(120px + env(safe-area-inset-bottom, 0px));
+    /* The tools wrap onto two rows on a phone and the playlist takes a third;
+       the page ends clear of all three. */
+    padding: 0 16px calc(170px + env(safe-area-inset-bottom, 0px));
   }
 
   .foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
     padding-inline: 16px;
+  }
+
+  app-transport-bar {
+    width: 100%;
+    margin-left: 0;
   }
 }

@@ -1,0 +1,147 @@
+:host {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+/* The track list and the video stack above the bar, clear of the page's tools. */
+.above {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Empty until the first play; then the video stays in view while it sounds, at
+   no less than the 200px YouTube's API policies require of an embedded player. */
+.screen {
+  display: none;
+}
+
+.screen--live {
+  display: block;
+  width: min(356px, calc(100vw - 32px));
+  height: 200px;
+  overflow: hidden;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+}
+
+.transport {
+  display: flex;
+  border-right: 1px solid var(--edge-soft);
+}
+
+button {
+  min-width: 36px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+button:hover {
+  color: var(--ink);
+  background: var(--flow-tint);
+}
+
+button:focus-visible {
+  outline-offset: -2px;
+}
+
+.transport__play {
+  color: var(--flow);
+}
+
+.tracks {
+  border-left: 1px solid var(--edge-soft);
+}
+
+.tracks[aria-expanded='true'] {
+  color: var(--ink);
+  background: var(--flow-tint-strong);
+}
+
+.now {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 12px;
+  line-height: 1.25;
+}
+
+.now__title,
+.now__meta {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.now__title {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.now__meta {
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-left: 1px solid var(--edge-soft);
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.volume input {
+  width: 72px;
+  accent-color: var(--flow);
+  cursor: pointer;
+}
+
+.volume input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .now {
+    flex: 1 1 auto;
+    width: auto;
+  }
+
+  .volume {
+    display: none;
+  }
+}

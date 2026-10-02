@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- A trance playlist on Home, played from YouTube through a transport bar at the foot of the page, with a track list and its own volume; it takes over from the Sound button's score rather than playing over it ([#233](https://github.com/anthonyturner/observatory/pull/233)).
 - An architecture map at `/architecture` that scans a project's services and draws them as a turning star system and as a UML diagram, with search, an area filter and Hot spots / Unused chips ([#230](https://github.com/anthonyturner/observatory/pull/230)).
 - Home, an animated space scene around a glowing core that draws in 3D where the browser can and in 2D where it can't, with a top bar, a clock and a help card ([#3](https://github.com/anthonyturner/observatory/pull/3), [#7](https://github.com/anthonyturner/observatory/pull/7), [#11](https://github.com/anthonyturner/observatory/pull/11), [#23](https://github.com/anthonyturner/observatory/pull/23), [#25](https://github.com/anthonyturner/observatory/pull/25), [#41](https://github.com/anthonyturner/observatory/pull/41)).
 - Live project cards, open issues and Directives (the three most blocked pull requests) on Home, read from GitHub ([#13](https://github.com/anthonyturner/observatory/pull/13), [#27](https://github.com/anthonyturner/observatory/pull/27), [#37](https://github.com/anthonyturner/observatory/pull/37)).

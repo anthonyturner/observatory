@@ -1,0 +1,52 @@
+:host {
+  display: block;
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--card-glass);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+}
+
+ol {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 7px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--flow-tint);
+}
+
+button:focus-visible {
+  outline-offset: -2px;
+}
+
+button[aria-current='true'] {
+  background: var(--flow-tint-strong);
+}
+
+.title {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.artist {
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}

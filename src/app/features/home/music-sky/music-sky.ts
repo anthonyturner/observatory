@@ -16,7 +16,7 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
-import { themeFor } from '../../../core/music-sync/visual-theme';
+import { sameTheme, themeFor } from '../../../core/music-sync/visual-theme';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 
 /** Smooth enough for a kick to land on time. */
@@ -44,7 +44,11 @@ export class MusicSky {
   private readonly pulse = inject(MusicPulse);
   private readonly playlist = inject(PlaylistPlayer);
   private readonly makeCanvas = inject(MUSIC_CANVAS);
-  private readonly theme = computed(() => themeFor(this.playlist.current()));
+  private readonly theme = computed(
+    () => themeFor(this.playlist.current(), this.playlist.elapsed()),
+    // The position ticks several times a second; the look changes every few minutes.
+    { equal: sameTheme },
+  );
   private readonly isMoving = computed(() => this.pulse.isListening() && !this.motion.isStill());
   private painter: MusicCanvas | null = null;
   private loop: FrameLoop | null = null;

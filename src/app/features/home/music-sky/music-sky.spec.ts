@@ -1,3 +1,4 @@
+import { Provider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
@@ -42,7 +43,7 @@ const tap: AudioTap = {
   close: () => undefined,
 };
 
-async function render() {
+async function render(providers: Provider[] = []) {
   const canvas = new FakeCanvas();
   TestBed.configureTestingModule({
     providers: [
@@ -50,6 +51,7 @@ async function render() {
       MusicPulse,
       { provide: AUDIO_TAP, useValue: () => Promise.resolve(tap) },
       { provide: MUSIC_CANVAS, useValue: () => canvas },
+      ...providers,
     ],
   });
   const fixture = TestBed.createComponent(MusicSky);
@@ -79,6 +81,26 @@ describe('MusicSky', () => {
     playlist.select(1);
     TestBed.tick();
     expect(canvas.themes.at(-1)).toEqual(themeFor(tracks[1]));
+  });
+
+  it('changes the look as the track plays on, and only when it changes', async () => {
+    const [track] = TestBed.inject(PLAYLIST_TRACKS);
+    TestBed.resetTestingModule();
+    const elapsed = signal(0);
+    const { canvas } = await render([
+      { provide: PlaylistPlayer, useValue: { current: signal(track), elapsed } },
+    ]);
+    const before = canvas.themes.length;
+    elapsed.set(1);
+    TestBed.tick();
+    expect(canvas.themes.length).toBe(before);
+
+    let changedS = 1;
+    while (themeFor(track, changedS).motif === themeFor(track).motif) changedS++;
+    elapsed.set(changedS);
+    TestBed.tick();
+    expect(canvas.themes.length).toBe(before + 1);
+    expect(canvas.themes.at(-1)).toEqual(themeFor(track, changedS));
   });
 
   it('moves while listening and clears when listening stops', async () => {

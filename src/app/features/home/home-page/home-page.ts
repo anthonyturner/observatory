@@ -15,6 +15,7 @@ import { RunDockPanel } from '../run-dock/run-dock';
 import { SkillsPanel } from '../skills-panel/skills-panel';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
 import { TopBar } from '../top-bar/top-bar';
+import { TransportBar } from '../transport-bar/transport-bar';
 import { VitalsPanel } from '../vitals-panel/vitals-panel';
 import { SoundPreference } from '../../../core/sound/sound-preference';
 import { RunDock } from '../../../core/runs/run-dock';
@@ -39,6 +40,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
     HelpCard,
     RunDockPanel,
     HomeTools,
+    TransportBar,
   ],
   providers: [SoundPreference],
   hostDirectives: [HelpShortcuts, CoreStateFeed],

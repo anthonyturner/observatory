@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- Home's music sky changes its look to a different one every 2 to 3 minutes of a track, at random but the same each time the track plays ([#251](https://github.com/anthonyturner/observatory/pull/251)).
 - A button on the playlist's video that makes it bigger, about a third of a wide window, and back ([#246](https://github.com/anthonyturner/observatory/pull/246)).
 - A seek bar on the playlist with the elapsed time and the track's length: drag to scrub, or skip back 15 seconds and forward 30 ([#244](https://github.com/anthonyturner/observatory/pull/244)).
 - Heart the track playing (or any track in the list) to save it as a favourite in this browser, and switch the playlist between the day's mix and your favourites from the bar ([#242](https://github.com/anthonyturner/observatory/pull/242)).

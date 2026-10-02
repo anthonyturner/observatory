@@ -94,7 +94,7 @@ rather than an accident.
 
 | Skill | What it does | Tools |
 | --- | --- | --- |
-| _none yet_ | | |
+| `restart-dev-server` | Stops this checkout's `npm start` group with `taskkill` and starts it again in its own window when the local API is down; asks before stopping another checkout's server | Claude Code only: other tools have no project skill directory yet |
 
 ## Naming
 

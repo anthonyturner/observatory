@@ -2,53 +2,135 @@
   @if (listOpen()) {
     <app-track-list
       id="playlist-tracks"
-      [tracks]="player.tracks"
+      [tracks]="player.tracks()"
       [currentIndex]="player.index()"
+      [favoriteIds]="favoriteIds()"
       (picked)="pick($event)"
+      (favoriteToggled)="favorites.toggle($event)"
     />
   }
   <div #screen class="screen" [class.screen--live]="hasStarted()"></div>
 </div>
-<div class="bar" role="group" aria-label="Playlist">
-  <div class="transport">
-    <button type="button" aria-label="Previous track" title="Previous track" (click)="previous()">
-      <span aria-hidden="true">⏮</span>
+<div class="deck" role="group" aria-label="Playlist">
+  <div class="scrub">
+    <button
+      type="button"
+      aria-label="Back 15 seconds"
+      title="Back 15 seconds"
+      [disabled]="!player.canSeek()"
+      (click)="player.skip(-backStep)"
+    >
+      <span aria-hidden="true">⏪︎</span>
+    </button>
+    <span class="scrub__time" aria-hidden="true">{{ elapsedLabel() }}</span>
+    <input
+      type="range"
+      min="0"
+      step="1"
+      aria-label="Position in track"
+      [max]="player.duration()"
+      [value]="shownElapsed()"
+      [attr.aria-valuetext]="positionWords()"
+      [disabled]="!player.canSeek()"
+      (input)="onScrub($event)"
+      (change)="onScrubbed($event)"
+    />
+    <span class="scrub__time" aria-hidden="true">{{ durationLabel() }}</span>
+    <button
+      type="button"
+      aria-label="Forward 30 seconds"
+      title="Forward 30 seconds"
+      [disabled]="!player.canSeek()"
+      (click)="player.skip(forwardStep)"
+    >
+      <span aria-hidden="true">⏩︎</span>
+    </button>
+  </div>
+  <div class="bar">
+    <div class="transport">
+      <button type="button" aria-label="Previous track" title="Previous track" (click)="previous()">
+        <span aria-hidden="true">⏮</span>
+      </button>
+      <button
+        type="button"
+        class="transport__play"
+        [attr.aria-label]="player.isPlaying() ? 'Pause' : 'Play'"
+        [title]="player.isPlaying() ? 'Pause the playlist' : 'Play the playlist'"
+        (click)="toggle()"
+      >
+        <span aria-hidden="true">{{ player.isPlaying() ? '❚❚' : '▶' }}</span>
+      </button>
+      <button type="button" aria-label="Next track" title="Next track" (click)="next()">
+        <span aria-hidden="true">⏭</span>
+      </button>
+    </div>
+    <button
+      type="button"
+      class="heart"
+      [attr.aria-pressed]="isFavorite()"
+      aria-label="Favourite"
+      [title]="
+        isFavorite()
+          ? 'Remove this track from your favourites'
+          : 'Save this track to your favourites'
+      "
+      (click)="favorites.toggle(player.current())"
+    >
+      <span aria-hidden="true">{{ isFavorite() ? '♥' : '♡' }}</span>
+    </button>
+    <p class="now" aria-live="polite">
+      <span class="now__title">{{ player.current().title }}</span>
+      <span class="now__meta">{{ status() }} · {{ position() }}</span>
+    </p>
+    <div class="source" role="group" aria-label="Which list plays">
+      <button
+        type="button"
+        [attr.aria-pressed]="library.source() === 'mix'"
+        title="Play today's shuffled mix"
+        (click)="choose('mix')"
+      >
+        Mix
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="library.source() === 'favorites'"
+        [disabled]="!library.hasFavorites()"
+        [title]="favoritesHint()"
+        (click)="choose('favorites')"
+      >
+        <span aria-hidden="true">♥</span> {{ favorites.count() }}
+        <span class="visually-hidden">favourites</span>
+      </button>
+    </div>
+    <button
+      type="button"
+      class="tracks"
+      aria-controls="playlist-tracks"
+      [attr.aria-expanded]="listOpen()"
+      (click)="listOpen.set(!listOpen())"
+    >
+      Tracks
     </button>
     <button
       type="button"
-      class="transport__play"
-      [attr.aria-label]="player.isPlaying() ? 'Pause' : 'Play'"
-      [title]="player.isPlaying() ? 'Pause the playlist' : 'Play the trance playlist'"
-      (click)="toggle()"
+      class="sync"
+      [attr.aria-pressed]="sync().isOn"
+      [disabled]="sync().isUnavailable"
+      [title]="sync().hint"
+      (click)="toggleSync()"
     >
-      <span aria-hidden="true">{{ player.isPlaying() ? '❚❚' : '▶' }}</span>
+      {{ sync().text }}
     </button>
-    <button type="button" aria-label="Next track" title="Next track" (click)="next()">
-      <span aria-hidden="true">⏭</span>
-    </button>
+    <label class="volume"
+      ><span aria-hidden="true">Vol</span
+      ><input
+        type="range"
+        min="0"
+        max="1"
+        step="0.05"
+        aria-label="Playlist volume"
+        [value]="player.volume()"
+        (input)="onVolume($event)"
+    /></label>
   </div>
-  <p class="now" aria-live="polite">
-    <span class="now__title">{{ player.current().title }}</span>
-    <span class="now__meta">{{ status() }} · {{ position() }}</span>
-  </p>
-  <button
-    type="button"
-    class="tracks"
-    aria-controls="playlist-tracks"
-    [attr.aria-expanded]="listOpen()"
-    (click)="listOpen.set(!listOpen())"
-  >
-    Tracks
-  </button>
-  <label class="volume"
-    ><span aria-hidden="true">Vol</span
-    ><input
-      type="range"
-      min="0"
-      max="1"
-      step="0.05"
-      aria-label="Playlist volume"
-      [value]="player.volume()"
-      (input)="onVolume($event)"
-  /></label>
 </div>

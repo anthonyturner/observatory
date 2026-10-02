@@ -16,16 +16,35 @@ ol {
   list-style: none;
 }
 
-button {
+li {
   display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 7px 14px;
+}
+
+button {
   border: 0;
   background: transparent;
-  text-align: left;
   font-family: inherit;
   cursor: pointer;
+}
+
+.pick {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  padding: 7px 14px;
+  text-align: left;
+}
+
+.heart {
+  flex: none;
+  width: 40px;
+  color: var(--faint);
+  font-size: 15px;
+}
+
+.heart[aria-pressed='true'] {
+  color: var(--music-trance-accent);
 }
 
 button:hover {
@@ -36,7 +55,7 @@ button:focus-visible {
   outline-offset: -2px;
 }
 
-button[aria-current='true'] {
+li:has(.pick[aria-current='true']) {
   background: var(--flow-tint-strong);
 }
 

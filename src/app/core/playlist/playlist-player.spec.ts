@@ -33,6 +33,19 @@ class FakePlayer implements VideoPlayer {
   setVolume(volume: number): void {
     this.volume = volume;
   }
+  time = 0;
+  length = 0;
+  seeks: number[] = [];
+  seekTo(seconds: number): void {
+    this.seeks.push(seconds);
+    this.time = seconds;
+  }
+  currentTime(): number {
+    return this.time;
+  }
+  duration(): number {
+    return this.length;
+  }
   dispose(): void {
     this.disposed = true;
   }
@@ -153,5 +166,111 @@ describe('PlaylistPlayer', () => {
     await settle();
     TestBed.resetTestingModule();
     expect(fake.disposed).toBe(true);
+  });
+
+  it('plays another list from its top, carrying on if music was playing', async () => {
+    const { playlist, fake, events } = setup();
+    playlist.select(2);
+    await settle();
+    events().playing();
+    const other: Track[] = [{ videoId: 'zzzzzzzzzzz', title: 'Z', artist: 'Z', genre: 'techno' }];
+    playlist.useTracks(other);
+    expect(playlist.index()).toBe(0);
+    expect(playlist.current().title).toBe('Z');
+    expect(fake.loaded.at(-1)).toBe('zzzzzzzzzzz');
+  });
+
+  it('loads the new list on the next Play when the switch came while paused', async () => {
+    const { playlist, fake, events } = setup();
+    playlist.play();
+    await settle();
+    events().paused();
+    playlist.useTracks([TRACKS[2]]);
+    expect(fake.loaded).toEqual([]);
+    playlist.play();
+    expect(fake.loaded).toEqual(['ccccccccccc']);
+    expect(fake.plays).toBe(0);
+  });
+
+  it('keeps the current track current when its list changes around it', () => {
+    const { playlist } = setup();
+    playlist.select(1);
+    playlist.refreshTracks([TRACKS[2], TRACKS[1]]);
+    expect(playlist.index()).toBe(1);
+    expect(playlist.current().title).toBe('Two');
+  });
+
+  it('plays the track that takes the place of one taken out while playing', async () => {
+    const { playlist, fake, events } = setup();
+    playlist.select(1);
+    await settle();
+    events().playing();
+    playlist.refreshTracks([TRACKS[0], TRACKS[2]]);
+    expect(playlist.current().title).toBe('Three');
+    expect(fake.loaded.at(-1)).toBe('ccccccccccc');
+  });
+
+  it('ignores an empty list', () => {
+    const { playlist } = setup();
+    playlist.useTracks([]);
+    playlist.refreshTracks([]);
+    expect(playlist.tracks()).toEqual(TRACKS);
+  });
+
+  describe('position in a track', () => {
+    afterEach(() => vi.useRealTimers());
+
+    async function playing() {
+      const ctx = setup();
+      ctx.playlist.play();
+      await settle();
+      ctx.fake.length = 300;
+      ctx.fake.time = 12;
+      vi.useFakeTimers();
+      ctx.events().playing();
+      return ctx;
+    }
+
+    it('follows the music while it plays, and stops following when paused', async () => {
+      const { playlist, fake, events } = await playing();
+      expect(playlist.elapsed()).toBe(12);
+      expect(playlist.duration()).toBe(300);
+      fake.time = 13;
+      vi.advanceTimersByTime(500);
+      expect(playlist.elapsed()).toBe(13);
+      events().paused();
+      fake.time = 99;
+      vi.advanceTimersByTime(2000);
+      expect(playlist.elapsed()).toBe(13);
+    });
+
+    it('seeks within the track, never past either end', async () => {
+      const { playlist, fake } = await playing();
+      playlist.seek(120);
+      playlist.seek(-5);
+      playlist.seek(900);
+      expect(fake.seeks).toEqual([120, 0, 300]);
+      expect(playlist.elapsed()).toBe(300);
+    });
+
+    it('skips forward and back from where the music is', async () => {
+      const { playlist, fake } = await playing();
+      playlist.skip(30);
+      playlist.skip(-15);
+      expect(fake.seeks).toEqual([42, 27]);
+    });
+
+    it('starts the next track from the top', async () => {
+      const { playlist } = await playing();
+      playlist.next();
+      expect(playlist.elapsed()).toBe(0);
+      expect(playlist.canSeek()).toBe(false);
+    });
+
+    it('cannot seek before the length is known', () => {
+      const { playlist, fake } = setup();
+      playlist.seek(10);
+      expect(fake.seeks).toEqual([]);
+    });
   });
 });

@@ -16,6 +16,9 @@ interface YtPlayer {
   playVideo(): void;
   pauseVideo(): void;
   setVolume(volume: number): void;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
+  getCurrentTime(): number;
+  getDuration(): number;
   destroy(): void;
 }
 
@@ -86,6 +89,10 @@ function adapt(player: YtPlayer): VideoPlayer {
     play: () => player.playVideo(),
     pause: () => player.pauseVideo(),
     setVolume: (volume) => player.setVolume(Math.round(volume * MAX_VOLUME)),
+    // Ahead of what has buffered too: a drag lands where it lets go.
+    seekTo: (seconds) => player.seekTo(seconds, true),
+    currentTime: () => finiteOrZero(player.getCurrentTime()),
+    duration: () => finiteOrZero(player.getDuration()),
     dispose: () => player.destroy(),
   };
 }
@@ -111,6 +118,11 @@ function loadApi(document: Document): Promise<YtApi> {
     document.head.append(script);
   });
   return api;
+}
+
+/** The player answers undefined or NaN before a video has loaded. */
+function finiteOrZero(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
 function isYtApi(value: unknown): value is YtApi {

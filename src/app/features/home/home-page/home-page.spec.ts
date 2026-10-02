@@ -6,6 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { CORE_RENDERER } from '../../../core/instrument/core-tokens';
 import { CoreRenderer } from '../../../core/instrument/core-renderer';
+import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { SKY_CANVAS, SkyCanvas } from '../../../core/sky/sky-painter';
 import { HelpState } from '../../../shared/help/help-state';
 import { HomePage } from './home-page';
@@ -17,6 +18,15 @@ const NO_SKY: SkyCanvas = {
   setView: () => undefined,
   setTrailSpeed: () => undefined,
   paint: () => undefined,
+  dispose: () => undefined,
+};
+
+const NO_MUSIC: MusicCanvas = {
+  canDraw: () => false,
+  setScene: () => undefined,
+  setTheme: () => undefined,
+  paint: () => undefined,
+  clear: () => undefined,
   dispose: () => undefined,
 };
 
@@ -54,6 +64,7 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
         provideHttpClientTesting(),
         { provide: CORE_RENDERER, useValue: () => NO_CANVAS },
         { provide: SKY_CANVAS, useValue: () => NO_SKY },
+        { provide: MUSIC_CANVAS, useValue: () => NO_MUSIC },
         { provide: HighContrastModeDetector, useClass: NoForcedColours },
       ],
     });

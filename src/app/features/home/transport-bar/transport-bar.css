@@ -4,13 +4,54 @@
   min-width: 0;
 }
 
-.bar {
-  display: flex;
-  align-items: center;
+.deck {
   overflow: hidden;
   border: 1px solid var(--edge-soft);
   border-radius: 10px;
   background: var(--panel);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+}
+
+.scrub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--edge-soft);
+}
+
+.scrub button {
+  min-height: 26px;
+}
+
+.scrub input {
+  flex: 1 1 auto;
+  min-width: 0;
+  accent-color: var(--flow);
+  cursor: pointer;
+}
+
+.scrub input:disabled,
+.scrub button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.scrub input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+/* Wide enough for "1:02:09", so the bar does not shift as the time grows. */
+.scrub__time {
+  min-width: 7ch;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-align: center;
 }
 
 /* The track list and the video stack above the bar, clear of the page's tools. */
@@ -72,8 +113,47 @@ button:focus-visible {
   color: var(--flow);
 }
 
+.heart {
+  border-right: 1px solid var(--edge-soft);
+  color: var(--faint);
+  font-size: 15px;
+}
+
+.heart[aria-pressed='true'] {
+  color: var(--music-trance-accent);
+}
+
+.source {
+  display: flex;
+  border-left: 1px solid var(--edge-soft);
+}
+
+.source button[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--flow-tint-strong);
+}
+
+.source button:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
 .tracks {
   border-left: 1px solid var(--edge-soft);
+}
+
+.sync {
+  border-left: 1px solid var(--edge-soft);
+}
+
+.sync[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--flow-tint-strong);
+}
+
+.sync:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
 }
 
 .tracks[aria-expanded='true'] {
@@ -136,6 +216,10 @@ button:focus-visible {
 }
 
 @media (max-width: 720px) {
+  .bar {
+    flex-wrap: wrap;
+  }
+
   .now {
     flex: 1 1 auto;
     width: auto;

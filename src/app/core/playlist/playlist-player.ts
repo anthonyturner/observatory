@@ -23,6 +23,8 @@ export const PLAYLIST_TRACKS = new InjectionToken<readonly Track[]>('PLAYLIST_TR
 });
 
 const DEFAULT_VOLUME = 0.6;
+/** How often the bar's position follows the music; the player has no event for it. */
+const PROGRESS_MS = 500;
 
 /** A playlist and where it is in it. Provided by the component that shows it, so
  *  leaving the page stops the music. Nothing loads until the first play. */
@@ -30,23 +32,34 @@ const DEFAULT_VOLUME = 0.6;
 export class PlaylistPlayer {
   private readonly makePlayer = inject(VIDEO_PLAYER_FACTORY);
   private readonly errors = inject(ErrorHandler);
-  readonly tracks = inject(PLAYLIST_TRACKS);
-
+  private readonly list = signal<readonly Track[]>(inject(PLAYLIST_TRACKS));
   private readonly position = signal(0);
   private readonly playback = signal<PlaybackState>('idle');
   private readonly level = signal(DEFAULT_VOLUME);
+  private readonly elapsedS = signal(0);
+  private readonly lengthS = signal(0);
 
+  /** The list playing now; never empty. */
+  readonly tracks: Signal<readonly Track[]> = this.list.asReadonly();
   readonly index: Signal<number> = this.position.asReadonly();
   readonly state: Signal<PlaybackState> = this.playback.asReadonly();
   /** From 0 to 1. */
   readonly volume: Signal<number> = this.level.asReadonly();
-  readonly current = computed(() => this.tracks[this.position()]);
+  /** Seconds into the current track. */
+  readonly elapsed: Signal<number> = this.elapsedS.asReadonly();
+  /** The current track's length in seconds; 0 until the player knows it. */
+  readonly duration: Signal<number> = this.lengthS.asReadonly();
+  readonly canSeek = computed(() => this.lengthS() > 0);
+  readonly current = computed(() => this.list()[this.position()]);
   readonly isPlaying = computed(() => this.playback() === 'playing');
 
   private host: HTMLElement | null = null;
   private player: VideoPlayer | null = null;
   private isStarting = false;
   private isDestroyed = false;
+  /** The video the player holds, which a list change can leave behind the current track. */
+  private loadedId: string | null = null;
+  private progressTimer: ReturnType<typeof setInterval> | null = null;
   /** Tracks refused in a row; a whole list of them stops the skipping. */
   private failuresInRow = 0;
 
@@ -54,15 +67,20 @@ export class PlaylistPlayer {
     playing: () => {
       this.failuresInRow = 0;
       this.playback.set('playing');
+      this.followProgress();
     },
-    paused: () => this.playback.set('paused'),
-    ended: () => this.goTo(nextIndex(this.position(), this.tracks.length)),
+    paused: () => {
+      this.playback.set('paused');
+      this.stopFollowing();
+    },
+    ended: () => this.goTo(nextIndex(this.position(), this.list().length)),
     failed: () => this.skipRefused(),
   };
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.isDestroyed = true;
+      this.stopFollowing();
       this.player?.dispose();
     });
   }
@@ -78,8 +96,9 @@ export class PlaylistPlayer {
   }
 
   play(): void {
-    if (this.player) this.player.play();
-    else this.start();
+    if (!this.player) this.start();
+    else if (this.loadedId !== this.current().videoId) this.goTo(this.position());
+    else this.player.play();
   }
 
   pause(): void {
@@ -87,16 +106,52 @@ export class PlaylistPlayer {
   }
 
   next(): void {
-    this.select(nextIndex(this.position(), this.tracks.length));
+    this.select(nextIndex(this.position(), this.list().length));
   }
 
   previous(): void {
-    this.select(previousIndex(this.position(), this.tracks.length));
+    this.select(previousIndex(this.position(), this.list().length));
   }
 
   select(index: number): void {
     this.failuresInRow = 0;
     this.goTo(index);
+  }
+
+  /** Plays from another list, from its top; music that was playing carries on. */
+  useTracks(tracks: readonly Track[]): void {
+    if (tracks.length === 0) return;
+    const wasActive = this.isActive();
+    this.list.set(tracks);
+    this.failuresInRow = 0;
+    if (wasActive) this.goTo(0);
+    else this.position.set(0);
+  }
+
+  /** The same list, changed: the current track stays current while it is still in
+   *  it; if it was taken out, the track that took its place plays instead. */
+  refreshTracks(tracks: readonly Track[]): void {
+    if (tracks.length === 0) return;
+    const currentId = this.current().videoId;
+    this.list.set(tracks);
+    const kept = tracks.findIndex((track) => track.videoId === currentId);
+    if (kept >= 0) return this.position.set(kept);
+    const slid = Math.min(this.position(), tracks.length - 1);
+    if (this.isActive()) this.goTo(slid);
+    else this.position.set(slid);
+  }
+
+  /** Moves to `seconds` into the current track, kept within it. */
+  seek(seconds: number): void {
+    if (!this.player || !this.canSeek()) return;
+    const to = Math.min(Math.max(seconds, 0), this.lengthS());
+    this.player.seekTo(to);
+    this.elapsedS.set(to);
+  }
+
+  /** Jumps `seconds` forward, or back when negative. */
+  skip(seconds: number): void {
+    this.seek(this.elapsedS() + seconds);
   }
 
   setVolume(volume: number): void {
@@ -109,13 +164,38 @@ export class PlaylistPlayer {
     this.position.set(index);
     if (!this.player) return this.start();
     this.playback.set('loading');
-    this.player.load(this.current().videoId);
+    this.stopFollowing();
+    this.elapsedS.set(0);
+    this.lengthS.set(0);
+    this.loadedId = this.current().videoId;
+    this.player.load(this.loadedId);
+  }
+
+  private followProgress(): void {
+    this.stopFollowing();
+    this.readProgress();
+    this.progressTimer = setInterval(() => this.readProgress(), PROGRESS_MS);
+  }
+
+  private stopFollowing(): void {
+    if (this.progressTimer !== null) clearInterval(this.progressTimer);
+    this.progressTimer = null;
+  }
+
+  private readProgress(): void {
+    if (!this.player) return;
+    this.elapsedS.set(this.player.currentTime());
+    this.lengthS.set(this.player.duration());
+  }
+
+  private isActive(): boolean {
+    return this.playback() === 'playing' || this.playback() === 'loading';
   }
 
   private skipRefused(): void {
     this.failuresInRow++;
-    if (this.failuresInRow >= this.tracks.length) this.playback.set('paused');
-    else this.goTo(nextIndex(this.position(), this.tracks.length));
+    if (this.failuresInRow >= this.list().length) this.playback.set('paused');
+    else this.goTo(nextIndex(this.position(), this.list().length));
   }
 
   private start(): void {
@@ -136,7 +216,8 @@ export class PlaylistPlayer {
   private started(player: VideoPlayer, videoId: string): void {
     if (this.isDestroyed) return player.dispose();
     this.player = player;
+    this.loadedId = this.current().videoId;
     player.setVolume(this.level());
-    if (this.current().videoId !== videoId) player.load(this.current().videoId);
+    if (this.loadedId !== videoId) player.load(this.loadedId);
   }
 }

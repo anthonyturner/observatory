@@ -76,8 +76,8 @@ app-transport-bar {
       'left core skills'
       'left core ask';
     gap: 14px 28px;
-    /* Clear of the tools along the foot. */
-    padding: 2px 28px 64px;
+    /* Clear of the tools and the two-row playlist along the foot. */
+    padding: 2px 28px 88px;
   }
 
   app-core-panel {
@@ -140,7 +140,7 @@ app-transport-bar {
   main {
     /* The tools wrap onto two rows on a phone and the playlist takes a third;
        the page ends clear of all three. */
-    padding: 0 16px calc(170px + env(safe-area-inset-bottom, 0px));
+    padding: 0 16px calc(200px + env(safe-area-inset-bottom, 0px));
   }
 
   .foot {

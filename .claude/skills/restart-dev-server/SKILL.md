@@ -17,10 +17,30 @@ bring it back. The fix is to stop the whole group and run `npm start` again.
 
 Run every step in PowerShell, from the checkout root.
 
-## 1. Diagnose
+## Setup
+
+Each agent shell call starts fresh, so variables and functions don't carry
+over from one call to the next. **Begin every step's command with this
+block.** It also reloads the process list, so later steps never check against
+a list from before the restart.
 
 ```powershell
 $apiPort = 4319; $webPort = 4200
+$checkout = (git rev-parse --show-toplevel) -replace '/', '\'
+$all = Get-CimInstance Win32_Process
+function Get-GroupRoot([int]$id) {
+  $p = $all | Where-Object ProcessId -eq $id
+  while ($p) {
+    if ($p.CommandLine -match 'concurrently\\dist\\bin') { return $p }
+    $p = $all | Where-Object ProcessId -eq $p.ParentProcessId
+  }
+}
+function Test-Ours($group) { $group.CommandLine -like "*$checkout\node_modules\*" }
+```
+
+## 1. Diagnose
+
+```powershell
 Get-NetTCPConnection -State Listen -LocalPort $apiPort, $webPort -ErrorAction SilentlyContinue |
   Select-Object LocalAddress, LocalPort, OwningProcess
 try { (Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:$apiPort/api/queue" -TimeoutSec 10).StatusCode }
@@ -39,16 +59,6 @@ contains the checkout it was started from
 apart from a worktree under `.claude\worktrees\`.
 
 ```powershell
-$checkout = (git rev-parse --show-toplevel) -replace '/', '\'
-$all = Get-CimInstance Win32_Process
-function Get-GroupRoot([int]$id) {
-  $p = $all | Where-Object ProcessId -eq $id
-  while ($p) {
-    if ($p.CommandLine -match 'concurrently\\dist\\bin') { return $p }
-    $p = $all | Where-Object ProcessId -eq $p.ParentProcessId
-  }
-}
-function Test-Ours($group) { $group.CommandLine -like "*$checkout\node_modules\*" }
 $all | Where-Object { $_.CommandLine -match 'concurrently\\dist\\bin' } |
   Select-Object ProcessId, CreationDate, @{ n = 'Ours'; e = { Test-Ours $_ } }, CommandLine |
   Format-List

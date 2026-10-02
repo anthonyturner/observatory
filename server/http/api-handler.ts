@@ -16,6 +16,9 @@ export interface RouteTable {
   readonly post: PostRoutes;
   /** Guarded by WRITE_HEADER like a POST, but with no body. */
   readonly delete?: Routes;
+  /** GET routes guarded by WRITE_HEADER like a write: each read costs a sign-in
+   *  somewhere, so another site's `<img>` must not be able to set one off. */
+  readonly guardedGet?: Routes;
   /** A larger body than MAX_BODY_BYTES, for the POST routes that need one. */
   readonly bodyLimits?: Readonly<Record<string, number>>;
 }
@@ -101,14 +104,17 @@ async function answerPost(post: PostHandler, request: Request, limit: number): P
   return answer(async () => post(await readJson(request, limit)));
 }
 
-/** JSON over HTTP: GET routes by path, and POST and DELETE routes guarded by WRITE_HEADER. */
+/** JSON over HTTP: GET routes by path, and POST, DELETE and guarded GET routes guarded by WRITE_HEADER. */
 export function createApiHandler(table: RouteTable): ApiHandler {
   return async (request) => {
     const url = new URL(request.url);
-    const get = request.method === 'GET' ? table.get[url.pathname] : undefined;
+    const isGet = request.method === 'GET';
+    const get = isGet ? table.get[url.pathname] : undefined;
+    const guardedGet = isGet ? table.guardedGet?.[url.pathname] : undefined;
     const post = request.method === 'POST' ? table.post[url.pathname] : undefined;
     const remove = request.method === 'DELETE' ? table.delete?.[url.pathname] : undefined;
     if (get) return answer(() => get(url.searchParams));
+    if (guardedGet) return asWrite(request, () => answer(() => guardedGet(url.searchParams)));
     if (remove) return asWrite(request, () => answer(() => remove(url.searchParams)));
     if (!post) return json(HTTP_NOT_FOUND, { error: 'not found' });
     const limit = table.bodyLimits?.[url.pathname] ?? MAX_BODY_BYTES;

@@ -41,4 +41,22 @@ describe('cached', () => {
     fail = false;
     assert.equal(await read(), 'up');
   });
+
+  it('keeps each answer for as long as its lifetime says', async () => {
+    let now = 0;
+    let loads = 0;
+    const read = cached(
+      async () => ++loads,
+      (answer) => (answer === 1 ? 5000 : 1000),
+      () => now,
+    );
+
+    assert.equal(await read(), 1);
+    now = 4999;
+    assert.equal(await read(), 1);
+    now = 5000;
+    assert.equal(await read(), 2);
+    now = 6000;
+    assert.equal(await read(), 3);
+  });
 });

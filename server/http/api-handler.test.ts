@@ -27,6 +27,7 @@ describe('createApiHandler', () => {
       '/api/large': async () => ({ ok: true }),
     },
     delete: { '/api/thing': async (query) => ({ removed: query.get('id') }) },
+    guardedGet: { '/api/costly': async (query) => ({ asked: query.get('what') }) },
     bodyLimits: { '/api/large': 64 * 1024 },
   });
   const base = 'http://localhost';
@@ -128,6 +129,25 @@ describe('createApiHandler', () => {
       (
         await handle(
           new Request(`${base}/api/ok`, { method: 'DELETE', headers: { 'x-observatory': '1' } }),
+        )
+      ).status,
+      404,
+    );
+  });
+
+  it('answers a guarded GET only with the header, as another site cannot send it', async () => {
+    const read = (headers: Record<string, string>) =>
+      handle(new Request(`${base}/api/costly?what=mail`, { headers }));
+
+    const answered = await read({ 'x-observatory': '1' });
+
+    assert.equal(answered.status, 200);
+    assert.deepEqual(await answered.json(), { asked: 'mail' });
+    assert.equal((await read({})).status, 403);
+    assert.equal(
+      (
+        await handle(
+          new Request(`${base}/api/costly`, { method: 'POST', headers: { 'x-observatory': '1' } }),
         )
       ).status,
       404,

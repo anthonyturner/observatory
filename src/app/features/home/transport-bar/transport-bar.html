@@ -1,0 +1,54 @@
+<div class="above">
+  @if (listOpen()) {
+    <app-track-list
+      id="playlist-tracks"
+      [tracks]="player.tracks"
+      [currentIndex]="player.index()"
+      (picked)="pick($event)"
+    />
+  }
+  <div #screen class="screen" [class.screen--live]="hasStarted()"></div>
+</div>
+<div class="bar" role="group" aria-label="Playlist">
+  <div class="transport">
+    <button type="button" aria-label="Previous track" title="Previous track" (click)="previous()">
+      <span aria-hidden="true">⏮</span>
+    </button>
+    <button
+      type="button"
+      class="transport__play"
+      [attr.aria-label]="player.isPlaying() ? 'Pause' : 'Play'"
+      [title]="player.isPlaying() ? 'Pause the playlist' : 'Play the trance playlist'"
+      (click)="toggle()"
+    >
+      <span aria-hidden="true">{{ player.isPlaying() ? '❚❚' : '▶' }}</span>
+    </button>
+    <button type="button" aria-label="Next track" title="Next track" (click)="next()">
+      <span aria-hidden="true">⏭</span>
+    </button>
+  </div>
+  <p class="now" aria-live="polite">
+    <span class="now__title">{{ player.current().title }}</span>
+    <span class="now__meta">{{ status() }} · {{ position() }}</span>
+  </p>
+  <button
+    type="button"
+    class="tracks"
+    aria-controls="playlist-tracks"
+    [attr.aria-expanded]="listOpen()"
+    (click)="listOpen.set(!listOpen())"
+  >
+    Tracks
+  </button>
+  <label class="volume"
+    ><span aria-hidden="true">Vol</span
+    ><input
+      type="range"
+      min="0"
+      max="1"
+      step="0.05"
+      aria-label="Playlist volume"
+      [value]="player.volume()"
+      (input)="onVolume($event)"
+  /></label>
+</div>

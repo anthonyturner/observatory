@@ -1,0 +1,14 @@
+<ol aria-label="Tracks">
+  @for (track of tracks(); track track.videoId; let index = $index) {
+    <li>
+      <button
+        type="button"
+        [attr.aria-current]="index === currentIndex() ? 'true' : null"
+        (click)="picked.emit(index)"
+      >
+        <span class="title">{{ track.title }}</span>
+        <span class="artist">{{ track.artist }}</span>
+      </button>
+    </li>
+  }
+</ol>

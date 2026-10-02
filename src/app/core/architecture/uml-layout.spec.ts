@@ -1,28 +1,49 @@
 import { graphOf, neighbourhoodOf } from './architecture-graph';
-import { ArchitectureArea, ArchitectureEdge, ArchitectureNode } from './architecture.types';
+import {
+  ArchitectureArea,
+  ArchitectureEdge,
+  ArchitectureNode,
+  EdgeKind,
+} from './architecture.types';
 import { BOX_WIDTH, umlDiagram } from './uml-layout';
 
 const AREAS: ArchitectureArea[] = [{ id: 'core', label: 'Core' }];
 
 const node = (name: string): ArchitectureNode => ({
+  id: name,
   name,
   kind: 'service',
   file: `core/${name}.ts`,
   area: 'core',
   group: '',
   providedIn: null,
+  windows: [],
 });
 
-const edge = (from: string, to: string, members: string[] = []): ArchitectureEdge => ({
+const edge = (
+  from: string,
+  to: string,
+  members: string[] = [],
+  kind: EdgeKind = 'injects',
+): ArchitectureEdge => ({
   from,
   to,
-  how: 'inject',
+  kind,
+  how: kind === 'injects' ? 'inject' : null,
   members,
 });
 
 function diagramAround(centre: string, nodes: ArchitectureNode[], edges: ArchitectureEdge[]) {
-  const graph = graphOf({ project: '', scannedAt: '', areas: AREAS, windows: [], nodes, edges });
-  const around = neighbourhoodOf(graph, centre, null);
+  const graph = graphOf({
+    schema: 2,
+    project: '',
+    scannedAt: '',
+    areas: AREAS,
+    windows: [],
+    nodes,
+    edges,
+  });
+  const around = neighbourhoodOf(graph, centre, { area: null, window: null });
   if (!around) throw new Error(`no ${centre}`);
   return umlDiagram(around, AREAS);
 }
@@ -48,8 +69,29 @@ describe('umlDiagram', () => {
     expect(diagram.links).toHaveLength(2);
   });
 
+  it('gives each link the kind of edge it stands for, and each box its relation', () => {
+    const mixed = diagramAround(
+      'WallClock',
+      [node('WallClock'), node('BaseClock'), node('DialComponent')],
+      [
+        edge('WallClock', 'BaseClock', [], 'extends'),
+        edge('WallClock', 'DialComponent', [], 'uses'),
+      ],
+    );
+    expect(mixed.links.map((link) => link.kind)).toEqual(['extends', 'uses']);
+    expect(mixed.boxes.map((box) => [box.title, box.relation])).toEqual([
+      ['WallClock', ''],
+      ['BaseClock', 'extends'],
+      ['DialComponent', 'uses'],
+    ]);
+  });
+
   it('captions the columns with the neighbour counts', () => {
-    expect(diagram.captions.map((c) => c.text)).toEqual(['Injected by 1', 'Centre', 'Injects 1']);
+    expect(diagram.captions.map((c) => c.text)).toEqual([
+      'Depended on by 1',
+      'Centre',
+      'Depends on 1',
+    ]);
   });
 
   it('stereotypes a box with its kind and area label', () => {

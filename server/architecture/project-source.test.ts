@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { windowsIn } from './project-source.ts';
+import { aliasesIn, windowsIn } from './project-source.ts';
 
 describe('windowsIn', () => {
   it('lists the window names a manifest declares', () => {
@@ -15,5 +15,26 @@ describe('windowsIn', () => {
 
   it('returns none when the manifest is not an object', () => {
     assert.deepEqual(windowsIn('[1, 2]'), []);
+  });
+});
+
+describe('aliasesIn', () => {
+  it('reads wildcard paths from a tsconfig with comments, against its baseUrl', () => {
+    const tsconfig = `{
+      // comments are allowed here
+      "compilerOptions": {
+        "baseUrl": "./",
+        "paths": { "@/*": ["./src/*"], "@env": ["src/env.ts"], "@core/*": ["src/app/core/*"] }
+      }
+    }`;
+    assert.deepEqual(aliasesIn(tsconfig), [
+      { prefix: '@/', target: 'src/' },
+      { prefix: '@core/', target: 'src/app/core/' },
+    ]);
+  });
+
+  it('returns none without compiler paths', () => {
+    assert.deepEqual(aliasesIn('{}'), []);
+    assert.deepEqual(aliasesIn('{ "compilerOptions": {} }'), []);
   });
 });

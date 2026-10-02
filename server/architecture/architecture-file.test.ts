@@ -8,18 +8,21 @@ import { fileArchitecture, writeArchitecture } from './architecture-file.ts';
 import type { ArchitectureMap } from './architecture-types.ts';
 
 const MAP: ArchitectureMap = {
+  schema: 2,
   project: 'clockwork',
   scannedAt: '2026-10-01T00:00:00Z',
   areas: [{ id: 'core', label: 'Core' }],
   windows: ['desktop'],
   nodes: [
     {
+      id: 'core/clock.ts#ClockService',
       name: 'ClockService',
       kind: 'service',
       file: 'core/clock.ts',
       area: 'core',
       group: '',
       providedIn: 'root',
+      windows: ['desktop'],
     },
   ],
   edges: [],

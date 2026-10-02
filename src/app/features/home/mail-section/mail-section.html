@@ -28,7 +28,12 @@
         <span class="meta">{{ view.address }} · checked {{ checkedAgo() }}</span>
       }
       @if (canRefresh()) {
-        <button type="button" class="refresh" [disabled]="isReading()" (click)="refresh()">
+        <button
+          type="button"
+          class="refresh"
+          [attr.aria-disabled]="isReading()"
+          (click)="refresh()"
+        >
           {{ isReading() ? 'Reading…' : 'Refresh' }}
         </button>
       }
@@ -79,7 +84,7 @@
               >.
             </p>
           }
-          <p class="state">It is tried again in 5 minutes, or when you press Refresh.</p>
+          <p class="state">{{ view.retry }}</p>
         }
         @case ('list') {
           @if (view.problem; as problem) {

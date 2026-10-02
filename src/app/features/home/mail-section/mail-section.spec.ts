@@ -1,7 +1,7 @@
 import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MailInbox } from '../../../core/mail/mail-inbox';
-import { UNREAD_STATES } from '../../../core/mail/mailbox-state';
+import { UNFETCHED_STATES } from '../../../core/mail/mailbox-state';
 import { MailboxReport, MailboxStates } from '../../../core/mail/mail.types';
 import { Clock } from '../../../core/time/clock';
 import { MailSection } from './mail-section';
@@ -39,8 +39,8 @@ const GMAIL_OFF: MailboxReport = {
   settings: ['GMAIL_ADDRESS', 'GMAIL_APP_PASSWORD'],
 };
 const BOTH: MailboxStates = {
-  icloud: { ...UNREAD_STATES.icloud, report: ICLOUD },
-  gmail: { ...UNREAD_STATES.gmail, report: GMAIL_OFF },
+  icloud: { ...UNFETCHED_STATES.icloud, report: ICLOUD },
+  gmail: { ...UNFETCHED_STATES.gmail, report: GMAIL_OFF },
 };
 
 function render(initial: MailboxStates = BOTH) {
@@ -116,7 +116,7 @@ describe('MailSection', () => {
     const { text } = render({
       ...BOTH,
       icloud: {
-        ...UNREAD_STATES.icloud,
+        ...UNFETCHED_STATES.icloud,
         report: {
           account: 'icloud',
           state: 'failed',
@@ -130,7 +130,9 @@ describe('MailSection', () => {
     expect(text('.state.bad')).toBe(
       "Couldn't sign in to iCloud: the address or app password was refused.",
     );
-    expect(text('[role="tabpanel"]')).toContain('It is tried again in 5 minutes');
+    expect(text('[role="tabpanel"]')).toContain(
+      "It isn't tried again until you press Refresh or restart the site.",
+    );
     expect(text('#mail-tab-icloud')).toContain('failed');
   });
 
@@ -158,14 +160,30 @@ describe('MailSection', () => {
     states.set({ ...BOTH, icloud: { ...BOTH.icloud, isReading: true } });
     fixture.detectChanges();
     expect(button()?.textContent?.trim()).toBe('Reading…');
-    expect(button()?.disabled).toBe(true);
+    expect(button()?.getAttribute('aria-disabled')).toBe('true');
     expect(element.querySelector('section')?.getAttribute('aria-busy')).toBe('false');
+  });
+
+  it('keeps focus on Refresh while it reads, and ignores presses until it is done', () => {
+    const { fixture, element, inbox, states } = render();
+    document.body.append(element);
+    const button = element.querySelector<HTMLButtonElement>('.refresh');
+    button?.focus();
+
+    states.set({ ...BOTH, icloud: { ...BOTH.icloud, isReading: true } });
+    fixture.detectChanges();
+    button?.click();
+
+    expect(button?.disabled).toBe(false);
+    expect(document.activeElement).toBe(button);
+    expect(inbox.refresh).not.toHaveBeenCalled();
+    element.remove();
   });
 
   it('is busy, saying it is reading, only before the first answer', () => {
     const { element } = render({
-      icloud: { ...UNREAD_STATES.icloud, isReading: true },
-      gmail: { ...UNREAD_STATES.gmail, isReading: true },
+      icloud: { ...UNFETCHED_STATES.icloud, isReading: true },
+      gmail: { ...UNFETCHED_STATES.gmail, isReading: true },
     });
 
     expect(element.querySelector('section')?.getAttribute('aria-busy')).toBe('true');
@@ -177,10 +195,10 @@ describe('MailSection', () => {
   it('offers no Refresh with neither account set up', () => {
     const { element } = render({
       icloud: {
-        ...UNREAD_STATES.icloud,
+        ...UNFETCHED_STATES.icloud,
         report: { account: 'icloud', state: 'off', settings: [] },
       },
-      gmail: { ...UNREAD_STATES.gmail, report: GMAIL_OFF },
+      gmail: { ...UNFETCHED_STATES.gmail, report: GMAIL_OFF },
     });
 
     expect(element.querySelector('.refresh')).toBeNull();

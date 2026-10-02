@@ -1,6 +1,6 @@
 import { MailAccount, MailAnswer, MailboxState, MailboxStates } from './mail.types';
 
-const unread = (account: MailAccount): MailboxState => ({
+const unfetched = (account: MailAccount): MailboxState => ({
   account,
   report: null,
   isReading: false,
@@ -8,7 +8,10 @@ const unread = (account: MailAccount): MailboxState => ({
 });
 
 /** Every inbox before its first report. */
-export const UNREAD_STATES: MailboxStates = { icloud: unread('icloud'), gmail: unread('gmail') };
+export const UNFETCHED_STATES: MailboxStates = {
+  icloud: unfetched('icloud'),
+  gmail: unfetched('gmail'),
+};
 
 /**
  * Where an inbox stands after `answer`. A list already shown is kept when a

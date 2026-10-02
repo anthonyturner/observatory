@@ -1,4 +1,4 @@
-import { UNREAD_STATES } from '../../../core/mail/mailbox-state';
+import { UNFETCHED_STATES } from '../../../core/mail/mailbox-state';
 import { MailMessage, MailboxReport, MailboxState } from '../../../core/mail/mail.types';
 import { mailPanel, mailSummary, mailTab, shownAccount } from './mail-view';
 
@@ -24,7 +24,7 @@ const listed = (overrides: Partial<Extract<MailboxReport, { state: 'listed' }>> 
   }) as const;
 const ICLOUD_SETTINGS = ['ICLOUD_MAIL_ADDRESS', 'ICLOUD_MAIL_APP_PASSWORD'];
 const state = (report: MailboxReport | null, overrides: Partial<MailboxState> = {}) => ({
-  ...UNREAD_STATES.icloud,
+  ...UNFETCHED_STATES.icloud,
   report,
   ...overrides,
 });
@@ -95,9 +95,14 @@ describe('mailPanel', () => {
       kind: 'failed',
       lead: "Couldn't sign in to iCloud: the address or app password was refused.",
       settings: ICLOUD_SETTINGS,
+      retry: "It isn't tried again until you press Refresh or restart the site.",
     });
     expect(mailPanel(state(failed('timeout')))).toEqual(
-      expect.objectContaining({ kind: 'failed', settings: null }),
+      expect.objectContaining({
+        kind: 'failed',
+        settings: null,
+        retry: 'It is tried again in 5 minutes, or when you press Refresh.',
+      }),
     );
   });
 });
@@ -113,29 +118,29 @@ describe('mailTab and mailSummary', () => {
       spokenNote: ', 3 unread',
       isBad: false,
     });
-    expect(mailTab({ ...UNREAD_STATES.gmail, report: gmailOff }).note).toBe('off');
+    expect(mailTab({ ...UNFETCHED_STATES.gmail, report: gmailOff }).note).toBe('off');
   });
 
   it('sums both inboxes up for the head band', () => {
     expect(
       mailSummary({
         icloud: state(listed()),
-        gmail: { ...UNREAD_STATES.gmail, report: gmailOff },
+        gmail: { ...UNFETCHED_STATES.gmail, report: gmailOff },
       }),
     ).toBe('iCloud 3 unread · Gmail not set up');
-    expect(mailSummary(UNREAD_STATES)).toBe('');
+    expect(mailSummary(UNFETCHED_STATES)).toBe('');
   });
 });
 
 describe('shownAccount', () => {
   const states = {
     icloud: state({ account: 'icloud', state: 'off', settings: [] }),
-    gmail: { ...UNREAD_STATES.gmail, report: listed({ account: 'gmail' }) },
+    gmail: { ...UNFETCHED_STATES.gmail, report: listed({ account: 'gmail' }) },
   };
 
   it('shows the tab last picked, else the first account set up, else iCloud', () => {
     expect(shownAccount(states, 'icloud')).toBe('icloud');
     expect(shownAccount(states, null)).toBe('gmail');
-    expect(shownAccount(UNREAD_STATES, null)).toBe('icloud');
+    expect(shownAccount(UNFETCHED_STATES, null)).toBe('icloud');
   });
 });

@@ -1,7 +1,8 @@
+import { Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAIL_API, MailApi } from './mail-api';
-import { MailInbox } from './mail-inbox';
-import { settled, UNREAD_STATES } from './mailbox-state';
+import { MAIL_PROVIDERS, MAIL_SHOWN, MailInbox } from './mail-inbox';
+import { settled, UNFETCHED_STATES } from './mailbox-state';
 import { MailAccount, MailAnswer, MailboxReport } from './mail.types';
 
 const listed = (account: MailAccount, unread = 1): MailboxReport => ({
@@ -39,7 +40,7 @@ function fakeApi(answers: (account: MailAccount, call: string) => MailAnswer) {
 }
 
 async function start(api: MailApi): Promise<MailInbox> {
-  TestBed.configureTestingModule({ providers: [{ provide: MAIL_API, useValue: api }] });
+  TestBed.configureTestingModule({ providers: [MailInbox, { provide: MAIL_API, useValue: api }] });
   const inbox = TestBed.inject(MailInbox);
   await vi.waitFor(() => expect(inbox.isReading()).toBe(false));
   return inbox;
@@ -89,11 +90,42 @@ describe('MailInbox', () => {
   });
 });
 
+describe('MailInbox on Home', () => {
+  @Component({ template: '', providers: [MAIL_PROVIDERS] })
+  class Home {
+    readonly hasMail = inject(MAIL_SHOWN);
+  }
+
+  afterEach(() => vi.useRealTimers());
+
+  it('reads every five minutes while Home is shown, and stops once it is left', async () => {
+    vi.useFakeTimers();
+    const { api, calls } = fakeApi((account) => report(listed(account)));
+    TestBed.configureTestingModule({ providers: [{ provide: MAIL_API, useValue: api }] });
+    const home = TestBed.createComponent(Home);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(calls.length).toBe(2);
+
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    expect(calls.length).toBe(4);
+    home.destroy();
+    await vi.advanceTimersByTimeAsync(15 * 60_000);
+
+    expect(calls.length).toBe(4);
+  });
+
+  it('has no mail anywhere but Home', () => {
+    TestBed.configureTestingModule({});
+
+    expect(TestBed.inject(MAIL_SHOWN)()).toBe(false);
+  });
+});
+
 describe('settled', () => {
-  const withList = { ...UNREAD_STATES.icloud, report: listed('icloud'), isReading: true };
+  const withList = { ...UNFETCHED_STATES.icloud, report: listed('icloud'), isReading: true };
 
   it('shows a failure in place when there was no list to keep', () => {
-    expect(settled(UNREAD_STATES.icloud, report(failed('icloud'))).report).toEqual(
+    expect(settled(UNFETCHED_STATES.icloud, report(failed('icloud'))).report).toEqual(
       failed('icloud'),
     );
   });

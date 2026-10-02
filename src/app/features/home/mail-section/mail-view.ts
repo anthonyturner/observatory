@@ -31,12 +31,15 @@ const REFRESH_REASON: Readonly<Record<MailProblem, string>> = {
   api: 'the API is not answering',
 };
 
+const RETRY_REFUSED = "It isn't tried again until you press Refresh or restart the site.";
+const RETRY_LATER = 'It is tried again in 5 minutes, or when you press Refresh.';
+
 const failedLead = (failure: MailFailure, label: string): string => {
   switch (failure) {
     case 'sign-in':
       return `Couldn't sign in to ${label}: the address or app password was refused.`;
     case 'timeout':
-      return `${label}'s mail server took longer than 15 seconds to answer.`;
+      return `${label}'s mail server took too long to answer.`;
     case 'unreachable':
       return `Couldn't reach ${label}'s mail server. Check this machine's internet connection.`;
     case 'unknown':
@@ -69,6 +72,8 @@ export type MailPanel =
       readonly lead: string;
       /** The settings to check, where the sign-in itself was refused. */
       readonly settings: readonly string[] | null;
+      /** When it is asked again: a refused password only when the owner says so. */
+      readonly retry: string;
     }
   | { readonly kind: 'empty'; readonly text: string; readonly address: string }
   | {
@@ -133,6 +138,7 @@ export function mailPanel(state: MailboxState): MailPanel {
         kind: 'failed',
         lead: failedLead(report.failure, label),
         settings: report.failure === 'sign-in' ? report.settings : null,
+        retry: report.failure === 'sign-in' ? RETRY_REFUSED : RETRY_LATER,
       };
     case 'listed':
       return listPanel(report, state.problem);

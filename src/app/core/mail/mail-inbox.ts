@@ -1,8 +1,16 @@
-import { Injectable, InjectionToken, Signal, computed, inject, signal } from '@angular/core';
+import {
+  Injectable,
+  InjectionToken,
+  Provider,
+  Signal,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { exhaustMap, filter, interval, startWith } from 'rxjs';
 import { MAIL_API } from './mail-api';
-import { UNREAD_STATES, settled } from './mailbox-state';
+import { UNFETCHED_STATES, settled } from './mailbox-state';
 import { MAIL_ACCOUNTS, MailAccount, MailAnswer, MailboxState, MailboxStates } from './mail.types';
 
 /** The server keeps a list for a minute and a failed sign-in for five, so this asks no server more often than that. */
@@ -11,11 +19,14 @@ const REREAD_MS = 5 * 60_000;
 /** Whether this site has mail: not known until the API answers a mail read. */
 type Presence = 'unknown' | 'here' | 'absent';
 
-/** Home's two inboxes, read now, every five minutes and on Refresh, each on its own. */
-@Injectable({ providedIn: 'root' })
+/**
+ * Home's two inboxes, read now, every five minutes and on Refresh, each on its
+ * own. Home provides it, so the reading stops when Home is left.
+ */
+@Injectable()
 export class MailInbox {
   private readonly api = inject(MAIL_API);
-  private readonly current = signal<MailboxStates>(UNREAD_STATES);
+  private readonly current = signal<MailboxStates>(UNFETCHED_STATES);
   private readonly presence = signal<Presence>('unknown');
 
   readonly states = this.current.asReadonly();
@@ -58,8 +69,15 @@ export class MailInbox {
   }
 }
 
-/** Whether Home has a Mail section, for the parts of the page that only follow it. */
+/** Whether Home has a Mail section, for the parts of the page that only follow it.
+ *  Home provides it from its MailInbox; anywhere else there is no mail. */
 export const MAIL_SHOWN = new InjectionToken<Signal<boolean>>('MAIL_SHOWN', {
   providedIn: 'root',
-  factory: () => inject(MailInbox).isShown,
+  factory: () => signal(false).asReadonly(),
 });
+
+/** What Home provides for mail: one MailInbox for its sections, and whether to show them. */
+export const MAIL_PROVIDERS: Provider[] = [
+  MailInbox,
+  { provide: MAIL_SHOWN, useFactory: () => inject(MailInbox).isShown },
+];

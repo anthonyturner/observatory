@@ -4,7 +4,7 @@
       #tab
       type="button"
       role="tab"
-      [id]="name() + '-tab-' + tab.id"
+      [id]="tabIds()[index]"
       [attr.aria-selected]="tab.id === selected()"
       [attr.aria-controls]="panelId()"
       [attr.tabindex]="tab.id === selected() ? 0 : -1"

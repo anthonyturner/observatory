@@ -11,7 +11,7 @@ import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { CoreStateFeed } from '../../../core/core-state/core-state-feed';
 import { HOME_HELP_KEYS, homeHelpEntries, withMailHelp } from '../help/help-content';
-import { MAIL_SHOWN } from '../../../core/mail/mail-inbox';
+import { MAIL_PROVIDERS, MAIL_SHOWN } from '../../../core/mail/mail-inbox';
 import { HomeTools } from '../home-tools/home-tools';
 import { RunDockPanel } from '../run-dock/run-dock';
 import { SkillsPanel } from '../skills-panel/skills-panel';
@@ -50,8 +50,9 @@ import { RunsStore } from '../../../core/runs/runs-store';
     HomeTools,
     TransportBar,
   ],
-  // The bar plays the music and the sky moves with it, so Home holds both for them.
-  providers: [SoundPreference, PlaylistPlayer, PlaylistLibrary, MusicPulse],
+  // The bar plays the music and the sky moves with it, so Home holds both for
+  // them; mail is read only while Home is shown.
+  providers: [SoundPreference, PlaylistPlayer, PlaylistLibrary, MusicPulse, MAIL_PROVIDERS],
   hostDirectives: [HelpShortcuts, CoreStateFeed],
   host: { '[class.docked]': 'dock.isOpen()' },
   templateUrl: './home-page.html',

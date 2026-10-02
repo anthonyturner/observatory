@@ -79,7 +79,9 @@ export class MailSection {
     if (picked) this.tabChoice.choose(picked);
   }
 
+  /** Ignored while a read is under way; the button stays focusable, so focus is not lost. */
   protected async refresh(): Promise<void> {
+    if (this.isReading()) return;
     this.announcement.set('');
     await this.inbox.refresh();
     this.announcement.set(`Mail read again: ${this.summary()}.`);

@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  computed,
   input,
   output,
   viewChildren,
@@ -56,6 +57,11 @@ export class TabStrip {
   readonly tabs = input.required<readonly TabStripTab[]>();
   readonly selected = input.required<string>();
   readonly selectedChange = output<string>();
+
+  /** Each tab's element id, in tab order. */
+  protected readonly tabIds = computed(() =>
+    this.tabs().map((tab) => tabStripTabId(this.name(), tab.id)),
+  );
 
   private readonly buttons = viewChildren<ElementRef<HTMLButtonElement>>('tab');
 

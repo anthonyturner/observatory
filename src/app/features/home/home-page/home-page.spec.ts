@@ -51,8 +51,9 @@ class NoForcedColours extends HighContrastModeDetector {
 
 /** The first render in this file builds the whole Home tree from cold: jsdom parses
  *  every Home stylesheet and V8 compiles every component for the first time. That is
- *  about 0.4 s alone, and passed the 5 s default under a loaded full suite; later
- *  renders take about 0.15 s. 15 s keeps three times the slowest first render seen. */
+ *  about 0.4 s alone, against 0.15 s for a later render, but it reached 5.5 s in a
+ *  full suite on a loaded machine and failed the 5 s default. 15 s is nearly three
+ *  times that, and still fails a render that hangs. */
 const COLD_FIRST_RENDER_MS = 15_000;
 
 describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {

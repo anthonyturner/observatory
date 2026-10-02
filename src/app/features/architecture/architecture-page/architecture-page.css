@@ -1,0 +1,128 @@
+:host {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template: auto minmax(0, 1fr) / 320px minmax(0, 1fr);
+  background: var(--void);
+}
+
+.top {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px 12px;
+}
+
+.brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 34px;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.stamp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.views {
+  display: flex;
+  gap: 8px;
+}
+
+.views .abtn[aria-pressed='true'] {
+  border-color: var(--flow);
+  background: var(--flow-tint-strong);
+}
+
+.index {
+  min-height: 0;
+  padding: 6px 14px 18px 20px;
+  border-right: 1px solid var(--edge-soft);
+}
+
+.stage {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stage[data-view='uml'] {
+  padding: 8px 24px 24px;
+  overflow: auto;
+}
+
+.state {
+  grid-column: 1 / -1;
+  place-self: center;
+  max-width: min(460px, calc(100vw - 40px));
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  color: var(--muted);
+  text-align: center;
+}
+
+.facts {
+  position: fixed;
+  right: 20px;
+  bottom: 18px;
+  max-width: 380px;
+  padding: 12px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.facts[data-heat='hot'] {
+  border-color: var(--bad-soft);
+}
+
+.facts[data-heat='unused'] {
+  border-style: dashed;
+  border-color: var(--muted);
+}
+
+.facts h2 {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.facts p {
+  margin: 2px 0 0;
+}
+
+.facts .kind,
+.facts .file {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.facts .note {
+  color: var(--warm);
+}

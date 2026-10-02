@@ -1,0 +1,133 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ring {
+  fill: none;
+  stroke: var(--edge);
+  stroke-width: 1;
+}
+
+.ring[data-kind='uses'] {
+  stroke: var(--flow-dash);
+  stroke-dasharray: 3 7;
+}
+
+.ring-label {
+  fill: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+
+.name {
+  fill: var(--ink-soft);
+  font-size: 11px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.sun .body {
+  fill: var(--warm);
+}
+
+.sun .glow {
+  fill: var(--warm);
+  opacity: 0.12;
+}
+
+.sun .name {
+  fill: var(--ink);
+  font-size: 14px;
+}
+
+/* The orbit turns and each planet turns back by as much, so its name stays level. */
+.orbit,
+.upright,
+.moons {
+  animation: turn linear infinite;
+}
+
+.upright {
+  animation-direction: reverse;
+}
+
+.moons {
+  animation-duration: 14s;
+}
+
+/* A moving target is hard to click: the system holds while the pointer is over it. */
+svg:hover .orbit,
+svg:hover .upright,
+svg:hover .moons,
+svg:focus-within .orbit,
+svg:focus-within .upright,
+svg:focus-within .moons {
+  animation-play-state: paused;
+}
+
+:host(.still) .orbit,
+:host(.still) .upright,
+:host(.still) .moons {
+  animation: none;
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.planet {
+  cursor: pointer;
+  outline: none;
+}
+
+.planet .body {
+  fill: var(--flow);
+  stroke: transparent;
+  stroke-width: 2;
+  transition: stroke 0.2s;
+}
+
+/* A component is drawn hollow: it is created from a template, not injected. */
+.planet[data-kind='component'] .body {
+  fill: var(--void);
+  stroke: var(--flow);
+}
+
+.planet[data-heat='hot'] .body,
+.sun[data-heat='hot'] .body {
+  fill: var(--bad-soft);
+}
+
+.planet[data-heat='unused'] .body,
+.sun[data-heat='unused'] .body {
+  fill: var(--faint);
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+}
+
+.planet:hover .body,
+.planet:focus-visible .body {
+  stroke: var(--ink);
+}
+
+.planet:hover .name,
+.planet:focus-visible .name {
+  fill: var(--ink);
+}
+
+.moon {
+  fill: var(--ink-soft);
+}

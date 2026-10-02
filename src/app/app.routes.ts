@@ -13,6 +13,14 @@ export const routes: Routes = [
       import('./features/orrery/orrery-page/orrery-page').then((m) => m.OrreryPage),
   },
   {
+    path: 'architecture',
+    title: 'Architecture · Observatory',
+    loadComponent: () =>
+      import('./features/architecture/architecture-page/architecture-page').then(
+        (m) => m.ArchitecturePage,
+      ),
+  },
+  {
     path: 'p/:owner/:repo',
     title: 'Review Queue · Observatory',
     loadComponent: () =>

@@ -1,0 +1,51 @@
+<svg
+  [attr.width]="diagram().width"
+  [attr.height]="diagram().height"
+  role="group"
+  aria-label="Dependency diagram of the centre class"
+>
+  <defs>
+    <marker id="uml-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path class="arrowhead" d="M 1 1 L 9 5 L 1 9" />
+    </marker>
+  </defs>
+
+  @for (caption of diagram().captions; track caption.x) {
+    <text class="caption" [attr.x]="caption.x" [attr.y]="captionY">{{ caption.text }}</text>
+  }
+
+  @for (link of diagram().links; track link) {
+    <path class="link" [attr.d]="link" marker-end="url(#uml-arrow)" />
+  }
+
+  @for (box of diagram().boxes; track box.entry.node.name) {
+    <g
+      class="box"
+      role="button"
+      tabindex="0"
+      [attr.data-role]="box.role"
+      [attr.data-heat]="box.entry.heat"
+      [attr.transform]="'translate(' + box.x + ' ' + box.y + ')'"
+      [attr.aria-label]="'Centre on ' + box.entry.node.name"
+      (click)="pick.emit(box.entry.node.name)"
+      (keydown.enter)="pick.emit(box.entry.node.name)"
+    >
+      <title>{{ box.entry.node.name }} · {{ box.entry.node.file }}</title>
+      <rect class="frame" rx="8" [attr.width]="boxWidth" [attr.height]="box.height" />
+      <text class="stereotype" x="12" y="18">{{ box.stereotype }}</text>
+      <text class="title" x="12" y="37">{{ box.title }}</text>
+      @if (box.lines.length) {
+        <line
+          class="rule"
+          x1="0"
+          [attr.x2]="boxWidth"
+          [attr.y1]="headerHeight"
+          [attr.y2]="headerHeight"
+        />
+      }
+      @for (line of box.lines; track line.y) {
+        <text class="member" x="12" [attr.y]="line.y">{{ line.text }}</text>
+      }
+    </g>
+  }
+</svg>

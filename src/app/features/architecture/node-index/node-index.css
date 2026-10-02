@@ -1,0 +1,144 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+input,
+select {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 1px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chips button[aria-pressed='true'] {
+  border-color: var(--flow);
+  background: var(--flow-tint);
+  color: var(--ink);
+}
+
+.dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--flow);
+}
+
+[data-kind='component'] .dot {
+  border: 1.5px solid var(--flow);
+  background: transparent;
+}
+
+[data-heat='hot'] .dot {
+  background: var(--bad-soft);
+}
+
+[data-heat='unused'] .dot {
+  border: 1.5px dashed var(--muted);
+  background: var(--faint);
+}
+
+.count {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+ul {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--flow-soft);
+  color: var(--ink);
+}
+
+.row[aria-current='true'] {
+  background: var(--flow-tint-strong);
+  color: var(--ink);
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uses {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}

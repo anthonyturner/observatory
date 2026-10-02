@@ -1,0 +1,83 @@
+:host {
+  display: block;
+  width: max-content;
+  margin-inline: auto;
+}
+
+svg {
+  display: block;
+}
+
+.caption {
+  fill: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.link {
+  fill: none;
+  stroke: var(--flow-dash);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 4;
+}
+
+.arrowhead {
+  fill: none;
+  stroke: var(--flow);
+  stroke-width: 1.2;
+}
+
+.box {
+  cursor: pointer;
+  outline: none;
+}
+
+.frame {
+  fill: var(--panel-strong);
+  stroke: var(--edge);
+  stroke-width: 1;
+  transition: stroke 0.2s;
+}
+
+.box[data-role='centre'] .frame {
+  stroke: var(--warm);
+  stroke-width: 1.6;
+}
+
+.box[data-heat='hot'] .frame {
+  stroke: var(--bad-soft);
+}
+
+.box[data-heat='unused'] .frame {
+  stroke: var(--muted);
+  stroke-dasharray: 4 4;
+}
+
+.box:hover .frame,
+.box:focus-visible .frame {
+  stroke: var(--ink);
+}
+
+.rule {
+  stroke: var(--edge);
+}
+
+.stereotype {
+  fill: var(--muted);
+  font-size: 10.5px;
+}
+
+.title {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.member {
+  fill: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  dominant-baseline: middle;
+}

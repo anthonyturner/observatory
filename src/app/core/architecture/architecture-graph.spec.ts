@@ -6,31 +6,50 @@ import {
   graphOf,
   memberUse,
   neighbourhoodOf,
+  Scope,
 } from './architecture-graph';
 import {
   ArchitectureEdge,
   ArchitectureMap,
   ArchitectureNode,
+  EdgeKind,
   NodeKind,
 } from './architecture.types';
 
+/** Ids are names here, as in a map from before ids existed; one test gives two nodes one name. */
 const node = (name: string, kind: NodeKind = 'service', area = 'core'): ArchitectureNode => ({
+  id: name,
   name,
   kind,
   file: `${area}/${name}.ts`,
   area,
   group: '',
   providedIn: null,
+  windows: [],
 });
 
-const edge = (from: string, to: string, members: string[] = []): ArchitectureEdge => ({
+const hostedBy = (windows: string[], hosted: ArchitectureNode): ArchitectureNode => ({
+  ...hosted,
+  windows,
+});
+
+const edge = (
+  from: string,
+  to: string,
+  members: string[] = [],
+  kind: EdgeKind = 'injects',
+): ArchitectureEdge => ({
   from,
   to,
-  how: 'inject',
+  kind,
+  how: kind === 'injects' ? 'inject' : null,
   members,
 });
 
+const EVERYWHERE: Scope = { area: null, window: null };
+
 const mapOf = (nodes: ArchitectureNode[], edges: ArchitectureEdge[] = []): ArchitectureMap => ({
+  schema: 2,
   project: 'clockwork',
   scannedAt: '',
   areas: [],
@@ -69,14 +88,45 @@ describe('graphOf', () => {
     const graph = graphOf(
       mapOf([node('ClockService'), node('AlarmHandler')], [edge('AlarmHandler', 'ClockService')]),
     );
-    expect(graph.byName.get('ClockService')).toMatchObject({ dependents: 1, dependencies: 0 });
-    expect(graph.byName.get('AlarmHandler')).toMatchObject({ dependents: 0, dependencies: 1 });
+    expect(graph.byId.get('ClockService')).toMatchObject({ dependents: 1, dependencies: 0 });
+    expect(graph.byId.get('AlarmHandler')).toMatchObject({ dependents: 0, dependencies: 1 });
   });
 
-  it('marks an injectable nobody injects as unused, but never a component', () => {
-    const graph = graphOf(mapOf([node('ClockService'), node('DialComponent', 'component')]));
-    expect(graph.byName.get('ClockService')?.heat).toBe('unused');
-    expect(graph.byName.get('DialComponent')?.heat).toBe('plain');
+  it('marks a node nothing depends on as unused, but never a component or a provider list', () => {
+    const graph = graphOf(
+      mapOf([
+        node('ClockService'),
+        node('DialComponent', 'component'),
+        node('appConfig', 'providers'),
+      ]),
+    );
+    expect(graph.byId.get('ClockService')?.heat).toBe('unused');
+    expect(graph.byId.get('DialComponent')?.heat).toBe('plain');
+    expect(graph.byId.get('appConfig')?.heat).toBe('plain');
+  });
+
+  it('counts a pair joined by several kinds of edge once', () => {
+    const graph = graphOf(
+      mapOf(
+        [node('ClockService'), node('FaceComponent', 'component')],
+        [
+          edge('FaceComponent', 'ClockService', [], 'provides'),
+          edge('FaceComponent', 'ClockService'),
+        ],
+      ),
+    );
+    expect(graph.byId.get('ClockService')).toMatchObject({ dependents: 1, heat: 'plain' });
+    expect(graph.byId.get('FaceComponent')?.dependencies).toBe(1);
+  });
+
+  it('keeps two nodes of one name apart by id', () => {
+    const twin = {
+      ...node('ClockService', 'service', 'ui'),
+      id: 'ui/ClockService.ts#ClockService',
+    };
+    const graph = graphOf(mapOf([node('ClockService'), twin]));
+    expect(graph.entries).toHaveLength(2);
+    expect(graph.byId.get(twin.id)?.node.area).toBe('ui');
   });
 
   it('marks a class with at least HOT_DEPENDENTS dependents as hot', () => {
@@ -92,8 +142,8 @@ describe('graphOf', () => {
         readerEdges('ClockService', HOT_DEPENDENTS - 1),
       ),
     );
-    expect(hot.byName.get('ClockService')?.heat).toBe('hot');
-    expect(warm.byName.get('ClockService')?.heat).toBe('plain');
+    expect(hot.byId.get('ClockService')?.heat).toBe('hot');
+    expect(warm.byId.get('ClockService')?.heat).toBe('plain');
     expect(countOf(hot, 'hot')).toBe(1);
   });
 });
@@ -115,12 +165,12 @@ describe('neighbourhoodOf', () => {
     ),
   );
 
-  it('returns null for an unknown name', () => {
-    expect(neighbourhoodOf(graph, 'Ghost', null)).toBeNull();
+  it('returns null for an unknown id', () => {
+    expect(neighbourhoodOf(graph, 'Ghost', EVERYWHERE)).toBeNull();
   });
 
   it('lists every dependent and dependency when no area is chosen', () => {
-    const around = neighbourhoodOf(graph, 'ClockService', null);
+    const around = neighbourhoodOf(graph, 'ClockService', EVERYWHERE);
     expect(around?.dependents.map((n) => n.entry.node.name)).toEqual([
       'AlarmHandler',
       'DialComponent',
@@ -131,10 +181,41 @@ describe('neighbourhoodOf', () => {
   });
 
   it('keeps only neighbours in the chosen area but always keeps the centre', () => {
-    const around = neighbourhoodOf(graph, 'ClockService', 'ui');
+    const around = neighbourhoodOf(graph, 'ClockService', { area: 'ui', window: null });
     expect(around?.centre.node.name).toBe('ClockService');
     expect(around?.dependents.map((n) => n.entry.node.name)).toEqual(['DialComponent']);
     expect(around?.dependencies.map((n) => n.entry.node.name)).toEqual(['TickStore']);
+  });
+
+  it('joins every kind of edge to one neighbour into one, kinds in their listed order', () => {
+    const joined = graphOf(
+      mapOf(
+        [node('FaceComponent', 'component'), node('ClockService')],
+        [
+          edge('FaceComponent', 'ClockService', [], 'provides'),
+          edge('FaceComponent', 'ClockService', ['now']),
+        ],
+      ),
+    );
+    const around = neighbourhoodOf(joined, 'FaceComponent', EVERYWHERE);
+    expect(around?.dependencies.map((n) => [n.entry.node.name, n.kinds, n.members])).toEqual([
+      ['ClockService', ['injects', 'provides'], ['now']],
+    ]);
+  });
+
+  it('keeps only neighbours the chosen window pulls in', () => {
+    const windowed = graphOf(
+      mapOf(
+        [
+          hostedBy(['wall'], node('FaceComponent', 'component')),
+          hostedBy(['wall', 'pocket'], node('ClockService')),
+          hostedBy(['pocket'], node('AlarmList', 'component')),
+        ],
+        [edge('FaceComponent', 'ClockService'), edge('AlarmList', 'ClockService')],
+      ),
+    );
+    const around = neighbourhoodOf(windowed, 'ClockService', { area: null, window: 'pocket' });
+    expect(around?.dependents.map((n) => n.entry.node.name)).toEqual(['AlarmList']);
   });
 });
 
@@ -143,13 +224,13 @@ describe('entriesMatching', () => {
     mapOf(
       [
         node('ClockService', 'service', 'core'),
-        node('DialStore', 'store', 'ui'),
+        hostedBy(['wall'], node('DialStore', 'store', 'ui')),
         node('DialComponent', 'component', 'ui'),
       ],
       [edge('DialComponent', 'DialStore')],
     ),
   );
-  const none: EntryFilter = { query: '', area: null, heat: null };
+  const none: EntryFilter = { query: '', area: null, window: null, heat: null };
   const names = (filter: Partial<EntryFilter>) =>
     entriesMatching(graph, { ...none, ...filter }).map((e) => e.node.name);
 
@@ -163,6 +244,11 @@ describe('entriesMatching', () => {
     expect(names({ area: 'ui', heat: 'plain', query: 'store' })).toEqual(['DialStore']);
   });
 
+  it('narrows by window', () => {
+    expect(names({ window: 'wall' })).toEqual(['DialStore']);
+    expect(names({ window: 'pocket' })).toEqual([]);
+  });
+
   it('returns everything for an empty filter', () => {
     expect(names({})).toHaveLength(3);
   });
@@ -172,7 +258,7 @@ describe('memberUse', () => {
   it('counts the dependents reading each member, most read first then by name', () => {
     const [entry] = graphOf(mapOf([node('ClockService')])).entries;
     if (!entry) throw new Error('no entry');
-    const neighbour = (members: string[]) => ({ entry, members });
+    const neighbour = (members: string[]) => ({ entry, members, kinds: ['injects' as const] });
     expect(
       memberUse([neighbour(['zone', 'now']), neighbour(['now']), neighbour(['alarm'])]),
     ).toEqual([

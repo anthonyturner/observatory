@@ -1,10 +1,25 @@
-/** What a class is, as the map colours and filters it. */
-export const NODE_KINDS = ['service', 'component', 'handler', 'store'] as const;
+/** What a node is, as the map colours and filters it. */
+export const NODE_KINDS = [
+  'service',
+  'component',
+  'handler',
+  'store',
+  'token',
+  'function',
+  'providers',
+] as const;
 export type NodeKind = (typeof NODE_KINDS)[number];
 
 /** How a class asks Angular for a dependency. */
 export const INJECTION_STYLES = ['inject', 'constructor'] as const;
 export type InjectionStyle = (typeof INJECTION_STYLES)[number];
+
+/** What an edge says `from` does with `to`, in the order the page names them. */
+export const EDGE_KINDS = ['injects', 'uses', 'provides', 'extends', 'calls'] as const;
+export type EdgeKind = (typeof EDGE_KINDS)[number];
+
+/** The map shape this page reads in full; an older one lacks component edges and windows. */
+export const MAP_SCHEMA = 2;
 
 /** One part of the mapped project: a ring in the star view, a choice in the area filter. */
 export interface ArchitectureArea {
@@ -12,26 +27,32 @@ export interface ArchitectureArea {
   readonly label: string;
 }
 
-/** One Angular class. Its name is its identity: edges refer to it by name. */
+/** One class, token, function or provider list. Edges refer to it by `id`. */
 export interface ArchitectureNode {
+  /** Unique even when two nodes share a name; an old map's ids are the names. */
+  readonly id: string;
   readonly name: string;
   readonly kind: NodeKind;
   readonly file: string;
   readonly area: string;
   readonly group: string;
   readonly providedIn: string | null;
+  /** The Overwolf windows that pull this node in. */
+  readonly windows: readonly string[];
 }
 
-/** `from` injects `to`, and reads these members of it. */
+/** `from` depends on `to` in the way `kind` names, and reads these members of it. */
 export interface ArchitectureEdge {
   readonly from: string;
   readonly to: string;
-  readonly how: InjectionStyle;
+  readonly kind: EdgeKind;
+  readonly how: InjectionStyle | null;
   readonly members: readonly string[];
 }
 
-/** A project's classes and what injects what, as `npm run arch:scan` writes it. */
+/** A project's nodes and how they depend on each other, as `npm run arch:scan` writes it. */
 export interface ArchitectureMap {
+  readonly schema: number;
   readonly project: string;
   readonly scannedAt: string;
   readonly areas: readonly ArchitectureArea[];

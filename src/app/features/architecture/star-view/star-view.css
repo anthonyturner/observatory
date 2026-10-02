@@ -16,9 +16,34 @@ svg {
   stroke-width: 1;
 }
 
-.ring[data-kind='uses'] {
+.ring[data-kind='dependencies'] {
   stroke: var(--flow-dash);
   stroke-dasharray: 3 7;
+}
+
+.spoke {
+  stroke: var(--link-injects);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+
+.spoke[data-link='uses'] {
+  stroke: var(--link-uses);
+}
+
+.spoke[data-link='provides'] {
+  stroke: var(--link-provides);
+  stroke-dasharray: 2 4;
+}
+
+.spoke[data-link='extends'] {
+  stroke: var(--link-extends);
+  stroke-width: 2;
+}
+
+.spoke[data-link='calls'] {
+  stroke: var(--link-calls);
+  stroke-dasharray: 6 3;
 }
 
 .ring-label {

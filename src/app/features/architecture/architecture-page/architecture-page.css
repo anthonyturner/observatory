@@ -33,6 +33,12 @@ h1 {
   color: var(--ink);
 }
 
+.rescan {
+  margin: 6px 0 0;
+  color: var(--warm);
+  font-size: 12px;
+}
+
 .stamp {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -61,6 +67,48 @@ h1 {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+}
+
+.legend {
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 16px;
+  height: 2px;
+  background: var(--link-injects);
+}
+
+.legend [data-link='uses'] .swatch {
+  background: var(--link-uses);
+}
+
+.legend [data-link='provides'] .swatch {
+  background: var(--link-provides);
+}
+
+.legend [data-link='extends'] .swatch {
+  background: var(--link-extends);
+}
+
+.legend [data-link='calls'] .swatch {
+  background: var(--link-calls);
 }
 
 .stage[data-view='uml'] {

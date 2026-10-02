@@ -1,30 +1,37 @@
 import { parseArchitecture } from './architecture-parse';
 
 const node = (name: string, extra: Record<string, unknown> = {}) => ({
+  id: `core/${name}.ts#${name}`,
   name,
   kind: 'service',
   file: `core/${name}.ts`,
   area: 'core',
   group: '',
   providedIn: 'root',
+  windows: ['desktop'],
   ...extra,
 });
 
+const idOf = (name: string) => `core/${name}.ts#${name}`;
+
 const edge = (from: string, to: string, extra: Record<string, unknown> = {}) => ({
-  from,
-  to,
+  from: idOf(from),
+  to: idOf(to),
+  kind: 'injects',
   how: 'inject',
   members: ['now'],
   ...extra,
 });
 
-const body = (nodes: unknown[], edges: unknown[] = []) => ({
+const body = (nodes: unknown[], edges: unknown[] = [], extra: Record<string, unknown> = {}) => ({
+  schema: 2,
   project: 'clockwork',
   scannedAt: '2026-10-01T00:00:00Z',
   areas: [{ id: 'core', label: 'Core' }],
   windows: ['desktop'],
   nodes,
   edges,
+  ...extra,
 });
 
 describe('parseArchitecture', () => {
@@ -38,13 +45,34 @@ describe('parseArchitecture', () => {
     const map = parseArchitecture(
       body([node('ClockService'), node('AlarmHandler')], [edge('AlarmHandler', 'ClockService')]),
     );
+    expect(map?.schema).toBe(2);
     expect(map?.project).toBe('clockwork');
     expect(map?.areas).toEqual([{ id: 'core', label: 'Core' }]);
     expect(map?.windows).toEqual(['desktop']);
-    expect(map?.nodes.map((n) => n.name)).toEqual(['ClockService', 'AlarmHandler']);
-    expect(map?.edges).toEqual([
-      { from: 'AlarmHandler', to: 'ClockService', how: 'inject', members: ['now'] },
+    expect(map?.nodes.map((n) => [n.id, n.windows])).toEqual([
+      [idOf('ClockService'), ['desktop']],
+      [idOf('AlarmHandler'), ['desktop']],
     ]);
+    expect(map?.edges).toEqual([
+      {
+        from: idOf('AlarmHandler'),
+        to: idOf('ClockService'),
+        kind: 'injects',
+        how: 'inject',
+        members: ['now'],
+      },
+    ]);
+  });
+
+  it('reads the new node and edge kinds, with no injection style on a non-injection edge', () => {
+    const map = parseArchitecture(
+      body(
+        [node('FaceComponent', { kind: 'component' }), node('CLOCK', { kind: 'token' })],
+        [edge('FaceComponent', 'CLOCK', { kind: 'provides', how: null, members: [] })],
+      ),
+    );
+    expect(map?.nodes.map((n) => n.kind)).toEqual(['component', 'token']);
+    expect(map?.edges[0]).toMatchObject({ kind: 'provides', how: null });
   });
 
   it('drops nodes that are malformed', () => {
@@ -70,23 +98,49 @@ describe('parseArchitecture', () => {
         ],
       ),
     );
-    expect(map?.edges.map((e) => `${e.from}>${e.to}`)).toEqual(['AlarmHandler>ClockService']);
+    expect(map?.edges.map((e) => `${e.from}>${e.to}`)).toEqual([
+      `${idOf('AlarmHandler')}>${idOf('ClockService')}`,
+    ]);
   });
 
-  it('drops edges with an unknown injection style', () => {
+  it('drops an edge of an unknown kind, and forgets an unknown injection style', () => {
     const map = parseArchitecture(
       body(
         [node('ClockService'), node('AlarmHandler')],
-        [edge('AlarmHandler', 'ClockService', { how: 'magic' })],
+        [
+          edge('AlarmHandler', 'ClockService', { kind: 'haunts' }),
+          edge('ClockService', 'AlarmHandler', { how: 'magic' }),
+        ],
       ),
     );
-    expect(map?.edges).toEqual([]);
+    expect(map?.edges.map((e) => [e.kind, e.how])).toEqual([['injects', null]]);
   });
 
-  it('defaults a missing group to empty and a missing providedIn to null', () => {
+  it('defaults a missing group to empty, providedIn to null and windows to none', () => {
     const map = parseArchitecture(
-      body([{ ...node('ClockService'), group: undefined, providedIn: undefined }]),
+      body([
+        { ...node('ClockService'), group: undefined, providedIn: undefined, windows: undefined },
+      ]),
     );
-    expect(map?.nodes[0]).toMatchObject({ group: '', providedIn: null });
+    expect(map?.nodes[0]).toMatchObject({ group: '', providedIn: null, windows: [] });
+  });
+
+  it('reads an old map whose nodes have no id and whose edges have no kind', () => {
+    const map = parseArchitecture({
+      project: 'clockwork',
+      scannedAt: '2026-10-01T00:00:00Z',
+      areas: [],
+      windows: [],
+      nodes: [
+        { name: 'ClockService', kind: 'service', file: 'core/clock.ts', area: 'core' },
+        { name: 'AlarmHandler', kind: 'handler', file: 'core/alarm.ts', area: 'core' },
+      ],
+      edges: [{ from: 'AlarmHandler', to: 'ClockService', how: 'inject', members: [] }],
+    });
+    expect(map?.schema).toBe(1);
+    expect(map?.nodes.map((n) => n.id)).toEqual(['ClockService', 'AlarmHandler']);
+    expect(map?.edges).toEqual([
+      { from: 'AlarmHandler', to: 'ClockService', kind: 'injects', how: 'inject', members: [] },
+    ]);
   });
 });

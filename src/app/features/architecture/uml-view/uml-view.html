@@ -2,11 +2,14 @@
   [attr.width]="diagram().width"
   [attr.height]="diagram().height"
   role="group"
-  aria-label="Dependency diagram of the centre class"
+  aria-label="Dependency diagram of the centre node"
 >
   <defs>
     <marker id="uml-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
       <path class="arrowhead" d="M 1 1 L 9 5 L 1 9" />
+    </marker>
+    <marker id="uml-triangle" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto">
+      <path class="triangle" d="M 1 1 L 11 6 L 1 11 Z" />
     </marker>
   </defs>
 
@@ -14,11 +17,16 @@
     <text class="caption" [attr.x]="caption.x" [attr.y]="captionY">{{ caption.text }}</text>
   }
 
-  @for (link of diagram().links; track link) {
-    <path class="link" [attr.d]="link" marker-end="url(#uml-arrow)" />
+  @for (link of diagram().links; track link.key) {
+    <path
+      class="link"
+      [attr.d]="link.path"
+      [attr.data-link]="link.kind"
+      [attr.marker-end]="link.kind === 'extends' ? 'url(#uml-triangle)' : 'url(#uml-arrow)'"
+    />
   }
 
-  @for (box of diagram().boxes; track box.entry.node.name) {
+  @for (box of diagram().boxes; track box.key) {
     <g
       class="box"
       role="button"
@@ -27,10 +35,13 @@
       [attr.data-heat]="box.entry.heat"
       [attr.transform]="'translate(' + box.x + ' ' + box.y + ')'"
       [attr.aria-label]="'Centre on ' + box.entry.node.name"
-      (click)="pick.emit(box.entry.node.name)"
-      (keydown.enter)="pick.emit(box.entry.node.name)"
+      (click)="pick.emit(box.entry.node.id)"
+      (keydown.enter)="pick.emit(box.entry.node.id)"
     >
-      <title>{{ box.entry.node.name }} · {{ box.entry.node.file }}</title>
+      <title>
+        {{ box.entry.node.name }} · {{ box.entry.node.file
+        }}{{ box.relation ? ' · ' + box.relation : '' }}
+      </title>
       <rect class="frame" rx="8" [attr.width]="boxWidth" [attr.height]="box.height" />
       <text class="stereotype" x="12" y="18">{{ box.stereotype }}</text>
       <text class="title" x="12" y="37">{{ box.title }}</text>

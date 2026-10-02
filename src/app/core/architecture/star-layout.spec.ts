@@ -1,6 +1,11 @@
 import { graphOf, neighbourhoodOf } from './architecture-graph';
-import { ArchitectureArea, ArchitectureEdge, ArchitectureNode } from './architecture.types';
-import { USES_LABEL, starSystem } from './star-layout';
+import {
+  ArchitectureArea,
+  ArchitectureEdge,
+  ArchitectureNode,
+  EdgeKind,
+} from './architecture.types';
+import { DEPENDENCIES_LABEL, starSystem } from './star-layout';
 
 const AREAS: ArchitectureArea[] = [
   { id: 'core', label: 'Core' },
@@ -8,24 +13,40 @@ const AREAS: ArchitectureArea[] = [
 ];
 
 const node = (name: string, area = 'core'): ArchitectureNode => ({
+  id: name,
   name,
   kind: 'service',
   file: `${area}/${name}.ts`,
   area,
   group: '',
   providedIn: null,
+  windows: [],
 });
 
-const edge = (from: string, to: string, members: string[] = []): ArchitectureEdge => ({
+const edge = (
+  from: string,
+  to: string,
+  members: string[] = [],
+  kind: EdgeKind = 'injects',
+): ArchitectureEdge => ({
   from,
   to,
-  how: 'inject',
+  kind,
+  how: kind === 'injects' ? 'inject' : null,
   members,
 });
 
 function systemAround(centre: string, nodes: ArchitectureNode[], edges: ArchitectureEdge[]) {
-  const graph = graphOf({ project: '', scannedAt: '', areas: AREAS, windows: [], nodes, edges });
-  const around = neighbourhoodOf(graph, centre, null);
+  const graph = graphOf({
+    schema: 2,
+    project: '',
+    scannedAt: '',
+    areas: AREAS,
+    windows: [],
+    nodes,
+    edges,
+  });
+  const around = neighbourhoodOf(graph, centre, { area: null, window: null });
   if (!around) throw new Error(`no ${centre}`);
   return starSystem(around, AREAS);
 }
@@ -40,14 +61,14 @@ describe('starSystem', () => {
     expect(system.orbits).toEqual([]);
   });
 
-  it('puts what the sun injects on the first ring, labelled Injects', () => {
+  it('puts what the sun depends on on the first ring, labelled Depends on', () => {
     const system = systemAround(
       'AlarmHandler',
       [node('AlarmHandler'), node('ClockService'), node('UiReader', 'ui')],
       [edge('AlarmHandler', 'ClockService'), edge('UiReader', 'AlarmHandler')],
     );
     expect(system.orbits.map((o) => [o.kind, o.label])).toEqual([
-      ['uses', USES_LABEL],
+      ['dependencies', DEPENDENCIES_LABEL],
       ['area', 'Interface'],
     ]);
     expect(system.orbits[0]?.radius).toBeLessThan(system.orbits[1]?.radius ?? 0);
@@ -86,6 +107,22 @@ describe('starSystem', () => {
     const planet = system.orbits[0]?.planets[0];
     expect(planet?.moons).toHaveLength(8);
     expect(planet?.hiddenMoons).toBe(3);
+  });
+
+  it('draws each spoke in the first kind of its link, and names every kind', () => {
+    const system = systemAround(
+      'FaceComponent',
+      [node('FaceComponent'), node('DialComponent'), node('ClockService')],
+      [
+        edge('FaceComponent', 'DialComponent', [], 'uses'),
+        edge('FaceComponent', 'ClockService', [], 'provides'),
+        edge('FaceComponent', 'ClockService'),
+      ],
+    );
+    expect(system.orbits[0]?.planets.map((p) => [p.entry.node.name, p.link, p.relation])).toEqual([
+      ['DialComponent', 'uses', 'uses'],
+      ['ClockService', 'injects', 'injects, provides'],
+    ]);
   });
 
   it('widens the view box to hold the outermost ring', () => {

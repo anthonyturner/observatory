@@ -3,12 +3,17 @@ import { ARCHITECTURE_STATE } from '../../../core/architecture/architecture-feed
 import {
   Heat,
   MapEntry,
+  Scope,
   countOf,
   entriesMatching,
   graphOf,
   neighbourhoodOf,
 } from '../../../core/architecture/architecture-graph';
-import { ArchitectureMap } from '../../../core/architecture/architecture.types';
+import {
+  ArchitectureMap,
+  EDGE_KINDS,
+  MAP_SCHEMA,
+} from '../../../core/architecture/architecture.types';
 import { starSystem } from '../../../core/architecture/star-layout';
 import { umlDiagram } from '../../../core/architecture/uml-layout';
 import { UpLink } from '../../../shared/up-link/up-link';
@@ -25,21 +30,25 @@ const WAITING_MESSAGE = {
   unreachable: 'Architecture map out of reach: is the API running (npm start)?',
 } as const;
 
+const RESCAN_NOTE =
+  'This map is from an older scan, without component links or windows. Run npm run arch:scan again, then reload.';
+
 const HEAT_NOTE: Readonly<Record<Heat, string>> = {
   hot: 'Hot spot: a change here is felt widely.',
-  unused: 'Nothing injects it: candidate dead code.',
+  unused: 'Nothing depends on it: candidate dead code.',
   plain: '',
 };
 
+const NO_LIST: readonly string[] = [];
 const NO_AREAS: ArchitectureMap['areas'] = [];
 
 function stampOf(map: ArchitectureMap): string {
   const scanned = new Date(map.scannedAt);
   const when = Number.isNaN(scanned.getTime()) ? '' : ` · scanned ${scanned.toLocaleDateString()}`;
-  return `${map.project} · ${map.nodes.length} classes · ${map.edges.length} injections${when}`;
+  return `${map.project} · ${map.nodes.length} nodes · ${map.edges.length} links${when}`;
 }
 
-/** A project's services and what injects them, as a star system or a dependency diagram. */
+/** A project's classes and how they depend on each other, as a star system or a dependency diagram. */
 @Component({
   selector: 'app-architecture-page',
   imports: [UpLink, NodeIndex, StarView, UmlView],
@@ -55,9 +64,11 @@ export class ArchitecturePage {
   });
   private readonly chosen = signal<string | null>(null);
 
+  protected readonly linkKinds = EDGE_KINDS;
   protected readonly view = signal<ViewChoice>('star');
   protected readonly query = signal('');
   protected readonly area = signal<string | null>(null);
+  protected readonly window = signal<string | null>(null);
   protected readonly heat = signal<Heat | null>(null);
 
   protected readonly waiting = computed(() => {
@@ -69,7 +80,12 @@ export class ArchitecturePage {
     const map = this.map();
     return map ? stampOf(map) : '';
   });
+  protected readonly rescanNote = computed(() => {
+    const map = this.map();
+    return map && map.schema < MAP_SCHEMA ? RESCAN_NOTE : null;
+  });
   protected readonly areas = computed(() => this.map()?.areas ?? NO_AREAS);
+  protected readonly windows = computed(() => this.map()?.windows ?? NO_LIST);
   protected readonly graph = computed(() => {
     const map = this.map();
     return map ? graphOf(map) : null;
@@ -80,18 +96,19 @@ export class ArchitecturePage {
       ? { unused: countOf(graph, 'unused'), hot: countOf(graph, 'hot') }
       : { unused: 0, hot: 0 };
   });
+  private readonly scope = computed((): Scope => ({ area: this.area(), window: this.window() }));
   protected readonly listed = computed((): readonly MapEntry[] => {
     const graph = this.graph();
     if (!graph) return [];
-    return entriesMatching(graph, { query: this.query(), area: this.area(), heat: this.heat() });
+    return entriesMatching(graph, { ...this.scope(), query: this.query(), heat: this.heat() });
   });
-  /** The class picked, or the most depended-on one until something is. */
-  protected readonly centreName = computed(
-    () => this.chosen() ?? this.graph()?.entries[0]?.node.name ?? null,
+  /** The node picked, or the most depended-on one until something is. */
+  protected readonly centreId = computed(
+    () => this.chosen() ?? this.graph()?.entries[0]?.node.id ?? null,
   );
   private readonly neighbourhood = computed(() => {
-    const [graph, name] = [this.graph(), this.centreName()];
-    return graph && name ? neighbourhoodOf(graph, name, this.area()) : null;
+    const [graph, id] = [this.graph(), this.centreId()];
+    return graph && id ? neighbourhoodOf(graph, id, this.scope()) : null;
   });
   protected readonly system = computed(() => {
     const neighbourhood = this.neighbourhood();
@@ -111,13 +128,14 @@ export class ArchitecturePage {
       kind: `${node.kind} · ${area}${node.group ? ` / ${node.group}` : ''}`,
       file: node.file,
       providedIn: node.providedIn,
-      counts: `Injected by ${neighbourhood.dependents.length} · injects ${neighbourhood.dependencies.length}`,
+      windows: node.windows.join(', '),
+      counts: `Depended on by ${neighbourhood.dependents.length} · depends on ${neighbourhood.dependencies.length}`,
       heat,
       note: HEAT_NOTE[heat],
     };
   });
 
-  protected centreOn(name: string): void {
-    this.chosen.set(name);
+  protected centreOn(id: string): void {
+    this.chosen.set(id);
   }
 }

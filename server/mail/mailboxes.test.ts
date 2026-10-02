@@ -85,7 +85,7 @@ describe('mailboxes', () => {
     assert.equal(fetching.reads(), 2);
   });
 
-  it('keeps a failed sign-in for five minutes, or until it is forgotten', async () => {
+  it('never retries a refused sign-in on its own: only Refresh, which forgets it, asks again', async () => {
     const fetching = counting(() => Promise.reject(new MailError('sign-in')));
     const { box, advance } = setUp(fetching.fetchInbox);
 
@@ -96,15 +96,27 @@ describe('mailboxes', () => {
       settings: ['ICLOUD_MAIL_ADDRESS', 'ICLOUD_MAIL_APP_PASSWORD'],
       checkedAt: '2026-10-02T12:00:00.000Z',
     });
-    advance(4 * 60_000);
+    advance(24 * 60 * 60_000);
     await box.read('icloud');
     assert.equal(fetching.reads(), 1);
     box.forget('icloud');
     await box.read('icloud');
     assert.equal(fetching.reads(), 2);
-    advance(5 * 60_000);
-    await box.read('icloud');
-    assert.equal(fetching.reads(), 3);
+  });
+
+  it('asks a slow or unreachable server again after five minutes', async () => {
+    for (const failure of ['timeout', 'unreachable'] as const) {
+      const fetching = counting(() => Promise.reject(new MailError(failure)));
+      const { box, advance } = setUp(fetching.fetchInbox);
+
+      await box.read('icloud');
+      advance(5 * 60_000 - 1);
+      await box.read('icloud');
+      assert.equal(fetching.reads(), 1, failure);
+      advance(1);
+      await box.read('icloud');
+      assert.equal(fetching.reads(), 2, failure);
+    }
   });
 
   it('never logs the password, even when the library’s error repeats it', async () => {

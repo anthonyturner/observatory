@@ -113,8 +113,9 @@ export function createApiHandler(table: RouteTable): ApiHandler {
     const guardedGet = isGet ? table.guardedGet?.[url.pathname] : undefined;
     const post = request.method === 'POST' ? table.post[url.pathname] : undefined;
     const remove = request.method === 'DELETE' ? table.delete?.[url.pathname] : undefined;
-    if (get) return answer(() => get(url.searchParams));
+    // Guarded first: a path listed in both tables keeps its guard.
     if (guardedGet) return asWrite(request, () => answer(() => guardedGet(url.searchParams)));
+    if (get) return answer(() => get(url.searchParams));
     if (remove) return asWrite(request, () => answer(() => remove(url.searchParams)));
     if (!post) return json(HTTP_NOT_FOUND, { error: 'not found' });
     const limit = table.bodyLimits?.[url.pathname] ?? MAX_BODY_BYTES;

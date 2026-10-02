@@ -154,6 +154,19 @@ describe('createApiHandler', () => {
     );
   });
 
+  it('keeps the guard on a path listed as both a plain and a guarded GET', async () => {
+    const both = createApiHandler({
+      get: { '/api/twice': async () => ({ open: true }) },
+      guardedGet: { '/api/twice': async () => ({ guarded: true }) },
+      post: {},
+    });
+    const read = (headers: Record<string, string>) =>
+      both(new Request(`${base}/api/twice`, { headers }));
+
+    assert.equal((await read({})).status, 403);
+    assert.deepEqual(await (await read({ 'x-observatory': '1' })).json(), { guarded: true });
+  });
+
   it('turns a failing route into a server error, not a crash', async () => {
     const original = console.error;
     console.error = () => undefined;

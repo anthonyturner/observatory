@@ -285,8 +285,11 @@ iCloud and Gmail inboxes, one tab each: sender, subject, when it arrived and a
 inbox over IMAP (the standard protocol mail apps read with), signing in with
 an app password. It opens the Inbox read-only and fetches only each message's
 flags and headers, so nothing Home does marks mail read. A list is kept for a
-minute, and a failed sign-in for five minutes, or until you press Refresh, so a
-wrong password is not retried until the provider locks the account.
+minute, and a slow or unreachable server is asked again after five minutes. A
+refused sign-in is not tried again until you press Refresh or restart the site,
+so a wrong password is never retried over and over until the provider locks
+the account.
+Home reads mail only while it is open.
 
 **Turning it on.** Put an address and an app password for each account in
 `~/.claude/observatory/.env`, or set them in the environment, then restart the

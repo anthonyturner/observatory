@@ -80,7 +80,7 @@ export class MailError extends Error {
 const INBOX = 'INBOX';
 export const LISTED_MESSAGES = 20;
 const SEEN = '\\Seen';
-/** The library's own limits sit under the reader's overall 15 s deadline. */
+/** Each step's own limit, kept under the whole read's deadline (mailboxes.ts), so that one is what fires. */
 const STEP_TIMEOUT_MS = 10_000;
 
 const TIMEOUT_CODES: ReadonlySet<string> = new Set([
@@ -160,7 +160,10 @@ async function readInbox(client: ImapClient): Promise<InboxPage> {
     return {
       total,
       unread: status ? (status.unseen ?? 0) : 0,
-      messages: [...listed].sort((a, b) => b.seq - a.seq).map(inboxMessage),
+      messages: [...listed]
+        .sort((a, b) => b.seq - a.seq)
+        .slice(0, LISTED_MESSAGES)
+        .map(inboxMessage),
     };
   } finally {
     lock.release();

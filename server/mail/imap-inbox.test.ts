@@ -156,6 +156,18 @@ describe('imapInbox', () => {
     assert.ok(!empty.calls.some((call) => call.startsWith('fetch')));
   });
 
+  it('lists no more than 20 when mail arrives between opening the Inbox and fetching', async () => {
+    const fake = fakeClient({ exists: 30 });
+    fake.client.fetchAll = async () =>
+      Array.from({ length: 25 }, (_, index) => message(11 + index));
+
+    const page = await imapInbox(fake.create)(request());
+
+    assert.equal(page.messages.length, 20);
+    assert.equal(page.messages[0].uid, 135);
+    assert.equal(page.messages.at(-1)?.uid, 116);
+  });
+
   it('marks unread mail, and makes do with a message that gives little', async () => {
     const fake = fakeClient({ exists: 1 });
     fake.client.fetchAll = async () => [

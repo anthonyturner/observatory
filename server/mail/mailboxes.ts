@@ -18,12 +18,17 @@ export interface MailboxesOptions {
 
 /** New mail is worth a minute's wait; asking more often only costs sign-ins. */
 const LIST_TTL_MS = 60_000;
-/** Retrying a refused sign-in every minute is how a provider locks an account. */
+/** A server that was slow or out of reach is worth asking again before long. */
 const FAILURE_TTL_MS = 5 * 60_000;
+/** Retrying a refused password unasked is how a provider locks an account, so
+ *  only Refresh (which forgets it) or a restart asks again. */
+const REFUSED_TTL_MS = Number.POSITIVE_INFINITY;
 const DEADLINE_MS = 15_000;
 
-const lifetimeOf = (report: MailboxReport): number =>
-  report.state === 'failed' ? FAILURE_TTL_MS : LIST_TTL_MS;
+function lifetimeOf(report: MailboxReport): number {
+  if (report.state !== 'failed') return LIST_TTL_MS;
+  return report.failure === 'sign-in' ? REFUSED_TTL_MS : FAILURE_TTL_MS;
+}
 
 const settingsOf = (account: MailAccount): readonly string[] => [
   MAIL_ENV[account].address,

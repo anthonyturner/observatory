@@ -1,5 +1,7 @@
+import { HighContrastMode, HighContrastModeDetector } from '@angular/cdk/a11y';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { CORE_RENDERER } from '../../../core/instrument/core-tokens';
@@ -38,7 +40,23 @@ const NO_CANVAS: CoreRenderer = {
   dispose: () => undefined,
 };
 
-describe('HomePage', () => {
+/** jsdom has no forced-colours mode to detect, and the CDK's probe for one runs
+ *  getComputedStyle, which in jsdom matches every selector of every Home stylesheet. */
+@Injectable()
+class NoForcedColours extends HighContrastModeDetector {
+  override getHighContrastMode(): HighContrastMode {
+    return HighContrastMode.NONE;
+  }
+}
+
+/** The first render in this file builds the whole Home tree from cold: jsdom parses
+ *  every Home stylesheet and V8 compiles every component for the first time. That is
+ *  about 0.4 s alone, against 0.15 s for a later render, but it reached 5.5 s in a
+ *  full suite on a loaded machine and failed the 5 s default. 15 s is nearly three
+ *  times that, and still fails a render that hangs. */
+const COLD_FIRST_RENDER_MS = 15_000;
+
+describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
   function render(): HTMLElement {
     TestBed.configureTestingModule({
       providers: [
@@ -48,6 +66,7 @@ describe('HomePage', () => {
         { provide: CORE_RENDERER, useValue: () => NO_CANVAS },
         { provide: SKY_CANVAS, useValue: () => NO_SKY },
         { provide: MUSIC_CANVAS, useValue: () => NO_MUSIC },
+        { provide: HighContrastModeDetector, useClass: NoForcedColours },
       ],
     });
     const fixture = TestBed.createComponent(HomePage);

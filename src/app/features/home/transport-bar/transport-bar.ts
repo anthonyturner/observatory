@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
+import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
@@ -18,7 +19,11 @@ import { SoundPreference } from '../../../core/sound/sound-preference';
 import { syncLabelOf } from './sync-label';
 import { TrackList } from './track-list/track-list';
 
-/** Home's playlist along the foot of the screen: the video, the transport, the
+/** Mixes run for an hour: a step back to hear a drop again, a longer one forward. */
+const BACK_STEP_S = 15;
+const FORWARD_STEP_S = 30;
+
+/** Home's playlist along the foot of the screen: the video, the seek bar, the transport, the
  *  heart, the Mix / Favourites switch, the sky's Sync and the volume, with the
  *  track list above. It plays instead of the
  *  generated score, never over it. The page provides the playlist and the pulse. */
@@ -40,6 +45,18 @@ export class TransportBar {
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
   protected readonly listOpen = signal(false);
+  protected readonly backStep = BACK_STEP_S;
+  protected readonly forwardStep = FORWARD_STEP_S;
+  /** Where the pointer holds the seek bar mid-drag; the music's position otherwise. */
+  private readonly dragged = signal<number | null>(null);
+  protected readonly shownElapsed = computed(() => this.dragged() ?? this.player.elapsed());
+  protected readonly elapsedLabel = computed(() => clockOf(this.shownElapsed()));
+  protected readonly durationLabel = computed(() =>
+    this.player.canSeek() ? clockOf(this.player.duration()) : '--:--',
+  );
+  protected readonly positionWords = computed(
+    () => `${spokenClockOf(this.shownElapsed())} of ${spokenClockOf(this.player.duration())}`,
+  );
   protected readonly hasStarted = computed(() => this.player.state() !== 'idle');
   protected readonly position = computed(
     () => `${this.player.index() + 1} / ${this.player.tracks().length}`,
@@ -97,6 +114,15 @@ export class TransportBar {
   protected choose(source: PlaylistSource): void {
     if (this.player.isPlaying()) this.silenceScore();
     this.library.choose(source);
+  }
+
+  protected onScrub(event: Event): void {
+    this.dragged.set(Number((event.target as HTMLInputElement).value));
+  }
+
+  protected onScrubbed(event: Event): void {
+    this.player.seek(Number((event.target as HTMLInputElement).value));
+    this.dragged.set(null);
   }
 
   protected onVolume(event: Event): void {

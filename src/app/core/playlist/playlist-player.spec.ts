@@ -33,6 +33,19 @@ class FakePlayer implements VideoPlayer {
   setVolume(volume: number): void {
     this.volume = volume;
   }
+  time = 0;
+  length = 0;
+  seeks: number[] = [];
+  seekTo(seconds: number): void {
+    this.seeks.push(seconds);
+    this.time = seconds;
+  }
+  currentTime(): number {
+    return this.time;
+  }
+  duration(): number {
+    return this.length;
+  }
   dispose(): void {
     this.disposed = true;
   }
@@ -202,5 +215,62 @@ describe('PlaylistPlayer', () => {
     playlist.useTracks([]);
     playlist.refreshTracks([]);
     expect(playlist.tracks()).toEqual(TRACKS);
+  });
+
+  describe('position in a track', () => {
+    afterEach(() => vi.useRealTimers());
+
+    async function playing() {
+      const ctx = setup();
+      ctx.playlist.play();
+      await settle();
+      ctx.fake.length = 300;
+      ctx.fake.time = 12;
+      vi.useFakeTimers();
+      ctx.events().playing();
+      return ctx;
+    }
+
+    it('follows the music while it plays, and stops following when paused', async () => {
+      const { playlist, fake, events } = await playing();
+      expect(playlist.elapsed()).toBe(12);
+      expect(playlist.duration()).toBe(300);
+      fake.time = 13;
+      vi.advanceTimersByTime(500);
+      expect(playlist.elapsed()).toBe(13);
+      events().paused();
+      fake.time = 99;
+      vi.advanceTimersByTime(2000);
+      expect(playlist.elapsed()).toBe(13);
+    });
+
+    it('seeks within the track, never past either end', async () => {
+      const { playlist, fake } = await playing();
+      playlist.seek(120);
+      playlist.seek(-5);
+      playlist.seek(900);
+      expect(fake.seeks).toEqual([120, 0, 300]);
+      expect(playlist.elapsed()).toBe(300);
+    });
+
+    it('skips forward and back from where the music is', async () => {
+      const { playlist, fake } = await playing();
+      playlist.skip(30);
+      playlist.skip(-15);
+      expect(fake.seeks).toEqual([42, 27]);
+    });
+
+    it('starts the next track from the top', async () => {
+      const { playlist } = await playing();
+      playlist.next();
+      expect(playlist.elapsed()).toBe(0);
+      expect(playlist.canSeek()).toBe(false);
+    });
+
+    it('cannot seek before the length is known', () => {
+      const { playlist, fake } = setup();
+      playlist.seek(10);
+      expect(fake.seeks).toEqual([]);
+    });
   });
 });

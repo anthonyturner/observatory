@@ -23,6 +23,8 @@ export const PLAYLIST_TRACKS = new InjectionToken<readonly Track[]>('PLAYLIST_TR
 });
 
 const DEFAULT_VOLUME = 0.6;
+/** How often the bar's position follows the music; the player has no event for it. */
+const PROGRESS_MS = 500;
 
 /** A playlist and where it is in it. Provided by the component that shows it, so
  *  leaving the page stops the music. Nothing loads until the first play. */
@@ -34,6 +36,8 @@ export class PlaylistPlayer {
   private readonly position = signal(0);
   private readonly playback = signal<PlaybackState>('idle');
   private readonly level = signal(DEFAULT_VOLUME);
+  private readonly elapsedS = signal(0);
+  private readonly lengthS = signal(0);
 
   /** The list playing now; never empty. */
   readonly tracks: Signal<readonly Track[]> = this.list.asReadonly();
@@ -41,6 +45,11 @@ export class PlaylistPlayer {
   readonly state: Signal<PlaybackState> = this.playback.asReadonly();
   /** From 0 to 1. */
   readonly volume: Signal<number> = this.level.asReadonly();
+  /** Seconds into the current track. */
+  readonly elapsed: Signal<number> = this.elapsedS.asReadonly();
+  /** The current track's length in seconds; 0 until the player knows it. */
+  readonly duration: Signal<number> = this.lengthS.asReadonly();
+  readonly canSeek = computed(() => this.lengthS() > 0);
   readonly current = computed(() => this.list()[this.position()]);
   readonly isPlaying = computed(() => this.playback() === 'playing');
 
@@ -50,6 +59,7 @@ export class PlaylistPlayer {
   private isDestroyed = false;
   /** The video the player holds, which a list change can leave behind the current track. */
   private loadedId: string | null = null;
+  private progressTimer: ReturnType<typeof setInterval> | null = null;
   /** Tracks refused in a row; a whole list of them stops the skipping. */
   private failuresInRow = 0;
 
@@ -57,8 +67,12 @@ export class PlaylistPlayer {
     playing: () => {
       this.failuresInRow = 0;
       this.playback.set('playing');
+      this.followProgress();
     },
-    paused: () => this.playback.set('paused'),
+    paused: () => {
+      this.playback.set('paused');
+      this.stopFollowing();
+    },
     ended: () => this.goTo(nextIndex(this.position(), this.list().length)),
     failed: () => this.skipRefused(),
   };
@@ -66,6 +80,7 @@ export class PlaylistPlayer {
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.isDestroyed = true;
+      this.stopFollowing();
       this.player?.dispose();
     });
   }
@@ -126,6 +141,19 @@ export class PlaylistPlayer {
     else this.position.set(slid);
   }
 
+  /** Moves to `seconds` into the current track, kept within it. */
+  seek(seconds: number): void {
+    if (!this.player || !this.canSeek()) return;
+    const to = Math.min(Math.max(seconds, 0), this.lengthS());
+    this.player.seekTo(to);
+    this.elapsedS.set(to);
+  }
+
+  /** Jumps `seconds` forward, or back when negative. */
+  skip(seconds: number): void {
+    this.seek(this.elapsedS() + seconds);
+  }
+
   setVolume(volume: number): void {
     const level = Math.min(1, Math.max(0, volume));
     this.level.set(level);
@@ -136,8 +164,28 @@ export class PlaylistPlayer {
     this.position.set(index);
     if (!this.player) return this.start();
     this.playback.set('loading');
+    this.stopFollowing();
+    this.elapsedS.set(0);
+    this.lengthS.set(0);
     this.loadedId = this.current().videoId;
     this.player.load(this.loadedId);
+  }
+
+  private followProgress(): void {
+    this.stopFollowing();
+    this.readProgress();
+    this.progressTimer = setInterval(() => this.readProgress(), PROGRESS_MS);
+  }
+
+  private stopFollowing(): void {
+    if (this.progressTimer !== null) clearInterval(this.progressTimer);
+    this.progressTimer = null;
+  }
+
+  private readProgress(): void {
+    if (!this.player) return;
+    this.elapsedS.set(this.player.currentTime());
+    this.lengthS.set(this.player.duration());
   }
 
   private isActive(): boolean {

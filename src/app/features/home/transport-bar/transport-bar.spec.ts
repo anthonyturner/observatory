@@ -1,7 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { AmbientPlayer } from '../../../core/sound/ambient-synth';
 import { AMBIENT_PLAYER, SoundPreference } from '../../../core/sound/sound-preference';
-import { VIDEO_PLAYER_FACTORY, VideoPlayer } from '../../../core/playlist/video-player';
+import {
+  VIDEO_PLAYER_FACTORY,
+  VideoPlayer,
+  VideoPlayerOptions,
+} from '../../../core/playlist/video-player';
 import { PLAYLIST_TRACKS, PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
@@ -22,9 +26,14 @@ function render() {
     play: vi.fn(),
     pause: pauses,
     setVolume: vi.fn(),
+    seekTo: vi.fn(),
+    currentTime: () => 0,
+    duration: () => 0,
     dispose: vi.fn(),
   };
-  const make = vi.fn(() => Promise.resolve(player));
+  const make = vi.fn<(options: VideoPlayerOptions) => Promise<VideoPlayer>>(() =>
+    Promise.resolve(player),
+  );
   const tap: AudioTap = {
     binHz: 20,
     binCount: 8,
@@ -61,6 +70,7 @@ function render() {
     openTap,
     pulse: TestBed.inject(MusicPulse),
     favorites: TestBed.inject(FavoritesStore),
+    player,
     tracks: TestBed.inject(PLAYLIST_TRACKS),
   };
 }
@@ -162,5 +172,41 @@ describe('TransportBar', () => {
     element.querySelectorAll<HTMLButtonElement>('app-track-list .heart')[3].click();
     fixture.detectChanges();
     expect(favorites.has(tracks[3].videoId)).toBe(true);
+  });
+
+  it('keeps the seek bar off until the track has a length, showing no time yet', () => {
+    const { element } = render();
+    const seek = element.querySelector<HTMLInputElement>('input[aria-label="Position in track"]');
+    expect(seek?.disabled).toBe(true);
+    expect(element.querySelector('.scrub')?.textContent).toContain('--:--');
+  });
+
+  it('holds the dragged position, then seeks there on release', async () => {
+    const { fixture, element, button, player, make } = render();
+    player.duration = () => 300;
+    player.currentTime = () => 10;
+    button('Play')?.click();
+    await fixture.whenStable();
+    vi.useFakeTimers();
+    try {
+      make.mock.calls[0][0].events.playing();
+      fixture.detectChanges();
+      const seek = element.querySelector<HTMLInputElement>('input[aria-label="Position in track"]');
+      if (!seek) throw new Error('no seek bar');
+      expect(seek.disabled).toBe(false);
+      expect(element.querySelector('.scrub')?.textContent).toContain('5:00');
+
+      seek.value = '200';
+      seek.dispatchEvent(new Event('input'));
+      vi.advanceTimersByTime(1000);
+      fixture.detectChanges();
+      expect(element.querySelector('.scrub')?.textContent).toContain('3:20');
+      expect(player.seekTo).not.toHaveBeenCalled();
+
+      seek.dispatchEvent(new Event('change'));
+      expect(player.seekTo).toHaveBeenCalledWith(200);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

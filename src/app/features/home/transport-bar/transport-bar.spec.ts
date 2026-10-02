@@ -3,6 +3,8 @@ import { AmbientPlayer } from '../../../core/sound/ambient-synth';
 import { AMBIENT_PLAYER, SoundPreference } from '../../../core/sound/sound-preference';
 import { VIDEO_PLAYER_FACTORY, VideoPlayer } from '../../../core/playlist/video-player';
 import { PLAYLIST_TRACKS, PlaylistPlayer } from '../../../core/playlist/playlist-player';
+import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
+import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
 import { TransportBar } from './transport-bar';
@@ -34,6 +36,7 @@ function render() {
   TestBed.configureTestingModule({
     providers: [
       PlaylistPlayer,
+      PlaylistLibrary,
       MusicPulse,
       { provide: AUDIO_TAP, useValue: openTap },
       { provide: VIDEO_PLAYER_FACTORY, useValue: make },
@@ -57,6 +60,7 @@ function render() {
     sound,
     openTap,
     pulse: TestBed.inject(MusicPulse),
+    favorites: TestBed.inject(FavoritesStore),
     tracks: TestBed.inject(PLAYLIST_TRACKS),
   };
 }
@@ -95,7 +99,7 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     expect(tracksButton?.getAttribute('aria-expanded')).toBe('true');
 
-    const picks = element.querySelectorAll<HTMLButtonElement>('app-track-list button');
+    const picks = element.querySelectorAll<HTMLButtonElement>('app-track-list .pick');
     expect(picks.length).toBe(tracks.length);
     picks[2].click();
     fixture.detectChanges();
@@ -130,5 +134,33 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     expect(openTap).toHaveBeenCalledTimes(2);
     expect(button('Synced')).toBeDefined();
+  });
+
+  it('hearts the track playing, and the Favourites switch then plays the hearted ones', () => {
+    const { fixture, element, button, favorites, tracks } = render();
+    const heart = button('Favourite');
+    const favoritesButton = (): HTMLButtonElement | null =>
+      element.querySelector('.source button:last-child');
+    expect(favoritesButton()?.disabled).toBe(true);
+
+    heart?.click();
+    fixture.detectChanges();
+    expect(heart?.getAttribute('aria-pressed')).toBe('true');
+    expect(favorites.tracks()).toEqual([tracks[0]]);
+    expect(favoritesButton()?.textContent).toContain('1');
+
+    favoritesButton()?.click();
+    fixture.detectChanges();
+    expect(favoritesButton()?.getAttribute('aria-pressed')).toBe('true');
+    expect(element.textContent).toContain('1 / 1');
+  });
+
+  it('hearts a track from its row in the track list', () => {
+    const { fixture, element, button, favorites, tracks } = render();
+    button('Tracks')?.click();
+    fixture.detectChanges();
+    element.querySelectorAll<HTMLButtonElement>('app-track-list .heart')[3].click();
+    fixture.detectChanges();
+    expect(favorites.has(tracks[3].videoId)).toBe(true);
   });
 });

@@ -154,4 +154,53 @@ describe('PlaylistPlayer', () => {
     TestBed.resetTestingModule();
     expect(fake.disposed).toBe(true);
   });
+
+  it('plays another list from its top, carrying on if music was playing', async () => {
+    const { playlist, fake, events } = setup();
+    playlist.select(2);
+    await settle();
+    events().playing();
+    const other: Track[] = [{ videoId: 'zzzzzzzzzzz', title: 'Z', artist: 'Z', genre: 'techno' }];
+    playlist.useTracks(other);
+    expect(playlist.index()).toBe(0);
+    expect(playlist.current().title).toBe('Z');
+    expect(fake.loaded.at(-1)).toBe('zzzzzzzzzzz');
+  });
+
+  it('loads the new list on the next Play when the switch came while paused', async () => {
+    const { playlist, fake, events } = setup();
+    playlist.play();
+    await settle();
+    events().paused();
+    playlist.useTracks([TRACKS[2]]);
+    expect(fake.loaded).toEqual([]);
+    playlist.play();
+    expect(fake.loaded).toEqual(['ccccccccccc']);
+    expect(fake.plays).toBe(0);
+  });
+
+  it('keeps the current track current when its list changes around it', () => {
+    const { playlist } = setup();
+    playlist.select(1);
+    playlist.refreshTracks([TRACKS[2], TRACKS[1]]);
+    expect(playlist.index()).toBe(1);
+    expect(playlist.current().title).toBe('Two');
+  });
+
+  it('plays the track that takes the place of one taken out while playing', async () => {
+    const { playlist, fake, events } = setup();
+    playlist.select(1);
+    await settle();
+    events().playing();
+    playlist.refreshTracks([TRACKS[0], TRACKS[2]]);
+    expect(playlist.current().title).toBe('Three');
+    expect(fake.loaded.at(-1)).toBe('ccccccccccc');
+  });
+
+  it('ignores an empty list', () => {
+    const { playlist } = setup();
+    playlist.useTracks([]);
+    playlist.refreshTracks([]);
+    expect(playlist.tracks()).toEqual(TRACKS);
+  });
 });

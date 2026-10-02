@@ -20,6 +20,7 @@ import { TransportBar } from '../transport-bar/transport-bar';
 import { VitalsPanel } from '../vitals-panel/vitals-panel';
 import { SoundPreference } from '../../../core/sound/sound-preference';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
+import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { RunDock } from '../../../core/runs/run-dock';
 import { RunsStore } from '../../../core/runs/runs-store';
@@ -47,7 +48,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
     TransportBar,
   ],
   // The bar plays the music and the sky moves with it, so Home holds both for them.
-  providers: [SoundPreference, PlaylistPlayer, MusicPulse],
+  providers: [SoundPreference, PlaylistPlayer, PlaylistLibrary, MusicPulse],
   hostDirectives: [HelpShortcuts, CoreStateFeed],
   host: { '[class.docked]': 'dock.isOpen()' },
   templateUrl: './home-page.html',

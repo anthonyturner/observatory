@@ -11,13 +11,16 @@ import {
   viewChild,
 } from '@angular/core';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
+import { FavoritesStore } from '../../../core/playlist/favorites-store';
+import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { SoundPreference } from '../../../core/sound/sound-preference';
 import { syncLabelOf } from './sync-label';
 import { TrackList } from './track-list/track-list';
 
 /** Home's playlist along the foot of the screen: the video, the transport, the
- *  sky's Sync and the volume, with the track list above. It plays instead of the
+ *  heart, the Mix / Favourites switch, the sky's Sync and the volume, with the
+ *  track list above. It plays instead of the
  *  generated score, never over it. The page provides the playlist and the pulse. */
 @Component({
   selector: 'app-transport-bar',
@@ -29,6 +32,8 @@ import { TrackList } from './track-list/track-list';
 })
 export class TransportBar {
   protected readonly player = inject(PlaylistPlayer);
+  protected readonly library = inject(PlaylistLibrary);
+  protected readonly favorites = inject(FavoritesStore);
   private readonly sound = inject(SoundPreference);
   private readonly pulse = inject(MusicPulse);
   protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
@@ -37,7 +42,16 @@ export class TransportBar {
   protected readonly listOpen = signal(false);
   protected readonly hasStarted = computed(() => this.player.state() !== 'idle');
   protected readonly position = computed(
-    () => `${this.player.index() + 1} / ${this.player.tracks.length}`,
+    () => `${this.player.index() + 1} / ${this.player.tracks().length}`,
+  );
+  protected readonly isFavorite = computed(() => this.favorites.has(this.player.current().videoId));
+  protected readonly favoriteIds = computed(
+    () => new Set(this.favorites.tracks().map((track) => track.videoId)),
+  );
+  protected readonly favoritesHint = computed(() =>
+    this.library.hasFavorites()
+      ? 'Play the tracks you have hearted'
+      : 'No favourites yet: heart a track to save it here',
   );
   protected readonly status = computed(() =>
     this.player.state() === 'loading' ? 'Loading…' : this.player.current().artist,
@@ -78,6 +92,11 @@ export class TransportBar {
     this.silenceScore();
     this.player.select(index);
     this.listOpen.set(false);
+  }
+
+  protected choose(source: PlaylistSource): void {
+    if (this.player.isPlaying()) this.silenceScore();
+    this.library.choose(source);
   }
 
   protected onVolume(event: Event): void {

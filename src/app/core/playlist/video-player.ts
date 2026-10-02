@@ -8,6 +8,11 @@ export interface VideoPlayer {
   pause(): void;
   /** From 0 to 1. */
   setVolume(volume: number): void;
+  seekTo(seconds: number): void;
+  /** Seconds into the video now. */
+  currentTime(): number;
+  /** The video's length in seconds; 0 until it is known. */
+  duration(): number;
   dispose(): void;
 }
 

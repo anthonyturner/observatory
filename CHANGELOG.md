@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- A seek bar on the playlist with the elapsed time and the track's length: drag to scrub, or skip back 15 seconds and forward 30 ([#244](https://github.com/anthonyturner/observatory/pull/244)).
 - Heart the track playing (or any track in the list) to save it as a favourite in this browser, and switch the playlist between the day's mix and your favourites from the bar ([#242](https://github.com/anthonyturner/observatory/pull/242)).
 - Home's sky moves with the playlist once you share the tab's audio: each track gets its own look (shockwave rings, a warp-speed star stream, aurora ribbons or a breathing nebula) in trance or techno colours, pulsing on the kicks, sparkling on the hats and bursting on a drop, while the core keeps its own glow ([#239](https://github.com/anthonyturner/observatory/pull/239)).
 - The architecture map shows which component uses which, what each provider list and token hands out, inheritance and calls to injecting functions, each as its own colour of link. A Window filter shows what each Overwolf window pulls in, and two classes that share a name are no longer merged ([#231](https://github.com/anthonyturner/observatory/pull/231)).

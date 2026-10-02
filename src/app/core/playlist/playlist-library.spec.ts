@@ -20,6 +20,9 @@ function setup() {
     play: vi.fn(),
     pause: vi.fn(),
     setVolume: vi.fn(),
+    seekTo: vi.fn(),
+    currentTime: () => 0,
+    duration: () => 0,
     dispose: vi.fn(),
   };
   TestBed.configureTestingModule({

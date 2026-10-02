@@ -10,6 +10,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { MotionPreference } from '../../../core/motion/motion-preference';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
@@ -33,7 +34,7 @@ const FORWARD_STEP_S = 30;
   templateUrl: './transport-bar.html',
   styleUrl: './transport-bar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(keydown.escape)': 'listOpen.set(false)' },
+  host: { '(keydown.escape)': 'listOpen.set(false)', '[class.still]': 'motion.isStill()' },
 })
 export class TransportBar {
   protected readonly player = inject(PlaylistPlayer);
@@ -41,10 +42,12 @@ export class TransportBar {
   protected readonly favorites = inject(FavoritesStore);
   private readonly sound = inject(SoundPreference);
   private readonly pulse = inject(MusicPulse);
+  protected readonly motion = inject(MotionPreference);
   protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
   protected readonly listOpen = signal(false);
+  protected readonly isVideoLarge = signal(false);
   protected readonly backStep = BACK_STEP_S;
   protected readonly forwardStep = FORWARD_STEP_S;
   /** Where the pointer holds the seek bar mid-drag; the music's position otherwise. */

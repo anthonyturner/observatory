@@ -209,4 +209,23 @@ describe('TransportBar', () => {
       vi.useRealTimers();
     }
   });
+
+  it('offers a bigger video once the card shows, and back again', async () => {
+    const { fixture, element, button } = render();
+    expect(button('Bigger video')).toBeUndefined();
+    button('Play')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const enlarge = button('Bigger video');
+    expect(enlarge?.getAttribute('aria-pressed')).toBe('false');
+    enlarge?.click();
+    fixture.detectChanges();
+    expect(enlarge?.getAttribute('aria-pressed')).toBe('true');
+    expect(element.querySelector('.card')?.classList).toContain('card--large');
+
+    enlarge?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('.card')?.classList).not.toContain('card--large');
+  });
 });

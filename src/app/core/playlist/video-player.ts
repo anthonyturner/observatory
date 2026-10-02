@@ -31,7 +31,7 @@ export interface VideoPlayerOptions {
 export type VideoPlayerFactory = (options: VideoPlayerOptions) => Promise<VideoPlayer>;
 
 /** Makes the player a playlist plays through; YouTube's embedded player by default. */
-export const VIDEO_PLAYER_FACTORY = new InjectionToken<VideoPlayerFactory>(
-  'VIDEO_PLAYER_FACTORY',
-  { providedIn: 'root', factory: () => createYouTubePlayer },
-);
+export const VIDEO_PLAYER_FACTORY = new InjectionToken<VideoPlayerFactory>('VIDEO_PLAYER_FACTORY', {
+  providedIn: 'root',
+  factory: () => createYouTubePlayer,
+});

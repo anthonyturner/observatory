@@ -50,7 +50,10 @@ export async function createYouTubePlayer(options: VideoPlayerOptions): Promise<
   const mount = options.host.ownerDocument.createElement('div');
   options.host.replaceChildren(mount);
   return new Promise((resolve) => {
-    const player = new Player(mount, playerOptions(options, () => resolve(adapt(player))));
+    const player = new Player(
+      mount,
+      playerOptions(options, () => resolve(adapt(player))),
+    );
   });
 }
 

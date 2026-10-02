@@ -8,15 +8,18 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { nextIndex, previousIndex } from './playlist-order';
 import { PlaybackState, Track } from './playlist.types';
-import { TRANCE_PLAYLIST } from './trance-playlist';
+import { MUSIC_POOL } from './music-pool';
+import { nextIndex, pickShuffled, previousIndex } from './playlist-order';
 import { VIDEO_PLAYER_FACTORY, VideoPlayer, VideoPlayerEvents } from './video-player';
 
-/** The tracks a page's playlist plays, in order. */
+/** How many tracks one visit's mix holds. */
+const MIX_SIZE = 12;
+
+/** The tracks a page's playlist plays, in order: a fresh mix from the pool on each load. */
 export const PLAYLIST_TRACKS = new InjectionToken<readonly Track[]>('PLAYLIST_TRACKS', {
   providedIn: 'root',
-  factory: () => TRANCE_PLAYLIST,
+  factory: () => pickShuffled(MUSIC_POOL, MIX_SIZE, Math.random),
 });
 
 const DEFAULT_VOLUME = 0.6;

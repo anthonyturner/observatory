@@ -1,0 +1,173 @@
+import { Track } from './playlist.types';
+
+/** Every track Home's playlist can draw from. Every id was checked against YouTube's
+ *  oEmbed endpoint, which answers 401 for a video whose owner forbids embedding. */
+export const MUSIC_POOL: readonly Track[] = [
+  { videoId: 'Bcf5kzBCdy4', title: 'Set You Free', artist: 'N-Trance', genre: 'trance' },
+  {
+    videoId: 'ad9kxOYT5Ko',
+    title: 'Take Me Home (Rising Star Extended Remix)',
+    artist: 'Armin van Buuren',
+    genre: 'trance',
+  },
+  {
+    videoId: 'AZn4W9NEDV4',
+    title: 'Android Dreams',
+    artist: 'Elite Trance Music',
+    genre: 'trance',
+  },
+  { videoId: 'QwlH-kROB9Q', title: 'Echoes', artist: 'AEKTrance', genre: 'trance' },
+  {
+    videoId: 'qALv57GVn0w',
+    title: 'Destination (Extended ASOT 2024 Anthem)',
+    artist: 'Armin van Buuren, Ferry Corsten, Rank 1 & Ruben de Ronde',
+    genre: 'trance',
+  },
+  {
+    videoId: 'tE9NcLGSDBE',
+    title: 'Trance Top 1000 — The Anthems (Mini Mix)',
+    artist: 'Armada Music',
+    genre: 'trance',
+  },
+  {
+    videoId: 'yEMt9esDe1g',
+    title: 'Classic Trance Anthems, 1999 to 2001',
+    artist: 'DelasTrance',
+    genre: 'trance',
+  },
+  {
+    videoId: 'eEdGs1Eyis4',
+    title: 'Classic Trance Anthems: Golden Era',
+    artist: 'BasslineDJs',
+    genre: 'trance',
+  },
+  {
+    videoId: 'RacKHfHQ9p8',
+    title: 'The Golden Era of Trance',
+    artist: 'Journey Into Trance',
+    genre: 'trance',
+  },
+  {
+    videoId: '562fPkS09e0',
+    title: 'Forgotten Trance Classics',
+    artist: 'Tranced Out',
+    genre: 'trance',
+  },
+  {
+    videoId: 'HbQ4eEDgBxY',
+    title: 'Legendary Trance Anthems',
+    artist: 'DreamTrail',
+    genre: 'trance',
+  },
+  {
+    videoId: 'x3xiShDhzwI',
+    title: '2000s Trance: Tiësto, ATB, Ferry Corsten',
+    artist: 'bront',
+    genre: 'trance',
+  },
+  {
+    videoId: 'vo_9amEEEhQ',
+    title: 'The Best of Anjunabeats: 2000–2004',
+    artist: 'Seven Bliss',
+    genre: 'trance',
+  },
+  {
+    videoId: 'u9tZq5CFE_g',
+    title: 'The Best of Anjunabeats: 2005–2006',
+    artist: 'Seven Bliss',
+    genre: 'trance',
+  },
+  {
+    videoId: 'zdUj6dgECh8',
+    title: 'Anjunabeats: The Lost Classics, Vol. 1',
+    artist: 'Seven Bliss',
+    genre: 'trance',
+  },
+  {
+    videoId: 'mhZsEQpKojw',
+    title: 'Best of Anjunabeats (Noisetalgia 045)',
+    artist: 'Indecent Noise',
+    genre: 'trance',
+  },
+  {
+    videoId: 'MXbngtqrhUI',
+    title: 'Smith & Pledger: Greatest Hits',
+    artist: 'Trance Essentials',
+    genre: 'trance',
+  },
+  {
+    videoId: 'KcU-1fbhgss',
+    title: 'Trance Classics, 1997–2005',
+    artist: 'Aurora',
+    genre: 'trance',
+  },
+  { videoId: '4bJ92SNa_40', title: 'Trance Classics Mix', artist: 'Aurora', genre: 'trance' },
+  {
+    videoId: 'xSyzngZDL8o',
+    title: 'Trance Year Mix 2024',
+    artist: 'Armada Music',
+    genre: 'trance',
+  },
+  {
+    videoId: '9DGGKPRSZMs',
+    title: 'Live at A State of Trance 2025',
+    artist: 'Ferry Corsten',
+    genre: 'trance',
+  },
+  { videoId: 'ooc8QR2WleM', title: 'Techno Shaman', artist: 'Ummet Ozcan', genre: 'techno' },
+  {
+    videoId: 'QeDDc3y6EmM',
+    title: 'Techno Set (Boiler Room)',
+    artist: 'Charlotte de Witte',
+    genre: 'techno',
+  },
+  {
+    videoId: 'ZQnztaR16kg',
+    title: 'Techno Masterclass (B2B)',
+    artist: 'Charlotte de Witte & Amelie Lens',
+    genre: 'techno',
+  },
+  {
+    videoId: '7j1l2sGAbT0',
+    title: 'Together (Techno Mix 2020)',
+    artist: 'Charlotte de Witte, Amelie Lens, Nina Kraviz & Adam Beyer',
+    genre: 'techno',
+  },
+  { videoId: 'dIHsojcEP-A', title: 'Best Techno 2024 Mix', artist: 'LÀCCA', genre: 'techno' },
+  {
+    videoId: '9GreWp9VdIM',
+    title: 'Afterlife Mix: Melodic Techno',
+    artist: 'Melodic State of Mind',
+    genre: 'techno',
+  },
+  {
+    videoId: 'DCKfe5vYLqk',
+    title: 'Afterlife Melodic Techno Mix 2023',
+    artist: 'Patrick Slayer',
+    genre: 'techno',
+  },
+  {
+    videoId: 'rKOjCfhXr84',
+    title: 'Afterlife 2026, Vol. 1',
+    artist: 'Micho Mixes',
+    genre: 'techno',
+  },
+  {
+    videoId: 'zV80oTVt6P4',
+    title: 'Oldschool Techno Classics',
+    artist: 'Sound of Frankfurt',
+    genre: 'techno',
+  },
+  {
+    videoId: 'zIEW-Yg3klI',
+    title: 'Remember the 90s: Techno & Trance Classics',
+    artist: 'Sound of Frankfurt',
+    genre: 'techno',
+  },
+  {
+    videoId: 'iSRhIeEFQf4',
+    title: 'Oldschool Techno/Trance Vinyl Mix, 1995–1999',
+    artist: 'KlangExtase',
+    genre: 'techno',
+  },
+];

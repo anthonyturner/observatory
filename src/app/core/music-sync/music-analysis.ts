@@ -4,8 +4,9 @@ import { BandLevels, MusicFrame } from './music-sync.types';
 const BEAT_RISE = 1.3;
 /** Below this the bass is too quiet for any beat: a breakdown, or silence. */
 const BEAT_FLOOR = 0.25;
-/** No faster than 214 BPM: a kick's tail never counts as a second kick. */
-const MIN_BEAT_GAP_S = 0.28;
+/** Under three beats a second (176 BPM), so a beat-lit sky never flashes faster
+ *  than WCAG 2.3.1 allows, and a kick's tail never counts as a second kick. */
+const MIN_BEAT_GAP_S = 0.34;
 /** How quickly the recent bass follows the music, per second. */
 const BASS_FOLLOW = 4;
 

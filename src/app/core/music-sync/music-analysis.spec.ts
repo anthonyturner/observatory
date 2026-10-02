@@ -53,4 +53,10 @@ describe('MusicAnalysis', () => {
     expect(frame).toEqual(expect.objectContaining({ bass: 0.3, mid: 0.6, high: 0.9 }));
     expect(frame.energy).toBeCloseTo(0.6);
   });
+
+  it('never finds more than three beats a second, however fast the kicks come', () => {
+    const fast = (t: number): BandLevels => (t % 0.2 < 0.05 ? LOUD : QUIET);
+    const frames = play(new MusicAnalysis(), fast, 3);
+    expect(frames.filter((frame) => frame.beat).length).toBeLessThanOrEqual(9);
+  });
 });

@@ -1,4 +1,4 @@
-import type { ButterchurnOptions, ButterchurnVisualizer } from 'butterchurn';
+import type { Butterchurn, ButterchurnOptions, ButterchurnVisualizer } from 'butterchurn';
 import { TabSound } from '../tab-audio';
 import { presetFor } from './milkdrop-presets';
 
@@ -14,13 +14,21 @@ export interface MilkdropEngine {
 
 export type MilkdropLoader = () => Promise<MilkdropEngine>;
 
+/** Butterchurn itself, whether or not the bundler unwrapped its default export. */
+export function unwrapButterchurn(
+  exported: Butterchurn | { readonly default: Butterchurn },
+): Butterchurn {
+  return 'createVisualizer' in exported ? exported : exported.default;
+}
+
 /** Loads Butterchurn on first use, in its own chunk: it is large, and most
  *  visits never listen to the music. */
 export const loadMilkdrop: MilkdropLoader = async () => {
-  const [{ default: butterchurn }, { default: pack }] = await Promise.all([
+  const [{ default: exported }, { default: pack }] = await Promise.all([
     import('butterchurn'),
     import('butterchurn-presets/lib/butterchurnPresets.min.js'),
   ]);
+  const butterchurn = unwrapButterchurn(exported);
   return {
     createVisualizer: (context, canvas, options) =>
       butterchurn.createVisualizer(context, canvas, options),

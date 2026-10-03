@@ -61,7 +61,11 @@ describe('FleetSection', () => {
     const BLOCKED =
       'Blocked by the browser. Allow notifications for this site in its settings, then tick again.';
 
-    beforeEach(() => localStorage.clear());
+    beforeEach(() => {
+      localStorage.clear();
+      vi.useFakeTimers();
+    });
+    afterEach(() => vi.useRealTimers());
 
     function renderWith(notices: FakeBrowserNotices) {
       TestBed.configureTestingModule({
@@ -78,11 +82,16 @@ describe('FleetSection', () => {
       if (!box) throw new Error('No Notify me box');
       const status = (): string =>
         element.querySelector('[role="status"].blocked')?.textContent?.trim() ?? '';
+      /** Lets the browser answer and the status line be written, then draws. */
+      const settle = async (): Promise<void> => {
+        await vi.advanceTimersByTimeAsync(1_000);
+        fixture.detectChanges();
+      };
       const tick = async (): Promise<void> => {
         box.click();
-        await fixture.whenStable();
+        await settle();
       };
-      return { fixture, element, box, status, tick };
+      return { fixture, element, box, status, tick, settle };
     }
 
     it('sits in the head, in a group for project notifications, off at first', () => {
@@ -125,6 +134,19 @@ describe('FleetSection', () => {
       await tick();
 
       expect(notices.requests).toBe(0);
+      expect(box.checked).toBe(false);
+      expect(status()).toBe(BLOCKED);
+    });
+
+    it('empties the line and writes it again when ticked after a refusal, so it is heard again', async () => {
+      const { fixture, box, status, tick, settle } = renderWith(new FakeBrowserNotices('denied'));
+      await tick();
+
+      box.click();
+      fixture.detectChanges();
+      expect(status()).toBe('');
+
+      await settle();
       expect(box.checked).toBe(false);
       expect(status()).toBe(BLOCKED);
     });

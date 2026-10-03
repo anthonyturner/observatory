@@ -1,5 +1,6 @@
-import { DOCUMENT, InjectionToken, inject } from '@angular/core';
-import { Observable, defer, of } from 'rxjs';
+import { DOCUMENT, DestroyRef, InjectionToken, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, defer, map, of, shareReplay, tap } from 'rxjs';
 
 /** The browser's notifications, behind a token so a test can stand in for them. */
 export interface BrowserNotices {
@@ -48,8 +49,31 @@ export const BROWSER_NOTICES = new InjectionToken<BrowserNotices>('BrowserNotice
  * and a browser asks only from a click, so subscribe from one.
  */
 export function permissionToNotify(notices: BrowserNotices): Observable<boolean> {
-  const permission = notices.permission();
-  if (permission === 'granted') return of(true);
-  if (permission !== 'default') return of(false);
-  return defer(() => notices.request());
+  return defer(() => {
+    const permission = notices.permission();
+    if (permission === 'granted') return of(true);
+    if (permission !== 'default') return of(false);
+    return notices.request();
+  });
+}
+
+/**
+ * Asks as `permissionToNotify` does, at once, and hands the answer to `keep`
+ * under the owner's lifetime rather than the asker's: the browser's prompt can
+ * stay open after the section that raised it has gone. The Observable returned
+ * tells the asker when the answer has been kept.
+ */
+export function askToNotify(
+  notices: BrowserNotices,
+  keep: (isAllowed: boolean) => void,
+  owner: DestroyRef,
+): Observable<void> {
+  const kept = permissionToNotify(notices).pipe(
+    tap(keep),
+    map(() => undefined),
+    takeUntilDestroyed(owner),
+    shareReplay(1),
+  );
+  kept.subscribe();
+  return kept;
 }

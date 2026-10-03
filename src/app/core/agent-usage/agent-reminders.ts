@@ -1,5 +1,6 @@
 import {
   DOCUMENT,
+  DestroyRef,
   Injectable,
   Signal,
   computed,
@@ -8,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { Observable, map, of, tap } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Clock } from '../time/clock';
 import { TrailActivity } from '../sky/trail-activity';
 import { localDayKey } from '../usage/usage-format';
@@ -25,7 +26,7 @@ import {
   markDone,
   snoozeToMonday,
 } from './agent-review-week';
-import { BROWSER_NOTICES, permissionToNotify } from './browser-notices';
+import { BROWSER_NOTICES, askToNotify } from './browser-notices';
 
 /** When the weekly review falls (null: reminders off), and whether to notify outside the tab. */
 export interface ReminderSettings {
@@ -114,6 +115,7 @@ export class AgentReminders {
   private readonly voice = inject(REPLY_VOICE);
   private readonly notices = inject(BROWSER_NOTICES);
   private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly chosen = signal(readStored(SETTINGS_KEY, DEFAULT_SETTINGS, isSettings));
   private readonly review = signal<StoredReview>(
@@ -160,13 +162,14 @@ export class AgentReminders {
     this.saveSettings({ ...this.chosen(), day });
   }
 
-  /** Asks the browser first, only when turned on; a refusal leaves it off. */
+  /** Asks the browser first, only when turned on; a refusal leaves it off. The
+   *  Observable says when the answer is saved, which it is even if nobody listens. */
   setNotify(notify: boolean): Observable<void> {
-    const allowed = notify ? permissionToNotify(this.notices) : of(false);
-    return allowed.pipe(
-      tap((isAllowed) => this.saveSettings({ ...this.chosen(), notify: isAllowed })),
-      map(() => undefined),
-    );
+    const save = (isAllowed: boolean): void =>
+      this.saveSettings({ ...this.chosen(), notify: isAllowed });
+    if (notify) return askToNotify(this.notices, save, this.destroyRef);
+    save(false);
+    return of(undefined);
   }
 
   done(): void {

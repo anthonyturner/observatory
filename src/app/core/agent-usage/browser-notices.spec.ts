@@ -1,6 +1,7 @@
+import { DestroyRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { lastValueFrom } from 'rxjs';
-import { BROWSER_NOTICES, permissionToNotify } from './browser-notices';
+import { BROWSER_NOTICES, askToNotify, permissionToNotify } from './browser-notices';
 import { FakeBrowserNotices } from './testing/fake-browser-notices';
 
 /** The browser's Notification, keeping each one made so a test can click it. */
@@ -69,6 +70,14 @@ describe('permissionToNotify', () => {
     expect(notices.requests).toBe(1);
   });
 
+  it('reads the permission when subscribed, not when made', async () => {
+    const notices = new FakeBrowserNotices('denied');
+    const asking = permissionToNotify(notices);
+    notices.setPermission('granted');
+
+    expect(await lastValueFrom(asking)).toBe(true);
+  });
+
   it('is refused without asking where the browser blocks it or has none', async () => {
     for (const permission of ['denied', 'unsupported'] as const) {
       const notices = new FakeBrowserNotices(permission, 'granted');
@@ -76,5 +85,34 @@ describe('permissionToNotify', () => {
       expect(await lastValueFrom(permissionToNotify(notices))).toBe(false);
       expect(notices.requests).toBe(0);
     }
+  });
+});
+
+describe('askToNotify', () => {
+  it('asks at once and keeps the answer though the asker has stopped listening', async () => {
+    const notices = new FakeBrowserNotices('default', 'granted');
+    const kept: boolean[] = [];
+
+    askToNotify(notices, (isAllowed) => kept.push(isAllowed), TestBed.inject(DestroyRef))
+      .subscribe()
+      .unsubscribe();
+    expect(notices.requests).toBe(1);
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(kept).toEqual([true]);
+  });
+
+  it('tells a later listener the answer was kept', async () => {
+    const notices = new FakeBrowserNotices('denied');
+    const kept: boolean[] = [];
+    const answered = askToNotify(
+      notices,
+      (isAllowed) => kept.push(isAllowed),
+      TestBed.inject(DestroyRef),
+    );
+
+    await lastValueFrom(answered);
+
+    expect(kept).toEqual([false]);
   });
 });

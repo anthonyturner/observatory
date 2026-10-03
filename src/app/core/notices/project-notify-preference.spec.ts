@@ -21,8 +21,20 @@ function setUp(notices: FakeBrowserNotices) {
   return { preference, isHidden };
 }
 
+/** Long enough for a refusal to be written into the emptied status line. */
+const AFTER_REWRITE_MS = 1_000;
+
+/** Lets the browser's answer arrive, and the status line be written again. */
+const settle = async (): Promise<void> => {
+  await vi.advanceTimersByTimeAsync(AFTER_REWRITE_MS);
+};
+
 describe('ProjectNotifyPreference', () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+  });
+  afterEach(() => vi.useRealTimers());
 
   it('starts off, and does not ask the browser until turned on', () => {
     const notices = new FakeBrowserNotices('default', 'granted');
@@ -52,6 +64,7 @@ describe('ProjectNotifyPreference', () => {
       const { preference } = setUp(notices);
 
       await lastValueFrom(preference.turnOn());
+      await settle();
 
       expect(preference.isOn()).toBe(false);
       expect(preference.isRefused()).toBe(true);
@@ -64,6 +77,7 @@ describe('ProjectNotifyPreference', () => {
     const notices = new FakeBrowserNotices('denied');
     const { preference } = setUp(notices);
     await lastValueFrom(preference.turnOn());
+    await settle();
     expect(preference.isRefused()).toBe(true);
 
     notices.setPermission('granted');
@@ -74,6 +88,57 @@ describe('ProjectNotifyPreference', () => {
     preference.turnOff();
     expect(preference.isOn()).toBe(false);
     expect(localStorage.getItem(STORAGE_KEY)).toBe('off');
+  });
+
+  it('empties the refusal when asked again, then writes it back, so it is announced again', async () => {
+    const { preference } = setUp(new FakeBrowserNotices('denied'));
+    await lastValueFrom(preference.turnOn());
+    await settle();
+
+    await lastValueFrom(preference.turnOn());
+    expect(preference.isRefused()).toBe(false);
+
+    await settle();
+    expect(preference.isRefused()).toBe(true);
+  });
+
+  it('drops a refusal still to be written once the box is unticked', async () => {
+    const { preference } = setUp(new FakeBrowserNotices('denied'));
+    await lastValueFrom(preference.turnOn());
+
+    preference.turnOff();
+    await settle();
+
+    expect(preference.isRefused()).toBe(false);
+  });
+
+  it('keeps the answer when whoever asked has gone before the browser answers', async () => {
+    const notices = new FakeBrowserNotices('default', 'granted');
+    const { preference } = setUp(notices);
+
+    preference.turnOn().subscribe().unsubscribe();
+    await settle();
+
+    expect(preference.isOn()).toBe(true);
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('on');
+  });
+
+  it('follows the choice made in another tab', () => {
+    const { preference } = setUp(new FakeBrowserNotices('granted'));
+    const storedElsewhere = (newValue: string | null, key: string | null = STORAGE_KEY) =>
+      window.dispatchEvent(new StorageEvent('storage', { key, newValue }));
+
+    storedElsewhere('on');
+    expect(preference.isOn()).toBe(true);
+
+    storedElsewhere('off');
+    expect(preference.isOn()).toBe(false);
+
+    storedElsewhere('on');
+    storedElsewhere('on', 'observatory.motion');
+    expect(preference.isOn()).toBe(true);
+    storedElsewhere(null, null);
+    expect(preference.isOn()).toBe(false);
   });
 
   it('is on from the start on a later visit, where it was left on and is still allowed', () => {

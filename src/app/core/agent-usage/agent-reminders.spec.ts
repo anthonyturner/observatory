@@ -172,6 +172,15 @@ describe('AgentReminders', () => {
       expect(reminders.settings().notify).toBe(true);
     });
 
+    it('keeps the answer when the Agents section has gone before the browser answers', async () => {
+      const { reminders } = setUp(FRIDAY_AFTERNOON, { permission: 'default', grants: true });
+
+      reminders.setNotify(true).subscribe().unsubscribe();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(reminders.settings().notify).toBe(true);
+    });
+
     it('stays off when the owner refuses, when the browser has refused, or has none', async () => {
       for (const permission of ['default', 'denied', 'unsupported'] as const) {
         const { reminders, notices } = again(FRIDAY_AFTERNOON, { permission, grants: false });

@@ -212,16 +212,19 @@
                 [disabled]="videoBackground.isOn()"
                 (input)="onMilkdropOpacity($event)"
             /></label>
-            <button
-              type="button"
-              class="sync"
-              [attr.aria-pressed]="sync().isOn"
-              [disabled]="sync().isUnavailable"
-              [title]="sync().hint"
-              (click)="toggleSync()"
-            >
-              {{ sync().text }}
-            </button>
+            <!-- No phone's browser can share a tab's audio, so there it never shows. -->
+            @if (pulse.canListen) {
+              <button
+                type="button"
+                class="sync"
+                [attr.aria-pressed]="sync().isOn"
+                [disabled]="sync().isUnavailable"
+                [title]="sync().hint"
+                (click)="toggleSync()"
+              >
+                {{ sync().text }}
+              </button>
+            }
           </div>
         }
       </div>

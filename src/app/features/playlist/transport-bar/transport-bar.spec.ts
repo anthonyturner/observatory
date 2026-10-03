@@ -14,7 +14,7 @@ import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { CURATED_PRESETS } from '../../../core/music-sync/milkdrop/milkdrop-presets';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
-import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
+import { AUDIO_TAP, AudioTap, TAB_AUDIO_SUPPORTED } from '../../../core/music-sync/tab-audio';
 import { FILE_SAVER, FileSaver } from '../../../core/files/file-saver';
 import { VideoBackground } from '../../../core/playlist/video-background';
 import { TransportBar } from './transport-bar';
@@ -25,8 +25,9 @@ const silentScore: AmbientPlayer = {
   dispose: () => undefined,
 };
 
-/** On Home by default: a page with a music sky, which the sky's controls need. */
-function render({ hasSky = true } = {}) {
+/** On Home by default: a page with a music sky, which the sky's controls need, in a
+ *  browser that can share a tab's audio. */
+function render({ hasSky = true, canShare = true } = {}) {
   const pauses = vi.fn();
   const player: VideoPlayer = {
     load: vi.fn(),
@@ -56,6 +57,7 @@ function render({ hasSky = true } = {}) {
       PlaylistLibrary,
       MusicPulse,
       { provide: AUDIO_TAP, useValue: openTap },
+      { provide: TAB_AUDIO_SUPPORTED, useValue: canShare },
       { provide: VIDEO_PLAYER_FACTORY, useValue: make },
       { provide: AMBIENT_PLAYER, useValue: () => silentScore },
       { provide: FILE_SAVER, useValue: saver },
@@ -192,6 +194,15 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     button('Play')?.click();
     expect(openTap).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows no Sync and never asks where the browser cannot share a tab’s audio', async () => {
+    const { fixture, element, button, openTap } = render({ canShare: false });
+    expect(element.querySelector('.sync')).toBeNull();
+
+    button('Play')?.click();
+    await fixture.whenStable();
+    expect(openTap).not.toHaveBeenCalled();
   });
 
   it('asks again from Sync after sharing was declined', async () => {

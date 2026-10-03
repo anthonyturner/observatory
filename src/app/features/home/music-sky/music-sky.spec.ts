@@ -9,7 +9,7 @@ import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painte
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
 import { MusicFrame } from '../../../core/music-sync/music-sync.types';
-import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
+import { AUDIO_TAP, AudioTap, TAB_AUDIO_SUPPORTED } from '../../../core/music-sync/tab-audio';
 import { SongName } from '../../../core/music-sync/title-card';
 import { VisualTheme, themeFor } from '../../../core/music-sync/visual-theme';
 import { PLAYLIST_TRACKS, PlaylistPlayer } from '../../../core/playlist/playlist-player';
@@ -71,6 +71,7 @@ async function render(providers: Provider[] = []) {
       PlaylistPlayer,
       MusicPulse,
       { provide: AUDIO_TAP, useValue: () => Promise.resolve(tap) },
+      { provide: TAB_AUDIO_SUPPORTED, useValue: true },
       { provide: MUSIC_CANVAS, useValue: () => canvas },
       ...providers,
     ],

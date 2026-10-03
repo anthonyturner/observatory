@@ -1,4 +1,4 @@
-import { ProjectCounts, ProjectSnapshot } from './project.types';
+import { ListedPull, ProjectCounts, ProjectSnapshot } from './project.types';
 
 /** A pull request's most urgent state, most urgent first. */
 export const PULL_BUCKETS = ['conflicted', 'failing', 'unknown', 'unlinked', 'unreviewed'] as const;
@@ -46,17 +46,32 @@ function parseCounts(value: unknown): ProjectCounts | null {
   ) as unknown as ProjectCounts;
 }
 
-/** A list with one bad entry is unknown as a whole: a number dropped from it
+/** A list with one bad number is unknown as a whole: a number dropped from it
  *  would read as a pull request that left, or an issue that closed. */
-function numbersOf(value: unknown, numberOf: (entry: unknown) => unknown): number[] | null {
+function issueNumbers(value: unknown): number[] | null {
   if (!Array.isArray(value)) return null;
-  const numbers: unknown[] = value.map(numberOf);
+  const numbers: unknown[] = value;
   return numbers.every(isCount) ? numbers : null;
 }
 
-const pullNumbers = (value: unknown): number[] | null =>
-  numbersOf(value, (entry) => (isObject(entry) ? entry['number'] : null));
-const issueNumbers = (value: unknown): number[] | null => numbersOf(value, (entry) => entry);
+function listedPull(value: unknown): ListedPull | null {
+  if (!isObject(value)) return null;
+  const { number, title, closes } = value;
+  if (!isCount(number)) return null;
+  return {
+    number,
+    title: isString(title) ? title : null,
+    closes: Array.isArray(closes) ? closes.filter(isCount) : [],
+  };
+}
+
+/** As with issueNumbers, one pull request without a number makes the list unknown;
+ *  a missing title or closing list only loses those words. */
+function listedPulls(value: unknown): ListedPull[] | null {
+  if (!Array.isArray(value)) return null;
+  const pulls = value.map(listedPull);
+  return pulls.every((pull): pull is ListedPull => pull !== null) ? pulls : null;
+}
 
 function parseProject(value: unknown): ProjectSnapshot | null {
   if (!isObject(value)) return null;
@@ -65,7 +80,7 @@ function parseProject(value: unknown): ProjectSnapshot | null {
   if (!isString(name) || !isString(repo) || !isString(dashboardUrl) || !isCount(open) || !counts) {
     return null;
   }
-  const openPulls = pullNumbers(value['openPulls']);
+  const openPulls = listedPulls(value['openPulls']);
   const openIssues = issueNumbers(value['openIssues']);
   return {
     name,

@@ -38,6 +38,21 @@
             >{{ row.title }}</a
           >
         }
+        @if (row.closing.length) {
+          <p class="notice__closing">
+            closing
+            @for (issue of row.closing; track issue.key) {
+              <a
+                class="notice__closing-link"
+                [routerLink]="issue.link.path"
+                [queryParams]="issue.link.query"
+                (click)="followed.emit()"
+                ><span class="notice__closing-number">#{{ issue.number }}</span>
+                {{ issue.title }}</a
+              >
+            }
+          </p>
+        }
       </li>
     }
   </ul>

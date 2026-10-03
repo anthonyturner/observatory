@@ -10,6 +10,16 @@ const merged = (number: number): ActivityItem => ({
   title: `Pull ${number}`,
 });
 
+/** Pull request 12 merged, closing issue 10, as one item. */
+const foldedMerge: ActivityItem = {
+  ...merged(12),
+  title: 'Transport bar fix',
+  closing: [{ number: 10, title: 'Bar stutters' }],
+};
+
+const opened: ActivityItem = { ...merged(13), kind: 'pull-opened', title: 'Notice stack' };
+const closed: ActivityItem = { ...merged(9), kind: 'issue-closed', title: 'Crash on load' };
+
 describe('announcementOf', () => {
   it('names the repository in full, so a shared display name is never ambiguous', () => {
     expect(announcementOf([merged(4)])).toBe('Pull request merged in me/alpha, #4: Pull 4.');
@@ -21,6 +31,14 @@ describe('announcementOf', () => {
     expect(sentence).toBe(
       'Pull request merged in me/alpha, #1: Pull 1; Pull request merged in me/alpha, #2: Pull 2; ' +
         'Pull request merged in me/alpha, #3: Pull 3; and 2 more.',
+    );
+  });
+
+  it('names a pull request opened, an issue closed, and the issue a merge closed', () => {
+    expect(announcementOf([foldedMerge, closed, opened])).toBe(
+      'Pull request merged in me/alpha, #12: Transport bar fix, closing #10: Bar stutters; ' +
+        'Issue closed in me/alpha, #9: Crash on load; ' +
+        'Pull request opened in me/alpha, #13: Notice stack.',
     );
   });
 });
@@ -41,6 +59,19 @@ describe('desktopNoticeOf', () => {
       tag: 'observatory-merged-me/alpha#4',
     });
     expect(desktopNoticeOf('issue', [issue('me/beta', 9)]).title).toBe('New issue');
+    expect(desktopNoticeOf('pull-opened', [opened]).title).toBe('Pull request opened');
+    expect(desktopNoticeOf('issue-closed', [closed]).title).toBe('Issue closed');
+  });
+
+  it('lists the issue a merge closed on the merge’s own line', () => {
+    expect(desktopNoticeOf('merged', [foldedMerge]).body).toBe(
+      'me/alpha #12 · Transport bar fix, closing #10 · Bar stutters',
+    );
+  });
+
+  it('counts several pull requests opened or issues closed in the title', () => {
+    expect(desktopNoticeOf('pull-opened', [opened, opened]).title).toBe('2 pull requests opened');
+    expect(desktopNoticeOf('issue-closed', [closed, closed]).title).toBe('2 issues closed');
   });
 
   it('counts several in the title, lists three, then says how many more', () => {
@@ -89,6 +120,18 @@ describe('sayingOf', () => {
   it('makes several items one line, a sentence each', () => {
     expect(sayingOf([merged(4), issue(7, 'Crash on load')])).toBe(
       'Pull request 4 in alpha merged: Pull 4. New issue 7 in beta: Crash on load.',
+    );
+  });
+
+  it('says a pull request opened and an issue closed by title', () => {
+    expect(sayingOf([opened, closed])).toBe(
+      'Pull request 13 in alpha opened: Notice stack. Issue 9 in alpha closed: Crash on load.',
+    );
+  });
+
+  it('says a merge and the issue it closed as one item', () => {
+    expect(sayingOf([foldedMerge])).toBe(
+      'Pull request 12 in alpha merged: Transport bar fix, closing issue 10, Bar stutters.',
     );
   });
 

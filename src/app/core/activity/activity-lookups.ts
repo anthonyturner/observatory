@@ -9,6 +9,13 @@ export interface PullState {
   readonly title: string;
 }
 
+/** Where one issue stands, from `GET /api/issue`. */
+export interface IssueState {
+  readonly title: string;
+  /** Null while it is open. */
+  readonly closedAt: string | null;
+}
+
 /** What a lookup came to. `denied` is a 401 or 403: this viewer may not read it. */
 export type Lookup<T> =
   | { readonly status: 'found'; readonly value: T }
@@ -18,7 +25,7 @@ export type Lookup<T> =
 /** The two follow-up reads the activity watch makes about what a report changed. */
 export interface ActivityLookups {
   pullState(repo: string, number: number): Observable<Lookup<PullState>>;
-  issueTitle(repo: string, number: number): Observable<Lookup<string>>;
+  issue(repo: string, number: number): Observable<Lookup<IssueState>>;
 }
 
 const PULL_STATE_URL = '/api/pull-state';
@@ -42,8 +49,7 @@ export const ACTIVITY_LOOKUPS = new InjectionToken<ActivityLookups>('ActivityLoo
       );
     return {
       pullState: (repo, number) => lookUp(PULL_STATE_URL, repo, number, parsePullState),
-      issueTitle: (repo, number) =>
-        lookUp(ISSUE_URL, repo, number, (body) => parseIssueDetail(body)?.title ?? null),
+      issue: (repo, number) => lookUp(ISSUE_URL, repo, number, parseIssueState),
     };
   },
 });
@@ -56,6 +62,11 @@ export function parsePullState(value: unknown): PullState | null {
   const { state, title } = value as Record<string, unknown>;
   const known = PULL_STATES.find((candidate) => candidate === state);
   return known && typeof title === 'string' ? { state: known, title } : null;
+}
+
+function parseIssueState(body: unknown): IssueState | null {
+  const issue = parseIssueDetail(body);
+  return issue ? { title: issue.title, closedAt: issue.closedAt } : null;
 }
 
 const foundOrFailed = <T>(value: T | null): Lookup<T> =>

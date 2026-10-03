@@ -63,20 +63,31 @@ describe('parseProjectsReport', () => {
     expect(parseProjectsReport({ generatedAt: 'x', projects: [] })?.directives).toEqual([]);
   });
 
-  it('keeps the numbers of the open pull requests and issues', () => {
+  it('keeps the open pull requests, with their titles and closing issues, and the open issues', () => {
     const listed = {
       ...project,
       openPulls: [
-        { number: 12, bucket: 'failing' },
-        { number: 9, bucket: 'unreviewed' },
+        { number: 12, bucket: 'failing', title: 'Fix the bar', closes: [40] },
+        { number: 9, bucket: 'unreviewed', title: 'Tidy', closes: [] },
       ],
       openIssues: [40, 31],
     };
 
     const parsed = parseProjectsReport({ generatedAt: 'x', projects: [listed] })?.projects[0];
 
-    expect(parsed?.openPulls).toEqual([12, 9]);
+    expect(parsed?.openPulls).toEqual([
+      { number: 12, title: 'Fix the bar', closes: [40] },
+      { number: 9, title: 'Tidy', closes: [] },
+    ]);
     expect(parsed?.openIssues).toEqual([40, 31]);
+  });
+
+  it('keeps a pull request whose title or closing list is missing, without them', () => {
+    const listed = { ...project, openPulls: [{ number: 12, closes: [-1, 'x', 4] }] };
+
+    const parsed = parseProjectsReport({ generatedAt: 'x', projects: [listed] })?.projects[0];
+
+    expect(parsed?.openPulls).toEqual([{ number: 12, title: null, closes: [4] }]);
   });
 
   it('leaves out a null or malformed list, which is unknown rather than empty', () => {

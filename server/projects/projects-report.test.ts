@@ -67,8 +67,8 @@ describe('projectsReport', () => {
       issues: 3,
       oldestIdleDays: 3,
       openPulls: [
-        { number: 1, bucket: 'conflicted' },
-        { number: 2, bucket: 'unlinked' },
+        { number: 1, bucket: 'conflicted', title: 'Change 1', closes: [1] },
+        { number: 2, bucket: 'unlinked', title: 'Change 2', closes: [] },
       ],
       openIssues: [1, 5, 6],
     });

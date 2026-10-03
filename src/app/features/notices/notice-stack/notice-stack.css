@@ -38,6 +38,20 @@
   --readout-edge-lit: var(--notice-issue-edge);
 }
 
+.notices__item--pull-opened {
+  --readout-accent: var(--notice-pull-opened);
+  --readout-frame: var(--notice-pull-opened-frame);
+  --readout-scan: var(--notice-pull-opened-scan);
+  --readout-edge-lit: var(--notice-pull-opened-edge);
+}
+
+.notices__item--issue-closed {
+  --readout-accent: var(--notice-issue-closed);
+  --readout-frame: var(--notice-issue-closed-frame);
+  --readout-scan: var(--notice-issue-closed-scan);
+  --readout-edge-lit: var(--notice-issue-closed-edge);
+}
+
 /* The gap closes as soon as a notice has faded, with no height animation. */
 .notices__item--enter {
   animation: notice-arrive 200ms ease-out;

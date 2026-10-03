@@ -213,11 +213,13 @@ button:focus-visible {
   border-left: 1px solid var(--edge-soft);
 }
 
-.sync {
+.sync,
+.video {
   border-left: 1px solid var(--edge-soft);
 }
 
-.sync[aria-pressed='true'] {
+.sync[aria-pressed='true'],
+.video[aria-pressed='true'] {
   color: var(--ink);
   background: var(--flow-tint-strong);
 }
@@ -282,6 +284,12 @@ button:focus-visible {
   width: 72px;
   accent-color: var(--flow);
   cursor: pointer;
+}
+
+.opacity input:disabled,
+.visual select:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .visual select {

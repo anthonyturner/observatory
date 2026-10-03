@@ -67,7 +67,15 @@ function playerOptions(options: VideoPlayerOptions, ready: () => void): YtPlayer
     width: '100%',
     height: '100%',
     videoId: options.videoId,
-    playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3 },
+    playerVars: {
+      autoplay: options.autoplay === false ? 0 : 1,
+      // YouTube takes whole seconds only.
+      start: Math.floor(options.startS ?? 0),
+      controls: 0,
+      playsinline: 1,
+      rel: 0,
+      iv_load_policy: 3,
+    },
     events: {
       onReady: ({ target }) => {
         target.setVolume(Math.round(options.volume * MAX_VOLUME));

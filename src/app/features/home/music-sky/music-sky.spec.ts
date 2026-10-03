@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { CURATED_PRESETS } from '../../../core/music-sync/milkdrop/milkdrop-presets';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
+import { VideoBackground } from '../../../core/playlist/video-background';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
@@ -149,6 +150,21 @@ describe('MusicSky', () => {
     opacity.set(0.3);
     TestBed.tick();
     expect(canvas.opacities.at(-1)).toBe(0.3);
+  });
+
+  it('hides Milkdrop while the video fills the background, and brings it back', async () => {
+    const { canvas } = await render();
+    const background = TestBed.inject(VideoBackground);
+    try {
+      background.toggle();
+      TestBed.tick();
+      expect(canvas.opacities.at(-1)).toBe(0);
+      background.toggle();
+      TestBed.tick();
+      expect(canvas.opacities.at(-1)).toBe(TestBed.inject(MilkdropOpacity).level());
+    } finally {
+      if (background.isOn()) background.toggle();
+    }
   });
 
   it('moves while listening and clears when listening stops', async () => {

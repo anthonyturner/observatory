@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { BeatStrength } from '../../../core/music-sync/beat-strength';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
 import { AmbientPlayer } from '../../../core/sound/ambient-synth';
@@ -128,6 +129,22 @@ describe('TransportBar', () => {
     expect(TestBed.inject(MilkdropOpacity).level()).toBe(0.25);
   });
 
+  it('sets how hard each beat hits from its slider', () => {
+    const { fixture, element } = render();
+    const strength = TestBed.inject(BeatStrength);
+    const before = strength.level();
+    try {
+      const slider = element.querySelector<HTMLInputElement>('input[aria-label="Beat strength"]');
+      expect(Number(slider?.value)).toBe(before);
+      if (slider) slider.value = '0.35';
+      slider?.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(strength.level()).toBe(0.35);
+    } finally {
+      strength.set(before);
+    }
+  });
+
   it('keeps the video in its card on a page with no backdrop to fill', async () => {
     const { fixture, element, button } = render();
     button('Play')?.click();
@@ -196,9 +213,10 @@ describe('TransportBar', () => {
     expect(openTap).toHaveBeenCalledTimes(1);
   });
 
-  it('shows no Sync and never asks where the browser cannot share a tab’s audio', async () => {
+  it('shows no Sync or Beat and never asks where the browser cannot share a tab’s audio', async () => {
     const { fixture, element, button, openTap } = render({ canShare: false });
     expect(element.querySelector('.sync')).toBeNull();
+    expect(element.querySelector('input[aria-label="Beat strength"]')).toBeNull();
 
     button('Play')?.click();
     await fixture.whenStable();

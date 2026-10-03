@@ -2,6 +2,7 @@ import { ErrorHandler, InjectionToken, inject } from '@angular/core';
 import { resolveColour } from '../instrument/palette';
 import { Genre } from '../playlist/playlist.types';
 import { BeatHit, zoomAnchor } from './beat-hit';
+import { DEFAULT_BEAT_STRENGTH } from './beat-strength';
 import { Bloom } from './bloom';
 import { DEFAULT_MILKDROP_OPACITY } from './milkdrop/milkdrop-opacity';
 import { MilkdropStage, loadMilkdrop } from './milkdrop/milkdrop-stage';
@@ -28,6 +29,8 @@ export interface MusicCanvas {
   setMilkdropPreset(preset: string | null): void;
   /** How strongly Milkdrop shows, from 0 (hidden) to 1 (full). */
   setMilkdropOpacity(level: number): void;
+  /** How hard each beat hits the sky, from 0 (no hit) to 1 (full). */
+  setBeatStrength(level: number): void;
   /** Shows a new song's name in the sky. */
   announce(song: SongName): void;
   paint(frame: MusicFrame, stepS: number): void;
@@ -95,6 +98,7 @@ export class MusicPainter implements MusicCanvas {
   private pixelRatio = 1;
   private motif: MotifLayer = new Shockwave();
   private milkdropOpacity = DEFAULT_MILKDROP_OPACITY;
+  private beatStrength = DEFAULT_BEAT_STRENGTH;
   private inks: MusicInks;
   private sparkles: Sparkle[] = [];
   private bursts: Burst[] = [];
@@ -153,6 +157,11 @@ export class MusicPainter implements MusicCanvas {
     this.milkdropOpacity = level;
   }
 
+  setBeatStrength(level: number): void {
+    this.beatStrength = level;
+    this.hit.setStrength(level);
+  }
+
   announce(song: SongName): void {
     this.titleCard.announce(song);
   }
@@ -170,7 +179,7 @@ export class MusicPainter implements MusicCanvas {
     this.drawSparkles(context);
     this.drawBursts(context, scene);
     this.hit.draw(context, scene, this.inks);
-    this.bloom.apply(this.canvas, context, BLOOM_BASE + BLOOM_BEAT * this.pulse);
+    this.bloom.apply(this.canvas, context, BLOOM_BASE + BLOOM_BEAT * this.beatStrength * this.pulse);
     context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     this.clearCore(context, scene);
     // After the clearing, which would otherwise rub out the line sitting just above the core.

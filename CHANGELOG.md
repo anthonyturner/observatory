@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- A Beat slider on the playlist bar softens the hit Home's music sky lands on every beat (the ring thrown from the core, the flash round it, the glowing edges and the zoom), from full down to none; it starts at full and is remembered in this browser ([#311](https://github.com/anthonyturner/observatory/pull/311)).
 - A notice appears under the clock on every page when a pull request merges or an issue is opened in any tracked project, linking to GitHub or to the issue on its star map; several at once are grouped, F8 reaches them, Esc dismisses one, and a screen reader hears each check once ([#298](https://github.com/anthonyturner/observatory/pull/298)).
 - The playlist bar shows its Sync, Video, Visual and Sky controls on Home only, where the music sky is; on the Orrery, the Review Queue and Architecture they are hidden, and the choices come back with Home ([#286](https://github.com/anthonyturner/observatory/pull/286)).
 - The playlist bar now sits at the foot of the Orrery and the Review Queue as well as Home, and keeps playing the same track as you move between them, without reloading the video; each page's own Sound still pauses it, and playing it still turns that Sound off ([#278](https://github.com/anthonyturner/observatory/pull/278)).

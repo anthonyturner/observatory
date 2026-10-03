@@ -212,8 +212,20 @@
                 [disabled]="videoBackground.isOn()"
                 (input)="onMilkdropOpacity($event)"
             /></label>
-            <!-- No phone's browser can share a tab's audio, so there it never shows. -->
+            <!-- No phone's browser can share a tab's audio, so there neither shows:
+                 with no sync there are no beats to soften. -->
             @if (pulse.canListen) {
+              <label class="opacity" title="How hard each beat hits the sky round the core"
+                ><span aria-hidden="true">Beat</span
+                ><input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  aria-label="Beat strength"
+                  [value]="beatStrength.level()"
+                  (input)="onBeatStrength($event)"
+              /></label>
               <button
                 type="button"
                 class="sync"

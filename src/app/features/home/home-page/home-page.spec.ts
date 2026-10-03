@@ -28,6 +28,7 @@ const NO_MUSIC: MusicCanvas = {
   setSound: () => undefined,
   setMilkdropPreset: () => undefined,
   announce: () => undefined,
+  setMilkdropOpacity: () => undefined,
   paint: () => undefined,
   clear: () => undefined,
   dispose: () => undefined,

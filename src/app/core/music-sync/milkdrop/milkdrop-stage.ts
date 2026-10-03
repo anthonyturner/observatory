@@ -138,7 +138,7 @@ export class MilkdropStage {
   }
 
   private pick(presets: Readonly<Record<string, object>>): string | null {
-    if (this.pinned !== null && this.pinned in presets) return this.pinned;
+    if (this.pinned !== null && Object.hasOwn(presets, this.pinned)) return this.pinned;
     return presetFor(this.variant, Object.keys(presets));
   }
 

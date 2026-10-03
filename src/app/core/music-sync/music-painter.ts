@@ -3,6 +3,7 @@ import { resolveColour } from '../instrument/palette';
 import { Genre } from '../playlist/playlist.types';
 import { BeatHit } from './beat-hit';
 import { Bloom } from './bloom';
+import { DEFAULT_MILKDROP_OPACITY } from './milkdrop/milkdrop-opacity';
 import { MilkdropStage, loadMilkdrop } from './milkdrop/milkdrop-stage';
 import { Milkdrop } from './motifs/milkdrop';
 import { Aurora } from './motifs/aurora';
@@ -25,6 +26,8 @@ export interface MusicCanvas {
   setSound(sound: TabSound | null): void;
   /** The Milkdrop preset to keep on screen, or null for Auto. */
   setMilkdropPreset(preset: string | null): void;
+  /** How strongly Milkdrop shows, from 0 (hidden) to 1 (full). */
+  setMilkdropOpacity(level: number): void;
   /** Shows a new song's name in the sky. */
   announce(song: SongName): void;
   paint(frame: MusicFrame, stepS: number): void;
@@ -91,6 +94,7 @@ export class MusicPainter implements MusicCanvas {
   private scene: MusicScene | null = null;
   private pixelRatio = 1;
   private motif: MotifLayer = new Shockwave();
+  private milkdropOpacity = DEFAULT_MILKDROP_OPACITY;
   private inks: MusicInks;
   private sparkles: Sparkle[] = [];
   private bursts: Burst[] = [];
@@ -128,7 +132,12 @@ export class MusicPainter implements MusicCanvas {
 
   setTheme(theme: VisualTheme): void {
     // Milkdrop always, with the theme's hand-drawn motif standing in until it can draw.
-    this.motif = new Milkdrop(this.milkdrop, theme.variant, MOTIF_LAYERS[theme.motif]());
+    this.motif = new Milkdrop(
+      this.milkdrop,
+      theme.variant,
+      MOTIF_LAYERS[theme.motif](),
+      () => this.milkdropOpacity,
+    );
     this.inks = this.palettes[theme.palette];
   }
 
@@ -138,6 +147,10 @@ export class MusicPainter implements MusicCanvas {
 
   setMilkdropPreset(preset: string | null): void {
     this.milkdrop.pin(preset);
+  }
+
+  setMilkdropOpacity(level: number): void {
+    this.milkdropOpacity = level;
   }
 
   announce(song: SongName): void {

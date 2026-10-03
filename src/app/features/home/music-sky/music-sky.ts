@@ -14,6 +14,7 @@ import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
+import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
@@ -44,6 +45,7 @@ export class MusicSky {
   private readonly errors = inject(ErrorHandler);
   private readonly pulse = inject(MusicPulse);
   private readonly playlist = inject(PlaylistPlayer);
+  private readonly milkdropOpacity = inject(MilkdropOpacity);
   private readonly makeCanvas = inject(MUSIC_CANVAS);
   private readonly milkdropChoice = inject(MilkdropChoice);
   /** The song playing, by name; it changes only when the song does. */
@@ -70,6 +72,10 @@ export class MusicSky {
       // Read before the painter exists too, or the effect never learns to rerun.
       const theme = this.theme();
       this.painter?.setTheme(theme);
+    });
+    effect(() => {
+      const level = this.milkdropOpacity.level();
+      this.painter?.setMilkdropOpacity(level);
     });
     effect(() => {
       const song = this.song();
@@ -105,6 +111,7 @@ export class MusicSky {
     painter.setSound(this.pulse.sound());
     painter.setMilkdropPreset(this.milkdropChoice.preset());
     painter.announce(this.song());
+    painter.setMilkdropOpacity(this.milkdropOpacity.level());
     this.place();
     const window = this.document.defaultView;
     this.loop = new FrameLoop({

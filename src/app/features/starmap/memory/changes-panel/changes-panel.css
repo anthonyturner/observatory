@@ -2,7 +2,11 @@
 .changes {
   position: fixed;
   right: 20px;
-  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  /* Above the tools, and above the playlist that shares their row. */
+  bottom: max(
+    calc(70px + env(safe-area-inset-bottom, 0px)),
+    calc(var(--playlist-height, 0px) + 12px)
+  );
   width: min(350px, calc(100vw - 40px));
   max-height: min(430px, calc(100vh - 260px));
   display: flex;

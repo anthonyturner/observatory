@@ -18,9 +18,9 @@ import {
   TabSound,
 } from './tab-audio';
 
-/** The music the page hears from its own tab, for the sky to move with.
- *  Provided by the page, so leaving it stops listening. */
-@Injectable()
+/** The music the app hears from its own tab, for the sky to move with. One for the
+ *  whole app, so listening carries on, like the playlist, from page to page. */
+@Injectable({ providedIn: 'root' })
 export class MusicPulse {
   private readonly openTap = inject(AUDIO_TAP);
   private readonly errors = inject(ErrorHandler);

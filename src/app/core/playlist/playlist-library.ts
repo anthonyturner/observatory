@@ -6,8 +6,8 @@ import { PLAYLIST_TRACKS, PlaylistPlayer } from './playlist-player';
 export type PlaylistSource = 'mix' | 'favorites';
 
 /** Which list plays, the day's mix or the hearted tracks, and keeps the player on
- *  it as favourites come and go. Provided by the page, beside the player. */
-@Injectable()
+ *  it as favourites come and go. One for the whole app, beside the player. */
+@Injectable({ providedIn: 'root' })
 export class PlaylistLibrary {
   private readonly player = inject(PlaylistPlayer);
   private readonly favorites = inject(FavoritesStore);

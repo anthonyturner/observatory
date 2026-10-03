@@ -10,7 +10,8 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
-- A toggle at the end of Home's playlist bar folds it down to the seek bar, the transport, the heart and the song's name, about as wide as the right column, and back; the fold is remembered in this browser ([#280](https://github.com/anthonyturner/observatory/pull/280)).
+- The playlist bar now sits at the foot of the Orrery and the Review Queue as well as Home, and keeps playing the same track as you move between them, without reloading the video; each page's own Sound still pauses it, and playing it still turns that Sound off ([#278](https://github.com/anthonyturner/observatory/pull/278)).
+- A toggle at the end of the playlist bar folds it down to the seek bar, the transport, the heart and the song's name, about as wide as the right column, and back; the fold is remembered in this browser ([#280](https://github.com/anthonyturner/observatory/pull/280)).
 - A Video switch on the playlist bar plays the track's video full screen behind Home in place of the Milkdrop visuals, carrying on from the same second, and remembers the choice in this browser ([#274](https://github.com/anthonyturner/observatory/pull/274)).
 - A Visual picker on the playlist bar keeps the Milkdrop visual you choose on Home's sky, or Auto to let it change with the music as before; the choice is remembered in this browser ([#270](https://github.com/anthonyturner/observatory/pull/270)).
 - Export your favourite tracks from Home's playlist bar to a file, and import that file on another copy of Observatory or another browser; imported tracks join the ones already hearted, and a short message says how many were added and skipped ([#265](https://github.com/anthonyturner/observatory/pull/265)).

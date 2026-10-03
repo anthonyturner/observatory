@@ -15,6 +15,7 @@ import { CURATED_PRESETS } from '../../../core/music-sync/milkdrop/milkdrop-pres
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
 import { FILE_SAVER, FileSaver } from '../../../core/files/file-saver';
+import { VideoBackground } from '../../../core/playlist/video-background';
 import { TransportBar } from './transport-bar';
 
 const silentScore: AmbientPlayer = {
@@ -121,8 +122,19 @@ describe('TransportBar', () => {
     expect(TestBed.inject(MilkdropOpacity).level()).toBe(0.25);
   });
 
+  it('keeps the video in its card on a page with no backdrop to fill', async () => {
+    const { fixture, element, button } = render();
+    button('Play')?.click();
+    await fixture.whenStable();
+    button('Video')?.click();
+    fixture.detectChanges();
+    expect(button('Video')?.getAttribute('aria-pressed')).toBe('true');
+    expect(element.querySelector('.card--live')).not.toBeNull();
+  });
+
   it('moves the video behind the page from the Video switch, and back', async () => {
     const { fixture, element, button, make } = render();
+    TestBed.inject(VideoBackground).holdBackdrop();
     button('Play')?.click();
     await fixture.whenStable();
     fixture.detectChanges();

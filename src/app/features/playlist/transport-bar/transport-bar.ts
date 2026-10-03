@@ -19,7 +19,7 @@ import { PlaylistBarFold } from '../../../core/playlist/playlist-bar-fold';
 import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { VideoBackground } from '../../../core/playlist/video-background';
-import { SoundPreference } from '../../../core/sound/sound-preference';
+import { PageScore } from '../../../core/sound/page-score';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { FavoritesTransfer, NOTHING_TO_EXPORT } from './favorites-transfer';
 import { syncLabelOf } from './sync-label';
@@ -29,12 +29,12 @@ import { TrackList } from './track-list/track-list';
 const BACK_STEP_S = 15;
 const FORWARD_STEP_S = 30;
 
-/** Home's playlist along the foot of the screen: the video, the seek bar, the
- *  transport, the heart, the Mix / Favourites switch, the favourites file, the
- *  sky's Sync, the Video switch, Milkdrop's visual and opacity, and the volume,
- *  with the track list above; folded, only the seek bar, the transport, the heart
- *  and the song's name stay. It plays instead of the generated score, never
- *  over it. The page provides the playlist and the pulse. */
+/** The playlist along the foot of every page: the video, the seek bar, the transport,
+ *  the heart, the Mix / Favourites switch, the favourites file, the sky's Sync, the
+ *  Video switch, Milkdrop's visual and opacity, and the volume, with the track list
+ *  above; folded, only the seek bar, the transport, the heart and the song's name
+ *  stay. It plays instead of the page's score, never over it. The app shell shows
+ *  it, so the music carries across pages. */
 @Component({
   selector: 'app-transport-bar',
   imports: [TrackList],
@@ -53,7 +53,7 @@ export class TransportBar {
   protected readonly library = inject(PlaylistLibrary);
   protected readonly favorites = inject(FavoritesStore);
   protected readonly transfer = inject(FavoritesTransfer);
-  private readonly sound = inject(SoundPreference);
+  private readonly score = inject(PageScore);
   private readonly pulse = inject(MusicPulse);
   protected readonly motion = inject(MotionPreference);
   protected readonly milkdrop = inject(MilkdropChoice);
@@ -80,7 +80,7 @@ export class TransportBar {
   protected readonly hasStarted = computed(() => this.player.state() !== 'idle');
   /** The card shows the video unless it is filling the page's background instead. */
   protected readonly isCardShown = computed(
-    () => this.hasStarted() && !this.videoBackground.isOn(),
+    () => this.hasStarted() && !this.videoBackground.isShown(),
   );
   protected readonly position = computed(
     () => `${this.player.index() + 1} / ${this.player.tracks().length}`,
@@ -105,17 +105,17 @@ export class TransportBar {
 
   constructor() {
     afterRenderEffect(() => {
-      if (!this.videoBackground.isOn()) this.player.attach(this.screen().nativeElement);
+      if (!this.videoBackground.isShown()) this.player.attach(this.screen().nativeElement);
     });
     effect(() => {
-      if (this.sound.isOn()) untracked(() => this.player.pause());
+      if (this.score.isOn()) untracked(() => this.player.pause());
     });
   }
 
   /** The first Play of a visit also asks to hear the tab, inside the same click. */
   protected toggle(): void {
     if (!this.player.isPlaying()) {
-      this.silenceScore();
+      this.score.silence();
       this.pulse.listenOnce();
     }
     this.player.toggle();
@@ -127,23 +127,23 @@ export class TransportBar {
   }
 
   protected next(): void {
-    this.silenceScore();
+    this.score.silence();
     this.player.next();
   }
 
   protected previous(): void {
-    this.silenceScore();
+    this.score.silence();
     this.player.previous();
   }
 
   protected pick(index: number): void {
-    this.silenceScore();
+    this.score.silence();
     this.player.select(index);
     this.listOpen.set(false);
   }
 
   protected choose(source: PlaylistSource): void {
-    if (this.player.isPlaying()) this.silenceScore();
+    if (this.player.isPlaying()) this.score.silence();
     this.library.choose(source);
   }
 
@@ -180,9 +180,5 @@ export class TransportBar {
   protected toggleFold(): void {
     this.fold.toggle();
     if (this.fold.isFolded()) this.listOpen.set(false);
-  }
-
-  private silenceScore(): void {
-    if (this.sound.isOn()) this.sound.toggle();
   }
 }

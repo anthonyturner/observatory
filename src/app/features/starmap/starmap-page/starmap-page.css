@@ -88,3 +88,9 @@
     display: none;
   }
 }
+
+/* Beside the playlist while it leaves room, wrapping short of it; above it otherwise. */
+.hud.bottom {
+  bottom: var(--playlist-clear-bottom, 0px);
+  padding-right: var(--playlist-clear-right, 20px);
+}

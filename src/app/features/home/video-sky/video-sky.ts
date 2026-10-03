@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  DestroyRef,
   afterRenderEffect,
   inject,
   viewChild,
@@ -24,8 +25,10 @@ export class VideoSky {
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
   constructor() {
+    // Leaving the page hands the video back to the bar, which outlives it.
+    inject(DestroyRef).onDestroy(this.background.holdBackdrop());
     afterRenderEffect(() => {
-      if (this.background.isOn()) this.player.attach(this.screen().nativeElement);
+      if (this.background.isShown()) this.player.attach(this.screen().nativeElement);
     });
   }
 }

@@ -29,4 +29,15 @@ describe('VideoBackground', () => {
     localStorage.setItem(STORAGE_KEY, 'loud');
     expect(TestBed.inject(VideoBackground).isOn()).toBe(false);
   });
+
+  it('shows only while a page holds a backdrop for it', () => {
+    const background = TestBed.inject(VideoBackground);
+    background.toggle();
+    expect(background.isShown()).toBe(false);
+    const release = background.holdBackdrop();
+    expect(background.isShown()).toBe(true);
+    release();
+    release();
+    expect(background.isShown()).toBe(false);
+  });
 });

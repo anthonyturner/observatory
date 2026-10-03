@@ -31,9 +31,9 @@ const DEFAULT_VOLUME = 0.6;
 /** How often the bar's position follows the music; the player has no event for it. */
 const PROGRESS_MS = 500;
 
-/** A playlist and where it is in it. Provided by the component that shows it, so
- *  leaving the page stops the music. Nothing loads until the first play. */
-@Injectable()
+/** A playlist and where it is in it, one for the whole app, so the music carries on
+ *  from page to page. Nothing loads until the first play. */
+@Injectable({ providedIn: 'root' })
 export class PlaylistPlayer {
   private readonly makePlayer = inject(VIDEO_PLAYER_FACTORY);
   private readonly errors = inject(ErrorHandler);

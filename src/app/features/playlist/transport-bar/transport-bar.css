@@ -68,10 +68,8 @@
   cursor: pointer;
 }
 
-.scrub input:disabled,
-.scrub button:disabled,
-.opacity input:disabled,
-.visual select:disabled {
+.scrub :disabled,
+.group--sky :disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -312,9 +310,10 @@ button:focus-visible {
   background: var(--issue-option);
 }
 
-/* Every slider and the visual's picker. */
-input:focus-visible,
-select:focus-visible {
+.scrub input:focus-visible,
+.visual select:focus-visible,
+.volume input:focus-visible,
+.opacity input:focus-visible {
   outline: 2px solid var(--flow);
   outline-offset: 3px;
 }
@@ -359,22 +358,23 @@ select:focus-visible {
   }
 
   .group,
-  .group--sky > :nth-child(odd) {
+  .opacity {
     border-left: 0;
   }
 
-  /* Video and the visual, then the sky's and the beat's strength, in pairs;
-     Sync, left over, takes the last row whole. */
+  /* Video and a Visual that fills the row, then the sky's strength, with Sync where
+     the browser can sync; the pickers shrink, so none of it runs off the screen. */
   .group--sky {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    flex-wrap: wrap;
   }
 
-  .sync {
-    grid-column: 1 / -1;
+  .visual,
+  .opacity {
+    flex: 1 1 60%;
   }
 
-  .visual select {
+  .visual select,
+  .opacity input {
     flex: 1;
     width: 0;
   }

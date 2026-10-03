@@ -3,20 +3,33 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { ActivityWatch } from '../activity/activity-watch';
 import { ActivityItem } from '../activity/activity.types';
+import { NewMail } from '../mail/mail-memory';
+import { MailWatch } from '../mail/mail-watch';
+import { mailSayingOf } from '../notices/mail-words';
 import { sayingOf } from '../notices/notice-words';
 import { PageVisibility } from '../presence/page-visibility';
 import { ANNOUNCEMENT_VOICE } from '../voice/announcement-voice';
 import { SpeakPreference } from '../voice/speak-preference';
 import { TalkState } from '../voice/talk-state';
+import { VoiceChoice } from '../voice/voice-choice';
 import { ASK_CHANNEL } from './ask-channel';
 import { ProposalSlot } from './proposal';
 
+/** What Jev has yet to say: the projects' news, then new mail. */
+interface Held {
+  readonly items: readonly ActivityItem[];
+  readonly mail: readonly NewMail[];
+}
+
+const NOTHING_HELD: Held = { items: [], mail: [] };
+
 /**
- * Jev says each check's news aloud, in one line, with Speak on and the tab in
- * view. News that comes while he is busy (reading a line, hearing the mic, on
- * a request, or showing a task) is held and joined by any that follows, then
- * said once he is free. News while the tab is hidden, or Speak is off, is not
- * said at all. Made only on this machine: see provideNoticeAnnouncer.
+ * Jev says each check's news, and new mail, aloud in one line, with Speak on
+ * and the tab in view. News that comes while he is busy (reading a line,
+ * hearing the mic, on a request, or showing a task) is held and joined by any
+ * that follows, then said once he is free. News while the tab is hidden, or
+ * Speak is off, is not said at all. A refused mail sign-in is never said.
+ * Made only on this machine: see provideNoticeAnnouncer.
  */
 @Injectable({ providedIn: 'root' })
 export class NoticeAnnouncer {
@@ -26,39 +39,54 @@ export class NoticeAnnouncer {
   private readonly talking = inject(TalkState).isTalking;
   private readonly asking = inject(ASK_CHANNEL).busy;
   private readonly proposal = inject(ProposalSlot).proposal;
-  private readonly held = signal<readonly ActivityItem[]>([]);
+  /** Only a voice that keeps its words here may name a sender or subject. */
+  private readonly mayNameMail = inject(VoiceChoice).isOnThisMachine;
+  private readonly held = signal<Held>(NOTHING_HELD);
 
   private readonly canHear = computed(() => this.speakOn() && !this.hidden());
   private readonly isIdle = computed(
     () => !this.voice.isBusy() && !this.talking() && !this.asking() && this.proposal() === null,
   );
-  private readonly isDue = computed(
-    () => this.canHear() && this.isIdle() && this.held().length > 0,
+  private readonly hasHeld = computed(
+    () => this.held().items.length > 0 || this.held().mail.length > 0,
   );
+  private readonly isDue = computed(() => this.canHear() && this.isIdle() && this.hasHeld());
 
   constructor() {
     inject(ActivityWatch)
       .checks.pipe(takeUntilDestroyed())
-      .subscribe((items) => this.hold(items));
+      .subscribe((items) => this.hold({ items, mail: [] }));
+    inject(MailWatch)
+      .news.pipe(takeUntilDestroyed())
+      .subscribe(({ newMail }) => this.hold({ items: [], mail: newMail }));
     toObservable(this.canHear)
       .pipe(
         filter((canHear) => !canHear),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.held.set([]));
+      .subscribe(() => this.held.set(NOTHING_HELD));
     toObservable(this.isDue)
       .pipe(filter(Boolean), takeUntilDestroyed())
       .subscribe(() => this.sayHeld());
   }
 
-  private hold(items: readonly ActivityItem[]): void {
-    if (this.canHear()) this.held.update((held) => [...held, ...items]);
+  private hold(news: Held): void {
+    if (!this.canHear()) return;
+    this.held.update(({ items, mail }) => ({
+      items: [...items, ...news.items],
+      mail: [...mail, ...news.mail],
+    }));
   }
 
+  /** The voice is read as the line is made, so a change of voice since the news came counts. */
   private sayHeld(): void {
     if (!this.isDue()) return;
-    const items = this.held();
-    this.held.set([]);
-    this.voice.announce(sayingOf(items));
+    const { items, mail } = this.held();
+    this.held.set(NOTHING_HELD);
+    const lines = [
+      ...(items.length ? [sayingOf(items)] : []),
+      ...(mail.length ? [mailSayingOf(mail, this.mayNameMail())] : []),
+    ];
+    this.voice.announce(lines.join(' '));
   }
 }

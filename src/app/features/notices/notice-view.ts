@@ -1,11 +1,13 @@
 import { ActivityItem, ActivityKind } from '../../core/activity/activity.types';
-import { Notice } from '../../core/notices/notice.types';
+import { ActivityNotice, Notice, NoticeKind } from '../../core/notices/notice.types';
+import { mailNoticeView, signInNoticeView } from './mail-notice-view';
 
-/** A page in Observatory. */
+/** A page in Observatory, and the section on it to land on, if any. */
 export interface NoticeRoute {
   readonly kind: 'route';
   readonly path: readonly string[];
   readonly query: Readonly<Record<string, number>>;
+  readonly fragment?: string;
 }
 
 /** Where a row's title goes: GitHub in a new tab, or a page in Observatory. */
@@ -21,8 +23,10 @@ export interface NoticeClosingView {
 
 export interface NoticeRowView {
   readonly key: string;
+  /** Who or where: a project, or a sender. */
   readonly label: string;
-  readonly number: number;
+  /** Beside the label: "#12", a mail account, or nothing. */
+  readonly badge: string | null;
   readonly title: string;
   readonly link: NoticeLink;
   readonly closing: readonly NoticeClosingView[];
@@ -31,7 +35,7 @@ export interface NoticeRowView {
 /** A notice ready to render. */
 export interface NoticeView {
   readonly id: number;
-  readonly kind: ActivityKind;
+  readonly kind: NoticeKind;
   readonly tag: string;
   /** "3 pull requests merged" for a group; null for one item, which the head names. */
   readonly heading: string | null;
@@ -93,7 +97,7 @@ function rowOf(item: ActivityItem): NoticeRowView {
   return {
     key: `${item.repo}#${item.number}`,
     label: item.label,
-    number: item.number,
+    badge: `#${item.number}`,
     title: item.title,
     link: LINKS[item.kind](owner, name, item.number),
     closing: (item.closing ?? []).map(({ number, title }) => ({
@@ -105,7 +109,7 @@ function rowOf(item: ActivityItem): NoticeRowView {
   };
 }
 
-export function noticeView({ id, kind, items }: Notice): NoticeView {
+function activityNoticeView({ id, kind, items }: ActivityNotice): NoticeView {
   const isGroup = items.length > 1;
   const first = items[0];
   const subject = isGroup
@@ -119,4 +123,15 @@ export function noticeView({ id, kind, items }: Notice): NoticeView {
     rows: items.map(rowOf),
     dismissLabel: `Dismiss: ${subject}`,
   };
+}
+
+export function noticeView(notice: Notice): NoticeView {
+  switch (notice.kind) {
+    case 'mail':
+      return mailNoticeView(notice);
+    case 'mail-sign-in':
+      return signInNoticeView(notice);
+    default:
+      return activityNoticeView(notice);
+  }
 }

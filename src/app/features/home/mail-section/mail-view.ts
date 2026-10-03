@@ -1,5 +1,7 @@
+import { senderOf, subjectOf } from '../../../core/mail/mail-text';
 import {
   MAIL_ACCOUNTS,
+  MAIL_ACCOUNT_LABELS,
   MailAccount,
   MailFailure,
   MailMessage,
@@ -9,11 +11,6 @@ import {
   MailboxStates,
 } from '../../../core/mail/mail.types';
 import { TabStripTab } from '../../../shared/tab-strip/tab-strip';
-
-export const ACCOUNT_LABEL: Readonly<Record<MailAccount, string>> = {
-  icloud: 'iCloud',
-  gmail: 'Gmail',
-};
 
 /** Where the settings go: outside the checkout, so no commit can carry them. */
 export const MAIL_ENV_FILE = '~/.claude/observatory/.env';
@@ -89,8 +86,8 @@ const FULL_DATE: Intl.DateTimeFormatOptions = { dateStyle: 'full', timeStyle: 's
 
 const rowOf = (message: MailMessage): MailRow => ({
   uid: message.uid,
-  from: message.from || '(unknown sender)',
-  subject: message.subject || '(no subject)',
+  from: senderOf(message),
+  subject: subjectOf(message),
   isUnread: message.isUnread,
   receivedAt: message.receivedAt,
   fullDate: message.receivedAt
@@ -102,7 +99,7 @@ function listPanel(
   report: Extract<MailboxReport, { state: 'listed' }>,
   problem: MailProblem | null,
 ): MailPanel {
-  const label = ACCOUNT_LABEL[report.account];
+  const label = MAIL_ACCOUNT_LABELS[report.account];
   if (!report.messages.length)
     return { kind: 'empty', text: `Your ${label} inbox is empty.`, address: report.address };
   const rows = report.messages.map(rowOf);
@@ -121,7 +118,7 @@ function listPanel(
 /** The panel for one inbox, from where it stands. */
 export function mailPanel(state: MailboxState): MailPanel {
   const { report } = state;
-  const label = ACCOUNT_LABEL[state.account];
+  const label = MAIL_ACCOUNT_LABELS[state.account];
   if (!report && state.problem === 'api')
     return { kind: 'unreachable', text: 'Mail out of reach: is the API running (npm start)?' };
   if (!report) return { kind: 'loading', text: `Reading your ${label} inbox…` };
@@ -162,12 +159,12 @@ function tabNote(report: MailboxReport | null): Pick<TabStripTab, 'note' | 'spok
 
 export const mailTab = (state: MailboxState): TabStripTab => ({
   id: state.account,
-  label: ACCOUNT_LABEL[state.account],
+  label: MAIL_ACCOUNT_LABELS[state.account],
   ...tabNote(state.report),
 });
 
 function accountSummary(report: MailboxReport): string {
-  const label = ACCOUNT_LABEL[report.account];
+  const label = MAIL_ACCOUNT_LABELS[report.account];
   switch (report.state) {
     case 'off':
       return `${label} not set up`;

@@ -289,7 +289,16 @@ minute, and a slow or unreachable server is asked again after five minutes. A
 refused sign-in is not tried again until you press Refresh or restart the site,
 so a wrong password is never retried over and over until the provider locks
 the account.
-Home reads mail only while it is open.
+
+The page reads both inboxes on this machine only, once the API has confirmed
+the session is local. It reads on every page, every five minutes while the tab
+is in view, and once on coming back to a hidden tab. A message that arrives
+after the first read and is still unread when it is found shows as a notice,
+with its sender and subject, linking to Home's Mail. With Speak on, Jev says
+it. With ElevenLabs as the voice he says only how many arrived, so no sender
+or subject is sent to ElevenLabs. With Kokoro he names the sender and subject
+of a lone message. A refused sign-in shows one quiet notice per tab and is
+never spoken. No message body is read, and nothing is marked read.
 
 **Turning it on.** Put an address and an app password for each account in
 `~/.claude/observatory/.env`, or set them in the environment, then restart the

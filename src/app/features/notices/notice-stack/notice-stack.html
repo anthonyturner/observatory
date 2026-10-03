@@ -17,6 +17,8 @@
         [class.notices__item--issue]="notice.kind === 'issue'"
         [class.notices__item--pull-opened]="notice.kind === 'pull-opened'"
         [class.notices__item--issue-closed]="notice.kind === 'issue-closed'"
+        [class.notices__item--mail]="notice.kind === 'mail'"
+        [class.notices__item--mail-sign-in]="notice.kind === 'mail-sign-in'"
         [attr.data-notice]="notice.id"
         animate.enter="notices__item--enter"
         animate.leave="notices__item--leave"

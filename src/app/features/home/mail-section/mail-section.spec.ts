@@ -1,5 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { MailInbox } from '../../../core/mail/mail-inbox';
 import { UNFETCHED_STATES } from '../../../core/mail/mailbox-state';
 import { MailboxReport, MailboxStates } from '../../../core/mail/mail.types';
@@ -48,7 +49,7 @@ function render(initial: MailboxStates = BOTH) {
   const inbox = {
     states,
     isReading: computed(() => Object.values(states()).some((state) => state.isReading)),
-    refresh: vi.fn(async () => undefined),
+    refresh: vi.fn(() => of(undefined)),
   };
   TestBed.configureTestingModule({
     providers: [
@@ -150,7 +151,6 @@ describe('MailSection', () => {
     const button = () => element.querySelector<HTMLButtonElement>('.refresh');
 
     button()?.click();
-    await inbox.refresh.mock.results[0]?.value;
     await fixture.whenStable();
 
     expect(inbox.refresh).toHaveBeenCalledTimes(1);

@@ -84,6 +84,12 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
     return fixture;
   }
 
+  /** Answers the session read as the API does, `local` on the owner's machine. */
+  function answerSession(access: string): void {
+    TestBed.inject(HttpTestingController).expectOne('/api/session').flush({ access, signIn: null });
+    TestBed.tick();
+  }
+
   /** Answers every mail read made so far with `answer`. */
   function answerMail(answer: (account: string) => object | null): void {
     const http = TestBed.inject(HttpTestingController);
@@ -133,6 +139,7 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('app-mail-section')).toBeNull();
 
+    answerSession('local');
     answerMail((account) => ({ account, state: 'off', settings: ['A', 'B'] }));
     await vi.waitFor(() => {
       fixture.detectChanges();
@@ -149,10 +156,11 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
     ).toContain('Mail');
   });
 
-  it('never shows Mail where the site has none, as hosted', async () => {
+  it('never reads or shows Mail on the hosted site', async () => {
     const fixture = renderFixture();
 
-    answerMail(() => null);
+    answerSession('visitor');
+    expect(TestBed.inject(HttpTestingController).match('/api/mail')).toEqual([]);
     await new Promise((resolve) => setTimeout(resolve));
     fixture.detectChanges();
 

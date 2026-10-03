@@ -10,14 +10,18 @@
       <span class="notice__name">{{ heading }}</span>
     } @else {
       <span class="notice__name">{{ notice().rows[0].label }}</span>
-      <span class="notice__number">#{{ notice().rows[0].number }}</span>
+      @if (notice().rows[0].badge; as badge) {
+        <span class="notice__number">{{ badge }}</span>
+      }
     }
   </p>
   <ul class="notice__rows" [class.notice__rows--group]="notice().heading">
     @for (row of notice().rows; track row.key) {
       <li class="notice__row">
         @if (notice().heading) {
-          <span class="notice__row-name">{{ row.label }} #{{ row.number }}</span>
+          <span class="notice__row-name"
+            >{{ row.label }}{{ row.badge ? ' ' + row.badge : '' }}</span
+          >
         }
         @if (row.link.kind === 'external') {
           <a
@@ -34,6 +38,7 @@
             class="notice__link"
             [routerLink]="row.link.path"
             [queryParams]="row.link.query"
+            [fragment]="row.link.fragment"
             (click)="followed.emit()"
             >{{ row.title }}</a
           >

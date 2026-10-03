@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- On your own machine, new unread iCloud and Gmail mail now shows as a notice on any page, with its sender and subject and a link to Home's Mail. With Speak on, Jev says it: only how many arrived while ElevenLabs is the voice ("2 new emails in Gmail, 1 in iCloud"), and the sender and subject of a lone message with Kokoro. Mail already there when the page opened, and mail already read, is not announced. A refused sign-in shows one quiet notice per tab ([#320](https://github.com/anthonyturner/observatory/pull/320)).
 - Notices, Jev's spoken news and desktop notifications now also tell you when a pull request is opened or an issue is closed in any tracked project, each named by its title; a merge and the issue it closes in the same check come as one ("Pull request 12 in observatory merged: transport bar fix, closing issue 10, bar stutters"), and an issue that was moved or deleted rather than closed is not reported ([#319](https://github.com/anthonyturner/observatory/pull/319)).
 - A Notify me box in Home's Projects heading sends a desktop notification when a pull request merges or an issue is opened in any tracked project while Observatory's tab is in the background, one per kind for each check; it asks the browser once, says so when the browser blocks it, and is remembered in this browser ([#308](https://github.com/anthonyturner/observatory/pull/308)).
 - On your own machine with Speak on, Jev says each notice's news out loud, naming the project and the title ("Pull request 12 in observatory merged: transport bar fix"). He waits until he has finished speaking, listening, answering or showing a task, then says what came in meanwhile as one line. He says nothing while the tab is hidden, and nothing if the browser will not let him speak yet ([#309](https://github.com/anthonyturner/observatory/pull/309)).
@@ -70,6 +71,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- The local site now reads your iCloud and Gmail inboxes on every page, not only while Home is open: every five minutes while the tab is in view, and once when you come back to it ([#320](https://github.com/anthonyturner/observatory/pull/320)).
 - Clicking one of Observatory's desktop notifications, including the Agent review's, brings its tab forward and closes the notification ([#308](https://github.com/anthonyturner/observatory/pull/308)).
 - On a phone, Home's foot takes less of the screen: the playlist bar starts folded to one row under the seek bar, unfolds its List and Sky controls as tidy rows of their own, and Home's tools fold behind one Tools button ([#302](https://github.com/anthonyturner/observatory/pull/302)).
 - The playlist bar's controls are grouped by purpose: volume follows the song's name, then a List group (Mix / Favourites, Tracks, export and import) and a Sky group (Video, Visual, Sky, Sync), each set apart by a firmer rule ([#292](https://github.com/anthonyturner/observatory/pull/292)).

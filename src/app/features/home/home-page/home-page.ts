@@ -16,6 +16,7 @@ import { NewsSection } from '../news-section/news-section';
 import { ReaderWindow } from '../../reader/reader-window/reader-window';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
+import { landOnFragment } from '../../../shared/section-jump/land-on-fragment';
 import { CoreStateFeed } from '../../../core/core-state/core-state-feed';
 import { HOME_HELP_KEYS, homeHelpEntries, withMailHelp } from '../help/help-content';
 import { MAIL_PROVIDERS, MAIL_SHOWN } from '../../../core/mail/mail-inbox';
@@ -31,6 +32,9 @@ import { SoundPreference } from '../../../core/sound/sound-preference';
 import { PlaylistPlacement } from '../../../core/playlist/playlist-placement';
 import { RunDock } from '../../../core/runs/run-dock';
 import { RunsStore } from '../../../core/runs/runs-store';
+
+/** The Mail section's id, which a mail notice's link names. */
+const MAIL_SECTION = 'mail';
 
 /** Home: the HUD over the sky, then mail, the news and the projects below the fold, and a
  *  task's panel beside them. It lays the sections out and nothing more. */
@@ -55,7 +59,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
     RunDockPanel,
     HomeTools,
   ],
-  // Home's own score, which leaving Home stops; mail is read only while Home is shown.
+  // Home's own score, which leaving Home stops; and whether Home shows mail.
   providers: [SoundPreference, MAIL_PROVIDERS],
   hostDirectives: [HelpShortcuts, CoreStateFeed],
   host: { '[class.docked]': 'dock.isOpen()' },
@@ -78,5 +82,6 @@ export class HomePage {
     const placement = inject(PlaylistPlacement);
     effect(() => placement.setBesideDock(this.dock.isOpen()));
     inject(DestroyRef).onDestroy(() => placement.setBesideDock(false));
+    landOnFragment(MAIL_SECTION, this.hasMail);
   }
 }

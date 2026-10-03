@@ -3,6 +3,12 @@ export type MailAccount = 'icloud' | 'gmail';
 
 export const MAIL_ACCOUNTS: readonly MailAccount[] = ['icloud', 'gmail'];
 
+/** Each account's name as the page shows it and Jev says it. */
+export const MAIL_ACCOUNT_LABELS: Readonly<Record<MailAccount, string>> = {
+  icloud: 'iCloud',
+  gmail: 'Gmail',
+};
+
 /** Why the server could not read an inbox. */
 export type MailFailure = 'sign-in' | 'timeout' | 'unreachable' | 'unknown';
 

@@ -56,7 +56,8 @@ const phraseOf = (item: ActivityItem): string =>
 const lineOf = (item: ActivityItem): string =>
   `${item.repo} #${item.number} · ${item.title}${closingOf(item, listedIssue)}`;
 
-const sentenceOf = (words: string): string => {
+/** The words as one sentence, with a full stop unless they already end one. */
+export const sentenceOf = (words: string): string => {
   const trimmed = words.trim();
   return ENDS_A_SENTENCE.test(trimmed) ? trimmed : `${trimmed}.`;
 };

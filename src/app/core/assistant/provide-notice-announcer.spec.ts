@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
 import { ActivityWatch } from '../activity/activity-watch';
 import { ActivityItem } from '../activity/activity.types';
+import { MailWatch } from '../mail/mail-watch';
 import { PageVisibility } from '../presence/page-visibility';
 import { PAGE_LOCATION, ViewerSession } from '../session/viewer-session';
 import { ANNOUNCEMENT_VOICE } from '../voice/announcement-voice';
@@ -26,6 +27,7 @@ function setUp() {
       provideHttpClientTesting(),
       { provide: PAGE_LOCATION, useValue: { here: () => '/', assign: () => undefined } },
       { provide: ActivityWatch, useValue: { checks } },
+      { provide: MailWatch, useValue: { news: new Subject() } },
       { provide: PageVisibility, useValue: { isHidden: signal(false) } },
       { provide: SpeakPreference, useValue: { isOn: signal(true) } },
       {

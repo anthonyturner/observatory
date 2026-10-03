@@ -14,6 +14,16 @@ export class SectionJump {
     const section = this.document.getElementById(id);
     if (!section || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
     event.preventDefault();
+    this.show(section);
+  }
+
+  /** Scrolls to the section and moves focus there, as a link to it from another page asks. */
+  land(id: string): void {
+    const section = this.document.getElementById(id);
+    if (section) this.show(section);
+  }
+
+  private show(section: HTMLElement): void {
     section.scrollIntoView({ behavior: this.motion.isStill() ? 'auto' : 'smooth', block: 'start' });
     section.focus({ preventScroll: true });
   }

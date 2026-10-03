@@ -22,6 +22,9 @@ export class VoiceChoice {
 
   readonly engine: Signal<VoiceEngineId> = computed(() => this.chosen().engine);
   readonly voice: Signal<string | null> = computed(() => this.chosen().voice);
+  /** True only for Kokoro, which reads in this browser: the words of a line
+   *  never leave the machine. ElevenLabs is sent them. */
+  readonly isOnThisMachine: Signal<boolean> = computed(() => this.engine() === 'kokoro');
 
   chooseEngine(engine: VoiceEngineId): void {
     this.save({ ...this.chosen(), engine });

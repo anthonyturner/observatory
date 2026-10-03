@@ -8,6 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { Observable, map, of, tap } from 'rxjs';
 import { Clock } from '../time/clock';
 import { TrailActivity } from '../sky/trail-activity';
 import { localDayKey } from '../usage/usage-format';
@@ -24,7 +25,7 @@ import {
   markDone,
   snoozeToMonday,
 } from './agent-review-week';
-import { BROWSER_NOTICES } from './browser-notices';
+import { BROWSER_NOTICES, permissionToNotify } from './browser-notices';
 
 /** When the weekly review falls (null: reminders off), and whether to notify outside the tab. */
 export interface ReminderSettings {
@@ -160,9 +161,12 @@ export class AgentReminders {
   }
 
   /** Asks the browser first, only when turned on; a refusal leaves it off. */
-  async setNotify(notify: boolean): Promise<void> {
-    if (notify && !(await this.permitted())) notify = false;
-    this.saveSettings({ ...this.chosen(), notify });
+  setNotify(notify: boolean): Observable<void> {
+    const allowed = notify ? permissionToNotify(this.notices) : of(false);
+    return allowed.pipe(
+      tap((isAllowed) => this.saveSettings({ ...this.chosen(), notify: isAllowed })),
+      map(() => undefined),
+    );
   }
 
   done(): void {
@@ -203,12 +207,5 @@ export class AgentReminders {
     if (wanted && this.notices.permission() === 'granted') {
       this.notices.show('Agent review', REVIEW_WORDS, `agent-review-${showing}`);
     }
-  }
-
-  private async permitted(): Promise<boolean> {
-    const permission = this.notices.permission();
-    if (permission === 'granted') return true;
-    if (permission !== 'default') return false;
-    return this.notices.request();
   }
 }

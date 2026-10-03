@@ -4,7 +4,7 @@ import {
   inject,
   provideEnvironmentInitializer,
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, take } from 'rxjs';
 import { ViewerSession } from '../session/viewer-session';
 import { NoticeAnnouncer } from './notice-announcer';
@@ -17,7 +17,7 @@ export function provideNoticeAnnouncer(): EnvironmentProviders {
   return provideEnvironmentInitializer(() => {
     const injector = inject(Injector);
     toObservable(inject(ViewerSession).isConfirmedLocal)
-      .pipe(filter(Boolean), take(1))
+      .pipe(filter(Boolean), take(1), takeUntilDestroyed())
       .subscribe(() => injector.get(NoticeAnnouncer));
   });
 }

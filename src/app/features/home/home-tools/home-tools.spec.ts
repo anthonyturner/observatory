@@ -40,6 +40,23 @@ describe('HomeTools', () => {
     expect(refreshButton?.textContent?.trim()).toBe('Refresh');
   });
 
+  it('opens and closes the tools from the Tools button, which says whether they show', () => {
+    const { fixture, element, button } = render();
+    const tools = button('Tools');
+    expect(tools?.getAttribute('aria-controls')).toBe('home-tools-groups');
+    expect(tools?.getAttribute('aria-expanded')).toBe('false');
+    expect(element.classList).not.toContain('open');
+
+    tools?.click();
+    fixture.detectChanges();
+    expect(tools?.getAttribute('aria-expanded')).toBe('true');
+    expect(element.classList).toContain('open');
+
+    tools?.click();
+    fixture.detectChanges();
+    expect(tools?.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('switches motion from the Motion button and says which way it is', () => {
     const { fixture, button } = render();
     const motion = button('Motion');

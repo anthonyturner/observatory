@@ -1,17 +1,30 @@
 :host {
+  --rule: var(--rule);
+  --fit: var(--fit);
+  --card: min(356px, var(--fit));
+  --large: min(clamp(463px, 30vw, 640px), var(--fit));
+
   position: relative;
   display: block;
   min-width: 0;
 }
 
 .deck {
-  overflow: hidden;
-  border: 1px solid var(--edge-soft);
-  border-radius: 10px;
   background: var(--panel);
 }
 
-.bar {
+.deck,
+.card--live {
+  overflow: hidden;
+  border: var(--rule);
+  border-radius: 10px;
+}
+
+.bar,
+.transport,
+.source,
+.transfer,
+.group {
   display: flex;
   align-items: center;
 }
@@ -36,7 +49,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  border-bottom: 1px solid var(--edge-soft);
+  border-bottom: var(--rule);
 }
 
 .scrub button {
@@ -46,6 +59,12 @@
 .scrub input {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.scrub input,
+.volume input,
+.opacity input,
+.visual select {
   accent-color: var(--flow);
   cursor: pointer;
 }
@@ -58,18 +77,20 @@
   opacity: 0.45;
 }
 
-.scrub input:focus-visible {
-  outline: 2px solid var(--flow);
-  outline-offset: 2px;
-}
-
 /* Wide enough for "1:02:09", so the bar does not shift as the time grows. */
 .scrub__time {
   min-width: 7ch;
+  text-align: center;
+}
+
+.scrub__time,
+.now__meta,
+.visual,
+.volume,
+.opacity {
   color: var(--faint);
   font-family: var(--font-mono);
   font-size: 10px;
-  text-align: center;
 }
 
 /* The track list and the video stack above the bar, clear of the page's tools. */
@@ -92,11 +113,8 @@
 .card--live {
   position: relative;
   display: block;
-  width: min(356px, calc(100vw - 32px));
+  width: var(--card);
   height: 200px;
-  overflow: hidden;
-  border: 1px solid var(--edge-soft);
-  border-radius: 10px;
   transition:
     width 0.25s ease,
     height 0.25s ease;
@@ -105,8 +123,8 @@
 /* About a third of a wide window: 1.3 times the usual card at the least, never
    past 640px or the window's edge, and still 16:9. */
 .card--live.card--large {
-  width: min(clamp(463px, 30vw, 640px), calc(100vw - 32px));
-  height: max(200px, calc(min(clamp(463px, 30vw, 640px), calc(100vw - 32px)) * 9 / 16));
+  width: var(--large);
+  height: max(200px, calc(var(--large) * 9 / 16));
 }
 
 .screen {
@@ -121,10 +139,14 @@
   min-width: 30px;
   min-height: 30px;
   padding: 0;
+  font-size: 15px;
+}
+
+.enlarge,
+.notice {
   border-radius: 8px;
   background: var(--panel-strong);
   color: var(--ink);
-  font-size: 15px;
 }
 
 /* Under a larger card the list gives up height, so both stay on the screen. */
@@ -137,8 +159,7 @@
 }
 
 .transport {
-  display: flex;
-  border-right: 1px solid var(--edge-soft);
+  border-right: var(--rule);
 }
 
 button {
@@ -170,7 +191,7 @@ button:focus-visible {
 }
 
 .heart {
-  border-right: 1px solid var(--edge-soft);
+  border-right: var(--rule);
   color: var(--faint);
   font-size: 15px;
 }
@@ -179,16 +200,9 @@ button:focus-visible {
   color: var(--music-trance-accent);
 }
 
-.source,
-.transfer {
-  display: flex;
-}
-
 /* A group of related controls stands apart from its neighbours by a firmer rule
    and a little air, more than the controls inside it stand apart from each other. */
 .group {
-  display: flex;
-  align-items: center;
   padding: 0 6px;
   border-left: 1px solid var(--edge);
 }
@@ -204,20 +218,17 @@ button:focus-visible {
 .sync,
 .video,
 .fold {
-  border-left: 1px solid var(--edge-soft);
+  border-left: var(--rule);
 }
 
-.source button[aria-pressed='true'],
-.sync[aria-pressed='true'],
-.video[aria-pressed='true'],
+.group [aria-pressed='true'],
 .tracks[aria-expanded='true'] {
   color: var(--ink);
   background: var(--flow-tint-strong);
 }
 
 /* aria-disabled rather than disabled: Export stays focusable, and pressing it says why. */
-.source button:disabled,
-.sync:disabled,
+.group :disabled,
 .transfer button[aria-disabled='true'] {
   color: var(--faint);
   cursor: not-allowed;
@@ -228,13 +239,10 @@ button:focus-visible {
 }
 
 .notice {
-  max-width: min(356px, calc(100vw - 32px));
+  max-width: var(--card);
   margin: 0;
   padding: 6px 10px;
-  border: 1px solid var(--edge-soft);
-  border-radius: 8px;
-  background: var(--panel-strong);
-  color: var(--ink);
+  border: var(--rule);
   font-size: 12px;
 }
 
@@ -267,12 +275,6 @@ button:focus-visible {
   font-size: 12px;
 }
 
-.now__meta {
-  color: var(--faint);
-  font-family: var(--font-mono);
-  font-size: 10px;
-}
-
 .visual,
 .volume,
 .opacity {
@@ -281,9 +283,7 @@ button:focus-visible {
   gap: 8px;
   min-height: 34px;
   padding: 0 12px;
-  border-left: 1px solid var(--edge-soft);
-  color: var(--faint);
-  font-family: var(--font-mono);
+  border-left: var(--rule);
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -293,15 +293,13 @@ button:focus-visible {
 .volume input,
 .opacity input {
   width: 72px;
-  accent-color: var(--flow);
-  cursor: pointer;
 }
 
 .visual select {
   width: 128px;
   min-height: 26px;
   padding: 0 4px;
-  border: 1px solid var(--edge-soft);
+  border: var(--rule);
   border-radius: 4px;
   background: transparent;
   color: var(--ink);
@@ -309,13 +307,13 @@ button:focus-visible {
   letter-spacing: normal;
   text-transform: none;
   text-overflow: ellipsis;
-  cursor: pointer;
 }
 
 .visual select option {
   background: var(--issue-option);
 }
 
+.scrub input:focus-visible,
 .visual select:focus-visible,
 .volume input:focus-visible,
 .opacity input:focus-visible {
@@ -324,18 +322,62 @@ button:focus-visible {
 }
 
 @media (max-width: 720px) {
+  /* On a phone the bar runs the screen's width, folded or not, over the page's
+     words, so it is the firmer panel. */
+  :host(.folded) {
+    width: 100%;
+  }
+
+  .deck {
+    background: var(--panel-strong);
+  }
+
   .bar {
     flex-wrap: wrap;
   }
 
+  /* The song's name takes what the transport, the heart and the fold leave, so
+     they share one row. */
   .now {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     width: auto;
   }
 
-  .visual,
-  .volume,
-  .opacity {
+  /* Unfolded, the extras open as their own rows under that one, a group a row. */
+  .extras {
+    display: grid;
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  .extras,
+  .group + .group,
+  .group--sky > :nth-child(n + 3) {
+    border-top: var(--rule);
+  }
+
+  .group {
+    padding: 0;
+  }
+
+  .group,
+  .group--sky > :nth-child(odd) {
+    border-left: 0;
+  }
+
+  /* Video and the visual, then the sky's strength and Sync: two even pairs. */
+  .group--sky {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .visual select {
+    flex: 1;
+    width: 0;
+  }
+
+  /* The phone's own buttons set the volume. */
+  .volume {
     display: none;
   }
 }

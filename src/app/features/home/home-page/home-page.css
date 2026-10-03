@@ -136,9 +136,9 @@ app-home-tools {
 
 @media (max-width: 720px) {
   main {
-    /* The tools wrap onto two rows on a phone and the playlist takes a third;
-       the page ends clear of all three. */
-    padding: 0 16px calc(200px + env(safe-area-inset-bottom, 0px));
+    /* The page ends clear of the playlist and the folded tools above it. */
+    padding: 0 16px
+      calc(var(--playlist-clear-bottom, 120px) + 80px + env(safe-area-inset-bottom, 0px));
   }
 
   .foot {

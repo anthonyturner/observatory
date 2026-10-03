@@ -1,55 +1,68 @@
-<div class="group" role="group" aria-label="Data">
-  <button
-    type="button"
-    title="Rebuild every project's counts from GitHub now"
-    [disabled]="refreshing()"
-    [attr.aria-busy]="refreshing()"
-    (click)="refresh()"
-  >
-    {{ refreshing() ? 'Refreshing…' : 'Refresh' }}
-  </button>
-</div>
-<div class="group">
-  <label class="spin" [title]="spinHint()"
-    ><span aria-hidden="true">Spin</span
-    ><input
-      type="range"
-      min="0"
-      [max]="lastStop"
-      step="1"
-      aria-label="Star trail speed"
-      [attr.aria-valuetext]="spinLabel()"
-      [value]="spin.stop()"
-      (input)="onSpin($event)"
-    /><output aria-hidden="true">{{ spinLabel() }}</output></label
-  >
-</div>
-<div class="group" role="group" aria-label="Scene">
-  <button
-    type="button"
-    [attr.aria-pressed]="!motion.isStill()"
-    [title]="motionHint()"
-    (click)="motion.toggle()"
-  >
-    {{ motion.isStill() ? 'Motion off' : 'Motion on' }}
-  </button>
-  <button
-    type="button"
-    [attr.aria-pressed]="sound.isOn()"
-    [title]="
-      sound.isOn() ? 'Ambient score playing — click to fade it out' : 'Play an ambient score'
-    "
-    (click)="sound.toggle()"
-  >
-    {{ sound.isOn() ? 'Sound on' : 'Sound off' }}
-  </button>
-  <button
-    type="button"
-    aria-label="Help"
-    title="What am I looking at? (?)"
-    [attr.aria-pressed]="help.isOpen()"
-    (click)="help.toggle()"
-  >
-    ?
-  </button>
+<!-- Only a phone shows this; wider screens always have room for the groups. -->
+<button
+  type="button"
+  class="toggle"
+  aria-controls="home-tools-groups"
+  [attr.aria-expanded]="isOpen()"
+  [title]="isOpen() ? 'Hide the page tools' : 'Show the page tools'"
+  (click)="isOpen.set(!isOpen())"
+>
+  Tools <span aria-hidden="true">{{ isOpen() ? '▾' : '▴' }}</span>
+</button>
+<div id="home-tools-groups" class="groups">
+  <div class="group" role="group" aria-label="Data">
+    <button
+      type="button"
+      title="Rebuild every project's counts from GitHub now"
+      [disabled]="refreshing()"
+      [attr.aria-busy]="refreshing()"
+      (click)="refresh()"
+    >
+      {{ refreshing() ? 'Refreshing…' : 'Refresh' }}
+    </button>
+  </div>
+  <div class="group">
+    <label class="spin" [title]="spinHint()"
+      ><span aria-hidden="true">Spin</span
+      ><input
+        type="range"
+        min="0"
+        [max]="lastStop"
+        step="1"
+        aria-label="Star trail speed"
+        [attr.aria-valuetext]="spinLabel()"
+        [value]="spin.stop()"
+        (input)="onSpin($event)"
+      /><output aria-hidden="true">{{ spinLabel() }}</output></label
+    >
+  </div>
+  <div class="group" role="group" aria-label="Scene">
+    <button
+      type="button"
+      [attr.aria-pressed]="!motion.isStill()"
+      [title]="motionHint()"
+      (click)="motion.toggle()"
+    >
+      {{ motion.isStill() ? 'Motion off' : 'Motion on' }}
+    </button>
+    <button
+      type="button"
+      [attr.aria-pressed]="sound.isOn()"
+      [title]="
+        sound.isOn() ? 'Ambient score playing — click to fade it out' : 'Play an ambient score'
+      "
+      (click)="sound.toggle()"
+    >
+      {{ sound.isOn() ? 'Sound on' : 'Sound off' }}
+    </button>
+    <button
+      type="button"
+      aria-label="Help"
+      title="What am I looking at? (?)"
+      [attr.aria-pressed]="help.isOpen()"
+      (click)="help.toggle()"
+    >
+      ?
+    </button>
+  </div>
 </div>

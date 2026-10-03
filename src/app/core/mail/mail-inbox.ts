@@ -14,6 +14,7 @@ import {
   Subject,
   defer,
   filter,
+  finalize,
   forkJoin,
   map,
   repeat,
@@ -109,6 +110,9 @@ export class MailInbox {
           this.presence.set(answer.kind === 'absent' ? 'absent' : 'here');
         this.update(account, (state) => settled(state, answer));
       }),
+      // A read given up before its answer, such as a Refresh on leaving Home,
+      // must not leave the shared inbox reading for every page after.
+      finalize(() => this.update(account, (state) => ({ ...state, isReading: false }))),
     );
   }
 

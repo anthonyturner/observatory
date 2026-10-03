@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Observable, of } from 'rxjs';
+import { NEVER, Observable, of } from 'rxjs';
 import { PageVisibility } from '../presence/page-visibility';
 import { ViewerSession } from '../session/viewer-session';
 import { MAIL_API, MailApi } from './mail-api';
@@ -162,6 +162,16 @@ describe('MailInbox', () => {
     inbox.refresh().subscribe();
 
     expect(rounds).toEqual([[listed('icloud')], [listed('icloud')]]);
+  });
+
+  it('leaves no inbox reading when a Refresh is abandoned, as on leaving Home', () => {
+    const { api } = fakeApi((account) => report(listed(account)));
+    const { inbox } = start({ ...api, refresh: () => NEVER });
+
+    inbox.refresh().subscribe().unsubscribe();
+
+    expect(inbox.isReading()).toBe(false);
+    expect(inbox.states().icloud.report).toEqual(listed('icloud'));
   });
 
   it('asks both mail servers again on Refresh, and keeps the list when one refuses', () => {

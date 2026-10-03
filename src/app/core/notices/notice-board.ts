@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, Signal, computed, inject, signal } from '@angul
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { ActivityWatch } from '../activity/activity-watch';
-import { ActivityItem, ActivityKind } from '../activity/activity.types';
+import { ACTIVITY_KINDS, ActivityItem, ActivityKind } from '../activity/activity.types';
 import { PageVisibility } from '../presence/page-visibility';
 import { NoticeCountdowns } from './notice-countdowns';
 import { noticeDurationMs } from './notice-timing';
@@ -11,8 +11,6 @@ import { Countdown, Notice } from './notice.types';
 
 /** The stack holds at most this many; the oldest leaves for a new one. */
 export const MOST_NOTICES = 3;
-
-const KINDS: readonly ActivityKind[] = ['merged', 'issue'];
 
 /**
  * The notices on show on every page, from the activity watch: one per kind
@@ -82,7 +80,7 @@ export class NoticeBoard {
 
   private show(items: readonly ActivityItem[]): void {
     this.spoken.set(announcementOf(items));
-    for (const kind of KINDS) {
+    for (const kind of ACTIVITY_KINDS) {
       const ofKind = items.filter((item) => item.kind === kind);
       if (ofKind.length) this.place(kind, ofKind);
     }

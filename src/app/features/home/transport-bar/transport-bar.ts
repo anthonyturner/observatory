@@ -17,6 +17,7 @@ import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { SoundPreference } from '../../../core/sound/sound-preference';
+import { FavoritesTransfer, NOTHING_TO_EXPORT } from './favorites-transfer';
 import { syncLabelOf } from './sync-label';
 import { TrackList } from './track-list/track-list';
 
@@ -25,12 +26,13 @@ const BACK_STEP_S = 15;
 const FORWARD_STEP_S = 30;
 
 /** Home's playlist along the foot of the screen: the video, the seek bar, the transport, the
- *  heart, the Mix / Favourites switch, the sky's Sync and the volume, with the
- *  track list above. It plays instead of the
+ *  heart, the Mix / Favourites switch, the favourites file, the sky's Sync and the
+ *  volume, with the track list above. It plays instead of the
  *  generated score, never over it. The page provides the playlist and the pulse. */
 @Component({
   selector: 'app-transport-bar',
   imports: [TrackList],
+  providers: [FavoritesTransfer],
   templateUrl: './transport-bar.html',
   styleUrl: './transport-bar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +42,7 @@ export class TransportBar {
   protected readonly player = inject(PlaylistPlayer);
   protected readonly library = inject(PlaylistLibrary);
   protected readonly favorites = inject(FavoritesStore);
+  protected readonly transfer = inject(FavoritesTransfer);
   private readonly sound = inject(SoundPreference);
   private readonly pulse = inject(MusicPulse);
   protected readonly motion = inject(MotionPreference);
@@ -72,6 +75,11 @@ export class TransportBar {
     this.library.hasFavorites()
       ? 'Play the tracks you have hearted'
       : 'No favourites yet: heart a track to save it here',
+  );
+  protected readonly exportHint = computed(() =>
+    this.library.hasFavorites()
+      ? 'Save your favourites to a file, to import on another site or browser'
+      : NOTHING_TO_EXPORT,
   );
   protected readonly status = computed(() =>
     this.player.state() === 'loading' ? 'Loading…' : this.player.current().artist,
@@ -126,6 +134,13 @@ export class TransportBar {
   protected onScrubbed(event: Event): void {
     this.player.seek(Number((event.target as HTMLInputElement).value));
     this.dragged.set(null);
+  }
+
+  protected importPicked(picker: HTMLInputElement): void {
+    const file = picker.files?.[0];
+    // Cleared so that picking the same file again still reports a change.
+    picker.value = '';
+    if (file) this.transfer.importFile(file);
   }
 
   protected onVolume(event: Event): void {

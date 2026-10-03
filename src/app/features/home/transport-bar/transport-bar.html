@@ -25,6 +25,7 @@
       </button>
     }
   </div>
+  <p class="notice" aria-live="polite">{{ transfer.notice() }}</p>
 </div>
 <div class="deck" role="group" aria-label="Playlist">
   <div class="scrub">
@@ -116,6 +117,32 @@
         <span aria-hidden="true">♥</span> {{ favorites.count() }}
         <span class="visually-hidden">favourites</span>
       </button>
+    </div>
+    <div class="transfer" role="group" aria-label="Favourites file">
+      <button
+        type="button"
+        aria-label="Export favourites"
+        [attr.aria-disabled]="library.hasFavorites() ? null : 'true'"
+        [title]="exportHint()"
+        (click)="transfer.exportFile()"
+      >
+        <span aria-hidden="true">⤓</span>
+      </button>
+      <button
+        type="button"
+        aria-label="Import favourites"
+        title="Add the favourites from an exported file to yours"
+        (click)="picker.click()"
+      >
+        <span aria-hidden="true">⤒</span>
+      </button>
+      <input
+        #picker
+        type="file"
+        accept=".json,application/json"
+        hidden
+        (change)="importPicked(picker)"
+      />
     </div>
     <button
       type="button"

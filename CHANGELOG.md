@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- Export your favourite tracks from Home's playlist bar to a file, and import that file on another copy of Observatory or another browser; imported tracks join the ones already hearted, and a short message says how many were added and skipped ([#265](https://github.com/anthonyturner/observatory/pull/265)).
 - When a new song starts, its title and artist fade into Home's music sky below the core, swelling with the beat, then fade away ([#263](https://github.com/anthonyturner/observatory/pull/263)).
 - Home's music sky shows Milkdrop all the time, moving to a new preset every 2 to 3 minutes; the hand-drawn looks stand in while it loads or where the browser cannot run it ([#261](https://github.com/anthonyturner/observatory/pull/261)).
 - Home's music sky locks to the kick drum: it finds each kick even over a loud bassline, keeps the 4/4 beat through a missed kick, and lands a hit on every beat (a flash round the core, a ring, a zoom and glowing edges) under a bloom. Milkdrop looks from Butterchurn join the rotation ([#259](https://github.com/anthonyturner/observatory/pull/259)).

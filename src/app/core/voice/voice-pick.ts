@@ -32,7 +32,7 @@ export class VoicePick {
   private async warmUpChosen(): Promise<void> {
     this.speaker.wake();
     const onAgreed = (): void => this.preference.turnOn();
-    const warmUp = await this.engine.warmUp({ takesFocus: true, onAgreed });
+    const warmUp = await this.engine.warmUp({ takesFocus: true, mayAsk: true, onAgreed });
     if (warmUp === 'asked') this.preference.turnOffForVisit();
   }
 }

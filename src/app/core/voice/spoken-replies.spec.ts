@@ -2,12 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { SpeakPreference } from './speak-preference';
 import { SpeakerOutput } from './speaker-output';
 import { sentences } from './sentences';
-import { SPEECH_ENGINE, SpeechEngine, WarmUp } from './speech-engine';
+import { SPEECH_ENGINE, SpeechEngine, WarmUp, WarmUpRequest } from './speech-engine';
 import { SpokenReplies } from './spoken-replies';
 import { TalkState } from './talk-state';
 import { VoiceError } from './voice-error';
 import { NEXT_FRAME } from './voice-level';
 import { SpokenClip } from './voice-protocol';
+import { VoiceNarration } from './voice-narration';
 import { VoiceStatus } from './voice-status';
 
 /** The few Web Audio parts a reply uses, keeping what was started when. */
@@ -54,9 +55,11 @@ class FakeEngine implements SpeechEngine {
   warmUpAnswer: WarmUp = 'ready';
   failure: VoiceError | null = null;
   readonly said: string[] = [];
+  readonly asked: boolean[] = [];
   released = 0;
   parts: (text: string) => string[] = sentences;
-  async warmUp(): Promise<WarmUp> {
+  async warmUp(request: WarmUpRequest): Promise<WarmUp> {
+    this.asked.push(request.mayAsk);
     return this.warmUpAnswer;
   }
   async synthesize(sentence: string): Promise<SpokenClip> {
@@ -94,6 +97,7 @@ function setup() {
   return {
     replies: TestBed.inject(SpokenReplies),
     status: TestBed.inject(VoiceStatus),
+    narration: TestBed.inject(VoiceNarration),
     talk: TestBed.inject(TalkState),
     context,
     engine,
@@ -191,5 +195,84 @@ describe('SpokenReplies', () => {
     await settle();
 
     expect(engine.said).toEqual(['One. Two.', 'Three.']);
+  });
+
+  describe('an announcement', () => {
+    it('is read aloud, busy from the start until it ends', async () => {
+      const { replies, context, engine } = setup();
+
+      replies.announce('Pull request 4 in alpha merged: Fix.');
+      expect(replies.isBusy()).toBe(true);
+      expect(replies.speaking()).toBe(false);
+      await settle();
+
+      expect(engine.said).toEqual(['Pull request 4 in alpha merged: Fix.']);
+      expect(engine.asked).toEqual([false]);
+      hearAll(context);
+      await settle();
+      expect(replies.isBusy()).toBe(false);
+    });
+
+    it('never cuts off a reply, even one not yet heard', async () => {
+      const { replies, engine } = setup();
+
+      void replies.speak('An answer.', 2);
+      expect(replies.speaking()).toBe(false);
+      replies.announce('News.');
+      await settle();
+
+      expect(engine.said).toEqual(['An answer.']);
+      expect(replies.tier()).toBe(2);
+    });
+
+    it('is cut off by a reply', async () => {
+      const { replies, context, engine } = setup();
+      replies.announce('News.');
+      await settle();
+
+      void replies.speak('An answer.', 2);
+      await settle();
+
+      expect(context.sources[0].stoppedAt).not.toBeNull();
+      expect(engine.said).toEqual(['News.', 'An answer.']);
+    });
+
+    it('fails without a word, on screen or to a screen reader', async () => {
+      const { replies, engine, status, narration } = setup();
+      const echo = vi.spyOn(narration, 'echo');
+      engine.failure = new VoiceError('blocked', 'audio');
+
+      replies.announce('News.');
+      await settle();
+
+      expect(status.line()).toBeNull();
+      expect(echo).not.toHaveBeenCalled();
+      expect(replies.isBusy()).toBe(false);
+    });
+
+    it('asks nothing and leaves Speak on when the voice must download first', async () => {
+      const { replies, engine } = setup();
+      engine.warmUpAnswer = 'unready';
+
+      replies.announce('News.');
+      await settle();
+
+      expect(engine.said).toEqual([]);
+      expect(TestBed.inject(SpeakPreference).isOn()).toBe(true);
+      expect(replies.isBusy()).toBe(false);
+    });
+
+    it('stays quiet while the mic is open, or Speak is off', async () => {
+      const { replies, engine, talk } = setup();
+      talk.begin();
+      replies.announce('News.');
+      talk.end();
+      TestBed.inject(SpeakPreference).turnOff();
+      replies.announce('News.');
+      await settle();
+
+      expect(engine.said).toEqual([]);
+      expect(replies.isBusy()).toBe(false);
+    });
   });
 });

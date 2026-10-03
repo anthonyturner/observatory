@@ -35,9 +35,11 @@ export class KokoroEngine implements SpeechEngine {
     failed: (error) => this.failed(error),
   });
 
-  /** Loads the model if the browser has it already; asks before a download. */
+  /** Loads the model if the browser has it already; asks before a download,
+   *  where the request allows it. */
   async warmUp(request: WarmUpRequest): Promise<WarmUp> {
     if (!this.model.isLoading() && !(await this.model.isCached())) {
+      if (!request.mayAsk) return 'unready';
       await this.consent.ask(this.model, request);
       return 'asked';
     }

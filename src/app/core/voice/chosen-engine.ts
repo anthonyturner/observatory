@@ -28,8 +28,11 @@ export class ChosenEngine implements SpeechEngine {
   private readonly active = inject(ActiveVoice);
   private readonly catalog = inject(VoiceCatalog);
   private readonly preference = inject(SpeakPreference);
+  /** Whether the line being made may ask anything; one line is made at a time. */
+  private mayAsk = true;
 
   async warmUp(request: WarmUpRequest): Promise<WarmUp> {
+    this.mayAsk = request.mayAsk;
     await this.catalog.whenRead;
     return this.current().warmUp(request);
   }
@@ -43,7 +46,9 @@ export class ChosenEngine implements SpeechEngine {
     try {
       return await engine.synthesize(part);
     } catch (error: unknown) {
-      if (engine !== this.engines.elevenlabs) throw error;
+      // A line that may not ask changes nothing either: ElevenLabs stays
+      // chosen, and the next reply falls back and says so.
+      if (engine !== this.engines.elevenlabs || !this.mayAsk) throw error;
       return this.speakInKokoro(part, error);
     }
   }
@@ -64,7 +69,7 @@ export class ChosenEngine implements SpeechEngine {
     this.active.fallBack(failedWith(error));
     const kokoro = this.engines.kokoro;
     const onAgreed = (): void => this.preference.turnOn();
-    const warmUp = await kokoro.warmUp({ takesFocus: false, onAgreed });
+    const warmUp = await kokoro.warmUp({ takesFocus: false, mayAsk: true, onAgreed });
     if (warmUp === 'asked') {
       this.preference.turnOffForVisit();
       throw error;

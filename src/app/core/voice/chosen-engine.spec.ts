@@ -8,7 +8,7 @@ import { CatalogState } from './voice-catalog.types';
 import { VoiceChoice, VoiceEngineId } from './voice-choice';
 import { VoiceError } from './voice-error';
 
-const REQUEST = { takesFocus: false, onAgreed: () => undefined };
+const REQUEST = { takesFocus: false, mayAsk: true, onAgreed: () => undefined };
 
 function setUp(chosen: VoiceEngineId, state: CatalogState = ELEVENLABS_ON) {
   localStorage.clear();
@@ -96,6 +96,19 @@ describe('ChosenEngine', () => {
     await expect(engine.synthesize('Hello.')).rejects.toBe(failure);
     expect(preference.isOn()).toBe(false);
     expect(kokoro.said).toEqual([]);
+  });
+
+  it('changes nothing when ElevenLabs fails a line that may not ask', async () => {
+    const { engine, kokoro, elevenlabs, active, preference } = setUp('elevenlabs');
+    await engine.warmUp({ ...REQUEST, mayAsk: false });
+    const failure = new VoiceError('rate limited', 'run');
+    elevenlabs.failure = failure;
+
+    await expect(engine.synthesize('Hello.')).rejects.toBe(failure);
+    expect(kokoro.warmUps).toBe(0);
+    expect(elevenlabs.released).toBe(0);
+    expect(active.fallbackReason()).toBeNull();
+    expect(preference.isOn()).toBe(true);
   });
 
   it('lets a Kokoro failure through as it is', async () => {

@@ -48,6 +48,9 @@ export class ViewerSession {
   private readonly answer = signal<SessionAnswer | null>(null);
 
   readonly access = computed<Access>(() => this.answer()?.access ?? 'local');
+  /** True only once the API has said this is the owner's machine, never on
+   *  `access`'s assumption, for what must not happen anywhere else. */
+  readonly isConfirmedLocal = computed(() => this.answer()?.access === 'local');
   /** Whether this viewer may change anything, such as triage. */
   readonly canWrite = computed(() => this.access() === 'local' || this.access() === 'owner');
   readonly isVisitor = computed(() => this.access() === 'visitor');

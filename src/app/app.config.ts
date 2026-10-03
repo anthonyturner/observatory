@@ -3,6 +3,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { ASK_FEED_CHANNEL } from './core/assistant/ask-feed';
+import { provideNoticeAnnouncer } from './core/assistant/provide-notice-announcer';
 import { provideVoice } from './core/voice/provide-voice';
 
 export const appConfig: ApplicationConfig = {
@@ -12,5 +13,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     ASK_FEED_CHANNEL,
     provideVoice(),
+    provideNoticeAnnouncer(),
   ],
 };

@@ -42,6 +42,7 @@ export class MilkdropStage {
   private visualizer: ButterchurnVisualizer | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private variant = 0;
+  private pinned: string | null = null;
   private preset: string | null = null;
   private width = 0;
   private height = 0;
@@ -58,9 +59,16 @@ export class MilkdropStage {
     this.sound = sound;
   }
 
-  /** Shows the preset `variant` picks, from 0 to 1. */
+  /** Shows the preset `variant` picks, from 0 to 1, unless one is pinned. */
   show(variant: number): void {
     this.variant = variant;
+    if (this.visualizer) this.loadPreset(BLEND_S);
+  }
+
+  /** Keeps `preset` on screen whatever the variant; null lets the variant pick
+   *  again. A preset the pack lacks is ignored, so something always shows. */
+  pin(preset: string | null): void {
+    this.pinned = preset;
     if (this.visualizer) this.loadPreset(BLEND_S);
   }
 
@@ -123,10 +131,15 @@ export class MilkdropStage {
 
   private loadPreset(blendS: number): void {
     const presets = this.engine?.presets;
-    const name = presets ? presetFor(this.variant, Object.keys(presets)) : null;
+    const name = presets ? this.pick(presets) : null;
     if (!presets || !name || name === this.preset) return;
     this.preset = name;
     this.visualizer?.loadPreset(presets[name], blendS);
+  }
+
+  private pick(presets: Readonly<Record<string, object>>): string | null {
+    if (this.pinned !== null && this.pinned in presets) return this.pinned;
+    return presetFor(this.variant, Object.keys(presets));
   }
 
   private canRun(): boolean {

@@ -13,6 +13,7 @@ import {
 import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
@@ -44,6 +45,7 @@ export class MusicSky {
   private readonly pulse = inject(MusicPulse);
   private readonly playlist = inject(PlaylistPlayer);
   private readonly makeCanvas = inject(MUSIC_CANVAS);
+  private readonly milkdropChoice = inject(MilkdropChoice);
   /** The song playing, by name; it changes only when the song does. */
   private readonly song = computed(
     () => {
@@ -78,6 +80,10 @@ export class MusicSky {
       this.painter?.setSound(sound);
     });
     effect(() => {
+      const preset = this.milkdropChoice.preset();
+      this.painter?.setMilkdropPreset(preset);
+    });
+    effect(() => {
       this.geometry.view();
       this.place();
     });
@@ -97,6 +103,7 @@ export class MusicSky {
     this.painter = painter;
     painter.setTheme(this.theme());
     painter.setSound(this.pulse.sound());
+    painter.setMilkdropPreset(this.milkdropChoice.preset());
     painter.announce(this.song());
     this.place();
     const window = this.document.defaultView;

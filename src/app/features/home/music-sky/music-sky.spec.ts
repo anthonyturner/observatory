@@ -24,6 +24,9 @@ class FakeCanvas implements MusicCanvas {
   setTheme(theme: VisualTheme): void {
     this.themes.push(theme);
   }
+  setSound(): void {
+    // The fake draws nothing, so it has nothing to hear.
+  }
   paint(frame: MusicFrame): void {
     this.frames.push(frame);
   }

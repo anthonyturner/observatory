@@ -62,6 +62,10 @@ export class MusicSky {
       this.painter?.setTheme(theme);
     });
     effect(() => {
+      const sound = this.pulse.sound();
+      this.painter?.setSound(sound);
+    });
+    effect(() => {
       this.geometry.view();
       this.place();
     });
@@ -80,6 +84,7 @@ export class MusicSky {
     if (!painter.canDraw()) return painter.dispose();
     this.painter = painter;
     painter.setTheme(this.theme());
+    painter.setSound(this.pulse.sound());
     this.place();
     const window = this.document.defaultView;
     this.loop = new FrameLoop({

@@ -12,9 +12,13 @@ const MAX_RINGS = 14;
 const START_AT = 1.15;
 const MIN_WIDTH_PX = 1.5;
 const BASS_WIDTH_PX = 7;
-const RING_ALPHA = 0.55;
+const RING_ALPHA = 0.7;
+/** Every beat's ring is at least this bright, however soft the bass. */
+const MIN_STRENGTH = 0.8;
+/** How much a beat thickens the rings. */
+const BEAT_WIDTH_PX = 6;
 
-/** Every kick sends a ring out from the core across the sky. */
+/** Every beat sends a ring out from the core across the sky. */
 export class Shockwave implements MotifLayer {
   private rings: Ring[] = [];
   private speed = BASE_SPEED_PX;
@@ -22,8 +26,12 @@ export class Shockwave implements MotifLayer {
 
   step(frame: MusicFrame, stepS: number, scene: MusicScene): void {
     this.speed = BASE_SPEED_PX + frame.energy * ENERGY_SPEED_PX;
-    this.width = MIN_WIDTH_PX + frame.bass * BASS_WIDTH_PX;
-    if (frame.beat) this.rings.push({ radius: scene.coreRadius * START_AT, strength: frame.bass });
+    this.width = MIN_WIDTH_PX + frame.bass * BASS_WIDTH_PX + frame.pulse * BEAT_WIDTH_PX;
+    if (frame.beat)
+      this.rings.push({
+        radius: scene.coreRadius * START_AT,
+        strength: Math.max(frame.bass, MIN_STRENGTH),
+      });
     const reach = reachOf(scene);
     this.rings = this.rings
       .map((ring) => ({ ...ring, radius: ring.radius + this.speed * stepS }))

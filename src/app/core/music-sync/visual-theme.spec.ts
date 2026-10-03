@@ -16,6 +16,13 @@ describe('themeFor', () => {
     expect(themeFor(track, 500)).toEqual(themeFor({ ...track }, 500));
     expect(themeFor(track).palette).toBe(track.genre);
     expect(themeFor(track, 500).palette).toBe(track.genre);
+    expect(themeFor(track, 500).variant).toBe(themeFor({ ...track }, 500).variant);
+  });
+
+  it('takes a fresh variant at each change', () => {
+    const [track] = MUSIC_POOL;
+    const [first, second] = changesOf(track);
+    expect(themeFor(track, second).variant).not.toBe(themeFor(track, first).variant);
   });
 
   it('uses every motif across the pool', () => {

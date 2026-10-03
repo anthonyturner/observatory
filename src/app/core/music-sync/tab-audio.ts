@@ -1,5 +1,11 @@
 import { InjectionToken } from '@angular/core';
 
+/** The tab's sound as a live audio node, for a visualizer that listens for itself. */
+export interface TabSound {
+  readonly context: AudioContext;
+  readonly source: AudioNode;
+}
+
 /** The tab's own sound, ready to read as a spectrum. */
 export interface AudioTap {
   /** Hertz per bin of `read`. */
@@ -10,6 +16,8 @@ export interface AudioTap {
   /** Called once if sharing stops from outside, as from Chrome's "Stop sharing". */
   onEnded(callback: () => void): void;
   close(): void;
+  /** The sound itself, where the tap is a real one. */
+  readonly sound?: TabSound;
 }
 
 /** Sharing went ahead without the "Share tab audio" box ticked. */
@@ -36,8 +44,8 @@ export const AUDIO_TAP = new InjectionToken<AudioTapOpener>('AUDIO_TAP', {
 
 /** Fine enough to split a kick from a bassline; 1024 bins at 48 kHz is ~23 Hz a bin. */
 const FFT_SIZE = 2048;
-/** Light smoothing: enough to steady the bands, little enough to keep the kicks sharp. */
-const SMOOTHING = 0.5;
+/** Barely any smoothing: more blurs a kick's attack across frames and lands it late. */
+const SMOOTHING = 0.2;
 
 /** Chrome's options for capturing this tab, beyond the standard's typings. */
 interface TabCaptureOptions extends DisplayMediaStreamOptions {
@@ -69,7 +77,8 @@ function tapOf(stream: MediaStream, audio: MediaStreamTrack): AudioTap {
   analyser.fftSize = FFT_SIZE;
   analyser.smoothingTimeConstant = SMOOTHING;
   // Into the analyser only, never to the speakers: the tab is already playing it.
-  context.createMediaStreamSource(stream).connect(analyser);
+  const source = context.createMediaStreamSource(stream);
+  source.connect(analyser);
   const close = (): void => {
     stream.getTracks().forEach((track) => track.stop());
     void context.close();
@@ -80,5 +89,6 @@ function tapOf(stream: MediaStream, audio: MediaStreamTrack): AudioTap {
     read: (into) => analyser.getByteFrequencyData(into),
     onEnded: (callback) => audio.addEventListener('ended', callback, { once: true }),
     close,
+    sound: { context, source },
   };
 }

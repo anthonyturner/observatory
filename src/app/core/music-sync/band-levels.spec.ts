@@ -13,6 +13,7 @@ describe('bandLevels', () => {
     expect(levels.bass).toBeCloseTo(1, 1);
     expect(levels.mid).toBeLessThan(0.05);
     expect(levels.high).toBe(0);
+    expect(levels.kick).toBeCloseTo(1, 1);
   });
 
   it('hears hats as highs alone', () => {
@@ -22,6 +23,6 @@ describe('bandLevels', () => {
   });
 
   it('hears silence as nothing', () => {
-    expect(bandLevels(new Uint8Array(1024), 20)).toEqual({ bass: 0, mid: 0, high: 0 });
+    expect(bandLevels(new Uint8Array(1024), 20)).toEqual({ bass: 0, mid: 0, high: 0, kick: 0 });
   });
 });

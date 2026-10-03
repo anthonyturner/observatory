@@ -1,8 +1,11 @@
-/* Over the sky backdrop, under the HUD (z-index 1): the core draws on top of it. */
+/* Over the sky backdrop, under the HUD (z-index 1): the core draws on top of it.
+   Screened, so the music only ever adds light: a look with its own black
+   ground, like Milkdrop's, leaves the sky behind it showing. */
 :host {
   position: fixed;
   inset: 0;
   z-index: 0;
   display: block;
   pointer-events: none;
+  mix-blend-mode: screen;
 }

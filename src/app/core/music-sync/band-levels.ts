@@ -1,10 +1,12 @@
 import { BandLevels } from './music-sync.types';
 
-/** Where each band sits, in hertz: the kick and bassline, the leads and pads, the hats. */
+/** Where each band sits, in hertz: the kick and bassline, the leads and pads, the
+ *  hats, and the kick's own punch, below most of the bassline. */
 const BANDS = {
   bass: { from: 30, to: 150 },
   mid: { from: 150, to: 2000 },
   high: { from: 4000, to: 12000 },
+  kick: { from: 40, to: 100 },
 } as const;
 
 const MAX_BIN = 255;
@@ -15,6 +17,7 @@ export function bandLevels(bins: Uint8Array, binHz: number): BandLevels {
     bass: averageOf(bins, binHz, BANDS.bass),
     mid: averageOf(bins, binHz, BANDS.mid),
     high: averageOf(bins, binHz, BANDS.high),
+    kick: averageOf(bins, binHz, BANDS.kick),
   };
 }
 

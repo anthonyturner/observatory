@@ -1,12 +1,17 @@
-import { InjectionToken } from '@angular/core';
+import { ErrorHandler, InjectionToken, inject } from '@angular/core';
 import { resolveColour } from '../instrument/palette';
 import { Genre } from '../playlist/playlist.types';
+import { BeatHit } from './beat-hit';
+import { Bloom } from './bloom';
+import { MilkdropStage, loadMilkdrop } from './milkdrop/milkdrop-stage';
+import { Milkdrop } from './motifs/milkdrop';
 import { Aurora } from './motifs/aurora';
 import { MotifLayer, MusicInks, MusicScene, reachOf } from './motifs/motif-layer';
 import { Nebula } from './motifs/nebula';
 import { Shockwave } from './motifs/shockwave';
 import { Warp } from './motifs/warp';
 import { MusicFrame } from './music-sync.types';
+import { TabSound } from './tab-audio';
 import { Motif, VisualTheme } from './visual-theme';
 
 /** What the music layer draws with, behind a token so a test's DOM, which has
@@ -15,6 +20,8 @@ export interface MusicCanvas {
   canDraw(): boolean;
   setScene(scene: MusicScene, pixelRatio: number): void;
   setTheme(theme: VisualTheme): void;
+  /** The tab's sound, for a look that hears it directly. */
+  setSound(sound: TabSound | null): void;
   paint(frame: MusicFrame, stepS: number): void;
   clear(): void;
   dispose(): void;
@@ -22,15 +29,21 @@ export interface MusicCanvas {
 
 export const MUSIC_CANVAS = new InjectionToken<(host: HTMLElement) => MusicCanvas>('MUSIC_CANVAS', {
   providedIn: 'root',
-  factory: () => (host) => new MusicPainter(host),
+  factory: () => {
+    const errors = inject(ErrorHandler);
+    return (host) => new MusicPainter(host, (error) => errors.handleError(error));
+  },
 });
 
-const MOTIF_LAYERS: Readonly<Record<Motif, () => MotifLayer>> = {
-  shockwave: () => new Shockwave(),
-  warp: () => new Warp(),
-  aurora: () => new Aurora(),
-  nebula: () => new Nebula(),
-};
+const MOTIF_LAYERS: Readonly<Record<Motif, (stage: MilkdropStage, variant: number) => MotifLayer>> =
+  {
+    shockwave: () => new Shockwave(),
+    warp: () => new Warp(),
+    aurora: () => new Aurora(),
+    nebula: () => new Nebula(),
+    // The nebula stands in while Milkdrop loads, or where it cannot run.
+    milkdrop: (stage, variant) => new Milkdrop(stage, variant, new Nebula()),
+  };
 
 interface Sparkle {
   x: number;
@@ -56,15 +69,22 @@ const BURST_WIDTH_PX = 18;
 const BURST_ALPHA = 0.35;
 /** The core stays clear: nothing is drawn inside it, and its edge fades in. */
 const HOLE_TO = 1.6;
+/** The glow over the whole layer, always on, and how much a beat adds to it. */
+const BLOOM_BASE = 0.45;
+const BLOOM_BEAT = 0.75;
 const MAX_STEP_S = 0.1;
 
 /** Paints the music between the sky and the HUD: the track's motif, a glow that
- *  breathes with the bass, sparkles on the highs and a burst on a drop, all
- *  kept off the core so its own pulse reads through. */
+ *  breathes with the bass, sparkles on the highs, a hit on every beat and a
+ *  burst on a drop, all bloomed and kept off the core so its own pulse reads
+ *  through. */
 export class MusicPainter implements MusicCanvas {
   private readonly canvas: HTMLCanvasElement;
   private readonly context: CanvasRenderingContext2D | null;
   private readonly palettes: Readonly<Record<Genre, MusicInks>>;
+  private readonly hit = new BeatHit();
+  private readonly bloom: Bloom;
+  private readonly milkdrop: MilkdropStage;
   private scene: MusicScene | null = null;
   private pixelRatio = 1;
   private motif: MotifLayer = new Shockwave();
@@ -72,12 +92,15 @@ export class MusicPainter implements MusicCanvas {
   private sparkles: Sparkle[] = [];
   private bursts: Burst[] = [];
   private bass = 0;
+  private pulse = 0;
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, onError: (error: unknown) => void) {
     this.canvas = host.ownerDocument.createElement('canvas');
     this.canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block';
     host.append(this.canvas);
     this.context = this.canvas.getContext('2d');
+    this.bloom = new Bloom(host.ownerDocument);
+    this.milkdrop = new MilkdropStage(host.ownerDocument, loadMilkdrop, onError);
     this.palettes = { trance: inksOf(host, 'trance'), techno: inksOf(host, 'techno') };
     this.inks = this.palettes.trance;
   }
@@ -100,8 +123,12 @@ export class MusicPainter implements MusicCanvas {
   }
 
   setTheme(theme: VisualTheme): void {
-    this.motif = MOTIF_LAYERS[theme.motif]();
+    this.motif = MOTIF_LAYERS[theme.motif](this.milkdrop, theme.variant);
     this.inks = this.palettes[theme.palette];
+  }
+
+  setSound(sound: TabSound | null): void {
+    this.milkdrop.setSound(sound);
   }
 
   paint(frame: MusicFrame, stepS: number): void {
@@ -113,9 +140,12 @@ export class MusicPainter implements MusicCanvas {
     context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     context.globalCompositeOperation = 'lighter';
     this.drawGlow(context, scene);
-    this.motif.draw(context, scene, this.inks);
+    this.drawMotif(context, scene);
     this.drawSparkles(context);
     this.drawBursts(context, scene);
+    this.hit.draw(context, scene, this.inks);
+    this.bloom.apply(this.canvas, context, BLOOM_BASE + BLOOM_BEAT * this.pulse);
+    context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     this.clearCore(context, scene);
   }
 
@@ -125,12 +155,15 @@ export class MusicPainter implements MusicCanvas {
   }
 
   dispose(): void {
+    this.milkdrop.dispose();
     this.canvas.remove();
   }
 
   private advance(frame: MusicFrame, stepS: number, scene: MusicScene): void {
     this.bass = frame.bass;
+    this.pulse = frame.pulse;
     this.motif.step(frame, stepS, scene);
+    this.hit.step(frame, stepS, scene);
     this.sparkles = this.sparkles
       .map((sparkle) => ({ ...sparkle, life: sparkle.life - stepS / SPARKLE_LIFE_S }))
       .filter((sparkle) => sparkle.life > 0);
@@ -148,6 +181,17 @@ export class MusicPainter implements MusicCanvas {
         life: burst.life - stepS / BURST_LIFE_S,
       }))
       .filter((burst) => burst.life > 0);
+  }
+
+  /** The motif, zoomed about the core on the beat. */
+  private drawMotif(context: CanvasRenderingContext2D, scene: MusicScene): void {
+    const zoom = this.hit.zoom();
+    context.save();
+    context.translate(scene.originX, scene.originY);
+    context.scale(zoom, zoom);
+    context.translate(-scene.originX, -scene.originY);
+    this.motif.draw(context, scene, this.inks);
+    context.restore();
   }
 
   private drawGlow(context: CanvasRenderingContext2D, scene: MusicScene): void {

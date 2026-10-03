@@ -7,8 +7,7 @@ const ORBIT_FROM = 2.2;
 const ORBIT_SPREAD = 1.6;
 const SIZE_IN_RADII = 1.8;
 const BASS_SWELL = 0.9;
-const KICK_SWELL = 0.35;
-const SWELL_DECAY = 4;
+const BEAT_SWELL = 0.6;
 const SPIN_PER_S = 0.05;
 const ENERGY_SPIN = 0.4;
 const CLOUD_ALPHA = 0.22;
@@ -22,17 +21,14 @@ const TILT = 0.6;
 const RESTING_GLOW = 0.35;
 
 /** Soft clouds of colour circling the core, breathing with the bass and
- *  swelling on each kick. */
+ *  swelling on each beat. */
 export class Nebula implements MotifLayer {
   private turn = 0;
-  private swell = 0;
   private breath = 0;
 
   step(frame: MusicFrame, stepS: number): void {
     this.turn += stepS * (SPIN_PER_S + frame.energy * ENERGY_SPIN);
-    if (frame.beat) this.swell = KICK_SWELL;
-    this.swell *= Math.exp(-SWELL_DECAY * stepS);
-    this.breath = frame.bass * BASS_SWELL + this.swell;
+    this.breath = frame.bass * BASS_SWELL + frame.pulse * BEAT_SWELL;
   }
 
   draw(context: CanvasRenderingContext2D, scene: MusicScene, inks: MusicInks): void {

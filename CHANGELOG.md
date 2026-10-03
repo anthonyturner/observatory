@@ -95,4 +95,5 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Security
 
+- The local API now refuses, on every route, a request that does not come from this machine: a website open in another tab can no longer read your pull requests, logs or usage, or merge or edit a pull request, by pointing its own address at your computer ([#317](https://github.com/anthonyturner/observatory/pull/317)).
 - Jev, answering through Claude Code, can still search the web but can no longer fetch a page at an address of its own choosing, so text a stranger writes in an issue or pull request title cannot talk it into sending your private project details to another site ([#316](https://github.com/anthonyturner/observatory/pull/316)).

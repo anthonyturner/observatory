@@ -91,3 +91,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 - Refresh reads GitHub right away instead of a cached answer, and Home's Refresh button works ([#181](https://github.com/anthonyturner/observatory/pull/181)).
 - On the Orrery, the pointer can reach a world's card before it hides ([#194](https://github.com/anthonyturner/observatory/pull/194)).
 - The weekly usage gauge reads plan limits live and shows today's share of the week ([#222](https://github.com/anthonyturner/observatory/pull/222)).
+
+### Security
+
+- Jev, answering through Claude Code, can still search the web but can no longer fetch a page at an address of its own choosing, so text a stranger writes in an issue or pull request title cannot talk it into sending your private project details to another site ([#316](https://github.com/anthonyturner/observatory/pull/316)).

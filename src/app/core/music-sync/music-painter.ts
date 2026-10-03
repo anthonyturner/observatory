@@ -170,10 +170,11 @@ export class MusicPainter implements MusicCanvas {
     this.drawSparkles(context);
     this.drawBursts(context, scene);
     this.hit.draw(context, scene, this.inks);
-    this.titleCard.draw(context, scene, this.inks);
     this.bloom.apply(this.canvas, context, BLOOM_BASE + BLOOM_BEAT * this.pulse);
     context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     this.clearCore(context, scene);
+    // After the clearing, which would otherwise rub out the line sitting just under the core.
+    this.titleCard.draw(context, scene, this.inks);
   }
 
   clear(): void {

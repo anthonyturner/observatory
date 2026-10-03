@@ -55,7 +55,7 @@ export class TransportBar {
   protected readonly favorites = inject(FavoritesStore);
   protected readonly transfer = inject(FavoritesTransfer);
   private readonly score = inject(PageScore);
-  private readonly pulse = inject(MusicPulse);
+  protected readonly pulse = inject(MusicPulse);
   protected readonly motion = inject(MotionPreference);
   protected readonly milkdrop = inject(MilkdropChoice);
   protected readonly milkdropOpacity = inject(MilkdropOpacity);

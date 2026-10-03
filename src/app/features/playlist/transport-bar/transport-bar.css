@@ -68,10 +68,8 @@
   cursor: pointer;
 }
 
-.scrub input:disabled,
-.scrub button:disabled,
-.opacity input:disabled,
-.visual select:disabled {
+.scrub :disabled,
+.group--sky :disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -360,17 +358,23 @@ button:focus-visible {
   }
 
   .group,
-  .group--sky > :nth-child(odd) {
+  .opacity {
     border-left: 0;
   }
 
-  /* Video and the visual, then the sky's strength and Sync: two even pairs. */
+  /* Video and a Visual that fills the row, then the sky's strength, with Sync where
+     the browser can sync; the pickers shrink, so none of it runs off the screen. */
   .group--sky {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    flex-wrap: wrap;
   }
 
-  .visual select {
+  .visual,
+  .opacity {
+    flex: 1 1 60%;
+  }
+
+  .visual select,
+  .opacity input {
     flex: 1;
     width: 0;
   }

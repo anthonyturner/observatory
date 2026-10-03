@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- On your own machine with Speak on, Jev says each notice's news out loud, naming the project and the title ("Pull request 12 in observatory merged: transport bar fix"). He waits until he has finished speaking, listening, answering or showing a task, then says what came in meanwhile as one line. He says nothing while the tab is hidden, and nothing if the browser will not let him speak yet ([#309](https://github.com/anthonyturner/observatory/pull/309)).
 - A notice appears under the clock on every page when a pull request merges or an issue is opened in any tracked project, linking to GitHub or to the issue on its star map; several at once are grouped, F8 reaches them, Esc dismisses one, and a screen reader hears each check once ([#298](https://github.com/anthonyturner/observatory/pull/298)).
 - The playlist bar shows its Sync, Video, Visual and Sky controls on Home only, where the music sky is; on the Orrery, the Review Queue and Architecture they are hidden, and the choices come back with Home ([#286](https://github.com/anthonyturner/observatory/pull/286)).
 - The playlist bar now sits at the foot of the Orrery and the Review Queue as well as Home, and keeps playing the same track as you move between them, without reloading the video; each page's own Sound still pauses it, and playing it still turns that Sound off ([#278](https://github.com/anthonyturner/observatory/pull/278)).

@@ -30,6 +30,25 @@ describe('ViewerSession', () => {
     expect(session.isVisitor()).toBe(false);
   });
 
+  it('confirms this machine only once the API says so', () => {
+    const local = setUp();
+    expect(local.session.isConfirmedLocal()).toBe(false);
+    local.answer({ access: 'local', signIn: null });
+    expect(local.session.isConfirmedLocal()).toBe(true);
+
+    TestBed.resetTestingModule();
+    const owner = setUp();
+    owner.answer({ access: 'owner', signIn: '/api/auth/login' });
+    expect(owner.session.isConfirmedLocal()).toBe(false);
+
+    TestBed.resetTestingModule();
+    const failed = setUp();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/session')
+      .flush('down', { status: 502, statusText: 'Bad Gateway' });
+    expect(failed.session.isConfirmedLocal()).toBe(false);
+  });
+
   it('lets this machine and the signed-in owner write', () => {
     const { session, answer } = setUp();
 

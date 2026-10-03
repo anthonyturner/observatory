@@ -16,6 +16,22 @@
   align-items: center;
 }
 
+/* Lays its controls out as the bar's own, so folding only takes them away. */
+.extras {
+  display: contents;
+}
+
+/* Folded, the bar is as wide as Home's right column, and never past the screen;
+   the song's name gives up width to fit. */
+:host(.folded) {
+  width: min(clamp(300px, 26vw, 380px), 100%);
+}
+
+.fold {
+  margin-left: auto;
+  font-size: 16px;
+}
+
 .scrub {
   display: flex;
   align-items: center;
@@ -35,7 +51,9 @@
 }
 
 .scrub input:disabled,
-.scrub button:disabled {
+.scrub button:disabled,
+.opacity input:disabled,
+.visual select:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -161,34 +179,39 @@ button:focus-visible {
   color: var(--music-trance-accent);
 }
 
-.source {
+.source,
+.transfer {
   display: flex;
+}
+
+/* Each control after the song's name opens with a rule. */
+.source,
+.transfer,
+.tracks,
+.sync,
+.video,
+.fold {
   border-left: 1px solid var(--edge-soft);
 }
 
-.source button[aria-pressed='true'] {
+.source button[aria-pressed='true'],
+.sync[aria-pressed='true'],
+.video[aria-pressed='true'],
+.tracks[aria-expanded='true'] {
   color: var(--ink);
   background: var(--flow-tint-strong);
 }
 
-.source button:disabled {
+/* aria-disabled rather than disabled: Export stays focusable, and pressing it says why. */
+.source button:disabled,
+.sync:disabled,
+.transfer button[aria-disabled='true'] {
   color: var(--faint);
   cursor: not-allowed;
-}
-
-.transfer {
-  display: flex;
-  border-left: 1px solid var(--edge-soft);
 }
 
 .transfer button {
   font-size: 15px;
-}
-
-/* aria-disabled rather than disabled: Export stays focusable, and pressing it says why. */
-.transfer button[aria-disabled='true'] {
-  color: var(--faint);
-  cursor: not-allowed;
 }
 
 .notice {
@@ -207,31 +230,6 @@ button:focus-visible {
   position: absolute;
   padding: 0;
   border: 0;
-}
-
-.tracks {
-  border-left: 1px solid var(--edge-soft);
-}
-
-.sync,
-.video {
-  border-left: 1px solid var(--edge-soft);
-}
-
-.sync[aria-pressed='true'],
-.video[aria-pressed='true'] {
-  color: var(--ink);
-  background: var(--flow-tint-strong);
-}
-
-.sync:disabled {
-  color: var(--faint);
-  cursor: not-allowed;
-}
-
-.tracks[aria-expanded='true'] {
-  color: var(--ink);
-  background: var(--flow-tint-strong);
 }
 
 .now {
@@ -284,12 +282,6 @@ button:focus-visible {
   width: 72px;
   accent-color: var(--flow);
   cursor: pointer;
-}
-
-.opacity input:disabled,
-.visual select:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 
 .visual select {

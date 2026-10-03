@@ -332,6 +332,34 @@ describe('TransportBar', () => {
     expect(choice.preset()).toBeNull();
   });
 
+  it('folds down to the seek bar, the transport, the heart and the name, and back', () => {
+    const { fixture, element, button } = render();
+    const fold = button('More playlist controls');
+    expect(fold?.getAttribute('aria-expanded')).toBe('true');
+    button('Tracks')?.click();
+    fixture.detectChanges();
+
+    fold?.click();
+    fixture.detectChanges();
+    expect(fold?.getAttribute('aria-expanded')).toBe('false');
+    expect(element.classList).toContain('folded');
+    for (const hidden of ['Tracks', 'Mix', 'Export favourites', 'Video']) {
+      expect(button(hidden)).toBeUndefined();
+    }
+    expect(element.querySelector('select[aria-label="Milkdrop visual"]')).toBeNull();
+    expect(element.querySelector('input[aria-label="Playlist volume"]')).toBeNull();
+    expect(element.querySelector('app-track-list')).toBeNull();
+    for (const kept of ['Play', 'Previous track', 'Next track', 'Favourite', 'Back 15 seconds']) {
+      expect(button(kept)).toBeDefined();
+    }
+    expect(element.querySelector('.now__title')).not.toBeNull();
+
+    fold?.click();
+    fixture.detectChanges();
+    expect(element.classList).not.toContain('folded');
+    expect(button('Tracks')).toBeDefined();
+  });
+
   it('offers a bigger video once the card shows, and back again', async () => {
     const { fixture, element, button } = render();
     expect(button('Bigger video')).toBeUndefined();

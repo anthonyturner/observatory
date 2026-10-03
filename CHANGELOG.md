@@ -79,6 +79,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- The playlist bar no longer shows Sync on a phone, or in any browser that cannot share a tab's audio, where it could never work; on a phone the Sky controls also stay on the screen, with the Sky slider on a row of its own ([#312](https://github.com/anthonyturner/observatory/pull/312)).
 - Home's music sky no longer jumps down and back on every beat once the page is scrolled; the beat's zoom now pulses in place while the core is out of view ([#301](https://github.com/anthonyturner/observatory/pull/301)).
 - Making the playlist's video bigger now moves the cards and panels on the right of the Orrery, the star map and the logs up out of its way, and they shrink to fit when the window is short ([#297](https://github.com/anthonyturner/observatory/pull/297)).
 - The Architecture page's centre-node card now sits at the top right of the diagram, no longer hidden behind the playlist bar ([#295](https://github.com/anthonyturner/observatory/pull/295)).

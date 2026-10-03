@@ -5,7 +5,8 @@ import { MotifLayer, MusicInks, MusicScene } from './motif-layer';
 /** Milkdrop renders at this share of the screen's size, then is drawn up to
  *  fill it: its looks are soft, and full size costs the frame rate. */
 const RENDER_SCALE = 0.5;
-/** Milkdrop fills the screen; this much of it lets the sky behind show through. */
+/** Milkdrop fills the screen, screened over the sky; a touch under full keeps
+ *  the beat hits standing out over it. */
 const MILKDROP_ALPHA = 0.8;
 
 /** A Milkdrop preset filling the sky, picked by the theme's variant. Until

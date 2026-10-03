@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import type { PullState } from '../github/fate-reader.ts';
 import type { QueueReport } from '../queue/queue-report.ts';
 import type { Frame } from './frames.ts';
 import type { HistoryStore } from './history-store.ts';
@@ -26,11 +27,11 @@ function memoryStore(frames: Frame[] = []): HistoryStore & { frames: Frame[] } {
   };
 }
 
-const states: Record<number, string> = { 1: 'MERGED', 2: 'CLOSED', 3: 'OPEN' };
+const states: Record<number, PullState['state']> = { 1: 'MERGED', 2: 'CLOSED', 3: 'OPEN' };
 const github = {
   pullState: async (_repo: string, pull: number) => {
     if (pull === 4) throw new Error('offline');
-    return states[pull];
+    return { state: states[pull], title: `#${pull}` };
   },
 };
 

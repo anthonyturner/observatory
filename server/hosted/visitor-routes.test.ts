@@ -17,6 +17,7 @@ const owner: RouteTable = {
 const reads = {
   history: async (repo: string) => ({ repo, frames: [] }),
   issue: async (repo: string, number: number) => ({ repo, number }),
+  pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
 } as unknown as ApiReads;
 const visible = async () => new Set(['me/app']);
 
@@ -80,6 +81,18 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/history?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/issue?repo=me/app&number=3')).status, 200);
     assert.equal((await get(handle, '/api/issue?repo=me/secret&number=3')).status, 404);
+  });
+
+  it('says whether a pull request merged only in a repository it may see', async () => {
+    const handle = visitor(false);
+
+    const permitted = await get(handle, '/api/pull-state?repo=me/app&number=7');
+    const refused = await get(handle, '/api/pull-state?repo=me/secret&number=7');
+
+    assert.equal(permitted.status, 200);
+    assert.deepEqual(await permitted.json(), { state: 'MERGED', title: 'Add a thing' });
+    assert.equal(refused.status, 404);
+    assert.deepEqual(await refused.json(), { error: 'no star map for me/secret' });
   });
 
   it('shows the logs through the second scrub when the owner chose to', async () => {

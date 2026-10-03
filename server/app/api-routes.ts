@@ -57,6 +57,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
         if (isFresh(query)) reads.forgetPull(repo, number);
         return reads.pull(repo, number);
       },
+      '/api/pull-state': (query) => reads.pullState(repoOf(query), numberOf(query)),
       '/api/labels': (query) => reads.labels(repoOf(query)),
       '/api/edit': (query) => editor.read({ repo: repoOf(query), number: numberOf(query) }),
     },

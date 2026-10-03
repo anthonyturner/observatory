@@ -4,11 +4,15 @@
       "data": {
         "repository": {
           "pullRequest": {
-            "state": "OPEN"
+            "state": "OPEN",
+            "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies"
           }
         }
       }
     }
   ],
-  "expected": "OPEN"
+  "expected": {
+    "state": "OPEN",
+    "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies"
+  }
 }

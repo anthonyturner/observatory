@@ -90,6 +90,8 @@ export function visitorRoutes(
         reads.issue(await visibleRepo(query), issueNumberFrom(query.get('number'))),
       '/api/pull': async (query) =>
         reads.pull(await visibleRepo(query), pullNumberFrom(query.get('number'))),
+      '/api/pull-state': async (query) =>
+        reads.pullState(await visibleRepo(query), pullNumberFrom(query.get('number'))),
       ...logs,
       ...news,
     },

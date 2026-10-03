@@ -1,7 +1,7 @@
 import type { GitHubReader, PullRequest, RepoRef } from '../github/github-reader.ts';
 import { mapWithLimit } from '../util/map-with-limit.ts';
 import { topDirectives } from './directives.ts';
-import type { Directive, ProjectSnapshot, ProjectsReport } from './project-types.ts';
+import type { Directive, OpenPull, ProjectSnapshot, ProjectsReport } from './project-types.ts';
 import { bucketOf, oldestIdleDays, pullCounts } from './pull-counts.ts';
 import { settleMergeable, type Sleep } from './settle-mergeable.ts';
 
@@ -43,6 +43,11 @@ const directiveOf = (project: string, pull: PullRequest): Directive => ({
   updatedAt: pull.updatedAt,
 });
 
+const openPullOf = (pull: PullRequest): OpenPull => ({
+  number: pull.number,
+  bucket: bucketOf(pull),
+});
+
 async function readProject(
   github: GitHubReader,
   repo: RepoRef,
@@ -67,13 +72,22 @@ async function readProject(
         counts: pullCounts(pulls, openIssues),
         ...(openIssues ? { issues: openIssues.length } : {}),
         oldestIdleDays: oldestIdleDays(pulls, now),
+        openPulls: pulls.map(openPullOf),
+        openIssues,
       },
       candidates: pulls.map((pull) => directiveOf(repo.name, pull)),
     };
   } catch (error) {
     // Unreadable is its own state, never quietly zero.
     return {
-      snapshot: { ...base, open: 0, counts: NO_COUNTS, error: firstLine(error) },
+      snapshot: {
+        ...base,
+        open: 0,
+        counts: NO_COUNTS,
+        error: firstLine(error),
+        openPulls: null,
+        openIssues: null,
+      },
       candidates: [],
     };
   }

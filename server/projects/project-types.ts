@@ -24,6 +24,18 @@ export interface ProjectSnapshot {
   readonly oldestIdleDays?: number;
   /** Why GitHub could not be read for it; its counts are then unknown. */
   readonly error?: string;
+  /** Open pull requests, at most the 100 the readers ask GitHub for, so a busier
+   *  repository's list is incomplete. Null when GitHub could not be read for it. */
+  readonly openPulls: readonly OpenPull[] | null;
+  /** Open issue numbers, at most the 1,000 the readers ask GitHub for. Null when
+   *  issues are switched off or GitHub could not be read. */
+  readonly openIssues: readonly number[] | null;
+}
+
+/** One open pull request, by number, with the most urgent thing about it. */
+export interface OpenPull {
+  readonly number: number;
+  readonly bucket: PullBucket;
 }
 
 /** One pull request from the top of the blocked-first queue across every project. */

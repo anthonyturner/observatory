@@ -1,5 +1,6 @@
 import { type AgentsReport, type Handoff, reportCards } from '../agents/agents-report.ts';
 import type { CollisionsReport } from '../collisions/collisions-report.ts';
+import type { PullState } from '../github/fate-reader.ts';
 import type { GitHub } from '../github/github.ts';
 import type { RawLabel } from '../github/pull-reader.ts';
 import type { Frame } from '../history/frames.ts';
@@ -78,6 +79,8 @@ export interface ApiReads {
   pull(repo: string, number: number): Promise<PullDetail>;
   /** The next read of this pull request goes to GitHub, not the cache. */
   forgetPull(repo: string, number: number): void;
+  /** Whether one pull request is open, merged or closed, and its title. */
+  pullState(repo: string, number: number): Promise<PullState>;
   labels(repo: string): Promise<RawLabel[]>;
   collisions(repo: string): Promise<CollisionsReport>;
   history(repo: string): Promise<HistoryReport>;
@@ -118,6 +121,10 @@ export function cachedReads(sources: ReadSources): ApiReads {
     ]);
     return pullDetailOf(raw, { diff, fetchedAt: new Date().toISOString() });
   }, PULL_TTL_MS);
+  const pullStateOf = keyedCache(async (key) => {
+    const [repo, number] = key.split('#');
+    return github.pullState(repo, Number(number));
+  }, PULL_TTL_MS);
 
   return {
     projects: () => projectsOf.read(ALL_PROJECTS),
@@ -130,6 +137,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     forgetIssue: (repo, number) => issueOf.forget(numberKey(repo, number)),
     pull: (repo, number) => pullOf.read(numberKey(repo, number)),
     forgetPull: (repo, number) => pullOf.forget(numberKey(repo, number)),
+    pullState: (repo, number) => pullStateOf.read(numberKey(repo, number)),
     labels: cachedByKey((repo) => github.repoLabels(repo), LABELS_TTL_MS),
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),
     history: async (repo) => ({ repo, frames: await history.read(repo) }),

@@ -1,5 +1,6 @@
 import { gh, ghJson } from './gh-cli.ts';
 import { ghCliWriter } from './gh-cli-writer.ts';
+import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import type { GitHub } from './github.ts';
 import {
@@ -194,18 +195,16 @@ export function ghCliReader(): GitHub {
           'number,files',
         ]),
       ),
-    pullState: async (repo, pull) =>
-      (
-        await ghJson<{ state: string }>([
-          'pr',
-          'view',
-          String(pull),
-          '--repo',
-          repo,
-          '--json',
-          'state',
-        ])
-      ).state,
+    pullState: (repo, pull) =>
+      ghJson<PullState>([
+        'pr',
+        'view',
+        String(pull),
+        '--repo',
+        repo,
+        '--json',
+        PULL_STATE_FIELDS.join(','),
+      ]),
     mergeableOf: async (repo, pull) =>
       (
         await ghJson<{ mergeable: string }>([

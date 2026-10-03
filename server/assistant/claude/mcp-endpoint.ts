@@ -1,4 +1,5 @@
 import type { ApiHandler } from '../../http/api-handler.ts';
+import { hasLoopbackHost, isLoopbackOrigin } from '../../http/loopback-guard.ts';
 import type { McpSession, McpSessions } from './mcp-sessions.ts';
 
 /* A minimal MCP server over HTTP, for the Claude Code that Jev starts: it
@@ -16,7 +17,6 @@ const HTTP_NOT_FOUND = 404;
 const HTTP_NOT_ALLOWED = 405;
 const HTTP_TOO_LARGE = 413;
 const MAX_BODY_BYTES = 256 * 1024;
-const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
 const PROTOCOL_VERSION = '2025-06-18';
 const SERVER_INFO = { name: 'observatory', version: '1.0.0' };
 const METHOD_NOT_FOUND = -32601;
@@ -29,21 +29,10 @@ const isObject = (value: unknown): value is Json =>
 const jsonAnswer = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
-const hostOf = (value: string | null): string | null => {
-  if (!value) return null;
-  try {
-    return new URL(value.includes('://') ? value : `http://${value}`).hostname;
-  } catch {
-    return null;
-  }
-};
-
 /** Claude Code on this machine sends no Origin; a page elsewhere always does. */
 function isFromThisMachine(request: Request): boolean {
-  const host = hostOf(request.headers.get('host'));
-  if (!host || !LOOPBACK_HOSTS.has(host)) return false;
   const origin = request.headers.get('origin');
-  return origin === null || LOOPBACK_HOSTS.has(hostOf(origin) ?? '');
+  return hasLoopbackHost(request) && (origin === null || isLoopbackOrigin(origin));
 }
 
 /** The answer to one JSON-RPC message, or null for a notification. */

@@ -13,6 +13,6 @@ export interface SpeakOnParts {
 export async function switchSpeakOn({ engine, preference, speaker }: SpeakOnParts): Promise<void> {
   speaker.wake();
   const turnOn = (): void => preference.turnOn();
-  const warmUp = await engine.warmUp({ takesFocus: true, onAgreed: turnOn });
+  const warmUp = await engine.warmUp({ takesFocus: true, mayAsk: true, onAgreed: turnOn });
   if (warmUp === 'ready') turnOn();
 }

@@ -24,13 +24,20 @@ const ZOOM = 0.06;
 
 /** What lands on every beat whatever the motif: a punch of light round the
  *  core, a ring thrown out from it, a glow at the screen's edges and a short
- *  zoom, all riding the beat's pulse so the sky hits with the kick. */
+ *  zoom, all riding the beat's pulse so the sky hits with the kick, and all scaled by
+ *  the strength the listener chose. */
 export class BeatHit implements MotifLayer {
   private rings: Ring[] = [];
   private pulse = 0;
+  private strength = 1;
+
+  /** How hard the hit lands, from 0 (not at all) to 1 (full). */
+  setStrength(level: number): void {
+    this.strength = level;
+  }
 
   step(frame: MusicFrame, stepS: number, scene: MusicScene): void {
-    this.pulse = frame.pulse;
+    this.pulse = frame.pulse * this.strength;
     if (frame.beat) this.rings.push({ radius: scene.coreRadius * RING_FROM, life: 1 });
     this.rings = this.rings
       .map((ring) => ({
@@ -65,7 +72,7 @@ export class BeatHit implements MotifLayer {
     const reach = reachOf(scene);
     context.strokeStyle = inks.accent;
     for (const ring of this.rings) {
-      context.globalAlpha = RING_ALPHA * ring.life;
+      context.globalAlpha = RING_ALPHA * this.strength * ring.life;
       context.lineWidth = RING_WIDTH_PX * ring.life;
       context.beginPath();
       context.arc(scene.originX, scene.originY, Math.min(ring.radius, reach), 0, Math.PI * 2);

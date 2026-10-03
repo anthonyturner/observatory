@@ -4,9 +4,6 @@ import { MAIL_ACCOUNTS, type MailAccount } from './mail-types.ts';
 
 export const MAIL_PATH = '/api/mail';
 
-/** Every mail path, for main.ts to put behind the loopback guard: it matches exact paths. */
-export const MAIL_PATHS: ReadonlySet<string> = new Set([MAIL_PATH]);
-
 const REFRESH = '1';
 
 function accountOf(query: URLSearchParams): MailAccount {

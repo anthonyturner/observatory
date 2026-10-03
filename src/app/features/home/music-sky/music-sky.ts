@@ -13,6 +13,7 @@ import {
 import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { BeatStrength } from '../../../core/music-sync/beat-strength';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
@@ -48,6 +49,7 @@ export class MusicSky {
   private readonly pulse = inject(MusicPulse);
   private readonly playlist = inject(PlaylistPlayer);
   private readonly milkdropOpacity = inject(MilkdropOpacity);
+  private readonly beatStrength = inject(BeatStrength);
   private readonly videoBackground = inject(VideoBackground);
   private readonly makeCanvas = inject(MUSIC_CANVAS);
   private readonly milkdropChoice = inject(MilkdropChoice);
@@ -87,6 +89,10 @@ export class MusicSky {
       this.painter?.setMilkdropOpacity(level);
     });
     effect(() => {
+      const level = this.beatStrength.level();
+      this.painter?.setBeatStrength(level);
+    });
+    effect(() => {
       const song = this.song();
       this.painter?.announce(song);
     });
@@ -121,6 +127,7 @@ export class MusicSky {
     painter.setMilkdropPreset(this.milkdropChoice.preset());
     painter.announce(this.song());
     painter.setMilkdropOpacity(this.milkdropLevel());
+    painter.setBeatStrength(this.beatStrength.level());
     this.place();
     const window = this.document.defaultView;
     this.loop = new FrameLoop({

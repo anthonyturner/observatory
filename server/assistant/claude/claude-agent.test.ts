@@ -91,11 +91,11 @@ const REQUEST = {
 };
 
 describe('claudeFlags', () => {
-  it('restricts Claude Code to the web and Jev’s tools, and never to code', () => {
+  it('restricts Claude Code to web search and Jev’s tools, and never to code', () => {
     const flags = claudeFlags('C:/tmp/x.mcp.json');
     assert.ok(flags.includes('--restricted'));
     assert.ok(flags.includes('--strict-mcp-config'));
-    assert.equal(flags[flags.indexOf('--tools') + 1], 'WebSearch,WebFetch');
+    assert.equal(flags[flags.indexOf('--tools') + 1], 'WebSearch');
     const disallowed = flags.slice(
       flags.indexOf('--disallowedTools') + 1,
       flags.indexOf('--strict-mcp-config'),
@@ -109,10 +109,21 @@ describe('claudeFlags', () => {
       'Glob',
       'Grep',
       'NotebookEdit',
+      'WebFetch',
     ]) {
       assert.ok(disallowed.includes(tool), tool);
     }
     assert.equal(flags.includes('--dangerously-skip-permissions'), false);
+  });
+
+  it('never lets a turn fetch a page at an address of its choosing', () => {
+    const flags = claudeFlags('C:/tmp/x.mcp.json');
+    const allowed = flags.slice(
+      flags.indexOf('--allowedTools') + 1,
+      flags.indexOf('--disallowedTools'),
+    );
+    assert.equal(flags[flags.indexOf('--tools') + 1].includes('WebFetch'), false);
+    assert.equal(allowed.includes('WebFetch'), false);
   });
 
   it('holds no character cmd.exe would act on, since a shim passes them through it', () => {

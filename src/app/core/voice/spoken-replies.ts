@@ -1,4 +1,5 @@
 import { DOCUMENT, DestroyRef, Injectable, Signal, inject, signal } from '@angular/core';
+import { AnnouncementVoice } from './announcement-voice';
 import { ReplyTier, ReplyVoice } from './reply-voice';
 import { sentences } from './sentences';
 import { SpeakPreference } from './speak-preference';
@@ -22,6 +23,12 @@ const PASSING: Partial<Record<VoiceFailureKind, string>> = {
   audio: NO_SOUND,
 };
 
+/** A line asked for, or one nobody asked for, which asks and tells nothing. */
+type TurnKind = 'reply' | 'announcement';
+
+/** An announcement lights the core as an app action does. */
+const ANNOUNCEMENT_TIER: ReplyTier = 1;
+
 /** One reply being read aloud. */
 class ReplyTurn {
   job: SpeechJob | null = null;
@@ -30,7 +37,10 @@ class ReplyTurn {
   readonly done: Promise<void>;
   finish: () => void = () => undefined;
 
-  constructor(readonly tier: ReplyTier) {
+  constructor(
+    readonly tier: ReplyTier,
+    readonly kind: TurnKind,
+  ) {
     this.done = new Promise((resolve) => (this.finish = resolve));
   }
 }
@@ -39,9 +49,11 @@ class ReplyTurn {
  *  while the one before it plays, so a long answer starts as soon as its
  *  first piece is ready.
  *  Tap to talk, Esc, a new reply, Speak turned off and leaving the page all
- *  cut it off at once. The engine makes the sound; this does the rest. */
+ *  cut it off at once. The engine makes the sound; this does the rest.
+ *  An announcement waits for nothing and cuts nothing off: it is dropped
+ *  when a line is under way. */
 @Injectable({ providedIn: 'root' })
-export class SpokenReplies implements ReplyVoice {
+export class SpokenReplies implements ReplyVoice, AnnouncementVoice {
   private readonly engine = inject(SPEECH_ENGINE);
   private readonly preference = inject(SpeakPreference);
   private readonly talk = inject(TalkState);
@@ -50,10 +62,12 @@ export class SpokenReplies implements ReplyVoice {
   private readonly status = inject(VoiceStatus);
   private readonly narration = inject(VoiceNarration);
   private readonly speakingNow = signal(false);
+  private readonly turnUnderWay = signal(false);
   private readonly tierNow = signal<ReplyTier | null>(null);
   private turn: ReplyTurn | null = null;
 
   readonly speaking: Signal<boolean> = this.speakingNow.asReadonly();
+  readonly isBusy: Signal<boolean> = this.turnUnderWay.asReadonly();
   /** The tier of the reply being heard, for the core's lit arc. */
   readonly tier: Signal<ReplyTier | null> = this.tierNow.asReadonly();
 
@@ -69,16 +83,12 @@ export class SpokenReplies implements ReplyVoice {
 
   speak(text: string, tier: ReplyTier): Promise<void> {
     this.stop();
-    const hasWords = sentences(text).length > 0;
-    if (!this.preference.isOn() || this.talk.isTalking() || !hasWords) return Promise.resolve();
-    const turn = new ReplyTurn(tier);
-    this.turn = turn;
-    this.readAloud(turn, text)
-      .catch((error: unknown) => {
-        if (this.turn === turn) this.report(error);
-      })
-      .finally(() => this.end(turn));
-    return turn.done;
+    return this.begin(new ReplyTurn(tier, 'reply'), text);
+  }
+
+  announce(text: string): void {
+    if (this.turn) return;
+    void this.begin(new ReplyTurn(ANNOUNCEMENT_TIER, 'announcement'), text);
   }
 
   stop(): boolean {
@@ -88,12 +98,26 @@ export class SpokenReplies implements ReplyVoice {
     return true;
   }
 
+  private begin(turn: ReplyTurn, text: string): Promise<void> {
+    const hasWords = sentences(text).length > 0;
+    if (!this.preference.isOn() || this.talk.isTalking() || !hasWords) return Promise.resolve();
+    this.turn = turn;
+    this.turnUnderWay.set(true);
+    this.readAloud(turn, text)
+      .catch((error: unknown) => {
+        if (this.turn === turn && turn.kind === 'reply') this.report(error);
+      })
+      .finally(() => this.end(turn));
+    return turn.done;
+  }
+
   private async readAloud(turn: ReplyTurn, text: string): Promise<void> {
     const onAgreed = (): void => this.preference.turnOn();
-    const warmUp = await this.engine.warmUp({ takesFocus: false, onAgreed });
+    const mayAsk = turn.kind === 'reply';
+    const warmUp = await this.engine.warmUp({ takesFocus: false, mayAsk, onAgreed });
     // A download waits for the viewer's say-so, so Speak is off till then.
     if (warmUp === 'asked') this.preference.turnOffForVisit();
-    if (warmUp === 'asked' || this.turn !== turn) return;
+    if (warmUp !== 'ready' || this.turn !== turn) return;
     const line = await this.speaker.ready();
     if (this.turn !== turn) return;
     const job = new SpeechJob(line, () => this.startedSounding(turn));
@@ -121,6 +145,7 @@ export class SpokenReplies implements ReplyVoice {
     turn.stopMeter();
     if (this.turn === turn) {
       this.turn = null;
+      this.turnUnderWay.set(false);
       this.speakingNow.set(false);
       this.tierNow.set(null);
     }

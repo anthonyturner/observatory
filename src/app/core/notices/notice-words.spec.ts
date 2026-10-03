@@ -1,5 +1,5 @@
 import { ActivityItem } from '../activity/activity.types';
-import { announcementOf, desktopNoticeOf } from './notice-words';
+import { announcementOf, desktopNoticeOf, sayingOf } from './notice-words';
 import { noticeDurationMs, resumedMs } from './notice-timing';
 
 const merged = (number: number): ActivityItem => ({
@@ -66,6 +66,40 @@ describe('desktopNoticeOf', () => {
     );
     expect(desktopNoticeOf('issue', [issue('me/alpha', 1)]).tag).not.toBe(
       desktopNoticeOf('merged', [merged(1)]).tag,
+    );
+  });
+});
+
+describe('sayingOf', () => {
+  const issue = (number: number, title: string): ActivityItem => ({
+    kind: 'issue',
+    repo: 'me/beta',
+    label: 'beta',
+    number,
+    title,
+  });
+
+  it('names the project as shown and the title, with no "#" or owner', () => {
+    expect(sayingOf([{ ...merged(12), title: 'Transport bar fix' }])).toBe(
+      'Pull request 12 in alpha merged: Transport bar fix.',
+    );
+    expect(sayingOf([issue(7, 'Crash on load')])).toBe('New issue 7 in beta: Crash on load.');
+  });
+
+  it('makes several items one line, a sentence each', () => {
+    expect(sayingOf([merged(4), issue(7, 'Crash on load')])).toBe(
+      'Pull request 4 in alpha merged: Pull 4. New issue 7 in beta: Crash on load.',
+    );
+  });
+
+  it('keeps a title’s own full stop, question or exclamation mark', () => {
+    expect(sayingOf([issue(1, 'Why is it slow?  ')])).toBe('New issue 1 in beta: Why is it slow?');
+  });
+
+  it('says three items, then how many more', () => {
+    expect(sayingOf([merged(1), merged(2), merged(3), merged(4), merged(5)])).toBe(
+      'Pull request 1 in alpha merged: Pull 1. Pull request 2 in alpha merged: Pull 2. ' +
+        'Pull request 3 in alpha merged: Pull 3. And 2 more.',
     );
   });
 });

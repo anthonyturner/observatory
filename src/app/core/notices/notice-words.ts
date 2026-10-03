@@ -2,6 +2,8 @@ import { ActivityItem, ActivityKind } from '../activity/activity.types';
 
 /** A screen reader hears, and a desktop notice lists, this many items, then how many more. */
 const ITEMS_TOLD = 3;
+/** Jev says this many items of a line, then how many more. */
+const SAID_ITEMS = 3;
 
 const OPENINGS: Readonly<Record<ActivityKind, string>> = {
   merged: 'Pull request merged in',
@@ -21,10 +23,24 @@ export interface DesktopNotice {
   readonly tag: string;
 }
 
+/** Jev's words name the project as it is shown, and the number without its
+ *  "#", which a voice would read out. */
+const SAYINGS: Readonly<Record<ActivityKind, (item: ActivityItem) => string>> = {
+  merged: ({ number, label, title }) => `Pull request ${number} in ${label} merged: ${title}`,
+  issue: ({ number, label, title }) => `New issue ${number} in ${label}: ${title}`,
+};
+
+const ENDS_A_SENTENCE = /[.!?]$/;
+
 const phraseOf = ({ kind, repo, number, title }: ActivityItem): string =>
   `${OPENINGS[kind]} ${repo}, #${number}: ${title}`;
 
 const lineOf = ({ repo, number, title }: ActivityItem): string => `${repo} #${number} · ${title}`;
+
+const sentenceOf = (words: string): string => {
+  const trimmed = words.trim();
+  return ENDS_A_SENTENCE.test(trimmed) ? trimmed : `${trimmed}.`;
+};
 
 /** The first few items, and how many were left out. */
 function firstFew(items: readonly ActivityItem[]): { told: ActivityItem[]; more: number } {
@@ -54,4 +70,11 @@ export function desktopNoticeOf(kind: ActivityKind, items: readonly ActivityItem
     body: lines.join('\n'),
     tag: `observatory-${kind}-${events}`,
   };
+}
+
+/** The news as Jev says it: one sentence an item, then how many more. */
+export function sayingOf(items: readonly ActivityItem[]): string {
+  const said = items.slice(0, SAID_ITEMS).map((item) => sentenceOf(SAYINGS[item.kind](item)));
+  const more = items.length - said.length;
+  return [...said, ...(more > 0 ? [`And ${more} more.`] : [])].join(' ');
 }

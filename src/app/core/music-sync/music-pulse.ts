@@ -14,6 +14,7 @@ import {
   AUDIO_TAP,
   AudioTap,
   NoTabAudioError,
+  TAB_AUDIO_SUPPORTED,
   TabAudioUnsupportedError,
   TabSound,
 } from './tab-audio';
@@ -32,6 +33,8 @@ export class MusicPulse {
   private hasAsked = false;
 
   readonly status: Signal<SyncStatus> = this.currentStatus.asReadonly();
+  /** False where the browser cannot share a tab's audio, so listening never can. */
+  readonly canListen = inject(TAB_AUDIO_SUPPORTED);
   readonly isListening = computed(() => this.currentStatus() === 'listening');
   /** The tab's sound while listening, for a visualizer that hears it directly. */
   readonly sound: Signal<TabSound | null> = this.currentSound.asReadonly();
@@ -40,9 +43,9 @@ export class MusicPulse {
     inject(DestroyRef).onDestroy(() => this.release());
   }
 
-  /** Asks to hear the tab, unless this visit already asked. */
+  /** Asks to hear the tab, unless this visit already asked or never could. */
   listenOnce(): void {
-    if (!this.hasAsked) this.listen();
+    if (!this.hasAsked && this.canListen) this.listen();
   }
 
   /** Asks to hear the tab; call it from a click, as the browser requires. */

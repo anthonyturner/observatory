@@ -8,6 +8,7 @@ import {
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { ASK_FEED_CHANNEL } from './core/assistant/ask-feed';
+import { provideNoticeAnnouncer } from './core/assistant/provide-notice-announcer';
 import { DesktopNotices } from './core/notices/desktop-notices';
 import { provideVoice } from './core/voice/provide-voice';
 
@@ -18,6 +19,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     ASK_FEED_CHANNEL,
     provideVoice(),
+    provideNoticeAnnouncer(),
     // Started with the app rather than with a page, so a hidden tab sends them from any page.
     provideAppInitializer(() => {
       inject(DesktopNotices);

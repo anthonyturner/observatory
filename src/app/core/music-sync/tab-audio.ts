@@ -42,6 +42,16 @@ export const AUDIO_TAP = new InjectionToken<AudioTapOpener>('AUDIO_TAP', {
   factory: () => openTabAudio,
 });
 
+/** Whether this browser can share a tab's audio at all; no phone's browser can. */
+export const TAB_AUDIO_SUPPORTED = new InjectionToken<boolean>('TAB_AUDIO_SUPPORTED', {
+  providedIn: 'root',
+  factory: canShareTabAudio,
+});
+
+function canShareTabAudio(): boolean {
+  return typeof globalThis.navigator?.mediaDevices?.getDisplayMedia === 'function';
+}
+
 /** Fine enough to split a kick from a bassline; 1024 bins at 48 kHz is ~23 Hz a bin. */
 const FFT_SIZE = 2048;
 /** Barely any smoothing: more blurs a kick's attack across frames and lands it late. */
@@ -56,8 +66,8 @@ interface TabCaptureOptions extends DisplayMediaStreamOptions {
 /** Chrome's share prompt, offering this tab first. Only the audio is kept:
  *  the video track is stopped at once, and nothing is played back or sent. */
 async function openTabAudio(): Promise<AudioTap> {
-  const media = globalThis.navigator?.mediaDevices;
-  if (typeof media?.getDisplayMedia !== 'function') throw new TabAudioUnsupportedError();
+  if (!canShareTabAudio()) throw new TabAudioUnsupportedError();
+  const media = globalThis.navigator.mediaDevices;
   const options: TabCaptureOptions = {
     video: true,
     audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },

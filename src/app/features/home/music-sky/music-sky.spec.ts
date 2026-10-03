@@ -1,5 +1,6 @@
 import { Provider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
@@ -26,6 +27,10 @@ class FakeCanvas implements MusicCanvas {
     this.themes.push(theme);
   }
   songs: SongName[] = [];
+  opacities: number[] = [];
+  setMilkdropOpacity(level: number): void {
+    this.opacities.push(level);
+  }
   announce(song: SongName): void {
     this.songs.push(song);
   }
@@ -117,6 +122,15 @@ describe('MusicSky', () => {
     playlist.select(1);
     TestBed.tick();
     expect(canvas.songs.at(-1)).toEqual({ title: tracks[1].title, artist: tracks[1].artist });
+  });
+
+  it('sets Milkdrop as strong as the slider asks, and follows it', async () => {
+    const { canvas } = await render();
+    const opacity = TestBed.inject(MilkdropOpacity);
+    expect(canvas.opacities.at(-1)).toBe(opacity.level());
+    opacity.set(0.3);
+    TestBed.tick();
+    expect(canvas.opacities.at(-1)).toBe(0.3);
   });
 
   it('moves while listening and clears when listening stops', async () => {

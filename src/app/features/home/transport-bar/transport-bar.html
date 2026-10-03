@@ -136,6 +136,17 @@
     >
       {{ sync().text }}
     </button>
+    <label class="opacity" title="How strongly the Milkdrop visuals show over the sky"
+      ><span aria-hidden="true">Sky</span
+      ><input
+        type="range"
+        min="0"
+        max="1"
+        step="0.05"
+        aria-label="Milkdrop visuals opacity"
+        [value]="milkdropOpacity.level()"
+        (input)="onMilkdropOpacity($event)"
+    /></label>
     <label class="volume"
       ><span aria-hidden="true">Vol</span
       ><input

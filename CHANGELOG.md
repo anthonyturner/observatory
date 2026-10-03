@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- A Notify me box in Home's Projects heading sends a desktop notification when a pull request merges or an issue is opened in any tracked project while Observatory's tab is in the background, one per kind for each check; it asks the browser once, says so when the browser blocks it, and is remembered in this browser ([#308](https://github.com/anthonyturner/observatory/pull/308)).
 - On your own machine with Speak on, Jev says each notice's news out loud, naming the project and the title ("Pull request 12 in observatory merged: transport bar fix"). He waits until he has finished speaking, listening, answering or showing a task, then says what came in meanwhile as one line. He says nothing while the tab is hidden, and nothing if the browser will not let him speak yet ([#309](https://github.com/anthonyturner/observatory/pull/309)).
 - A Beat slider on the playlist bar softens the hit Home's music sky lands on every beat (the ring thrown from the core, the flash round it, the glowing edges and the zoom), from full down to none; it starts at full and is remembered in this browser ([#311](https://github.com/anthonyturner/observatory/pull/311)).
 - A notice appears under the clock on every page when a pull request merges or an issue is opened in any tracked project, linking to GitHub or to the issue on its star map; several at once are grouped, F8 reaches them, Esc dismisses one, and a screen reader hears each check once ([#298](https://github.com/anthonyturner/observatory/pull/298)).
@@ -68,6 +69,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- Clicking one of Observatory's desktop notifications, including the Agent review's, brings its tab forward and closes the notification ([#308](https://github.com/anthonyturner/observatory/pull/308)).
 - On a phone, Home's foot takes less of the screen: the playlist bar starts folded to one row under the seek bar, unfolds its List and Sky controls as tidy rows of their own, and Home's tools fold behind one Tools button ([#302](https://github.com/anthonyturner/observatory/pull/302)).
 - The playlist bar's controls are grouped by purpose: volume follows the song's name, then a List group (Mix / Favourites, Tracks, export and import) and a Sky group (Video, Visual, Sky, Sync), each set apart by a firmer rule ([#292](https://github.com/anthonyturner/observatory/pull/292)).
 - Home's music is a trance groove with a lead melody, and it steps back while the mic is listening ([#173](https://github.com/anthonyturner/observatory/pull/173), [#175](https://github.com/anthonyturner/observatory/pull/175), [#179](https://github.com/anthonyturner/observatory/pull/179)).

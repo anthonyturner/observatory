@@ -18,7 +18,7 @@ import { ProjectsReport } from '../projects/projects-report';
 import { PROJECTS_STATE } from '../projects/projects-source';
 import { ACTIVITY_LOOKUPS, Lookup, PullState } from './activity-lookups';
 import { Comparison, EMPTY_MEMORY, compareReport } from './activity-memory';
-import { ActivityItem, ActivityKind, Sighting } from './activity.types';
+import { ACTIVITY_KINDS, ActivityItem, ActivityKind, Sighting } from './activity.types';
 
 /** At most this many follow-up reads at once, so a busy check does not burst. */
 const LOOKUPS_AT_ONCE = 4;
@@ -29,7 +29,6 @@ const DENIED = 'denied';
 type Outcome = ActivityItem | typeof DENIED | null;
 
 const NOTHING_COMPARED: Comparison = { memory: EMPTY_MEMORY, departedPulls: [], newIssues: [] };
-const KIND_ORDER: readonly ActivityKind[] = ['merged', 'issue'];
 
 /**
  * Merged pull requests and new issues across every tracked project, found by
@@ -116,7 +115,7 @@ function newsIn(outcomes: readonly Outcome[]): ActivityItem[] {
     .filter(isItem)
     .sort(
       (a, b) =>
-        KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) ||
+        ACTIVITY_KINDS.indexOf(a.kind) - ACTIVITY_KINDS.indexOf(b.kind) ||
         a.repo.localeCompare(b.repo) ||
         a.number - b.number,
     );

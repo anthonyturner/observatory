@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { lastValueFrom, of } from 'rxjs';
 import { TrailActivity } from '../sky/trail-activity';
 import { Clock } from '../time/clock';
 import { REPLY_VOICE } from '../voice/reply-voice';
@@ -167,15 +167,24 @@ describe('AgentReminders', () => {
       });
       expect(notices.request).not.toHaveBeenCalled();
 
-      await reminders.setNotify(true);
+      await lastValueFrom(reminders.setNotify(true));
       expect(notices.request).toHaveBeenCalledTimes(1);
+      expect(reminders.settings().notify).toBe(true);
+    });
+
+    it('keeps the answer when the Agents section has gone before the browser answers', async () => {
+      const { reminders } = setUp(FRIDAY_AFTERNOON, { permission: 'default', grants: true });
+
+      reminders.setNotify(true).subscribe().unsubscribe();
+      await new Promise((resolve) => setTimeout(resolve));
+
       expect(reminders.settings().notify).toBe(true);
     });
 
     it('stays off when the owner refuses, when the browser has refused, or has none', async () => {
       for (const permission of ['default', 'denied', 'unsupported'] as const) {
         const { reminders, notices } = again(FRIDAY_AFTERNOON, { permission, grants: false });
-        await reminders.setNotify(true);
+        await lastValueFrom(reminders.setNotify(true));
 
         expect(reminders.settings().notify).toBe(false);
         expect(notices.request).toHaveBeenCalledTimes(permission === 'default' ? 1 : 0);

@@ -1,6 +1,9 @@
 /** What happened in a tracked project that is worth a notice. */
 export type ActivityKind = 'merged' | 'issue';
 
+/** Every kind, in the order their news is told: merged pull requests first. */
+export const ACTIVITY_KINDS: readonly ActivityKind[] = ['merged', 'issue'];
+
 /** A pull request or issue one report shows has come or gone, before its
  *  title is read. */
 export interface Sighting {

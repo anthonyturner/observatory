@@ -11,6 +11,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AgentChart, AgentFocus } from '../../../core/agent-usage/agent-focus';
 import { AgentReminders } from '../../../core/agent-usage/agent-reminders';
 import { Weekday } from '../../../core/agent-usage/agent-review-week';
@@ -76,6 +77,7 @@ export class AgentsSection {
   private readonly feed = inject(AgentUsageFeed);
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly reminders = inject(AgentReminders);
   protected readonly weekdays = WEEKDAYS;
   /** The chart a reminder just opened, outlined for a moment. */
@@ -168,7 +170,7 @@ export class AgentsSection {
         { injector: this.injector },
       );
     });
-    inject(DestroyRef).onDestroy(() => clearTimeout(this.flashTimer));
+    this.destroyRef.onDestroy(() => clearTimeout(this.flashTimer));
   }
 
   protected setReminderDay(event: Event): void {
@@ -177,10 +179,12 @@ export class AgentsSection {
   }
 
   /** The box is set back to what was saved: a browser that refuses leaves it unticked. */
-  protected async setNotify(event: Event): Promise<void> {
+  protected setNotify(event: Event): void {
     const box = event.target as HTMLInputElement;
-    await this.reminders.setNotify(box.checked);
-    box.checked = this.reminders.settings().notify;
+    this.reminders
+      .setNotify(box.checked)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => (box.checked = this.reminders.settings().notify));
   }
 
   protected pickProject(event: Event): void {

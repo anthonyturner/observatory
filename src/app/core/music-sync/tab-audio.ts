@@ -36,8 +36,8 @@ export const AUDIO_TAP = new InjectionToken<AudioTapOpener>('AUDIO_TAP', {
 
 /** Fine enough to split a kick from a bassline; 1024 bins at 48 kHz is ~23 Hz a bin. */
 const FFT_SIZE = 2048;
-/** Light smoothing: enough to steady the bands, little enough to keep the kicks sharp. */
-const SMOOTHING = 0.5;
+/** Barely any smoothing: more blurs a kick's attack across frames and lands it late. */
+const SMOOTHING = 0.2;
 
 /** Chrome's options for capturing this tab, beyond the standard's typings. */
 interface TabCaptureOptions extends DisplayMediaStreamOptions {

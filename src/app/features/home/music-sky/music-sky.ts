@@ -13,12 +13,14 @@ import {
 import { CoreGeometry } from '../../../core/instrument/core-geometry';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { sameTheme, themeFor } from '../../../core/music-sync/visual-theme';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
+import { VideoBackground } from '../../../core/playlist/video-background';
 
 /** Smooth enough for a kick to land on time. */
 const MUSIC_FPS = 60;
@@ -45,7 +47,9 @@ export class MusicSky {
   private readonly pulse = inject(MusicPulse);
   private readonly playlist = inject(PlaylistPlayer);
   private readonly milkdropOpacity = inject(MilkdropOpacity);
+  private readonly videoBackground = inject(VideoBackground);
   private readonly makeCanvas = inject(MUSIC_CANVAS);
+  private readonly milkdropChoice = inject(MilkdropChoice);
   /** The song playing, by name; it changes only when the song does. */
   private readonly song = computed(
     () => {
@@ -58,6 +62,10 @@ export class MusicSky {
     () => themeFor(this.playlist.current(), this.playlist.elapsed()),
     // The position ticks several times a second; the look changes every few minutes.
     { equal: sameTheme },
+  );
+  /** The video takes Milkdrop's place behind the page while it is on. */
+  private readonly milkdropLevel = computed(() =>
+    this.videoBackground.isOn() ? 0 : this.milkdropOpacity.level(),
   );
   private readonly isMoving = computed(() => this.pulse.isListening() && !this.motion.isStill());
   private painter: MusicCanvas | null = null;
@@ -72,7 +80,7 @@ export class MusicSky {
       this.painter?.setTheme(theme);
     });
     effect(() => {
-      const level = this.milkdropOpacity.level();
+      const level = this.milkdropLevel();
       this.painter?.setMilkdropOpacity(level);
     });
     effect(() => {
@@ -82,6 +90,10 @@ export class MusicSky {
     effect(() => {
       const sound = this.pulse.sound();
       this.painter?.setSound(sound);
+    });
+    effect(() => {
+      const preset = this.milkdropChoice.preset();
+      this.painter?.setMilkdropPreset(preset);
     });
     effect(() => {
       this.geometry.view();
@@ -103,8 +115,9 @@ export class MusicSky {
     this.painter = painter;
     painter.setTheme(this.theme());
     painter.setSound(this.pulse.sound());
+    painter.setMilkdropPreset(this.milkdropChoice.preset());
     painter.announce(this.song());
-    painter.setMilkdropOpacity(this.milkdropOpacity.level());
+    painter.setMilkdropOpacity(this.milkdropLevel());
     this.place();
     const window = this.document.defaultView;
     this.loop = new FrameLoop({

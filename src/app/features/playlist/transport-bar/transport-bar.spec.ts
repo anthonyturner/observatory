@@ -10,9 +10,12 @@ import {
 import { PLAYLIST_TRACKS, PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
+import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
+import { CURATED_PRESETS } from '../../../core/music-sync/milkdrop/milkdrop-presets';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
 import { FILE_SAVER, FileSaver } from '../../../core/files/file-saver';
+import { VideoBackground } from '../../../core/playlist/video-background';
 import { TransportBar } from './transport-bar';
 
 const silentScore: AmbientPlayer = {
@@ -117,6 +120,45 @@ describe('TransportBar', () => {
     slider?.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     expect(TestBed.inject(MilkdropOpacity).level()).toBe(0.25);
+  });
+
+  it('keeps the video in its card on a page with no backdrop to fill', async () => {
+    const { fixture, element, button } = render();
+    button('Play')?.click();
+    await fixture.whenStable();
+    button('Video')?.click();
+    fixture.detectChanges();
+    expect(button('Video')?.getAttribute('aria-pressed')).toBe('true');
+    expect(element.querySelector('.card--live')).not.toBeNull();
+  });
+
+  it('moves the video behind the page from the Video switch, and back', async () => {
+    const { fixture, element, button, make } = render();
+    TestBed.inject(VideoBackground).holdBackdrop();
+    button('Play')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(element.querySelector('.card--live')).not.toBeNull();
+
+    const video = button('Video');
+    video?.click();
+    fixture.detectChanges();
+    expect(video?.getAttribute('aria-pressed')).toBe('true');
+    expect(element.querySelector('.card--live')).toBeNull();
+    expect(
+      element.querySelector<HTMLInputElement>('input[aria-label="Milkdrop visuals opacity"]')
+        ?.disabled,
+    ).toBe(true);
+    expect(
+      element.querySelector<HTMLSelectElement>('select[aria-label="Milkdrop visual"]')?.disabled,
+    ).toBe(true);
+
+    video?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(video?.getAttribute('aria-pressed')).toBe('false');
+    expect(element.querySelector('.card--live')).not.toBeNull();
+    expect(make.mock.calls.at(-1)?.[0].host).toBe(element.querySelector('.screen'));
   });
 
   it('opens the track list and plays the one picked', async () => {
@@ -269,6 +311,25 @@ describe('TransportBar', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('picks the Milkdrop visual, starting on Auto and going back to it', () => {
+    const { fixture, element } = render();
+    const choice = TestBed.inject(MilkdropChoice);
+    const select = element.querySelector<HTMLSelectElement>('select[aria-label="Milkdrop visual"]');
+    expect(select?.options[0].textContent?.trim()).toBe('Auto');
+    expect(select?.options.length).toBe(CURATED_PRESETS.length + 1);
+    expect(select?.value).toBe('');
+
+    if (select) select.value = CURATED_PRESETS[4];
+    select?.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(choice.preset()).toBe(CURATED_PRESETS[4]);
+
+    if (select) select.value = '';
+    select?.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(choice.preset()).toBeNull();
   });
 
   it('offers a bigger video once the card shows, and back again', async () => {

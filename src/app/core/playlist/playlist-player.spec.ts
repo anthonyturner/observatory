@@ -273,4 +273,70 @@ describe('PlaylistPlayer', () => {
       expect(fake.seeks).toEqual([]);
     });
   });
+
+  describe('moving to another host', () => {
+    it('only remembers the host before anything plays', () => {
+      const { playlist, made } = setup();
+      const elsewhere = document.createElement('div');
+      playlist.attach(elsewhere);
+      expect(made.length).toBe(0);
+      playlist.play();
+      expect(made[0].host).toBe(elsewhere);
+    });
+
+    it('rebuilds a playing player there, from the same second', async () => {
+      const { playlist, fake, made, events } = setup();
+      playlist.select(1);
+      await settle();
+      events().playing();
+      fake.time = 42.6;
+      const elsewhere = document.createElement('div');
+      playlist.attach(elsewhere);
+      expect(fake.disposed).toBe(true);
+      expect(made[1]).toEqual(
+        expect.objectContaining({
+          host: elsewhere,
+          videoId: 'bbbbbbbbbbb',
+          startS: 42.6,
+          autoplay: true,
+        }),
+      );
+      expect(playlist.state()).toBe('loading');
+    });
+
+    it('keeps a paused player paused there', async () => {
+      const { playlist, fake, made, events } = setup();
+      playlist.play();
+      await settle();
+      events().paused();
+      playlist.attach(document.createElement('div'));
+      expect(made[1].autoplay).toBe(false);
+      expect(playlist.state()).toBe('paused');
+      await settle();
+      playlist.play();
+      expect(fake.plays).toBe(1);
+      expect(made.length).toBe(2);
+    });
+
+    it('does nothing for the host it already has', async () => {
+      const { playlist, made } = setup();
+      const host = document.createElement('div');
+      playlist.attach(host);
+      playlist.play();
+      await settle();
+      playlist.attach(host);
+      expect(made.length).toBe(1);
+    });
+
+    it('moves a player that was still loading once it is ready', async () => {
+      const { playlist, fake, made } = setup();
+      playlist.play();
+      const elsewhere = document.createElement('div');
+      playlist.attach(elsewhere);
+      expect(made.length).toBe(1);
+      await settle();
+      expect(fake.disposed).toBe(true);
+      expect(made[1].host).toBe(elsewhere);
+    });
+  });
 });

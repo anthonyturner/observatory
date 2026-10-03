@@ -24,6 +24,8 @@ export interface MusicCanvas {
   setTheme(theme: VisualTheme): void;
   /** The tab's sound, for a look that hears it directly. */
   setSound(sound: TabSound | null): void;
+  /** The Milkdrop preset to keep on screen, or null for Auto. */
+  setMilkdropPreset(preset: string | null): void;
   /** How strongly Milkdrop shows, from 0 (hidden) to 1 (full). */
   setMilkdropOpacity(level: number): void;
   /** Shows a new song's name in the sky. */
@@ -143,6 +145,10 @@ export class MusicPainter implements MusicCanvas {
     this.milkdrop.setSound(sound);
   }
 
+  setMilkdropPreset(preset: string | null): void {
+    this.milkdrop.pin(preset);
+  }
+
   setMilkdropOpacity(level: number): void {
     this.milkdropOpacity = level;
   }
@@ -167,7 +173,7 @@ export class MusicPainter implements MusicCanvas {
     this.bloom.apply(this.canvas, context, BLOOM_BASE + BLOOM_BEAT * this.pulse);
     context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     this.clearCore(context, scene);
-    // After the clearing, which would otherwise rub out the line sitting just under the core.
+    // After the clearing, which would otherwise rub out the line sitting just above the core.
     this.titleCard.draw(context, scene, this.inks);
   }
 

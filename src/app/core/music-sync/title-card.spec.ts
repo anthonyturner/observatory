@@ -67,7 +67,7 @@ describe('TitleCard', () => {
     expect(card.opacity()).toBe(1);
   });
 
-  it('sets the line just under the core, above the name beneath it', () => {
+  it('sets the line just above the core, inside its box under the top bar', () => {
     const card = new TitleCard('sans-serif');
     card.announce(SONG);
     play(card, 1);
@@ -84,10 +84,10 @@ describe('TitleCard', () => {
       const [[x, y]] = moves;
       const titlePx = Number(/(\d+(\.\d+)?)px/.exec(fonts[1])?.[1]);
       expect(x).toBe(600);
-      // Below the core's edge by more than the title's cap height…
-      expect(y - titlePx * 0.75).toBeGreaterThan(300 + coreRadius);
-      // …and above the name, which starts 1.47 core radii down at the nearest.
-      expect(y + titlePx * 0.25).toBeLessThanOrEqual(300 + coreRadius * 1.47 + 4);
+      // Above the core's edge, descenders and all…
+      expect(y + titlePx * 0.25).toBeLessThan(300 - coreRadius);
+      // …and inside the core's box, under the top bar: at least 1.47 core radii up.
+      expect(y - titlePx * 0.75).toBeGreaterThanOrEqual(300 - coreRadius * 1.47);
     }
   });
 });

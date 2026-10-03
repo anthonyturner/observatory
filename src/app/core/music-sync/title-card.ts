@@ -11,10 +11,10 @@ export interface SongName {
 const FADE_IN_S = 0.6;
 const HOLD_S = 4.5;
 const FADE_OUT_S = 1.4;
-/** Where the line's baseline sits below the core's centre, in core radii: in
- *  the band between the core and the name under it, which starts at least
- *  1.47 radii down (the core is at most 0.34 of its box's height). */
-const BASELINE_BELOW_CORE = 1.3;
+/** Where the line's baseline sits above the core's centre, in core radii: in
+ *  the band between the core and the top of its box, under the top bar. The
+ *  box's top is at least 1.47 radii up (the core is at most 0.34 of its height). */
+const BASELINE_ABOVE_CORE = 1.18;
 /** The title's size, in core radii, kept readable and inside the band. */
 const TITLE_SIZE = 0.17;
 const MIN_TITLE_PX = 13;
@@ -78,7 +78,7 @@ export class TitleCard {
     const width = titleWidth + gap + artistWidth;
     const fit = Math.min(1, (scene.width * MAX_WIDTH_SHARE) / width);
     const swell = (1 + BEAT_SWELL * this.pulse) * fit;
-    context.translate(scene.originX, scene.originY + scene.coreRadius * BASELINE_BELOW_CORE);
+    context.translate(scene.originX, scene.originY - scene.coreRadius * BASELINE_ABOVE_CORE);
     context.scale(swell, swell);
     context.globalAlpha = opacity;
     // Painted over the look rather than added to it, so a bright preset never washes it out.

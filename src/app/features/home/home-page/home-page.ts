@@ -17,6 +17,7 @@ import { RunDockPanel } from '../run-dock/run-dock';
 import { SkillsPanel } from '../skills-panel/skills-panel';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
 import { MusicSky } from '../music-sky/music-sky';
+import { VideoSky } from '../video-sky/video-sky';
 import { TopBar } from '../top-bar/top-bar';
 import { VitalsPanel } from '../vitals-panel/vitals-panel';
 import { SoundPreference } from '../../../core/sound/sound-preference';
@@ -31,6 +32,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
   imports: [
     ReaderWindow,
     SkyBackdrop,
+    VideoSky,
     MusicSky,
     TopBar,
     CorePanel,

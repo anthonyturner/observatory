@@ -11,7 +11,12 @@ import {
 import { PlaybackState, Track } from './playlist.types';
 import { MUSIC_POOL } from './music-pool';
 import { nextIndex, pickShuffled, previousIndex } from './playlist-order';
-import { VIDEO_PLAYER_FACTORY, VideoPlayer, VideoPlayerEvents } from './video-player';
+import {
+  VIDEO_PLAYER_FACTORY,
+  VideoPlayer,
+  VideoPlayerEvents,
+  VideoPlayerOptions,
+} from './video-player';
 
 /** How many tracks one visit's mix holds. */
 const MIX_SIZE = 12;
@@ -85,9 +90,12 @@ export class PlaylistPlayer {
     });
   }
 
-  /** Where the player draws; it stays visible while it plays, as YouTube's terms ask. */
+  /** Where the player draws; it stays visible while it plays, as YouTube's terms ask.
+   *  A new host once the player exists moves it there, carrying on where it was. */
   attach(host: HTMLElement): void {
+    if (host === this.host) return;
     this.host = host;
+    if (this.player) this.move(this.player);
   }
 
   toggle(): void {
@@ -198,26 +206,43 @@ export class PlaylistPlayer {
     else this.goTo(nextIndex(this.position(), this.list().length));
   }
 
-  private start(): void {
-    if (this.isStarting || !this.host) return;
-    this.isStarting = true;
-    this.playback.set('loading');
-    const videoId = this.current().videoId;
-    this.makePlayer({ host: this.host, videoId, volume: this.level(), events: this.events })
-      .then((player) => this.started(player, videoId))
-      .catch((error: unknown) => {
-        this.playback.set('idle');
-        this.errors.handleError(error);
-      })
-      .finally(() => (this.isStarting = false));
+  /** YouTube reloads a frame moved about the page, so the player is built afresh in
+   *  the new host, from the same second and playing or paused as it was. */
+  private move(player: VideoPlayer): void {
+    const startS = player.currentTime();
+    const autoplay = this.isActive();
+    this.stopFollowing();
+    player.dispose();
+    this.player = null;
+    this.start({ startS, autoplay });
   }
 
-  /** A track picked while the player was loading plays in place of the first. */
-  private started(player: VideoPlayer, videoId: string): void {
+  private start(from: Pick<VideoPlayerOptions, 'startS' | 'autoplay'> = {}): void {
+    if (this.isStarting || !this.host) return;
+    this.isStarting = true;
+    if (from.autoplay !== false) this.playback.set('loading');
+    const host = this.host;
+    const videoId = this.current().videoId;
+    this.makePlayer({ host, videoId, volume: this.level(), events: this.events, ...from })
+      .then((player) => {
+        this.isStarting = false;
+        this.started(player, videoId, host);
+      })
+      .catch((error: unknown) => {
+        this.isStarting = false;
+        this.playback.set('idle');
+        this.errors.handleError(error);
+      });
+  }
+
+  /** A track picked while the player was loading plays in place of the first, and a
+   *  host attached meanwhile takes the player over. */
+  private started(player: VideoPlayer, videoId: string, host: HTMLElement): void {
     if (this.isDestroyed) return player.dispose();
     this.player = player;
     this.loadedId = this.current().videoId;
     player.setVolume(this.level());
     if (this.loadedId !== videoId) player.load(this.loadedId);
+    if (this.host !== host) this.move(player);
   }
 }

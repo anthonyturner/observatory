@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  afterNextRender,
+  afterRenderEffect,
   computed,
   effect,
   inject,
@@ -11,11 +11,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
+import { VideoBackground } from '../../../core/playlist/video-background';
 import { PageScore } from '../../../core/sound/page-score';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { FavoritesTransfer, NOTHING_TO_EXPORT } from './favorites-transfer';
@@ -26,10 +28,11 @@ import { TrackList } from './track-list/track-list';
 const BACK_STEP_S = 15;
 const FORWARD_STEP_S = 30;
 
-/** The playlist along the foot of every page: the video, the seek bar, the transport, the
- *  heart, the Mix / Favourites switch, the favourites file, the sky's Sync, Milkdrop's
- *  opacity and the volume, with the track list above. It plays instead of the page's
- *  score, never over it. The app shell shows it, so the music carries across pages. */
+/** The playlist along the foot of every page: the video, the seek bar, the transport,
+ *  the heart, the Mix / Favourites switch, the favourites file, the sky's Sync, the
+ *  Video switch, Milkdrop's visual and opacity, and the volume, with the track list
+ *  above. It plays instead of the page's score, never over it. The app shell shows
+ *  it, so the music carries across pages. */
 @Component({
   selector: 'app-transport-bar',
   imports: [TrackList],
@@ -47,7 +50,9 @@ export class TransportBar {
   private readonly score = inject(PageScore);
   private readonly pulse = inject(MusicPulse);
   protected readonly motion = inject(MotionPreference);
+  protected readonly milkdrop = inject(MilkdropChoice);
   protected readonly milkdropOpacity = inject(MilkdropOpacity);
+  protected readonly videoBackground = inject(VideoBackground);
   protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
@@ -66,6 +71,10 @@ export class TransportBar {
     () => `${spokenClockOf(this.shownElapsed())} of ${spokenClockOf(this.player.duration())}`,
   );
   protected readonly hasStarted = computed(() => this.player.state() !== 'idle');
+  /** The card shows the video unless it is filling the page's background instead. */
+  protected readonly isCardShown = computed(
+    () => this.hasStarted() && !this.videoBackground.isShown(),
+  );
   protected readonly position = computed(
     () => `${this.player.index() + 1} / ${this.player.tracks().length}`,
   );
@@ -88,7 +97,9 @@ export class TransportBar {
   );
 
   constructor() {
-    afterNextRender(() => this.player.attach(this.screen().nativeElement));
+    afterRenderEffect(() => {
+      if (!this.videoBackground.isShown()) this.player.attach(this.screen().nativeElement);
+    });
     effect(() => {
       if (this.score.isOn()) untracked(() => this.player.pause());
     });
@@ -151,5 +162,10 @@ export class TransportBar {
 
   protected onVolume(event: Event): void {
     this.player.setVolume(Number((event.target as HTMLInputElement).value));
+  }
+
+  /** The select's empty value is Auto. */
+  protected onMilkdropPreset(event: Event): void {
+    this.milkdrop.choose((event.target as HTMLSelectElement).value || null);
   }
 }

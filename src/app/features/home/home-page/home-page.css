@@ -53,6 +53,11 @@ main {
   pointer-events: auto;
 }
 
+/* Free to shrink short of the playlist, so the groups wrap rather than spill off. */
+app-home-tools {
+  min-width: 0;
+}
+
 /* Wide and tall enough: the HUD fits one screen in three columns. */
 @media (min-width: 1024px) and (min-height: 600px) {
   .hud {

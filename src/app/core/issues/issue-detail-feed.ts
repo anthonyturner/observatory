@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { Observable, Subscription, catchError, map, of } from 'rxjs';
-import { IssueDetail, parseIssueDetail } from './issue-detail';
+import { ISSUE_URL, IssueDetail, parseIssueDetail } from './issue-detail';
 
 /** Where one issue's description stands. */
 export type IssueDetailState =
@@ -12,7 +12,6 @@ export type IssueDetailState =
 /** What the last Refresh came to, for the window's status line. */
 export type RefetchOutcome = 'fetching' | 'updated' | 'kept' | null;
 
-const ISSUE_URL = '/api/issue';
 /** Asks the API for the issue anew rather than its cached copy. */
 const FRESH = { fresh: '1' };
 

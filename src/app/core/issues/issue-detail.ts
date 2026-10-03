@@ -1,5 +1,8 @@
 import { Issue, parseIssue } from './issues-report';
 
+/** Observatory's own API for one issue, given `repo` and `number`. */
+export const ISSUE_URL = '/api/issue';
+
 /** What `GET /api/issue` returns: the list's row, the full title and the description. */
 export interface IssueDetail extends Issue {
   readonly body: string;

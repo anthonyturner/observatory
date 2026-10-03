@@ -1,7 +1,27 @@
+import { MusicScene } from './motifs/motif-layer';
 import { SILENCE } from './music-sync.types';
 import { TitleCard } from './title-card';
 
 const SONG = { title: 'Set You Free', artist: 'N-Trance' };
+const INKS = { primary: '#0ff', secondary: '#a8f', accent: '#f0f' };
+
+/** A canvas that records where text lands and how big it is set. */
+function recorder() {
+  const moves: [number, number][] = [];
+  const fonts: string[] = [];
+  const context = {
+    globalAlpha: 1,
+    font: '',
+    letterSpacing: '0px',
+    save: () => undefined,
+    restore: () => undefined,
+    scale: () => undefined,
+    translate: (x: number, y: number) => moves.push([x, y]),
+    measureText: (text: string) => ({ width: text.length * 10 }),
+    fillText: () => fonts.push(context.font),
+  };
+  return { context: context as unknown as CanvasRenderingContext2D, moves, fonts };
+}
 
 /** Steps `card` through `seconds` of music, a frame at a time. */
 function play(card: TitleCard, seconds: number): void {
@@ -45,5 +65,29 @@ describe('TitleCard', () => {
     expect(card.opacity()).toBe(0);
     play(card, 1);
     expect(card.opacity()).toBe(1);
+  });
+
+  it('sets the line just under the core, above the name beneath it', () => {
+    const card = new TitleCard('sans-serif');
+    card.announce(SONG);
+    play(card, 1);
+    for (const coreRadius of [36, 120, 175]) {
+      const scene: MusicScene = {
+        width: 1200,
+        height: 900,
+        originX: 600,
+        originY: 300,
+        coreRadius,
+      };
+      const { context, moves, fonts } = recorder();
+      card.draw(context, scene, INKS);
+      const [[x, y]] = moves;
+      const titlePx = Number(/(\d+(\.\d+)?)px/.exec(fonts[1])?.[1]);
+      expect(x).toBe(600);
+      // Below the core's edge by more than the title's cap height…
+      expect(y - titlePx * 0.75).toBeGreaterThan(300 + coreRadius);
+      // …and above the name, which starts 1.47 core radii down at the nearest.
+      expect(y + titlePx * 0.25).toBeLessThanOrEqual(300 + coreRadius * 1.47 + 4);
+    }
   });
 });

@@ -48,10 +48,9 @@ describe('AgentNudges', () => {
   it('tags each nudge with the signal it reads', () => {
     const { element } = render(NUDGES);
 
-    expect(Array.from(element.querySelectorAll('.tag')).map((tag) => tag.textContent)).toEqual([
-      'Context',
-      'Rework',
-    ]);
+    expect(
+      Array.from(element.querySelectorAll('.readout__tag')).map((tag) => tag.textContent),
+    ).toEqual(['Context', 'Rework']);
   });
 
   it('opens a chart nudge’s chart, narrowed to what it names', () => {

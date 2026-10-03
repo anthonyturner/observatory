@@ -1,0 +1,63 @@
+<div class="notice">
+  <p class="notice__head">
+    <span
+      class="readout__marker"
+      [class.notice__marker--still]="isStill()"
+      aria-hidden="true"
+    ></span>
+    <span class="readout__tag">{{ notice().tag }}</span>
+    @if (notice().heading; as heading) {
+      <span class="notice__name">{{ heading }}</span>
+    } @else {
+      <span class="notice__name">{{ notice().rows[0].label }}</span>
+      <span class="notice__number">#{{ notice().rows[0].number }}</span>
+    }
+  </p>
+  <ul class="notice__rows" [class.notice__rows--group]="notice().heading">
+    @for (row of notice().rows; track row.key) {
+      <li class="notice__row">
+        @if (notice().heading) {
+          <span class="notice__row-name">{{ row.label }} #{{ row.number }}</span>
+        }
+        @if (row.link.kind === 'external') {
+          <a
+            class="notice__link"
+            [href]="row.link.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            (click)="followed.emit()"
+            >{{ row.title }}<span aria-hidden="true"> ↗</span
+            ><span class="visually-hidden">, in a new tab</span></a
+          >
+        } @else {
+          <a
+            class="notice__link"
+            [routerLink]="row.link.path"
+            [queryParams]="row.link.query"
+            (click)="followed.emit()"
+            >{{ row.title }}</a
+          >
+        }
+      </li>
+    }
+  </ul>
+</div>
+<button
+  type="button"
+  class="notice__close"
+  [attr.aria-label]="notice().dismissLabel"
+  title="Dismiss"
+  (click)="dismissed.emit()"
+>
+  <span aria-hidden="true">×</span>
+</button>
+@if (!isStill() && countdown(); as line) {
+  <span
+    class="notice__countdown"
+    [class.notice__countdown--odd]="line.run % 2 === 1"
+    [class.notice__countdown--paused]="isPaused()"
+    [style.--countdown-from]="line.fromScale"
+    [style.animation-duration.ms]="line.ms"
+    aria-hidden="true"
+  ></span>
+}

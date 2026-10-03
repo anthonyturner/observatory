@@ -216,6 +216,17 @@
   --nudge-bracket: var(--warm);
   --nudge-frame: rgba(255, 217, 138, 0.16);
   --nudge-scan: rgba(255, 217, 138, 0.035);
+  /* A notice's readout: green for a merged pull request, comet cyan for a new
+     issue, on the card glass, which keeps both above 4.5:1. */
+  --notice-glass: var(--glass-card);
+  --notice-merged: var(--ok);
+  --notice-merged-frame: rgba(95, 227, 161, 0.18);
+  --notice-merged-scan: rgba(95, 227, 161, 0.035);
+  --notice-merged-edge: rgba(95, 227, 161, 0.4);
+  --notice-issue: var(--count-unclaimed);
+  --notice-issue-frame: rgba(159, 232, 255, 0.18);
+  --notice-issue-scan: rgba(159, 232, 255, 0.035);
+  --notice-issue-edge: rgba(159, 232, 255, 0.4);
 
   /* A collision thread: a pair that would conflict. */
   --chart-thread-conflict: var(--bad);
@@ -314,6 +325,9 @@
   --run-pill-edge: rgba(255, 194, 77, 0.45);
   --run-refused-wash: rgba(255, 194, 77, 0.05);
   --run-dock-glass: rgba(7, 11, 24, 0.9);
+  /* What the page keeps clear on the right while the task dock is open beside
+     it: the dock's 440px, its 16px margin and a 20px gap. */
+  --run-dock-clearance: 476px;
   --run-log-well: rgba(2, 4, 10, 0.7);
   --run-jump-wash: rgba(7, 11, 24, 0.95);
   --run-jump-hover: rgb(18, 26, 52);

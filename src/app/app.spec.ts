@@ -41,6 +41,13 @@ describe('App', () => {
     expect(bar?.closest('router-outlet')).toBeNull();
   });
 
+  it('keeps the notices outside the routed page, so they show on every page', () => {
+    const { element } = render();
+    const stack = element.querySelector('app-notice-stack');
+    expect(stack).not.toBeNull();
+    expect(stack?.closest('router-outlet')).toBeNull();
+  });
+
   it('moves the playlist clear of the task dock while a page says it is open', () => {
     const { fixture, element } = render();
     const foot = element.querySelector('.playlist');

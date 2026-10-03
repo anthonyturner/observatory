@@ -20,4 +20,9 @@ export interface ProjectSnapshot {
   readonly oldestIdleDays?: number;
   /** Set when GitHub could not be read for this project; its counts are then unknown. */
   readonly error?: string;
+  /** The numbers of its open pull requests, up to the 100 the API asks GitHub for.
+   *  Absent when unknown: unreadable, or an API too old to send them. */
+  readonly openPulls?: readonly number[];
+  /** Its open issue numbers. Absent when unknown, which includes issues switched off. */
+  readonly openIssues?: readonly number[];
 }

@@ -46,6 +46,18 @@ function parseCounts(value: unknown): ProjectCounts | null {
   ) as unknown as ProjectCounts;
 }
 
+/** A list with one bad entry is unknown as a whole: a number dropped from it
+ *  would read as a pull request that left, or an issue that closed. */
+function numbersOf(value: unknown, numberOf: (entry: unknown) => unknown): number[] | null {
+  if (!Array.isArray(value)) return null;
+  const numbers: unknown[] = value.map(numberOf);
+  return numbers.every(isCount) ? numbers : null;
+}
+
+const pullNumbers = (value: unknown): number[] | null =>
+  numbersOf(value, (entry) => (isObject(entry) ? entry['number'] : null));
+const issueNumbers = (value: unknown): number[] | null => numbersOf(value, (entry) => entry);
+
 function parseProject(value: unknown): ProjectSnapshot | null {
   if (!isObject(value)) return null;
   const { name, repo, dashboardUrl, open, issues, oldestIdleDays, error } = value;
@@ -53,6 +65,8 @@ function parseProject(value: unknown): ProjectSnapshot | null {
   if (!isString(name) || !isString(repo) || !isString(dashboardUrl) || !isCount(open) || !counts) {
     return null;
   }
+  const openPulls = pullNumbers(value['openPulls']);
+  const openIssues = issueNumbers(value['openIssues']);
   return {
     name,
     repo,
@@ -62,6 +76,8 @@ function parseProject(value: unknown): ProjectSnapshot | null {
     ...(isCount(issues) ? { issues } : {}),
     ...(isCount(oldestIdleDays) ? { oldestIdleDays } : {}),
     ...(isString(error) ? { error } : {}),
+    ...(openPulls ? { openPulls } : {}),
+    ...(openIssues ? { openIssues } : {}),
   };
 }
 

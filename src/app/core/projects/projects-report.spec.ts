@@ -63,6 +63,34 @@ describe('parseProjectsReport', () => {
     expect(parseProjectsReport({ generatedAt: 'x', projects: [] })?.directives).toEqual([]);
   });
 
+  it('keeps the numbers of the open pull requests and issues', () => {
+    const listed = {
+      ...project,
+      openPulls: [
+        { number: 12, bucket: 'failing' },
+        { number: 9, bucket: 'unreviewed' },
+      ],
+      openIssues: [40, 31],
+    };
+
+    const parsed = parseProjectsReport({ generatedAt: 'x', projects: [listed] })?.projects[0];
+
+    expect(parsed?.openPulls).toEqual([12, 9]);
+    expect(parsed?.openIssues).toEqual([40, 31]);
+  });
+
+  it('leaves out a null or malformed list, which is unknown rather than empty', () => {
+    const unknown = {
+      ...project,
+      openPulls: [{ number: 12, bucket: 'failing' }, { number: -1 }],
+      openIssues: null,
+    };
+
+    const parsed = parseProjectsReport({ generatedAt: 'x', projects: [unknown] })?.projects[0];
+
+    expect(parsed).toEqual(project);
+  });
+
   it('refuses something that is not a projects report', () => {
     expect(parseProjectsReport({ error: 'not found' })).toBeNull();
   });

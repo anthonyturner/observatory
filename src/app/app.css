@@ -16,7 +16,7 @@
 /* Clear of Home's task dock, which opens beside the page on a wide screen. */
 @media (min-width: 1024px) and (min-height: 600px) {
   .playlist--beside-dock {
-    padding-right: 476px;
+    padding-right: var(--run-dock-clearance);
   }
 }
 

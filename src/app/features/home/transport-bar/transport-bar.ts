@@ -17,6 +17,7 @@ import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { SoundPreference } from '../../../core/sound/sound-preference';
+import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { FavoritesTransfer, NOTHING_TO_EXPORT } from './favorites-transfer';
 import { syncLabelOf } from './sync-label';
 import { TrackList } from './track-list/track-list';
@@ -26,8 +27,8 @@ const BACK_STEP_S = 15;
 const FORWARD_STEP_S = 30;
 
 /** Home's playlist along the foot of the screen: the video, the seek bar, the transport, the
- *  heart, the Mix / Favourites switch, the favourites file, the sky's Sync and the
- *  volume, with the track list above. It plays instead of the
+ *  heart, the Mix / Favourites switch, the favourites file, the sky's Sync, Milkdrop's
+ *  opacity and the volume, with the track list above. It plays instead of the
  *  generated score, never over it. The page provides the playlist and the pulse. */
 @Component({
   selector: 'app-transport-bar',
@@ -46,6 +47,7 @@ export class TransportBar {
   private readonly sound = inject(SoundPreference);
   private readonly pulse = inject(MusicPulse);
   protected readonly motion = inject(MotionPreference);
+  protected readonly milkdropOpacity = inject(MilkdropOpacity);
   protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
@@ -141,6 +143,10 @@ export class TransportBar {
     // Cleared so that picking the same file again still reports a change.
     picker.value = '';
     if (file) this.transfer.importFile(file);
+  }
+
+  protected onMilkdropOpacity(event: Event): void {
+    this.milkdropOpacity.set(Number((event.target as HTMLInputElement).value));
   }
 
   protected onVolume(event: Event): void {

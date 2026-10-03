@@ -260,7 +260,8 @@ button:focus-visible {
   font-size: 10px;
 }
 
-.volume {
+.volume,
+.opacity {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -275,13 +276,15 @@ button:focus-visible {
   cursor: pointer;
 }
 
-.volume input {
+.volume input,
+.opacity input {
   width: 72px;
   accent-color: var(--flow);
   cursor: pointer;
 }
 
-.volume input:focus-visible {
+.volume input:focus-visible,
+.opacity input:focus-visible {
   outline: 2px solid var(--flow);
   outline-offset: 3px;
 }
@@ -296,7 +299,8 @@ button:focus-visible {
     width: auto;
   }
 
-  .volume {
+  .volume,
+  .opacity {
     display: none;
   }
 }

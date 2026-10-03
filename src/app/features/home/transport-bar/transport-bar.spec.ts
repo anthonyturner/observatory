@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { AmbientPlayer } from '../../../core/sound/ambient-synth';
 import { AMBIENT_PLAYER, SoundPreference } from '../../../core/sound/sound-preference';
 import {
@@ -104,6 +105,18 @@ describe('TransportBar', () => {
     sound.toggle();
     TestBed.tick();
     expect(pauses).toHaveBeenCalled();
+  });
+
+  it('sets how strongly Milkdrop shows from its slider', () => {
+    const { fixture, element } = render();
+    const slider = element.querySelector<HTMLInputElement>(
+      'input[aria-label="Milkdrop visuals opacity"]',
+    );
+    expect(Number(slider?.value)).toBe(TestBed.inject(MilkdropOpacity).level());
+    if (slider) slider.value = '0.25';
+    slider?.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(TestBed.inject(MilkdropOpacity).level()).toBe(0.25);
   });
 
   it('opens the track list and plays the one picked', async () => {

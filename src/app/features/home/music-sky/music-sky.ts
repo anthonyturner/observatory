@@ -44,6 +44,14 @@ export class MusicSky {
   private readonly pulse = inject(MusicPulse);
   private readonly playlist = inject(PlaylistPlayer);
   private readonly makeCanvas = inject(MUSIC_CANVAS);
+  /** The song playing, by name; it changes only when the song does. */
+  private readonly song = computed(
+    () => {
+      const { title, artist } = this.playlist.current();
+      return { title, artist };
+    },
+    { equal: (a, b) => a.title === b.title && a.artist === b.artist },
+  );
   private readonly theme = computed(
     () => themeFor(this.playlist.current(), this.playlist.elapsed()),
     // The position ticks several times a second; the look changes every few minutes.
@@ -60,6 +68,10 @@ export class MusicSky {
       // Read before the painter exists too, or the effect never learns to rerun.
       const theme = this.theme();
       this.painter?.setTheme(theme);
+    });
+    effect(() => {
+      const song = this.song();
+      this.painter?.announce(song);
     });
     effect(() => {
       const sound = this.pulse.sound();
@@ -85,6 +97,7 @@ export class MusicSky {
     this.painter = painter;
     painter.setTheme(this.theme());
     painter.setSound(this.pulse.sound());
+    painter.announce(this.song());
     this.place();
     const window = this.document.defaultView;
     this.loop = new FrameLoop({

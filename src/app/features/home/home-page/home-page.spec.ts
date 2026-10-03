@@ -26,6 +26,7 @@ const NO_MUSIC: MusicCanvas = {
   setScene: () => undefined,
   setTheme: () => undefined,
   setSound: () => undefined,
+  announce: () => undefined,
   paint: () => undefined,
   clear: () => undefined,
   dispose: () => undefined,

@@ -12,6 +12,7 @@ import { Shockwave } from './motifs/shockwave';
 import { Warp } from './motifs/warp';
 import { MusicFrame } from './music-sync.types';
 import { TabSound } from './tab-audio';
+import { SongName, TitleCard } from './title-card';
 import { Motif, VisualTheme } from './visual-theme';
 
 /** What the music layer draws with, behind a token so a test's DOM, which has
@@ -22,6 +23,8 @@ export interface MusicCanvas {
   setTheme(theme: VisualTheme): void;
   /** The tab's sound, for a look that hears it directly. */
   setSound(sound: TabSound | null): void;
+  /** Shows a new song's name in the sky. */
+  announce(song: SongName): void;
   paint(frame: MusicFrame, stepS: number): void;
   clear(): void;
   dispose(): void;
@@ -72,8 +75,8 @@ const BLOOM_BEAT = 0.75;
 const MAX_STEP_S = 0.1;
 
 /** Paints the music between the sky and the HUD: the track's Milkdrop preset, a glow that
- *  breathes with the bass, sparkles on the highs, a hit on every beat and a
- *  burst on a drop, all bloomed and kept off the core so its own pulse reads
+ *  breathes with the bass, sparkles on the highs, a hit on every beat, the
+ *  name of each new song and a burst on a drop, all bloomed and kept off the core so its own pulse reads
  *  through. */
 export class MusicPainter implements MusicCanvas {
   private readonly canvas: HTMLCanvasElement;
@@ -82,6 +85,7 @@ export class MusicPainter implements MusicCanvas {
   private readonly hit = new BeatHit();
   private readonly bloom: Bloom;
   private readonly milkdrop: MilkdropStage;
+  private readonly titleCard: TitleCard;
   private scene: MusicScene | null = null;
   private pixelRatio = 1;
   private motif: MotifLayer = new Shockwave();
@@ -100,6 +104,7 @@ export class MusicPainter implements MusicCanvas {
     this.milkdrop = new MilkdropStage(host.ownerDocument, loadMilkdrop, onError);
     this.palettes = { trance: inksOf(host, 'trance'), techno: inksOf(host, 'techno') };
     this.inks = this.palettes.trance;
+    this.titleCard = new TitleCard(fontOf(host));
   }
 
   canDraw(): boolean {
@@ -129,6 +134,10 @@ export class MusicPainter implements MusicCanvas {
     this.milkdrop.setSound(sound);
   }
 
+  announce(song: SongName): void {
+    this.titleCard.announce(song);
+  }
+
   paint(frame: MusicFrame, stepS: number): void {
     const { context, scene } = this;
     if (!context || !scene) return;
@@ -142,6 +151,7 @@ export class MusicPainter implements MusicCanvas {
     this.drawSparkles(context);
     this.drawBursts(context, scene);
     this.hit.draw(context, scene, this.inks);
+    this.titleCard.draw(context, scene, this.inks);
     this.bloom.apply(this.canvas, context, BLOOM_BASE + BLOOM_BEAT * this.pulse);
     context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     this.clearCore(context, scene);
@@ -162,6 +172,7 @@ export class MusicPainter implements MusicCanvas {
     this.pulse = frame.pulse;
     this.motif.step(frame, stepS, scene);
     this.hit.step(frame, stepS, scene);
+    this.titleCard.step(frame, stepS);
     this.sparkles = this.sparkles
       .map((sparkle) => ({ ...sparkle, life: sparkle.life - stepS / SPARKLE_LIFE_S }))
       .filter((sparkle) => sparkle.life > 0);
@@ -236,6 +247,13 @@ export class MusicPainter implements MusicCanvas {
     context.arc(x, y, r * HOLE_TO, 0, Math.PI * 2);
     context.fill();
   }
+}
+
+/** The face the song's name is set in: the site's condensed sans. */
+function fontOf(host: HTMLElement): string {
+  const view = host.ownerDocument.defaultView;
+  const font = view?.getComputedStyle(host).getPropertyValue('--font-condensed').trim();
+  return font || 'sans-serif';
 }
 
 function inksOf(host: HTMLElement, genre: Genre): MusicInks {

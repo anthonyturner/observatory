@@ -5,6 +5,7 @@ import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painte
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { MusicFrame } from '../../../core/music-sync/music-sync.types';
 import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
+import { SongName } from '../../../core/music-sync/title-card';
 import { VisualTheme, themeFor } from '../../../core/music-sync/visual-theme';
 import { PLAYLIST_TRACKS, PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { MusicSky } from './music-sky';
@@ -23,6 +24,10 @@ class FakeCanvas implements MusicCanvas {
   }
   setTheme(theme: VisualTheme): void {
     this.themes.push(theme);
+  }
+  songs: SongName[] = [];
+  announce(song: SongName): void {
+    this.songs.push(song);
   }
   setSound(): void {
     // The fake draws nothing, so it has nothing to hear.
@@ -104,6 +109,14 @@ describe('MusicSky', () => {
     TestBed.tick();
     expect(canvas.themes.length).toBe(before + 1);
     expect(canvas.themes.at(-1)).toEqual(themeFor(track, changedS));
+  });
+
+  it('names the song playing, and each new one as it starts', async () => {
+    const { canvas, playlist, tracks } = await render();
+    expect(canvas.songs.at(-1)).toEqual({ title: tracks[0].title, artist: tracks[0].artist });
+    playlist.select(1);
+    TestBed.tick();
+    expect(canvas.songs.at(-1)).toEqual({ title: tracks[1].title, artist: tracks[1].artist });
   });
 
   it('moves while listening and clears when listening stops', async () => {

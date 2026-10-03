@@ -18,6 +18,7 @@ import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opac
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
+import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
 import { sameTheme, themeFor } from '../../../core/music-sync/visual-theme';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { VideoBackground } from '../../../core/playlist/video-background';
@@ -73,6 +74,8 @@ export class MusicSky {
   private lastWall: number | null = null;
 
   constructor() {
+    // The playlist bar offers the sky's controls while this sky is on the page.
+    inject(DestroyRef).onDestroy(inject(MusicSkyPresence).hold());
     afterNextRender(() => this.start());
     effect(() => {
       // Read before the painter exists too, or the effect never learns to rerun.

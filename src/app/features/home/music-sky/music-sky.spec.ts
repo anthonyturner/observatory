@@ -7,6 +7,7 @@ import { VideoBackground } from '../../../core/playlist/video-background';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
+import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
 import { MusicFrame } from '../../../core/music-sync/music-sync.types';
 import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
 import { SongName } from '../../../core/music-sync/title-card';
@@ -189,5 +190,13 @@ describe('MusicSky', () => {
     const { canvas } = await render();
     TestBed.resetTestingModule();
     expect(canvas.disposed).toBe(true);
+  });
+
+  it('tells the playlist bar a music sky is on the page, until it goes', async () => {
+    const { fixture } = await render();
+    const presence = TestBed.inject(MusicSkyPresence);
+    expect(presence.isShown()).toBe(true);
+    fixture.destroy();
+    expect(presence.isShown()).toBe(false);
   });
 });

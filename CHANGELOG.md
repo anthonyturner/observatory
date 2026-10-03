@@ -77,6 +77,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- The Architecture page's centre-node card now sits at the top right of the diagram, no longer hidden behind the playlist bar ([#295](https://github.com/anthonyturner/observatory/pull/295)).
 - Milkdrop now shows on Home's music sky on the deployed site, not only when running locally; before, the hand-drawn looks stayed up the whole time ([#283](https://github.com/anthonyturner/observatory/pull/283)).
 - The hosted star map reads checks with a fine-grained GitHub token instead of failing ([#119](https://github.com/anthonyturner/observatory/pull/119), [#123](https://github.com/anthonyturner/observatory/pull/123)).
 - ElevenLabs reads a reply in one breath instead of in choppy pieces ([#147](https://github.com/anthonyturner/observatory/pull/147)).

@@ -1,13 +1,15 @@
 import { Genre, Track } from '../playlist/playlist.types';
 
 /** The ways the sky can move with a track. */
-export const MOTIFS = ['shockwave', 'warp', 'aurora', 'nebula'] as const;
+export const MOTIFS = ['shockwave', 'warp', 'aurora', 'nebula', 'milkdrop'] as const;
 export type Motif = (typeof MOTIFS)[number];
 
 /** How the sky looks for one track: a motif of its own, coloured by its genre. */
 export interface VisualTheme {
   readonly motif: Motif;
   readonly palette: Genre;
+  /** From 0 to 1: which take on the motif, such as which Milkdrop preset. */
+  readonly variant: number;
 }
 
 /** The motif changes every 2–3 minutes of a track. */
@@ -17,24 +19,27 @@ const CHANGE_SPREAD_S = 60;
 /** The same track always looks the same at the same point; neighbouring tracks
  *  rarely do. */
 export function themeFor(track: Track, elapsedS = 0): VisualTheme {
-  return { motif: motifAt(track.videoId, elapsedS), palette: track.genre };
+  return { ...lookAt(track.videoId, elapsedS), palette: track.genre };
 }
 
 export function sameTheme(a: VisualTheme, b: VisualTheme): boolean {
-  return a.motif === b.motif && a.palette === b.palette;
+  return a.motif === b.motif && a.palette === b.palette && a.variant === b.variant;
 }
 
 /** A track opens on its own motif, then changes to a different one at random
  *  gaps; the draw is seeded by the track, so a seek or a replay lands on the
  *  same look. */
-function motifAt(videoId: string, elapsedS: number): Motif {
+function lookAt(videoId: string, elapsedS: number): { motif: Motif; variant: number } {
   const seed = hashOf(videoId);
   const random = randomFrom(seed);
   const gapS = () => CHANGE_AFTER_S + random() * CHANGE_SPREAD_S;
   let index = seed % MOTIFS.length;
-  for (let changeS = gapS(); changeS <= elapsedS; changeS += gapS())
+  let variant = random();
+  for (let changeS = gapS(); changeS <= elapsedS; changeS += gapS()) {
     index = (index + 1 + Math.floor(random() * (MOTIFS.length - 1))) % MOTIFS.length;
-  return MOTIFS[index];
+    variant = random();
+  }
+  return { motif: MOTIFS[index], variant };
 }
 
 /** FNV-1a: a small, even spread of short strings over whole numbers. */

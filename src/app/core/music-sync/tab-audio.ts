@@ -1,5 +1,11 @@
 import { InjectionToken } from '@angular/core';
 
+/** The tab's sound as a live audio node, for a visualizer that listens for itself. */
+export interface TabSound {
+  readonly context: AudioContext;
+  readonly source: AudioNode;
+}
+
 /** The tab's own sound, ready to read as a spectrum. */
 export interface AudioTap {
   /** Hertz per bin of `read`. */
@@ -10,6 +16,8 @@ export interface AudioTap {
   /** Called once if sharing stops from outside, as from Chrome's "Stop sharing". */
   onEnded(callback: () => void): void;
   close(): void;
+  /** The sound itself, where the tap is a real one. */
+  readonly sound?: TabSound;
 }
 
 /** Sharing went ahead without the "Share tab audio" box ticked. */
@@ -69,7 +77,8 @@ function tapOf(stream: MediaStream, audio: MediaStreamTrack): AudioTap {
   analyser.fftSize = FFT_SIZE;
   analyser.smoothingTimeConstant = SMOOTHING;
   // Into the analyser only, never to the speakers: the tab is already playing it.
-  context.createMediaStreamSource(stream).connect(analyser);
+  const source = context.createMediaStreamSource(stream);
+  source.connect(analyser);
   const close = (): void => {
     stream.getTracks().forEach((track) => track.stop());
     void context.close();
@@ -80,5 +89,6 @@ function tapOf(stream: MediaStream, audio: MediaStreamTrack): AudioTap {
     read: (into) => analyser.getByteFrequencyData(into),
     onEnded: (callback) => audio.addEventListener('ended', callback, { once: true }),
     close,
+    sound: { context, source },
   };
 }

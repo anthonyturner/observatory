@@ -10,7 +10,13 @@ import {
 import { bandLevels } from './band-levels';
 import { MusicAnalysis } from './music-analysis';
 import { MusicFrame, SILENCE, SyncStatus } from './music-sync.types';
-import { AUDIO_TAP, AudioTap, NoTabAudioError, TabAudioUnsupportedError } from './tab-audio';
+import {
+  AUDIO_TAP,
+  AudioTap,
+  NoTabAudioError,
+  TabAudioUnsupportedError,
+  TabSound,
+} from './tab-audio';
 
 /** The music the page hears from its own tab, for the sky to move with.
  *  Provided by the page, so leaving it stops listening. */
@@ -19,6 +25,7 @@ export class MusicPulse {
   private readonly openTap = inject(AUDIO_TAP);
   private readonly errors = inject(ErrorHandler);
   private readonly currentStatus = signal<SyncStatus>('off');
+  private readonly currentSound = signal<TabSound | null>(null);
   private tap: AudioTap | null = null;
   private bins = new Uint8Array(0);
   private analysis = new MusicAnalysis();
@@ -26,6 +33,8 @@ export class MusicPulse {
 
   readonly status: Signal<SyncStatus> = this.currentStatus.asReadonly();
   readonly isListening = computed(() => this.currentStatus() === 'listening');
+  /** The tab's sound while listening, for a visualizer that hears it directly. */
+  readonly sound: Signal<TabSound | null> = this.currentSound.asReadonly();
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.release());
@@ -63,6 +72,7 @@ export class MusicPulse {
     this.bins = new Uint8Array(tap.binCount);
     this.analysis = new MusicAnalysis();
     tap.onEnded(() => this.stop());
+    this.currentSound.set(tap.sound ?? null);
     this.currentStatus.set('listening');
   }
 
@@ -80,5 +90,6 @@ export class MusicPulse {
   private release(): void {
     this.tap?.close();
     this.tap = null;
+    this.currentSound.set(null);
   }
 }

@@ -65,6 +65,17 @@ describe('MusicPulse', () => {
     expect(pulse.isListening()).toBe(true);
   });
 
+  it('lends out the tab sound while listening, and takes it back on a stop', async () => {
+    const sound = { context: {} as AudioContext, source: {} as AudioNode };
+    const { pulse } = setup(() => Promise.resolve(Object.assign(new FakeTap(), { sound })));
+    expect(pulse.sound()).toBeNull();
+    pulse.listen();
+    await settle();
+    expect(pulse.sound()).toBe(sound);
+    pulse.stop();
+    expect(pulse.sound()).toBeNull();
+  });
+
   it('goes quiet when sharing is stopped from the browser', async () => {
     const tap = new FakeTap();
     const { pulse } = setup(() => Promise.resolve(tap));

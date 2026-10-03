@@ -1,0 +1,45 @@
+import { MilkdropStage } from '../milkdrop/milkdrop-stage';
+import { MusicFrame, SILENCE } from '../music-sync.types';
+import { Milkdrop } from './milkdrop';
+import { MotifLayer, MusicScene } from './motif-layer';
+
+const SCENE: MusicScene = { width: 800, height: 600, originX: 400, originY: 240, coreRadius: 100 };
+
+class FakeLayer implements MotifLayer {
+  steps: MusicFrame[] = [];
+  draws = 0;
+  step(frame: MusicFrame): void {
+    this.steps.push(frame);
+  }
+  draw(): void {
+    this.draws++;
+  }
+}
+
+function stageWith(picture: HTMLCanvasElement | null) {
+  const stage = { show: vi.fn(), frame: vi.fn(() => picture) };
+  return { stage, asStage: stage as unknown as MilkdropStage };
+}
+
+describe('Milkdrop', () => {
+  it('shows its variant, rendered at half size', () => {
+    const { stage, asStage } = stageWith(document.createElement('canvas'));
+    const layer = new Milkdrop(asStage, 0.4, new FakeLayer());
+    layer.step(SILENCE, 1 / 60, SCENE);
+    expect(stage.show).toHaveBeenCalledWith(0.4);
+    expect(stage.frame).toHaveBeenCalledWith(400, 300);
+  });
+
+  it('lets its stand-in draw until Milkdrop is ready', () => {
+    const fallback = new FakeLayer();
+    const layer = new Milkdrop(stageWith(null).asStage, 0.4, fallback);
+    layer.step(SILENCE, 1 / 60, SCENE);
+    layer.draw({} as CanvasRenderingContext2D, SCENE, {
+      primary: '#fff',
+      secondary: '#fff',
+      accent: '#fff',
+    });
+    expect(fallback.steps).toEqual([SILENCE]);
+    expect(fallback.draws).toBe(1);
+  });
+});

@@ -1,14 +1,17 @@
-import { InjectionToken } from '@angular/core';
+import { ErrorHandler, InjectionToken, inject } from '@angular/core';
 import { resolveColour } from '../instrument/palette';
 import { Genre } from '../playlist/playlist.types';
 import { BeatHit } from './beat-hit';
 import { Bloom } from './bloom';
+import { MilkdropStage, loadMilkdrop } from './milkdrop/milkdrop-stage';
+import { Milkdrop } from './motifs/milkdrop';
 import { Aurora } from './motifs/aurora';
 import { MotifLayer, MusicInks, MusicScene, reachOf } from './motifs/motif-layer';
 import { Nebula } from './motifs/nebula';
 import { Shockwave } from './motifs/shockwave';
 import { Warp } from './motifs/warp';
 import { MusicFrame } from './music-sync.types';
+import { TabSound } from './tab-audio';
 import { Motif, VisualTheme } from './visual-theme';
 
 /** What the music layer draws with, behind a token so a test's DOM, which has
@@ -17,6 +20,8 @@ export interface MusicCanvas {
   canDraw(): boolean;
   setScene(scene: MusicScene, pixelRatio: number): void;
   setTheme(theme: VisualTheme): void;
+  /** The tab's sound, for a look that hears it directly. */
+  setSound(sound: TabSound | null): void;
   paint(frame: MusicFrame, stepS: number): void;
   clear(): void;
   dispose(): void;
@@ -24,15 +29,21 @@ export interface MusicCanvas {
 
 export const MUSIC_CANVAS = new InjectionToken<(host: HTMLElement) => MusicCanvas>('MUSIC_CANVAS', {
   providedIn: 'root',
-  factory: () => (host) => new MusicPainter(host),
+  factory: () => {
+    const errors = inject(ErrorHandler);
+    return (host) => new MusicPainter(host, (error) => errors.handleError(error));
+  },
 });
 
-const MOTIF_LAYERS: Readonly<Record<Motif, () => MotifLayer>> = {
-  shockwave: () => new Shockwave(),
-  warp: () => new Warp(),
-  aurora: () => new Aurora(),
-  nebula: () => new Nebula(),
-};
+const MOTIF_LAYERS: Readonly<Record<Motif, (stage: MilkdropStage, variant: number) => MotifLayer>> =
+  {
+    shockwave: () => new Shockwave(),
+    warp: () => new Warp(),
+    aurora: () => new Aurora(),
+    nebula: () => new Nebula(),
+    // The nebula stands in while Milkdrop loads, or where it cannot run.
+    milkdrop: (stage, variant) => new Milkdrop(stage, variant, new Nebula()),
+  };
 
 interface Sparkle {
   x: number;
@@ -73,6 +84,7 @@ export class MusicPainter implements MusicCanvas {
   private readonly palettes: Readonly<Record<Genre, MusicInks>>;
   private readonly hit = new BeatHit();
   private readonly bloom: Bloom;
+  private readonly milkdrop: MilkdropStage;
   private scene: MusicScene | null = null;
   private pixelRatio = 1;
   private motif: MotifLayer = new Shockwave();
@@ -82,12 +94,13 @@ export class MusicPainter implements MusicCanvas {
   private bass = 0;
   private pulse = 0;
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, onError: (error: unknown) => void) {
     this.canvas = host.ownerDocument.createElement('canvas');
     this.canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block';
     host.append(this.canvas);
     this.context = this.canvas.getContext('2d');
     this.bloom = new Bloom(host.ownerDocument);
+    this.milkdrop = new MilkdropStage(host.ownerDocument, loadMilkdrop, onError);
     this.palettes = { trance: inksOf(host, 'trance'), techno: inksOf(host, 'techno') };
     this.inks = this.palettes.trance;
   }
@@ -110,8 +123,12 @@ export class MusicPainter implements MusicCanvas {
   }
 
   setTheme(theme: VisualTheme): void {
-    this.motif = MOTIF_LAYERS[theme.motif]();
+    this.motif = MOTIF_LAYERS[theme.motif](this.milkdrop, theme.variant);
     this.inks = this.palettes[theme.palette];
+  }
+
+  setSound(sound: TabSound | null): void {
+    this.milkdrop.setSound(sound);
   }
 
   paint(frame: MusicFrame, stepS: number): void {
@@ -138,6 +155,7 @@ export class MusicPainter implements MusicCanvas {
   }
 
   dispose(): void {
+    this.milkdrop.dispose();
     this.canvas.remove();
   }
 

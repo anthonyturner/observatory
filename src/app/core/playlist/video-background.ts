@@ -1,4 +1,5 @@
 import { Injectable, Signal, computed, signal } from '@angular/core';
+import { holds } from '../presence/holds';
 
 const STORAGE_KEY = 'observatory.music.video-background';
 
@@ -9,20 +10,15 @@ const STORAGE_KEY = 'observatory.music.video-background';
 export class VideoBackground {
   private readonly current = signal(readStored());
 
-  private readonly backdrops = signal(0);
+  private readonly backdrops = holds();
 
   readonly isOn: Signal<boolean> = this.current.asReadonly();
   /** On, and a backdrop on the page to fill. */
-  readonly isShown = computed(() => this.current() && this.backdrops() > 0);
+  readonly isShown = computed(() => this.current() && this.backdrops.isHeld());
 
   /** A backdrop arriving on the page; call the returned function as it leaves. */
   holdBackdrop(): () => void {
-    this.backdrops.update((count) => count + 1);
-    let isHeld = true;
-    return () => {
-      if (isHeld) this.backdrops.update((count) => count - 1);
-      isHeld = false;
-    };
+    return this.backdrops.hold();
   }
 
   toggle(): void {

@@ -13,6 +13,7 @@ import {
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
+import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
 import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { PlaylistBarFold } from '../../../core/playlist/playlist-bar-fold';
@@ -59,6 +60,8 @@ export class TransportBar {
   protected readonly milkdrop = inject(MilkdropChoice);
   protected readonly milkdropOpacity = inject(MilkdropOpacity);
   protected readonly videoBackground = inject(VideoBackground);
+  /** Sync, Video, Visual and Sky only do something on a page with a music sky. */
+  protected readonly sky = inject(MusicSkyPresence);
   protected readonly fold = inject(PlaylistBarFold);
   protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');

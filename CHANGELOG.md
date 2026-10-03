@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- The playlist bar shows its Sync, Video, Visual and Sky controls on Home only, where the music sky is; on the Orrery, the Review Queue and Architecture they are hidden, and the choices come back with Home ([#286](https://github.com/anthonyturner/observatory/pull/286)).
 - The playlist bar now sits at the foot of the Orrery and the Review Queue as well as Home, and keeps playing the same track as you move between them, without reloading the video; each page's own Sound still pauses it, and playing it still turns that Sound off ([#278](https://github.com/anthonyturner/observatory/pull/278)).
 - A toggle at the end of the playlist bar folds it down to the seek bar, the transport, the heart and the song's name, about as wide as the right column, and back; the fold is remembered in this browser ([#280](https://github.com/anthonyturner/observatory/pull/280)).
 - A Video switch on the playlist bar plays the track's video full screen behind Home in place of the Milkdrop visuals, carrying on from the same second, and remembers the choice in this browser ([#274](https://github.com/anthonyturner/observatory/pull/274)).

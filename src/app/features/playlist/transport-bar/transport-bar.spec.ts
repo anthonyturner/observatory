@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
+import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
 import { AmbientPlayer } from '../../../core/sound/ambient-synth';
 import { AMBIENT_PLAYER, SoundPreference } from '../../../core/sound/sound-preference';
 import {
@@ -24,7 +25,8 @@ const silentScore: AmbientPlayer = {
   dispose: () => undefined,
 };
 
-function render() {
+/** On Home by default: a page with a music sky, which the sky's controls need. */
+function render({ hasSky = true } = {}) {
   const pauses = vi.fn();
   const player: VideoPlayer = {
     load: vi.fn(),
@@ -59,6 +61,7 @@ function render() {
       { provide: FILE_SAVER, useValue: saver },
     ],
   });
+  const leaveSky = hasSky ? TestBed.inject(MusicSkyPresence).hold() : () => undefined;
   const fixture = TestBed.createComponent(TransportBar);
   fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
@@ -71,6 +74,7 @@ function render() {
     fixture,
     element,
     button,
+    leaveSky,
     make,
     pauses,
     sound,
@@ -379,6 +383,28 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     expect(element.classList).not.toContain('folded');
     expect(button('Tracks')).toBeDefined();
+  });
+
+  it('hides Sync, Video, Visual and Sky on a page without a music sky', () => {
+    const { element, button } = render({ hasSky: false });
+    expect(button('Video')).toBeUndefined();
+    expect(element.querySelector('.sync')).toBeNull();
+    expect(element.querySelector('select[aria-label="Milkdrop visual"]')).toBeNull();
+    expect(element.querySelector('input[aria-label="Milkdrop visuals opacity"]')).toBeNull();
+    expect(button('Tracks')).toBeDefined();
+    expect(element.querySelector('input[aria-label="Playlist volume"]')).not.toBeNull();
+  });
+
+  it('takes the sky controls away as the page with the sky leaves, keeping the music', async () => {
+    const { fixture, element, button, leaveSky, pauses } = render();
+    button('Play')?.click();
+    await fixture.whenStable();
+    expect(button('Video')).toBeDefined();
+    leaveSky();
+    fixture.detectChanges();
+    expect(button('Video')).toBeUndefined();
+    expect(element.querySelector('.sync')).toBeNull();
+    expect(pauses).not.toHaveBeenCalled();
   });
 
   it('offers a bigger video once the card shows, and back again', async () => {

@@ -39,6 +39,9 @@ const pull = (number: number): QueuePull => ({
   changedFiles: 1,
 });
 
+/** Each pull request whose state GitHub was asked for. */
+const stateAsked: string[] = [];
+
 /** Two repositories, one private; each with one open pull request. */
 const github = {
   viewer: async () => 'whoever-owns-the-token',
@@ -50,7 +53,10 @@ const github = {
   queuePulls: async () => [pull(7)],
   mergeableOf: async () => 'MERGEABLE',
   openIssueNumbers: async () => [1],
-  pullState: async () => ({ state: 'OPEN', title: 'Change' }),
+  pullState: async (repo: string, number: number) => {
+    stateAsked.push(`${repo}#${number}`);
+    return { state: 'MERGED', title: `Change ${number}` };
+  },
   pullFiles: async () => [],
   pullDetail: async (repo: string, number: number) => ({
     ...pull(number),
@@ -154,6 +160,18 @@ describe('hostedApi', () => {
     assert.equal(written.status, 200);
     assert.ok(store.data.has('triage/me__app'));
     assert.equal((await get(handle, '/api/usage', ownerCookie)).status, 200);
+  });
+
+  it('reads a pull request’s state through the cache, asking GitHub once', async () => {
+    const { handle } = site();
+    stateAsked.length = 0;
+
+    const first = await get(handle, '/api/pull-state?repo=me/app&number=12', ownerCookie);
+    const second = await get(handle, '/api/pull-state?repo=me/app&number=12', ownerCookie);
+
+    assert.deepEqual(await first.json(), { state: 'MERGED', title: 'Change 12' });
+    assert.deepEqual(await second.json(), { state: 'MERGED', title: 'Change 12' });
+    assert.deepEqual(stateAsked, ['me/app#12']);
   });
 
   it('has no runs routes, even for the owner: tier 3 runs on the local server only', async () => {

@@ -52,6 +52,20 @@
   --readout-edge-lit: var(--notice-issue-closed-edge);
 }
 
+.notices__item--mail {
+  --readout-accent: var(--notice-mail);
+  --readout-frame: var(--notice-mail-frame);
+  --readout-scan: var(--notice-mail-scan);
+  --readout-edge-lit: var(--notice-mail-edge);
+}
+
+.notices__item--mail-sign-in {
+  --readout-accent: var(--notice-mail-sign-in);
+  --readout-frame: var(--notice-mail-sign-in-frame);
+  --readout-scan: var(--notice-mail-sign-in-scan);
+  --readout-edge-lit: var(--notice-mail-sign-in-edge);
+}
+
 /* The gap closes as soon as a notice has faded, with no height animation. */
 .notices__item--enter {
   animation: notice-arrive 200ms ease-out;

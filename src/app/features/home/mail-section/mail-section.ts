@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MailInbox } from '../../../core/mail/mail-inbox';
 import { MailTabChoice } from '../../../core/mail/mail-tab-choice';
 import { MAIL_ACCOUNTS } from '../../../core/mail/mail.types';
@@ -24,6 +32,7 @@ export class MailSection {
   private readonly inbox = inject(MailInbox);
   private readonly tabChoice = inject(MailTabChoice);
   private readonly clock = inject(Clock);
+  private readonly destroyRef = inject(DestroyRef);
   /** Ages move a minute at a time, so the list is not redrawn every second. */
   private readonly minute = computed(() => Math.floor(this.clock.now().getTime() / MINUTE_MS));
 
@@ -80,10 +89,12 @@ export class MailSection {
   }
 
   /** Ignored while a read is under way; the button stays focusable, so focus is not lost. */
-  protected async refresh(): Promise<void> {
+  protected refresh(): void {
     if (this.isReading()) return;
     this.announcement.set('');
-    await this.inbox.refresh();
-    this.announcement.set(`Mail read again: ${this.summary()}.`);
+    this.inbox
+      .refresh()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.announcement.set(`Mail read again: ${this.summary()}.`));
   }
 }

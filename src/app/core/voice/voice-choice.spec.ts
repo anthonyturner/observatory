@@ -31,6 +31,14 @@ describe('VoiceChoice', () => {
     expect(TestBed.inject(VoiceChoice).engine()).toBe('kokoro');
   });
 
+  it('keeps a line on this machine only with Kokoro chosen', () => {
+    const choice = TestBed.inject(VoiceChoice);
+    expect(choice.isOnThisMachine()).toBe(false);
+
+    choice.chooseEngine('kokoro');
+    expect(choice.isOnThisMachine()).toBe(true);
+  });
+
   it('starts as it was left', () => {
     localStorage.setItem(KEY, JSON.stringify({ engine: 'elevenlabs', voice: 'rachel01' }));
     const choice = TestBed.inject(VoiceChoice);

@@ -1,4 +1,5 @@
 import { ActivityItem } from '../../core/activity/activity.types';
+import { MailMessage } from '../../core/mail/mail.types';
 import { noticeView } from './notice-view';
 
 const merged: ActivityItem = {
@@ -31,7 +32,7 @@ describe('noticeView', () => {
     expect(view.tag).toBe('New issue');
     expect(view.heading).toBe('2 new issues');
     expect(view.dismissLabel).toBe('Dismiss: 2 new issues');
-    expect(view.rows.map((row) => row.number)).toEqual([12, 13]);
+    expect(view.rows.map((row) => row.badge)).toEqual(['#12', '#13']);
   });
 
   it('links a merged pull request to GitHub and a new issue to its star map', () => {
@@ -102,5 +103,62 @@ describe('noticeView', () => {
         link: { kind: 'route', path: ['/p', 'me', 'observatory'], query: { issue: 270 } },
       },
     ]);
+  });
+
+  describe('mail', () => {
+    const message = (uid: number, changes: Partial<MailMessage> = {}): MailMessage => ({
+      uid,
+      from: 'Apple',
+      fromAddress: 'no_reply@apple.example',
+      subject: 'Your receipt',
+      receivedAt: '2026-10-03T12:10:00.000Z',
+      isUnread: true,
+      ...changes,
+    });
+    const HOME_MAIL = { kind: 'route', path: ['/'], query: {}, fragment: 'mail' };
+
+    it('heads one new message with its sender and account, its subject linked to Home’s Mail', () => {
+      const view = noticeView({ id: 6, kind: 'mail', account: 'icloud', messages: [message(7)] });
+
+      expect(view.tag).toBe('New mail');
+      expect(view.heading).toBeNull();
+      expect(view.rows).toEqual([
+        {
+          key: 'icloud#7',
+          label: 'Apple',
+          badge: 'iCloud',
+          title: 'Your receipt',
+          link: HOME_MAIL,
+          closing: [],
+        },
+      ]);
+      expect(view.dismissLabel).toBe('Dismiss: new email in iCloud from Apple');
+    });
+
+    it('heads several with the count in their account, and lists each sender and subject', () => {
+      const view = noticeView({
+        id: 7,
+        kind: 'mail',
+        account: 'gmail',
+        messages: [message(3), message(2, { from: '', subject: '' })],
+      });
+
+      expect(view.heading).toBe('2 new emails in Gmail');
+      expect(view.rows.map(({ label, badge, title }) => [label, badge, title])).toEqual([
+        ['Apple', null, 'Your receipt'],
+        ['(unknown sender)', null, '(no subject)'],
+      ]);
+      expect(view.dismissLabel).toBe('Dismiss: 2 new emails in Gmail');
+    });
+
+    it('says a refused sign-in plainly, with no password, and links to Home’s Mail', () => {
+      const view = noticeView({ id: 8, kind: 'mail-sign-in', account: 'gmail' });
+
+      expect(view.tag).toBe('Mail');
+      expect(view.rows.map(({ label, title, link }) => [label, title, link])).toEqual([
+        ['Gmail', "Couldn't sign in: check the address and app password", HOME_MAIL],
+      ]);
+      expect(view.dismissLabel).toBe('Dismiss: Gmail sign-in refused');
+    });
   });
 });

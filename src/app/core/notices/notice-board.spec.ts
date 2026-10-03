@@ -3,8 +3,12 @@ import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
 import { ActivityWatch } from '../activity/activity-watch';
 import { ActivityItem } from '../activity/activity.types';
+import { MailNews } from '../mail/mail-memory';
+import { MailWatch } from '../mail/mail-watch';
+import { MailMessage } from '../mail/mail.types';
 import { PageVisibility } from '../presence/page-visibility';
 import { NoticeBoard } from './notice-board';
+import { Notice } from './notice.types';
 
 const merged = (number: number): ActivityItem => ({
   kind: 'merged',
@@ -21,12 +25,35 @@ const issue = (number: number): ActivityItem => ({
   title: `Issue ${number}`,
 });
 
+const message = (uid: number): MailMessage => ({
+  uid,
+  from: 'Apple',
+  fromAddress: 'no_reply@apple.example',
+  subject: `Receipt ${uid}`,
+  receivedAt: '2026-10-03T12:10:00.000Z',
+  isUnread: true,
+});
+
+/** Each notice's rows: pull request and issue numbers, or message UIDs. */
+const rowsOf = (notice: Notice): number[] => {
+  switch (notice.kind) {
+    case 'mail':
+      return notice.messages.map((each) => each.uid);
+    case 'mail-sign-in':
+      return [];
+    default:
+      return notice.items.map((item) => item.number);
+  }
+};
+
 function setUp() {
   const checks = new Subject<readonly ActivityItem[]>();
+  const mail = new Subject<MailNews>();
   const isHidden = signal(false);
   TestBed.configureTestingModule({
     providers: [
       { provide: ActivityWatch, useValue: { checks } },
+      { provide: MailWatch, useValue: { news: mail } },
       { provide: PageVisibility, useValue: { isHidden } },
     ],
   });
@@ -36,10 +63,13 @@ function setUp() {
     checks.next(items);
     TestBed.tick();
   };
+  const read = (news: MailNews): void => {
+    mail.next(news);
+    TestBed.tick();
+  };
   const settle = (): void => TestBed.tick();
-  const numbers = (): number[][] =>
-    board.notices().map((notice) => notice.items.map((i) => i.number));
-  return { board, check, settle, isHidden, numbers };
+  const numbers = (): number[][] => board.notices().map(rowsOf);
+  return { board, check, read, settle, isHidden, numbers };
 }
 
 describe('NoticeBoard', () => {
@@ -174,5 +204,45 @@ describe('NoticeBoard', () => {
 
     expect(numbers()).toEqual([]);
     expect(board.isPaused()).toBe(false);
+  });
+
+  it('shows new mail as one notice per account, after the projects’ news, and says each message', () => {
+    const { board, check, read, numbers } = setUp();
+    check(merged(1));
+
+    read({
+      newMail: [
+        { account: 'icloud', messages: [message(7), message(6)] },
+        { account: 'gmail', messages: [message(3)] },
+      ],
+      signInFailed: [],
+    });
+
+    expect(board.notices().map((notice) => notice.kind)).toEqual(['merged', 'mail', 'mail']);
+    expect(numbers()).toEqual([[1], [7, 6], [3]]);
+    expect(board.announcement()).toBe(
+      'New email in iCloud from Apple: Receipt 7; New email in iCloud from Apple: Receipt 6; ' +
+        'New email in Gmail from Apple: Receipt 3.',
+    );
+  });
+
+  it('shows a refused sign-in as its own notice, which leaves like any other', () => {
+    const { board, read, numbers } = setUp();
+
+    read({ newMail: [], signInFailed: ['gmail'] });
+
+    expect(board.notices()).toEqual([{ id: 1, kind: 'mail-sign-in', account: 'gmail' }]);
+    expect(board.announcement()).toBe("Couldn't sign in to Gmail.");
+    vi.advanceTimersByTime(10_000);
+    expect(numbers()).toEqual([]);
+  });
+
+  it('keeps at most three across projects and mail', () => {
+    const { board, check, read } = setUp();
+    check(merged(1), issue(2));
+
+    read({ newMail: [{ account: 'gmail', messages: [message(3)] }], signInFailed: ['icloud'] });
+
+    expect(board.notices().map((notice) => notice.kind)).toEqual(['issue', 'mail', 'mail-sign-in']);
   });
 });

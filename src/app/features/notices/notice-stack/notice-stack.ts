@@ -4,7 +4,9 @@ import {
   DOCUMENT,
   ElementRef,
   computed,
+  effect,
   inject,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
@@ -40,6 +42,10 @@ export class NoticeStack {
   private readonly document = inject(DOCUMENT);
   /** Where focus was when F8 moved it here, to go back to. */
   private returnTo: HTMLElement | null = null;
+  /** The notice focus is in, if any. A removed element sends no focusout, so a
+   *  notice pushed out while focused is only noticed through this. */
+  private focusedNotice: number | null = null;
+  private shownIds: readonly number[] = [];
 
   protected readonly views = computed(() => this.board.notices().map(noticeView));
 
@@ -49,6 +55,10 @@ export class NoticeStack {
     fromEvent<KeyboardEvent>(window, 'keydown', { capture: true })
       .pipe(takeUntilDestroyed())
       .subscribe((event) => this.onKeydown(event));
+    effect(() => {
+      const ids = this.board.notices().map((notice) => notice.id);
+      untracked(() => this.followRemoval(ids));
+    });
   }
 
   /** Dismisses a notice; focus inside it moves to the next, the one before, or back. */
@@ -59,9 +69,27 @@ export class NoticeStack {
     if (hadFocus) this.moveFocus(next);
   }
 
+  protected onFocusIn(event: FocusEvent): void {
+    this.board.setFocusWithin(true);
+    this.focusedNotice = noticeIdOf(event.target);
+  }
+
   protected onFocusOut(event: FocusEvent): void {
     const to = event.relatedTarget;
-    if (!(to instanceof Node) || !this.host.contains(to)) this.board.setFocusWithin(false);
+    if (to instanceof Node && this.host.contains(to)) return;
+    this.focusedNotice = null;
+    this.board.setFocusWithin(false);
+  }
+
+  /** A notice that left without a dismiss here, such as the oldest pushed out
+   *  by a new one, takes focus with it unless it is moved on the same way. */
+  private followRemoval(ids: readonly number[]): void {
+    const before = this.shownIds;
+    this.shownIds = ids;
+    const focused = this.focusedNotice;
+    if (focused === null || ids.includes(focused)) return;
+    this.focusedNotice = null;
+    this.moveFocus(neighbourIn(before, focused, ids));
   }
 
   private onKeydown(event: KeyboardEvent): void {
@@ -85,23 +113,23 @@ export class NoticeStack {
   private dismissFocused(event: KeyboardEvent): void {
     const target = event.target;
     if (!(target instanceof Element)) return;
-    const notice = target.closest<HTMLElement>('[data-notice]');
-    if (!notice || !this.host.contains(notice)) return;
+    const id = noticeIdOf(target);
+    if (id === null || !this.host.contains(target)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.dismiss(Number(notice.dataset['notice']));
+    this.dismiss(id);
   }
 
   private neighbourOf(id: number): number | null {
     const ids = this.board.notices().map((notice) => notice.id);
-    const at = ids.indexOf(id);
-    return ids[at + 1] ?? ids[at - 1] ?? null;
+    return neighbourIn(ids, id, ids);
   }
 
   private moveFocus(next: number | null): void {
     const target = (next === null ? null : this.firstLinkOf(next)) ?? this.fallbackFocus();
     if (target) target.focus();
     else if (this.document.activeElement instanceof HTMLElement) this.document.activeElement.blur();
+    if (!this.host.contains(this.document.activeElement)) this.board.setFocusWithin(false);
   }
 
   private fallbackFocus(): HTMLElement | null {
@@ -118,6 +146,22 @@ export class NoticeStack {
   private firstLinkOf(id: number): HTMLElement | null {
     return this.noticeElement(id)?.querySelector<HTMLElement>(LINK) ?? null;
   }
+}
+
+function noticeIdOf(target: EventTarget | null): number | null {
+  const notice = target instanceof Element ? target.closest<HTMLElement>('[data-notice]') : null;
+  return notice ? Number(notice.dataset['notice']) : null;
+}
+
+/** The notice after `id` in `order` that is still shown, else the one before. */
+function neighbourIn(
+  order: readonly number[],
+  id: number,
+  shown: readonly number[],
+): number | null {
+  const at = order.indexOf(id);
+  const isShown = (each: number): boolean => each !== id && shown.includes(each);
+  return order.slice(at + 1).find(isShown) ?? order.slice(0, at).reverse().find(isShown) ?? null;
 }
 
 const hasModifier = (event: KeyboardEvent): boolean =>

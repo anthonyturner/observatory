@@ -6,7 +6,7 @@
   [class.notices--still]="motion.isStill()"
   (pointerenter)="board.setPointerOver(true)"
   (pointerleave)="board.setPointerOver(false)"
-  (focusin)="board.setFocusWithin(true)"
+  (focusin)="onFocusIn($event)"
   (focusout)="onFocusOut($event)"
 >
   <ul class="notices__list">

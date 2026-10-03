@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ACTIVITY_LOOKUPS, Lookup } from './activity-lookups';
+import { ACTIVITY_LOOKUPS, LOOKUP_TIMEOUT_MS, Lookup } from './activity-lookups';
 
 function setUp() {
   TestBed.configureTestingModule({
@@ -62,5 +62,28 @@ describe('ACTIVITY_LOOKUPS', () => {
     http.expectOne('/api/pull-state?repo=me/alpha&number=4').flush({ state: 'GONE', title: 'x' });
 
     expect(seen.map((lookup) => lookup.status)).toEqual(['denied', 'denied', 'failed', 'failed']);
+  });
+
+  it('gives up on a lookup that never answers, so later checks are not held', () => {
+    vi.useFakeTimers();
+    try {
+      const { lookups, http } = setUp();
+      const seen: Lookup<unknown>[] = [];
+      lookups.pullState('me/alpha', 10).subscribe((lookup) => seen.push(lookup));
+      lookups.issueTitle('me/alpha', 7).subscribe((lookup) => seen.push(lookup));
+      const pending = [
+        http.expectOne('/api/pull-state?repo=me/alpha&number=10'),
+        http.expectOne('/api/issue?repo=me/alpha&number=7'),
+      ];
+
+      vi.advanceTimersByTime(LOOKUP_TIMEOUT_MS - 1);
+      expect(seen).toEqual([]);
+      vi.advanceTimersByTime(1);
+
+      expect(seen).toEqual([{ status: 'failed' }, { status: 'failed' }]);
+      expect(pending.every((request) => request.cancelled)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -76,7 +76,9 @@ function pullsGone(before: RepoMemory, project: ProjectSnapshot): number[] {
   return [...pulls].filter((number) => !open.has(number)).sort(ascending);
 }
 
-/** Higher than any number seen before, so a reopened issue never counts as new. */
+/** Higher than any number seen before, so a reopened issue seen open this session
+ *  never counts as new. One closed before the page loaded, numbered above every
+ *  issue and pull request open then, still would: the report holds nothing older. */
 function issuesOpened(before: RepoMemory, project: ProjectSnapshot): number[] {
   const { highestNumber } = before;
   if (highestNumber === null || !project.openIssues) return [];

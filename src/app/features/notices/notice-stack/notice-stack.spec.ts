@@ -207,6 +207,36 @@ describe('NoticeStack', () => {
     expect(document.activeElement).toBe(field);
   });
 
+  it('moves focus on when the focused notice is pushed out by a new one', () => {
+    const { check, notices } = render();
+    for (const number of [1, 2, 3]) check(merged(number));
+    (notices()[0].querySelector('a') as HTMLElement).focus();
+
+    check(merged(4));
+
+    expect(notices()[0].textContent).toContain('#2');
+    expect(document.activeElement).toBe(notices()[0].querySelector('a'));
+    expect(TestBed.inject(NoticeBoard).isPaused()).toBe(true);
+  });
+
+  it('gives focus back, and lets the countdowns run, when a focused notice leaves on its own', () => {
+    const { check, notices, fixture, press } = render();
+    const field = document.createElement('button');
+    document.body.append(field);
+    field.focus();
+    check(merged(1));
+    press('F8');
+    const board = TestBed.inject(NoticeBoard);
+
+    board.dismiss(board.notices()[0].id);
+    fixture.detectChanges();
+    check(merged(2));
+
+    expect(notices()).toHaveLength(1);
+    expect(document.activeElement).toBe(field);
+    expect(board.isPaused()).toBe(false);
+  });
+
   it('leaves Esc to the page when focus is not in a notice', () => {
     const { check, press } = render();
     check(merged(1));

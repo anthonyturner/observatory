@@ -325,6 +325,9 @@
   --run-pill-edge: rgba(255, 194, 77, 0.45);
   --run-refused-wash: rgba(255, 194, 77, 0.05);
   --run-dock-glass: rgba(7, 11, 24, 0.9);
+  /* What the page keeps clear on the right while the task dock is open beside
+     it: the dock's 440px, its 16px margin and a 20px gap. */
+  --run-dock-clearance: 476px;
   --run-log-well: rgba(2, 4, 10, 0.7);
   --run-jump-wash: rgba(7, 11, 24, 0.95);
   --run-jump-hover: rgb(18, 26, 52);

@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { InjectionToken, inject } from '@angular/core';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, timeout } from 'rxjs';
 import { ISSUE_URL, parseIssueDetail } from '../issues/issue-detail';
 
 /** Where one pull request stands, as `GET /api/pull-state` answers. */
@@ -24,6 +24,10 @@ export interface ActivityLookups {
 const PULL_STATE_URL = '/api/pull-state';
 const PULL_STATES: readonly PullState['state'][] = ['OPEN', 'MERGED', 'CLOSED'];
 const DENIED_STATUSES: readonly number[] = [401, 403];
+/** The watch takes checks one at a time, so a lookup that never answers would
+ *  hold every later check; past this it counts as failed. A cold GitHub read
+ *  behind the API takes a few seconds at most. */
+export const LOOKUP_TIMEOUT_MS = 20_000;
 
 /** The lookups over Observatory's own API. */
 export const ACTIVITY_LOOKUPS = new InjectionToken<ActivityLookups>('ActivityLookups', {
@@ -32,6 +36,7 @@ export const ACTIVITY_LOOKUPS = new InjectionToken<ActivityLookups>('ActivityLoo
     const http = inject(HttpClient);
     const lookUp = <T>(url: string, repo: string, number: number, parse: Parse<T>) =>
       http.get<unknown>(url, { params: { repo, number } }).pipe(
+        timeout(LOOKUP_TIMEOUT_MS),
         map((body) => foundOrFailed(parse(body))),
         catchError((error: unknown) => of(failureOf<T>(error))),
       );

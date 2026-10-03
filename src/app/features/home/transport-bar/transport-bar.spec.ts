@@ -12,6 +12,7 @@ import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
+import { FILE_SAVER, FileSaver } from '../../../core/files/file-saver';
 import { TransportBar } from './transport-bar';
 
 const silentScore: AmbientPlayer = {
@@ -43,6 +44,7 @@ function render() {
     close: vi.fn(),
   };
   const openTap = vi.fn(() => Promise.resolve(tap));
+  const saver: FileSaver = { save: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
       PlaylistPlayer,
@@ -51,6 +53,7 @@ function render() {
       { provide: AUDIO_TAP, useValue: openTap },
       { provide: VIDEO_PLAYER_FACTORY, useValue: make },
       { provide: AMBIENT_PLAYER, useValue: () => silentScore },
+      { provide: FILE_SAVER, useValue: saver },
     ],
   });
   const fixture = TestBed.createComponent(TransportBar);
@@ -69,6 +72,7 @@ function render() {
     pauses,
     sound,
     openTap,
+    saver,
     pulse: TestBed.inject(MusicPulse),
     favorites: TestBed.inject(FavoritesStore),
     player,
@@ -185,6 +189,50 @@ describe('TransportBar', () => {
     element.querySelectorAll<HTMLButtonElement>('app-track-list .heart')[3].click();
     fixture.detectChanges();
     expect(favorites.has(tracks[3].videoId)).toBe(true);
+  });
+
+  it('offers Export once a track is hearted, and says why it cannot before then', () => {
+    const { fixture, element, button, saver } = render();
+    const exportButton = button('Export favourites');
+    expect(exportButton?.getAttribute('aria-disabled')).toBe('true');
+    expect(exportButton?.title).toContain('No favourites to export yet');
+
+    exportButton?.click();
+    fixture.detectChanges();
+    expect(saver.save).not.toHaveBeenCalled();
+    expect(element.querySelector('.notice[aria-live="polite"]')?.textContent).toContain(
+      'No favourites to export yet',
+    );
+
+    button('Favourite')?.click();
+    fixture.detectChanges();
+    expect(exportButton?.hasAttribute('aria-disabled')).toBe(false);
+    exportButton?.click();
+    fixture.detectChanges();
+    expect(saver.save).toHaveBeenCalledTimes(1);
+    expect(element.querySelector('.notice')?.textContent).toContain('Exported 1 favourite');
+  });
+
+  it('imports favourites from the file picked, and announces the count', async () => {
+    const { fixture, element, button, favorites, tracks } = render();
+    const picker = element.querySelector<HTMLInputElement>('.transfer input[type="file"]');
+    if (!picker) throw new Error('no file picker');
+    expect(picker.accept).toBe('.json,application/json');
+    const opens = vi.spyOn(picker, 'click').mockImplementation(() => undefined);
+    button('Import favourites')?.click();
+    expect(opens).toHaveBeenCalled();
+
+    const text = JSON.stringify({
+      format: 'observatory.favorites',
+      version: 1,
+      tracks: [tracks[4]],
+    });
+    Object.defineProperty(picker, 'files', { value: [new File([text], 'favourites.json')] });
+    picker.dispatchEvent(new Event('change'));
+
+    await vi.waitFor(() => expect(favorites.tracks()).toEqual([tracks[4]]));
+    fixture.detectChanges();
+    expect(element.querySelector('.notice')?.textContent).toContain('Added 1 favourite');
   });
 
   it('keeps the seek bar off until the track has a length, showing no time yet', () => {

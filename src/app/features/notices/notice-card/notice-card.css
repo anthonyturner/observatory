@@ -1,0 +1,155 @@
+:host {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.notice {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px 10px 11px;
+}
+
+.notice__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.notice__marker--still {
+  animation: none;
+}
+
+/* The name gives way; the number never does. */
+.notice__name {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice__number {
+  flex: none;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.notice__rows {
+  margin: 0;
+  padding: 0 0 0 15px;
+  list-style: none;
+}
+
+/* About five rows show; the rest scroll inside the notice. */
+.notice__rows--group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 17.5em;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+.notice__row-name {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.notice__link {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.notice__link:hover,
+.notice__link:focus-visible {
+  text-decoration: underline;
+}
+
+.notice__link:focus-visible,
+.notice__close:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.notice__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--readout-frame);
+  background: transparent;
+  color: var(--readout-accent);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.notice__close:hover,
+.notice__close:focus-visible {
+  background: var(--flow-tint);
+}
+
+/* Two runs alternate so a resumed countdown starts its line afresh. */
+.notice__countdown {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--readout-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: notice-countdown-even linear forwards;
+}
+
+.notice__countdown--odd {
+  animation-name: notice-countdown-odd;
+}
+
+.notice__countdown--paused {
+  animation-play-state: paused;
+}
+
+@keyframes notice-countdown-even {
+  from {
+    transform: scaleX(var(--countdown-from));
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes notice-countdown-odd {
+  from {
+    transform: scaleX(var(--countdown-from));
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .notice__link {
+    min-height: 44px;
+  }
+
+  .notice__close {
+    width: 44px;
+  }
+}

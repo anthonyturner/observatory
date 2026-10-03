@@ -289,4 +289,5 @@ export const HOME_HELP_KEYS: readonly HelpKey[] = [
   { key: '?', action: 'help' },
   { key: 'Esc', action: 'close, throw a recording away, stay here or stop speaking' },
   { key: '← → ↑ ↓', action: 'turn the core' },
+  { key: 'F8', action: 'go to the notifications' },
 ];

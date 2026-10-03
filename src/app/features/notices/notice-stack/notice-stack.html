@@ -1,0 +1,34 @@
+<section
+  class="notices"
+  role="region"
+  aria-label="Notifications"
+  [class.notices--beside-dock]="placement.isBesideDock()"
+  [class.notices--still]="motion.isStill()"
+  (pointerenter)="board.setPointerOver(true)"
+  (pointerleave)="board.setPointerOver(false)"
+  (focusin)="board.setFocusWithin(true)"
+  (focusout)="onFocusOut($event)"
+>
+  <ul class="notices__list">
+    @for (notice of views(); track notice.id) {
+      <li
+        class="notices__item readout"
+        [class.notices__item--merged]="notice.kind === 'merged'"
+        [class.notices__item--issue]="notice.kind === 'issue'"
+        [attr.data-notice]="notice.id"
+        animate.enter="notices__item--enter"
+        animate.leave="notices__item--leave"
+      >
+        <app-notice-card
+          [notice]="notice"
+          [countdowns]="board.countdowns()"
+          [isPaused]="board.isPaused()"
+          [isStill]="motion.isStill()"
+          (dismissed)="dismiss(notice.id)"
+          (followed)="dismiss(notice.id)"
+        />
+      </li>
+    }
+  </ul>
+</section>
+<p class="visually-hidden" aria-live="polite">{{ board.announcement() }}</p>

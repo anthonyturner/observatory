@@ -38,4 +38,5 @@ export const ORRERY_HELP_KEYS: readonly HelpKey[] = [
   { key: 'Esc', action: 'close' },
   { key: '← → ↑ ↓', action: 'move' },
   { key: '+ −', action: 'zoom' },
+  { key: 'F8', action: 'go to the notifications' },
 ];

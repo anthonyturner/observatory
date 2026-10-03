@@ -13,20 +13,21 @@ import { RouterOutlet } from '@angular/router';
 import { fromEvent, map, startWith, combineLatest } from 'rxjs';
 import { footClearanceOf, playlistReachOf } from './core/playlist/foot-clearance';
 import { PlaylistPlacement } from './core/playlist/playlist-placement';
+import { NoticeStack } from './features/notices/notice-stack/notice-stack';
 import { TransportBar } from './features/playlist/transport-bar/transport-bar';
 import { ELEMENT_SIZE, ElementSize } from './shared/element-size/element-size';
 import { PreviewBanner } from './shared/preview-banner/preview-banner';
 
 const NO_SIZE: ElementSize = { width: 0, height: 0 };
 
-/** The shell: the routed page, and the playlist outside it, so the music and its
- *  video carry on from page to page without reloading. Every page's tools and cards
- *  at the foot keep clear of it through `--playlist-clear-right` and
- *  `--playlist-clear-bottom`, and `--playlist-height`; the cards on the right keep
- *  above its video through `--playlist-reach`. */
+/** The shell: the routed page, and outside it the notices and the playlist, so
+ *  both carry on from page to page and the music and its video never reload.
+ *  Every page's tools and cards at the foot keep clear of the playlist through
+ *  `--playlist-clear-right` and `--playlist-clear-bottom`, and `--playlist-height`;
+ *  the cards on the right keep above its video through `--playlist-reach`. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, PreviewBanner, TransportBar],
+  imports: [RouterOutlet, PreviewBanner, TransportBar, NoticeStack],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

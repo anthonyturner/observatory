@@ -1,0 +1,97 @@
+/* Under the clock on every page, above the run dock. Only the notices take the
+   pointer, so the page under the empty stack stays clickable. */
+.notices {
+  position: fixed;
+  top: calc(100px + env(safe-area-inset-top, 0px));
+  right: 28px;
+  z-index: 9;
+  width: min(360px, calc(100vw - 40px));
+  pointer-events: none;
+}
+
+.notices__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notices__item {
+  --readout-fill: var(--notice-glass);
+  display: flex;
+  pointer-events: auto;
+}
+
+.notices__item--merged {
+  --readout-accent: var(--notice-merged);
+  --readout-frame: var(--notice-merged-frame);
+  --readout-scan: var(--notice-merged-scan);
+  --readout-edge-lit: var(--notice-merged-edge);
+}
+
+.notices__item--issue {
+  --readout-accent: var(--notice-issue);
+  --readout-frame: var(--notice-issue-frame);
+  --readout-scan: var(--notice-issue-scan);
+  --readout-edge-lit: var(--notice-issue-edge);
+}
+
+/* The gap closes as soon as a notice has faded, with no height animation. */
+.notices__item--enter {
+  animation: notice-arrive 200ms ease-out;
+}
+
+.notices__item--leave {
+  pointer-events: none;
+  animation: notice-leave 250ms ease-in forwards;
+}
+
+.notices--still .notices__item--enter {
+  animation: notice-fade-in 150ms ease-out;
+}
+
+.notices--still .notices__item--leave {
+  animation-duration: 150ms;
+}
+
+@keyframes notice-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@keyframes notice-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes notice-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Clear of Home's task dock, which opens beside the page on a wide screen. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .notices--beside-dock {
+    right: calc(28px + 476px);
+  }
+}
+
+/* Across the top of a phone, two at most: the oldest of three steps aside. */
+@media (max-width: 720px) {
+  .notices {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: 10px;
+    left: 10px;
+    width: auto;
+  }
+
+  .notices__item:nth-last-child(n + 3) {
+    display: none;
+  }
+}

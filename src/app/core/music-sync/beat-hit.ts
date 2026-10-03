@@ -84,3 +84,14 @@ export class BeatHit implements MotifLayer {
     context.fillRect(0, 0, scene.width, scene.height);
   }
 }
+
+/** Where the beat's zoom scales the sky from: the core, held inside the screen.
+ *  Scaled about a core scrolled off the screen, the sky would slide away from
+ *  it on every beat and bare the edge it left; from a point on the screen, a
+ *  zoom of 1 or more always covers it. */
+export function zoomAnchor(scene: MusicScene): { readonly x: number; readonly y: number } {
+  return {
+    x: Math.min(Math.max(scene.originX, 0), scene.width),
+    y: Math.min(Math.max(scene.originY, 0), scene.height),
+  };
+}

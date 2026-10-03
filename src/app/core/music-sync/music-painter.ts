@@ -1,7 +1,7 @@
 import { ErrorHandler, InjectionToken, inject } from '@angular/core';
 import { resolveColour } from '../instrument/palette';
 import { Genre } from '../playlist/playlist.types';
-import { BeatHit } from './beat-hit';
+import { BeatHit, zoomAnchor } from './beat-hit';
 import { Bloom } from './bloom';
 import { DEFAULT_MILKDROP_OPACITY } from './milkdrop/milkdrop-opacity';
 import { MilkdropStage, loadMilkdrop } from './milkdrop/milkdrop-stage';
@@ -212,13 +212,15 @@ export class MusicPainter implements MusicCanvas {
       .filter((burst) => burst.life > 0);
   }
 
-  /** The motif, zoomed about the core on the beat. */
+  /** The motif, zoomed about the core on the beat, or about the nearest point
+   *  on the screen once the core is scrolled away. */
   private drawMotif(context: CanvasRenderingContext2D, scene: MusicScene): void {
     const zoom = this.hit.zoom();
+    const anchor = zoomAnchor(scene);
     context.save();
-    context.translate(scene.originX, scene.originY);
+    context.translate(anchor.x, anchor.y);
     context.scale(zoom, zoom);
-    context.translate(-scene.originX, -scene.originY);
+    context.translate(-anchor.x, -anchor.y);
     this.motif.draw(context, scene, this.inks);
     context.restore();
   }

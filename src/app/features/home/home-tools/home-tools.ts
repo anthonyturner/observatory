@@ -7,12 +7,14 @@ import { SoundPreference } from '../../../core/sound/sound-preference';
 import { HelpState } from '../../../shared/help/help-state';
 
 /** Home's controls along the foot of the screen, as the orrery's and the star map's
- *  are: Refresh, the star trails' Spin, then Motion, Sound and Help. */
+ *  are: Refresh, the star trails' Spin, then Motion, Sound and Help. On a phone they
+ *  fold behind one Tools button, so the foot keeps the screen for the page. */
 @Component({
   selector: 'app-home-tools',
   templateUrl: './home-tools.html',
   styleUrl: './home-tools.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.open]': 'isOpen()' },
 })
 export class HomeTools {
   protected readonly help = inject(HelpState);
@@ -21,6 +23,7 @@ export class HomeTools {
   protected readonly spin = inject(TrailSpeed);
   private readonly page = inject(PAGE_REFRESH);
   protected readonly refreshing = signal(false);
+  protected readonly isOpen = signal(false);
   protected readonly lastStop = TRAIL_SPEEDS.length - 1;
   protected readonly spinLabel = computed(() => `${this.spin.multiplier()}×`);
   private readonly activity = inject(TrailActivity).measured;

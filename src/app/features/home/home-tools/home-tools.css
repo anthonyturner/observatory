@@ -1,8 +1,13 @@
-:host {
+:host,
+.groups {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 9px;
+}
+
+.toggle {
+  display: none;
 }
 
 .group {
@@ -80,6 +85,33 @@ button[aria-pressed='true'] {
 }
 
 @media (max-width: 720px) {
+  /* The groups open above the button, so it stays where the thumb found it. */
+  :host {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .toggle {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--edge-soft);
+    border-radius: 10px;
+    background: var(--panel-strong);
+  }
+
+  .group {
+    background: var(--panel-strong);
+  }
+
+  .toggle[aria-expanded='true'] {
+    color: var(--ink);
+    background: var(--flow-tint-strong);
+  }
+
+  :host(:not(.open)) .groups {
+    display: none;
+  }
+
   button {
     min-width: 44px;
     min-height: 44px;

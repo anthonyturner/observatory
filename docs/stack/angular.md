@@ -47,6 +47,17 @@ These three are rules, not preferences:
   callers have to poll. A *signal* is Angular's value-that-notifies-readers; an
   *Observable* is an RxJS stream. Prefer signals for state a template reads,
   and Observables for streams of events over time; `toSignal()` bridges the two.
+- **Write async work as an Observable, not a Promise.** Fetches, timers and
+  anything else that completes later return an Observable. State and the
+  values derived from it are signals and `computed()`. They are not fields
+  that an `async` function writes after an `await`. Observables can be
+  cancelled, composed with RxJS operators, and torn down with
+  `takeUntilDestroyed()`, and they are what Angular's own APIs return.
+- **Leave a Promise as it is where the API only offers one**, such as dynamic
+  `import()` or a browser API like `getDisplayMedia()`. Do not wrap it in
+  `from()` or `defer()` just to make it an Observable. Existing Promise code is
+  converted when it is next touched, not in bulk. The Node API server, which
+  has no RxJS, keeps its Promises.
 - **Isolate side effects** (network calls, storage, timers) in services, and
   log them through the project's logger (see [typescript.md](typescript.md)).
 - **Before adding a service, check whether one already owns the

@@ -2,7 +2,7 @@ import { senderOf, subjectOf } from '../../core/mail/mail-text';
 import { MAIL_ACCOUNT_LABELS } from '../../core/mail/mail.types';
 import { newEmails } from '../../core/notices/mail-words';
 import { MailNotice, MailSignInNotice } from '../../core/notices/notice.types';
-import { NoticeRoute, NoticeRowView, NoticeView } from './notice-view';
+import type { NoticeRoute, NoticeRowView, NoticeView } from './notice-view';
 
 /** Home's Mail section, where every mail notice leads. */
 export const HOME_MAIL: NoticeRoute = { kind: 'route', path: ['/'], query: {}, fragment: 'mail' };

@@ -9,8 +9,12 @@ interface Streak {
 const STREAKS = 160;
 const DRIFT_PX = 40;
 const ENERGY_SPEED_PX = 900;
-/** A kick throws the stars forward, and the throw dies away within a beat. */
-const KICK_BOOST_PX = 700;
+/** A beat throws the stars forward, at least this hard however soft the bass,
+ *  and the throw dies away within a beat. */
+const BEAT_BOOST_PX = 1100;
+const MIN_BOOST_SHARE = 0.7;
+/** How much a beat lights the streaks. */
+const BEAT_LIGHT = 0.6;
 const BOOST_DECAY = 6;
 const LENGTH_PER_SPEED = 0.06;
 const STREAK_ALPHA = 0.7;
@@ -24,7 +28,7 @@ const ACCENT_EVERY = 3;
 const LIT_BY_ENERGY = 2;
 
 /** Stars stream out of the core as if the sky were jumping to light speed:
- *  faster as the music fills, thrown forward on each kick. */
+ *  faster as the music fills, thrown forward on each beat. */
 export class Warp implements MotifLayer {
   private readonly streaks: Streak[] = [];
   private speed = DRIFT_PX;
@@ -34,10 +38,10 @@ export class Warp implements MotifLayer {
   step(frame: MusicFrame, stepS: number, scene: MusicScene): void {
     const reach = reachOf(scene);
     if (this.streaks.length === 0) this.seed(scene, reach);
-    if (frame.beat) this.boost = KICK_BOOST_PX * frame.bass;
+    if (frame.beat) this.boost = BEAT_BOOST_PX * Math.max(frame.bass, MIN_BOOST_SHARE);
     this.boost *= Math.exp(-BOOST_DECAY * stepS);
     this.speed = DRIFT_PX + frame.energy * ENERGY_SPEED_PX + this.boost;
-    this.level = Math.min(1, frame.energy * LIT_BY_ENERGY);
+    this.level = Math.min(1, frame.energy * LIT_BY_ENERGY + frame.pulse * BEAT_LIGHT);
     for (const streak of this.streaks) {
       streak.distance += this.speed * stepS * (streak.distance / reach + NEAR_PACE);
       if (streak.distance > reach) this.respawn(streak, scene);

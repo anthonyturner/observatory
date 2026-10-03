@@ -12,8 +12,7 @@ const MID_SWING_PX = 90;
 const CURTAIN_PX = 220;
 const BASE_ALPHA = 0.14;
 const BASS_ALPHA = 0.45;
-const KICK_FLARE = 0.12;
-const FLARE_DECAY = 5;
+const BEAT_FLARE = 0.4;
 /** The ribbons drift at a walk in silence and run as the music fills. */
 const IDLE_PACE = 0.6;
 const ENERGY_PACE = 2.4;
@@ -27,19 +26,16 @@ const LEAD_IN = 0.2;
 const BRIGHTEST_AT = 0.25;
 
 /** Curtains of light across the top of the sky: the leads swing them, the
- *  bass brightens them, and a kick lights them for a moment. */
+ *  bass brightens them, and every beat lights them up. */
 export class Aurora implements MotifLayer {
   private phase = 0;
   private swing = 0;
   private glow = BASE_ALPHA;
-  private flare = 0;
 
   step(frame: MusicFrame, stepS: number): void {
     this.phase += stepS * (IDLE_PACE + frame.energy * ENERGY_PACE);
     this.swing = frame.mid * MID_SWING_PX;
-    if (frame.beat) this.flare = KICK_FLARE;
-    this.flare *= Math.exp(-FLARE_DECAY * stepS);
-    this.glow = BASE_ALPHA + frame.bass * BASS_ALPHA + this.flare;
+    this.glow = BASE_ALPHA + frame.bass * BASS_ALPHA + frame.pulse * BEAT_FLARE;
   }
 
   draw(context: CanvasRenderingContext2D, scene: MusicScene, inks: MusicInks): void {

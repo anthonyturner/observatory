@@ -30,7 +30,12 @@ describe('MusicAnalysis', () => {
   });
 
   it('finds no beats in a steady hum or in silence', () => {
-    const hum = play(new MusicAnalysis(), () => ({ bass: 0.6, mid: 0.6, high: 0.6, kick: 0.6 }), 3, 1);
+    const hum = play(
+      new MusicAnalysis(),
+      () => ({ bass: 0.6, mid: 0.6, high: 0.6, kick: 0.6 }),
+      3,
+      1,
+    );
     // Past the first second, once the analysis has settled on the hum's level.
     expect(hum.slice(60).some((frame) => frame.beat)).toBe(false);
     const silence = play(new MusicAnalysis(), () => ({ bass: 0, mid: 0, high: 0, kick: 0 }), 3);

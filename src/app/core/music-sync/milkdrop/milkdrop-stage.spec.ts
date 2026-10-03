@@ -34,6 +34,12 @@ function soundOf(): TabSound {
 
 const settle = (): Promise<void> => new Promise((done) => setTimeout(done));
 
+/** Asks for a first frame, which starts the load, and lets the load land. */
+async function warm(stage: MilkdropStage): Promise<void> {
+  stage.frame(400, 300);
+  await settle();
+}
+
 function setup(load?: () => Promise<MilkdropEngine>) {
   const visualizers: FakeVisualizer[] = [];
   const errors: unknown[] = [];
@@ -57,10 +63,13 @@ describe('MilkdropStage', () => {
   beforeEach(() => (window['WebGL2RenderingContext'] = Object));
   afterEach(() => delete window['WebGL2RenderingContext']);
 
-  it('loads Milkdrop once, on the first Milkdrop turn', async () => {
+  it('loads Milkdrop once, on the first frame asked for, and not before', async () => {
     const { stage, loader } = setup();
     stage.show(0.1);
-    stage.show(0.6);
+    await settle();
+    expect(loader).not.toHaveBeenCalled();
+    stage.frame(400, 300);
+    stage.frame(400, 300);
     await settle();
     expect(loader).toHaveBeenCalledTimes(1);
   });
@@ -68,7 +77,7 @@ describe('MilkdropStage', () => {
   it('renders the preset the variant picks once it hears the tab', async () => {
     const { stage, visualizers } = setup();
     stage.show(0.1);
-    await settle();
+    await warm(stage);
     expect(stage.frame(400, 300)).toBeNull();
 
     const sound = soundOf();
@@ -82,11 +91,11 @@ describe('MilkdropStage', () => {
     expect(visualizer.renders).toBe(1);
   });
 
-  it('melts into the next preset on the next Milkdrop turn', async () => {
+  it('melts into the next preset on the next turn', async () => {
     const { stage, visualizers } = setup();
     stage.setSound(soundOf());
     stage.show(0.1);
-    await settle();
+    await warm(stage);
     stage.frame(400, 300);
     stage.show(0.9);
     expect(visualizers[0].presets.at(-1)?.blendS).toBeGreaterThan(0);
@@ -97,7 +106,7 @@ describe('MilkdropStage', () => {
     const { stage, visualizers } = setup();
     stage.setSound(soundOf());
     stage.show(0.1);
-    await settle();
+    await warm(stage);
     stage.frame(400, 300);
     stage.setSound(soundOf());
     stage.frame(400, 300);
@@ -110,7 +119,7 @@ describe('MilkdropStage', () => {
     const { stage, errors } = setup(() => Promise.reject(failure));
     stage.setSound(soundOf());
     stage.show(0.1);
-    await settle();
+    await warm(stage);
     expect(stage.frame(400, 300)).toBeNull();
     expect(errors).toEqual([failure]);
   });
@@ -119,7 +128,7 @@ describe('MilkdropStage', () => {
     delete window['WebGL2RenderingContext'];
     const { stage, loader } = setup();
     stage.show(0.1);
-    await settle();
+    await warm(stage);
     expect(loader).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- Home's music sky shows Milkdrop all the time, moving to a new preset every 2 to 3 minutes; the hand-drawn looks stand in while it loads or where the browser cannot run it ([#261](https://github.com/anthonyturner/observatory/pull/261)).
 - Home's music sky locks to the kick drum: it finds each kick even over a loud bassline, keeps the 4/4 beat through a missed kick, and lands a hit on every beat (a flash round the core, a ring, a zoom and glowing edges) under a bloom. Milkdrop looks from Butterchurn join the rotation ([#259](https://github.com/anthonyturner/observatory/pull/259)).
 - A Mail section on Home, on your own machine only, listing the 20 newest messages in your iCloud and Gmail inboxes in one tab each, with unread mail marked New; it only reads, so nothing is marked read ([#252](https://github.com/anthonyturner/observatory/pull/252)).
 - Home's music sky changes its look to a different one every 2 to 3 minutes of a track, at random but the same each time the track plays ([#251](https://github.com/anthonyturner/observatory/pull/251)).

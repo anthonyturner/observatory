@@ -69,7 +69,8 @@ export class BeatClock {
     const next = this.nextBeatS;
     if (period === null || next === null) return false;
     const previous = next - period;
-    const offS = Math.abs(timeS - previous) < Math.abs(timeS - next) ? timeS - previous : timeS - next;
+    const offS =
+      Math.abs(timeS - previous) < Math.abs(timeS - next) ? timeS - previous : timeS - next;
     if (Math.abs(offS) > period * MATCH_WINDOW) return false;
     this.nextBeatS = next + offS * PHASE_GAIN;
     this.lastOnBeatS = timeS;

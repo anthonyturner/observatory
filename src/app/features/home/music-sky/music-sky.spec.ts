@@ -2,6 +2,7 @@ import { Provider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { CURATED_PRESETS } from '../../../core/music-sync/milkdrop/milkdrop-presets';
+import { BeatStrength } from '../../../core/music-sync/beat-strength';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { VideoBackground } from '../../../core/playlist/video-background';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
@@ -34,6 +35,10 @@ class FakeCanvas implements MusicCanvas {
   opacities: number[] = [];
   setMilkdropOpacity(level: number): void {
     this.opacities.push(level);
+  }
+  strengths: number[] = [];
+  setBeatStrength(level: number): void {
+    this.strengths.push(level);
   }
   announce(song: SongName): void {
     this.songs.push(song);
@@ -151,6 +156,20 @@ describe('MusicSky', () => {
     opacity.set(0.3);
     TestBed.tick();
     expect(canvas.opacities.at(-1)).toBe(0.3);
+  });
+
+  it('hits each beat as hard as the slider asks, and follows it', async () => {
+    const { canvas } = await render();
+    const strength = TestBed.inject(BeatStrength);
+    const before = strength.level();
+    try {
+      expect(canvas.strengths.at(-1)).toBe(before);
+      strength.set(0.4);
+      TestBed.tick();
+      expect(canvas.strengths.at(-1)).toBe(0.4);
+    } finally {
+      strength.set(before);
+    }
   });
 
   it('hides Milkdrop while the video fills the background, and brings it back', async () => {

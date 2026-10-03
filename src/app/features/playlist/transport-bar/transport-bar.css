@@ -312,10 +312,9 @@ button:focus-visible {
   background: var(--issue-option);
 }
 
-.scrub input:focus-visible,
-.visual select:focus-visible,
-.volume input:focus-visible,
-.opacity input:focus-visible {
+/* Every slider and the visual's picker. */
+input:focus-visible,
+select:focus-visible {
   outline: 2px solid var(--flow);
   outline-offset: 3px;
 }
@@ -364,10 +363,15 @@ button:focus-visible {
     border-left: 0;
   }
 
-  /* Video and the visual, then the sky's strength and Sync: two even pairs. */
+  /* Video and the visual, then the sky's and the beat's strength, in pairs;
+     Sync, left over, takes the last row whole. */
   .group--sky {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .sync {
+    grid-column: 1 / -1;
   }
 
   .visual select {

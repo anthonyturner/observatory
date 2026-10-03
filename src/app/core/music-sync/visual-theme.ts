@@ -1,18 +1,20 @@
 import { Genre, Track } from '../playlist/playlist.types';
 
-/** The ways the sky can move with a track. */
-export const MOTIFS = ['shockwave', 'warp', 'aurora', 'nebula', 'milkdrop'] as const;
+/** The hand-drawn ways the sky can move with a track, shown while Milkdrop
+ *  loads or where it cannot run. */
+export const MOTIFS = ['shockwave', 'warp', 'aurora', 'nebula'] as const;
 export type Motif = (typeof MOTIFS)[number];
 
-/** How the sky looks for one track: a motif of its own, coloured by its genre. */
+/** How the sky looks for one track: a Milkdrop preset, with a hand-drawn
+ *  motif coloured by its genre standing by. */
 export interface VisualTheme {
   readonly motif: Motif;
   readonly palette: Genre;
-  /** From 0 to 1: which take on the motif, such as which Milkdrop preset. */
+  /** From 0 to 1: which Milkdrop preset. */
   readonly variant: number;
 }
 
-/** The motif changes every 2–3 minutes of a track. */
+/** The look changes every 2–3 minutes of a track. */
 const CHANGE_AFTER_S = 120;
 const CHANGE_SPREAD_S = 60;
 
@@ -26,7 +28,7 @@ export function sameTheme(a: VisualTheme, b: VisualTheme): boolean {
   return a.motif === b.motif && a.palette === b.palette && a.variant === b.variant;
 }
 
-/** A track opens on its own motif, then changes to a different one at random
+/** A track opens on its own look, then changes to a different one at random
  *  gaps; the draw is seeded by the track, so a seek or a replay lands on the
  *  same look. */
 function lookAt(videoId: string, elapsedS: number): { motif: Motif; variant: number } {

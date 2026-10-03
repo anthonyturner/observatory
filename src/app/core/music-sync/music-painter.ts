@@ -35,15 +35,12 @@ export const MUSIC_CANVAS = new InjectionToken<(host: HTMLElement) => MusicCanva
   },
 });
 
-const MOTIF_LAYERS: Readonly<Record<Motif, (stage: MilkdropStage, variant: number) => MotifLayer>> =
-  {
-    shockwave: () => new Shockwave(),
-    warp: () => new Warp(),
-    aurora: () => new Aurora(),
-    nebula: () => new Nebula(),
-    // The nebula stands in while Milkdrop loads, or where it cannot run.
-    milkdrop: (stage, variant) => new Milkdrop(stage, variant, new Nebula()),
-  };
+const MOTIF_LAYERS: Readonly<Record<Motif, () => MotifLayer>> = {
+  shockwave: () => new Shockwave(),
+  warp: () => new Warp(),
+  aurora: () => new Aurora(),
+  nebula: () => new Nebula(),
+};
 
 interface Sparkle {
   x: number;
@@ -74,7 +71,7 @@ const BLOOM_BASE = 0.45;
 const BLOOM_BEAT = 0.75;
 const MAX_STEP_S = 0.1;
 
-/** Paints the music between the sky and the HUD: the track's motif, a glow that
+/** Paints the music between the sky and the HUD: the track's Milkdrop preset, a glow that
  *  breathes with the bass, sparkles on the highs, a hit on every beat and a
  *  burst on a drop, all bloomed and kept off the core so its own pulse reads
  *  through. */
@@ -123,7 +120,8 @@ export class MusicPainter implements MusicCanvas {
   }
 
   setTheme(theme: VisualTheme): void {
-    this.motif = MOTIF_LAYERS[theme.motif](this.milkdrop, theme.variant);
+    // Milkdrop always, with the theme's hand-drawn motif standing in until it can draw.
+    this.motif = new Milkdrop(this.milkdrop, theme.variant, MOTIF_LAYERS[theme.motif]());
     this.inks = this.palettes[theme.palette];
   }
 

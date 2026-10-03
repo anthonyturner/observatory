@@ -16,13 +16,17 @@ declare module 'butterchurn' {
     readonly textureRatio?: number;
   }
 
-  const butterchurn: {
+  export interface Butterchurn {
     createVisualizer(
       context: AudioContext,
       canvas: HTMLCanvasElement,
       options: ButterchurnOptions,
     ): ButterchurnVisualizer;
-  };
+  }
+
+  /** The package's UMD file exports `{ default: Butterchurn }`. The dev server
+   *  unwraps that and the production build does not, so either can arrive. */
+  const butterchurn: Butterchurn | { readonly default: Butterchurn };
   export default butterchurn;
 }
 

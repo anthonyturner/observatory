@@ -1,7 +1,7 @@
-import type { ButterchurnVisualizer } from 'butterchurn';
+import type { Butterchurn, ButterchurnVisualizer } from 'butterchurn';
 import { TabSound } from '../tab-audio';
 import { CURATED_PRESETS, presetFor } from './milkdrop-presets';
-import { MilkdropEngine, MilkdropStage } from './milkdrop-stage';
+import { MilkdropEngine, MilkdropStage, unwrapButterchurn } from './milkdrop-stage';
 
 class FakeVisualizer implements ButterchurnVisualizer {
   connected: AudioNode[] = [];
@@ -185,5 +185,17 @@ describe('presetFor', () => {
   it('falls back to any preset when the pack has none of the curated ones', () => {
     expect(presetFor(0.5, ['only'])).toBe('only');
     expect(presetFor(0.5, [])).toBeNull();
+  });
+});
+
+describe('unwrapButterchurn', () => {
+  const butterchurn: Butterchurn = { createVisualizer: () => new FakeVisualizer() };
+
+  it('takes Butterchurn as the bundler hands it over', () => {
+    expect(unwrapButterchurn(butterchurn)).toBe(butterchurn);
+  });
+
+  it('unwraps it where the production build leaves it under default', () => {
+    expect(unwrapButterchurn({ default: butterchurn })).toBe(butterchurn);
   });
 });

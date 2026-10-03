@@ -9,10 +9,10 @@
       (favoriteToggled)="favorites.toggle($event)"
     />
   }
-  <div class="card" [class.card--live]="hasStarted()" [class.card--large]="isVideoLarge()">
+  <div class="card" [class.card--live]="isCardShown()" [class.card--large]="isVideoLarge()">
     <!-- YouTube replaces whatever is inside the screen, so the button sits beside it. -->
     <div #screen class="screen"></div>
-    @if (hasStarted()) {
+    @if (isCardShown()) {
       <button
         type="button"
         class="enlarge"
@@ -163,6 +163,19 @@
     >
       {{ sync().text }}
     </button>
+    <button
+      type="button"
+      class="video"
+      [attr.aria-pressed]="videoBackground.isOn()"
+      [title]="
+        videoBackground.isOn()
+          ? 'Back to the Milkdrop visuals behind the page'
+          : 'Play the video full screen behind the page instead of Milkdrop'
+      "
+      (click)="videoBackground.toggle()"
+    >
+      Video
+    </button>
     <label class="opacity" title="How strongly the Milkdrop visuals show over the sky"
       ><span aria-hidden="true">Sky</span
       ><input
@@ -172,6 +185,7 @@
         step="0.05"
         aria-label="Milkdrop visuals opacity"
         [value]="milkdropOpacity.level()"
+        [disabled]="videoBackground.isOn()"
         (input)="onMilkdropOpacity($event)"
     /></label>
     <label class="volume"

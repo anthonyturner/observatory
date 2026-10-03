@@ -1,0 +1,20 @@
+/* Over the sky backdrop and under the music sky, so the beat hits still screen over it. */
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* 16:9 and at least as large as the window both ways, centred: the video covers it,
+   cropped at the edges, instead of sitting between black bars. */
+.screen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100vw, calc(100vh * 16 / 9));
+  height: max(100vh, calc(100vw * 9 / 16));
+  transform: translate(-50%, -50%);
+}

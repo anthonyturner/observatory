@@ -31,6 +31,10 @@ export interface VideoPlayerOptions {
   readonly videoId: string;
   readonly volume: number;
   readonly events: VideoPlayerEvents;
+  /** Seconds into the video to begin at; from the top when left out. */
+  readonly startS?: number;
+  /** False to wait for `play()` rather than starting once ready. */
+  readonly autoplay?: boolean;
 }
 
 export type VideoPlayerFactory = (options: VideoPlayerOptions) => Promise<VideoPlayer>;

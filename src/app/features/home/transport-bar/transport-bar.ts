@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  afterNextRender,
+  afterRenderEffect,
   computed,
   effect,
   inject,
@@ -16,6 +16,7 @@ import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
+import { VideoBackground } from '../../../core/playlist/video-background';
 import { SoundPreference } from '../../../core/sound/sound-preference';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { FavoritesTransfer, NOTHING_TO_EXPORT } from './favorites-transfer';
@@ -27,8 +28,8 @@ const BACK_STEP_S = 15;
 const FORWARD_STEP_S = 30;
 
 /** Home's playlist along the foot of the screen: the video, the seek bar, the transport, the
- *  heart, the Mix / Favourites switch, the favourites file, the sky's Sync, Milkdrop's
- *  opacity and the volume, with the track list above. It plays instead of the
+ *  heart, the Mix / Favourites switch, the favourites file, the sky's Sync, the Video
+ *  switch, Milkdrop's opacity and the volume, with the track list above. It plays instead of the
  *  generated score, never over it. The page provides the playlist and the pulse. */
 @Component({
   selector: 'app-transport-bar',
@@ -48,6 +49,7 @@ export class TransportBar {
   private readonly pulse = inject(MusicPulse);
   protected readonly motion = inject(MotionPreference);
   protected readonly milkdropOpacity = inject(MilkdropOpacity);
+  protected readonly videoBackground = inject(VideoBackground);
   protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
@@ -66,6 +68,10 @@ export class TransportBar {
     () => `${spokenClockOf(this.shownElapsed())} of ${spokenClockOf(this.player.duration())}`,
   );
   protected readonly hasStarted = computed(() => this.player.state() !== 'idle');
+  /** The card shows the video unless it is filling the page's background instead. */
+  protected readonly isCardShown = computed(
+    () => this.hasStarted() && !this.videoBackground.isOn(),
+  );
   protected readonly position = computed(
     () => `${this.player.index() + 1} / ${this.player.tracks().length}`,
   );
@@ -88,7 +94,9 @@ export class TransportBar {
   );
 
   constructor() {
-    afterNextRender(() => this.player.attach(this.screen().nativeElement));
+    afterRenderEffect(() => {
+      if (!this.videoBackground.isOn()) this.player.attach(this.screen().nativeElement);
+    });
     effect(() => {
       if (this.sound.isOn()) untracked(() => this.player.pause());
     });

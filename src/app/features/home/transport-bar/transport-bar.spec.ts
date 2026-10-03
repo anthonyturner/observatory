@@ -119,6 +119,31 @@ describe('TransportBar', () => {
     expect(TestBed.inject(MilkdropOpacity).level()).toBe(0.25);
   });
 
+  it('moves the video behind the page from the Video switch, and back', async () => {
+    const { fixture, element, button, make } = render();
+    button('Play')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(element.querySelector('.card--live')).not.toBeNull();
+
+    const video = button('Video');
+    video?.click();
+    fixture.detectChanges();
+    expect(video?.getAttribute('aria-pressed')).toBe('true');
+    expect(element.querySelector('.card--live')).toBeNull();
+    expect(
+      element.querySelector<HTMLInputElement>('input[aria-label="Milkdrop visuals opacity"]')
+        ?.disabled,
+    ).toBe(true);
+
+    video?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(video?.getAttribute('aria-pressed')).toBe('false');
+    expect(element.querySelector('.card--live')).not.toBeNull();
+    expect(make.mock.calls.at(-1)?.[0].host).toBe(element.querySelector('.screen'));
+  });
+
   it('opens the track list and plays the one picked', async () => {
     const { fixture, element, button, tracks } = render();
     const tracksButton = button('Tracks');

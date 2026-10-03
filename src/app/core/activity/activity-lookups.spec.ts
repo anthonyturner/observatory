@@ -32,14 +32,28 @@ describe('ACTIVITY_LOOKUPS', () => {
     expect(seen).toEqual([{ status: 'found', value: { state: 'MERGED', title: 'Fold the bar' } }]);
   });
 
-  it('reads a new issue’s title', () => {
+  it('reads an issue’s title, and that it is open', () => {
     const { lookups, http } = setUp();
     const seen: Lookup<unknown>[] = [];
 
-    lookups.issueTitle('me/alpha', 7).subscribe((lookup) => seen.push(lookup));
+    lookups.issue('me/alpha', 7).subscribe((lookup) => seen.push(lookup));
     http.expectOne('/api/issue?repo=me/alpha&number=7').flush(ISSUE);
 
-    expect(seen).toEqual([{ status: 'found', value: 'Crash on load' }]);
+    expect(seen).toEqual([{ status: 'found', value: { title: 'Crash on load', closedAt: null } }]);
+  });
+
+  it('reads when an issue closed', () => {
+    const { lookups, http } = setUp();
+    const seen: Lookup<unknown>[] = [];
+
+    lookups.issue('me/alpha', 7).subscribe((lookup) => seen.push(lookup));
+    http
+      .expectOne('/api/issue?repo=me/alpha&number=7')
+      .flush({ ...ISSUE, closedAt: '2026-10-03T12:30:00Z', stateReason: 'COMPLETED' });
+
+    expect(seen).toEqual([
+      { status: 'found', value: { title: 'Crash on load', closedAt: '2026-10-03T12:30:00Z' } },
+    ]);
   });
 
   it('tells a refusal apart from any other failure', () => {
@@ -70,7 +84,7 @@ describe('ACTIVITY_LOOKUPS', () => {
       const { lookups, http } = setUp();
       const seen: Lookup<unknown>[] = [];
       lookups.pullState('me/alpha', 10).subscribe((lookup) => seen.push(lookup));
-      lookups.issueTitle('me/alpha', 7).subscribe((lookup) => seen.push(lookup));
+      lookups.issue('me/alpha', 7).subscribe((lookup) => seen.push(lookup));
       const pending = [
         http.expectOne('/api/pull-state?repo=me/alpha&number=10'),
         http.expectOne('/api/issue?repo=me/alpha&number=7'),

@@ -1,4 +1,4 @@
-import { ActivityItem, ActivityKind } from '../activity/activity.types';
+import { ActivityItem, ActivityKind, ClosedIssue } from '../activity/activity.types';
 
 /** A screen reader hears, and a desktop notice lists, this many items, then how many more. */
 const ITEMS_TOLD = 3;
@@ -7,12 +7,16 @@ const SAID_ITEMS = 3;
 
 const OPENINGS: Readonly<Record<ActivityKind, string>> = {
   merged: 'Pull request merged in',
+  'issue-closed': 'Issue closed in',
+  'pull-opened': 'Pull request opened in',
   issue: 'New issue in',
 };
 
 /** A desktop notice's title for one item, and for several. */
 const TITLES: Readonly<Record<ActivityKind, { one: string; many: string }>> = {
   merged: { one: 'Pull request merged', many: 'pull requests merged' },
+  'issue-closed': { one: 'Issue closed', many: 'issues closed' },
+  'pull-opened': { one: 'Pull request opened', many: 'pull requests opened' },
   issue: { one: 'New issue', many: 'new issues' },
 };
 
@@ -23,19 +27,34 @@ export interface DesktopNotice {
   readonly tag: string;
 }
 
+/** ", closing …" with each issue a merge closed; empty for any other item. */
+function closingOf(item: ActivityItem, name: (issue: ClosedIssue) => string): string {
+  const closing = item.closing ?? [];
+  return closing.length ? `, closing ${closing.map(name).join(' and ')}` : '';
+}
+
+const saidIssue = ({ number, title }: ClosedIssue): string => `issue ${number}, ${title}`;
+const readIssue = ({ number, title }: ClosedIssue): string => `#${number}: ${title}`;
+const listedIssue = ({ number, title }: ClosedIssue): string => `#${number} · ${title}`;
+
 /** Jev's words name the project as it is shown, and the number without its
  *  "#", which a voice would read out. */
 const SAYINGS: Readonly<Record<ActivityKind, (item: ActivityItem) => string>> = {
-  merged: ({ number, label, title }) => `Pull request ${number} in ${label} merged: ${title}`,
+  merged: (item) =>
+    `Pull request ${item.number} in ${item.label} merged: ${item.title}${closingOf(item, saidIssue)}`,
+  'issue-closed': ({ number, label, title }) => `Issue ${number} in ${label} closed: ${title}`,
+  'pull-opened': ({ number, label, title }) =>
+    `Pull request ${number} in ${label} opened: ${title}`,
   issue: ({ number, label, title }) => `New issue ${number} in ${label}: ${title}`,
 };
 
 const ENDS_A_SENTENCE = /[.!?]$/;
 
-const phraseOf = ({ kind, repo, number, title }: ActivityItem): string =>
-  `${OPENINGS[kind]} ${repo}, #${number}: ${title}`;
+const phraseOf = (item: ActivityItem): string =>
+  `${OPENINGS[item.kind]} ${item.repo}, #${item.number}: ${item.title}${closingOf(item, readIssue)}`;
 
-const lineOf = ({ repo, number, title }: ActivityItem): string => `${repo} #${number} · ${title}`;
+const lineOf = (item: ActivityItem): string =>
+  `${item.repo} #${item.number} · ${item.title}${closingOf(item, listedIssue)}`;
 
 const sentenceOf = (words: string): string => {
   const trimmed = words.trim();

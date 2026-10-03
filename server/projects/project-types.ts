@@ -36,6 +36,9 @@ export interface ProjectSnapshot {
 export interface OpenPull {
   readonly number: number;
   readonly bucket: PullBucket;
+  readonly title: string;
+  /** The issue numbers it says it closes. */
+  readonly closes: readonly number[];
 }
 
 /** One pull request from the top of the blocked-first queue across every project. */

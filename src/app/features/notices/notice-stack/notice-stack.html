@@ -15,6 +15,8 @@
         class="notices__item readout"
         [class.notices__item--merged]="notice.kind === 'merged'"
         [class.notices__item--issue]="notice.kind === 'issue'"
+        [class.notices__item--pull-opened]="notice.kind === 'pull-opened'"
+        [class.notices__item--issue-closed]="notice.kind === 'issue-closed'"
         [attr.data-notice]="notice.id"
         animate.enter="notices__item--enter"
         animate.leave="notices__item--leave"

@@ -9,6 +9,15 @@ export interface ProjectCounts {
   readonly unclaimed: number;
 }
 
+/** One open pull request as the projects report lists it. */
+export interface ListedPull {
+  readonly number: number;
+  /** Null when the report did not say. */
+  readonly title: string | null;
+  /** The issue numbers it says it closes. */
+  readonly closes: readonly number[];
+}
+
 /** One tracked project as last read from GitHub. */
 export interface ProjectSnapshot {
   readonly name: string;
@@ -20,9 +29,9 @@ export interface ProjectSnapshot {
   readonly oldestIdleDays?: number;
   /** Set when GitHub could not be read for this project; its counts are then unknown. */
   readonly error?: string;
-  /** The numbers of its open pull requests, up to the 100 the API asks GitHub for.
-   *  Absent when unknown: unreadable, or an API too old to send them. */
-  readonly openPulls?: readonly number[];
+  /** Its open pull requests, up to the 100 the API asks GitHub for. Absent when
+   *  unknown: unreadable, or an API too old to send them. */
+  readonly openPulls?: readonly ListedPull[];
   /** Its open issue numbers. Absent when unknown, which includes issues switched off. */
   readonly openIssues?: readonly number[];
 }

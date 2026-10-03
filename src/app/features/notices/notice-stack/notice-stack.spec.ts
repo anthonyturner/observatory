@@ -82,6 +82,33 @@ describe('NoticeStack', () => {
     );
   });
 
+  it('colours each kind of notice by its own modifier', () => {
+    const { notices, check } = render();
+
+    check(
+      merged(10),
+      { ...issue(7), kind: 'issue-closed' },
+      { ...merged(11), kind: 'pull-opened' },
+    );
+
+    expect(notices().map((notice) => notice.className)).toEqual([
+      expect.stringContaining('notices__item--merged'),
+      expect.stringContaining('notices__item--issue-closed'),
+      expect.stringContaining('notices__item--pull-opened'),
+    ]);
+  });
+
+  it('names under a merge the issue it closed, linked to its star map', () => {
+    const { notices, links, check } = render();
+
+    check({ ...merged(12), closing: [{ number: 10, title: 'Bar stutters' }] });
+
+    const [pull, closed] = links(notices()[0]);
+    expect(pull.textContent).toContain('Pull 12');
+    expect(closed.textContent?.replace(/\s+/g, ' ').trim()).toBe('#10 Bar stutters');
+    expect(closed.getAttribute('href')).toBe('/p/me/alpha?issue=10');
+  });
+
   it('never takes focus as a notice arrives', () => {
     const { check } = render();
     const before = document.activeElement;

@@ -46,6 +46,8 @@ const directiveOf = (project: string, pull: PullRequest): Directive => ({
 const openPullOf = (pull: PullRequest): OpenPull => ({
   number: pull.number,
   bucket: bucketOf(pull),
+  title: pull.title,
+  closes: (pull.closingIssuesReferences ?? []).map((issue) => issue.number),
 });
 
 async function readProject(

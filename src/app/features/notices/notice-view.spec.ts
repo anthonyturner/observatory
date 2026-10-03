@@ -48,4 +48,59 @@ describe('noticeView', () => {
       query: { issue: 12 },
     });
   });
+
+  it('tags and heads a pull request opened and an issue closed', () => {
+    const opened = noticeView({
+      id: 3,
+      kind: 'pull-opened',
+      items: [{ ...merged, kind: 'pull-opened' }],
+    });
+    const closed = noticeView({
+      id: 4,
+      kind: 'issue-closed',
+      items: [
+        { ...issue, kind: 'issue-closed' },
+        { ...issue, kind: 'issue-closed', number: 13 },
+      ],
+    });
+
+    expect(opened.tag).toBe('PR opened');
+    expect(opened.dismissLabel).toBe('Dismiss: pull request opened, Observatory #280');
+    expect(closed.tag).toBe('Issue closed');
+    expect(closed.heading).toBe('2 issues closed');
+  });
+
+  it('links a pull request opened to GitHub and an issue closed to its star map', () => {
+    const [pull] = noticeView({
+      id: 3,
+      kind: 'pull-opened',
+      items: [{ ...merged, kind: 'pull-opened' }],
+    }).rows;
+    const [shut] = noticeView({
+      id: 4,
+      kind: 'issue-closed',
+      items: [{ ...issue, kind: 'issue-closed' }],
+    }).rows;
+
+    expect(pull.link).toEqual({
+      kind: 'external',
+      href: 'https://github.com/me/observatory/pull/280',
+    });
+    expect(shut.link).toEqual({ kind: 'route', path: ['/p', 'me', 'beta'], query: { issue: 12 } });
+  });
+
+  it('names under a merge each issue it closed, linked to the star map', () => {
+    const folded: ActivityItem = { ...merged, closing: [{ number: 270, title: 'Bar stutters' }] };
+
+    const [row] = noticeView({ id: 5, kind: 'merged', items: [folded] }).rows;
+
+    expect(row.closing).toEqual([
+      {
+        key: 'me/observatory#270',
+        number: 270,
+        title: 'Bar stutters',
+        link: { kind: 'route', path: ['/p', 'me', 'observatory'], query: { issue: 270 } },
+      },
+    ]);
+  });
 });

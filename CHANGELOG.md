@@ -78,6 +78,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- Making the playlist's video bigger now moves the cards and panels on the right of the Orrery, the star map and the logs up out of its way, and they shrink to fit when the window is short ([#297](https://github.com/anthonyturner/observatory/pull/297)).
 - The Architecture page's centre-node card now sits at the top right of the diagram, no longer hidden behind the playlist bar ([#295](https://github.com/anthonyturner/observatory/pull/295)).
 - Milkdrop now shows on Home's music sky on the deployed site, not only when running locally; before, the hand-drawn looks stayed up the whole time ([#283](https://github.com/anthonyturner/observatory/pull/283)).
 - The hosted star map reads checks with a fine-grained GitHub token instead of failing ([#119](https://github.com/anthonyturner/observatory/pull/119), [#123](https://github.com/anthonyturner/observatory/pull/123)).

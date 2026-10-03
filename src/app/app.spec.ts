@@ -58,5 +58,6 @@ describe('App', () => {
     // jsdom's window is 1024px wide, under twice the bar's 560px: the tools stack above it.
     expect(style.getPropertyValue('--playlist-clear-right')).toBe('20px');
     expect(style.getPropertyValue('--playlist-clear-bottom')).toBe('84px');
+    expect(style.getPropertyValue('--playlist-reach')).toBe('84px');
   });
 });

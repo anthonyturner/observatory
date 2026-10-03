@@ -47,9 +47,10 @@ export class App {
             map(() => window.innerWidth),
           )
         : [root.clientWidth];
-      // The video and track list float over the bar's far end, outside its box.
+      // The video and track list float over the bar's far end, outside its box; the
+      // bar marks where they sit with data-playlist-above.
       const foot = this.foot().nativeElement;
-      const above = foot.querySelector('.above');
+      const above = foot.querySelector('[data-playlist-above]');
       combineLatest([sizeOf(foot), above ? sizeOf(above) : [NO_SIZE], windowWidth])
         .pipe(takeUntilDestroyed(destroyRef))
         .subscribe(([bar, aboveBar, width]) => {

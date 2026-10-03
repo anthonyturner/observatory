@@ -19,7 +19,7 @@ function render() {
         provide: ELEMENT_SIZE,
         // Nothing floats over the bar before the first play.
         useValue: (element: Element) =>
-          of(element.classList.contains('above') ? NOTHING : { width: 560, height: 84 }),
+          of(element.hasAttribute('data-playlist-above') ? NOTHING : { width: 560, height: 84 }),
       },
     ],
   });

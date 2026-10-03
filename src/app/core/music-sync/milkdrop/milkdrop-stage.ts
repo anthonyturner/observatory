@@ -15,7 +15,7 @@ export interface MilkdropEngine {
 export type MilkdropLoader = () => Promise<MilkdropEngine>;
 
 /** Loads Butterchurn on first use, in its own chunk: it is large, and most
- *  visits never reach a Milkdrop turn. */
+ *  visits never listen to the music. */
 export const loadMilkdrop: MilkdropLoader = async () => {
   const [{ default: butterchurn }, { default: pack }] = await Promise.all([
     import('butterchurn'),
@@ -58,16 +58,17 @@ export class MilkdropStage {
     this.sound = sound;
   }
 
-  /** Shows the preset `variant` picks, from 0 to 1, loading Milkdrop the first time. */
+  /** Shows the preset `variant` picks, from 0 to 1. */
   show(variant: number): void {
     this.variant = variant;
-    this.startLoading();
     if (this.visualizer) this.loadPreset(BLEND_S);
   }
 
   /** Renders a frame `width` by `height` CSS pixels, or null while Milkdrop is
-   *  loading or cannot run here. */
+   *  loading or cannot run here. The first frame asked for loads it, so a visit
+   *  that never listens never downloads it. */
   frame(width: number, height: number): HTMLCanvasElement | null {
+    this.startLoading();
     const visualizer = this.visualizer ?? this.create(width, height);
     if (!visualizer || !this.canvas) return null;
     if (width !== this.width || height !== this.height) {

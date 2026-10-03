@@ -36,6 +36,21 @@ function fakeGitHub(overrides: Partial<GitHubReader> = {}): GitHubReader & { ask
   };
 }
 
+/** `github`, writing down the name of each method it is asked. */
+function counting(github: GitHubReader, calls: string[]): GitHubReader {
+  const note = <T>(name: string, read: () => Promise<T>): Promise<T> => {
+    calls.push(name);
+    return read();
+  };
+  return {
+    viewer: () => note('viewer', () => github.viewer()),
+    ownedRepos: (owner) => note('ownedRepos', () => github.ownedRepos(owner)),
+    openPulls: (repo) => note('openPulls', () => github.openPulls(repo)),
+    mergeableOf: (repo, pull) => note('mergeableOf', () => github.mergeableOf(repo, pull)),
+    openIssueNumbers: (repo) => note('openIssueNumbers', () => github.openIssueNumbers(repo)),
+  };
+}
+
 describe('projectsReport', () => {
   it('reads every owned repository into a snapshot', async () => {
     const github = fakeGitHub();
@@ -51,9 +66,32 @@ describe('projectsReport', () => {
       counts: { conflicted: 1, failing: 0, unknown: 0, unlinked: 1, unreviewed: 0, unclaimed: 2 },
       issues: 3,
       oldestIdleDays: 3,
+      openPulls: [
+        { number: 1, bucket: 'conflicted' },
+        { number: 2, bucket: 'unlinked' },
+      ],
+      openIssues: [1, 5, 6],
     });
     assert.deepEqual(github.asked, [1]);
     assert.equal(beta.issues, undefined);
+    assert.deepEqual(beta.openPulls, []);
+    assert.equal(beta.openIssues, null);
+  });
+
+  it('lists the open numbers without asking GitHub anything more', async () => {
+    const calls: string[] = [];
+
+    await projectsReport(counting(fakeGitHub(), calls), NOW, noWait);
+
+    assert.deepEqual([...calls].sort(), [
+      'mergeableOf',
+      'openIssueNumbers',
+      'openIssueNumbers',
+      'openPulls',
+      'openPulls',
+      'ownedRepos',
+      'viewer',
+    ]);
   });
 
   it('keeps mergeability unknown when GitHub never settles it', async () => {
@@ -76,6 +114,21 @@ describe('projectsReport', () => {
 
     assert.equal(projects[1].error, 'HTTP 403: rate limit exceeded');
     assert.equal(projects[1].open, 0);
+  });
+
+  it('keeps an unreadable repository’s open numbers unknown, not empty', async () => {
+    const github = fakeGitHub({
+      openPulls: async (repo) => {
+        if (repo === 'me/beta') throw new Error('HTTP 502');
+        return [];
+      },
+      openIssueNumbers: async () => [],
+    });
+
+    const [readable, unreadable] = (await projectsReport(github, NOW, noWait)).projects;
+
+    assert.deepEqual([readable.openPulls, readable.openIssues], [[], []]);
+    assert.deepEqual([unreadable.openPulls, unreadable.openIssues], [null, null]);
   });
 
   it('names the most urgent pull requests across every project', async () => {

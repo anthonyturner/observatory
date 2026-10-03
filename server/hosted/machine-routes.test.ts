@@ -48,7 +48,7 @@ const github = {
   queuePulls: async () => [pull(1), pull(2)],
   mergeableOf: async () => 'MERGEABLE',
   openIssueNumbers: async () => [],
-  pullState: async () => 'OPEN',
+  pullState: async () => ({ state: 'OPEN', title: 'Change' }),
   pullFiles: async () => [
     { number: 1, files: ['a.ts'] },
     { number: 2, files: ['a.ts'] },

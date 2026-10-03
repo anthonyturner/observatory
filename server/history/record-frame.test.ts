@@ -30,7 +30,7 @@ const states: Record<number, string> = { 1: 'MERGED', 2: 'CLOSED', 3: 'OPEN' };
 const github = {
   pullState: async (_repo: string, pull: number) => {
     if (pull === 4) throw new Error('offline');
-    return states[pull];
+    return { state: states[pull], title: `#${pull}` };
   },
 };
 

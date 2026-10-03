@@ -28,6 +28,8 @@ const snapshot = (name: string): ProjectSnapshot => ({
   counts: COUNTS,
   issues: 7,
   oldestIdleDays: 12,
+  openPulls: [],
+  openIssues: [],
 });
 
 const item = (number: number): QueueItem => ({

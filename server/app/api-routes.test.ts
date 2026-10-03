@@ -36,6 +36,8 @@ const queue: QueueReport = {
   ],
 };
 
+const PULL_STATES: Record<number, string> = { 1: 'OPEN', 2: 'MERGED', 3: 'CLOSED' };
+
 const forgotten: string[] = [];
 const reads = {
   queue: async () => queue,
@@ -45,6 +47,10 @@ const reads = {
   forgetQueue: (repo: string) => forgotten.push(`queue ${repo}`),
   forgetIssues: (repo: string) => forgotten.push(`issues ${repo}`),
   pull: async (repo: string, number: number) => ({ repo, number }),
+  pullState: async (_repo: string, number: number) => ({
+    state: PULL_STATES[number],
+    title: `Change ${number}`,
+  }),
   issue: async (repo: string, number: number) => ({ repo, issue: number }),
   forgetIssue: (repo: string, number: number) => forgotten.push(`issue ${repo}#${number}`),
   forgetPull: (repo: string, number: number) => forgotten.push(`${repo}#${number}`),
@@ -112,6 +118,20 @@ describe('ownerRoutes', () => {
     assert.deepEqual(await get('/api/issue?repo=me/app&number=x'), {
       error: 'number must be an issue number',
     });
+  });
+
+  it('reads whether a pull request is open, merged or closed, and refuses a bad number', async () => {
+    const states = await Promise.all(
+      [1, 2, 3].map((number) => get(`/api/pull-state?repo=me/app&number=${number}`)),
+    );
+
+    assert.deepEqual(states, [
+      { state: 'OPEN', title: 'Change 1' },
+      { state: 'MERGED', title: 'Change 2' },
+      { state: 'CLOSED', title: 'Change 3' },
+    ]);
+    const bad = await handle(new Request('http://x/api/pull-state?repo=me/app&number=x'));
+    assert.equal(bad.status, 400);
   });
 
   it('reads a pull request afresh when asked to', async () => {

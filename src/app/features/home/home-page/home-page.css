@@ -44,17 +44,13 @@ main {
   /* A row, so the tools are as wide as their buttons and the rest of the strip
      lets the pointer through to the page. */
   display: flex;
-  padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px));
+  /* The playlist holds the far end, and the tools stop short of it. */
+  padding: 0 var(--playlist-width, 20px) calc(18px + env(safe-area-inset-bottom, 0px)) 20px;
   pointer-events: none;
 }
 
 .foot > * {
   pointer-events: auto;
-}
-
-/* The playlist keeps the far end of the strip, clear of the tools. */
-app-transport-bar {
-  margin-left: auto;
 }
 
 /* Wide and tall enough: the HUD fits one screen in three columns. */
@@ -111,9 +107,6 @@ app-transport-bar {
   }
 
   /* The playlist at the end of the tools stays clear of the dock too. */
-  :host(.docked) .foot {
-    padding-right: 476px;
-  }
 }
 
 @media (min-width: 1100px) and (min-height: 600px) {
@@ -143,15 +136,9 @@ app-transport-bar {
     padding: 0 16px calc(200px + env(safe-area-inset-bottom, 0px));
   }
 
+  /* The playlist takes the whole foot on a phone, and the tools stack above it. */
   .foot {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 9px;
-    padding-inline: 16px;
-  }
-
-  app-transport-bar {
-    width: 100%;
-    margin-left: 0;
+    bottom: var(--playlist-height, 0px);
+    padding: 0 16px 9px;
   }
 }

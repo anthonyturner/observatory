@@ -212,7 +212,7 @@ h2 {
     left: 10px;
     width: auto;
     top: auto;
-    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(72px + var(--playlist-height, env(safe-area-inset-bottom, 0px)));
     transform: none;
     max-height: 52vh;
     animation: none;

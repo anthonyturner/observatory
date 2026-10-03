@@ -2,7 +2,8 @@
 .plan {
   position: fixed;
   right: 20px;
-  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  /* Above the tools, and above the playlist that shares their row. */
+  bottom: max(calc(70px + env(safe-area-inset-bottom, 0px)), calc(var(--playlist-height, 0px) + 12px));
   width: min(370px, calc(100vw - 40px));
   max-height: min(470px, calc(100vh - 250px));
   display: flex;

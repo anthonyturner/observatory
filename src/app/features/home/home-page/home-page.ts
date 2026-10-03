@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject } from '@angular/core';
 import { AgentReviewCard } from '../agent-review-card/agent-review-card';
 import { AgentsSection } from '../agents-section/agents-section';
 import { AskPanel } from '../ask-panel/ask-panel';
@@ -18,12 +18,9 @@ import { SkillsPanel } from '../skills-panel/skills-panel';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
 import { MusicSky } from '../music-sky/music-sky';
 import { TopBar } from '../top-bar/top-bar';
-import { TransportBar } from '../transport-bar/transport-bar';
 import { VitalsPanel } from '../vitals-panel/vitals-panel';
 import { SoundPreference } from '../../../core/sound/sound-preference';
-import { MusicPulse } from '../../../core/music-sync/music-pulse';
-import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
-import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
+import { PlaylistPlacement } from '../../../core/playlist/playlist-placement';
 import { RunDock } from '../../../core/runs/run-dock';
 import { RunsStore } from '../../../core/runs/runs-store';
 
@@ -48,11 +45,9 @@ import { RunsStore } from '../../../core/runs/runs-store';
     HelpCard,
     RunDockPanel,
     HomeTools,
-    TransportBar,
   ],
-  // The bar plays the music and the sky moves with it, so Home holds both for
-  // them; mail is read only while Home is shown.
-  providers: [SoundPreference, PlaylistPlayer, PlaylistLibrary, MusicPulse, MAIL_PROVIDERS],
+  // Home's own score, which leaving Home stops; mail is read only while Home is shown.
+  providers: [SoundPreference, MAIL_PROVIDERS],
   hostDirectives: [HelpShortcuts, CoreStateFeed],
   host: { '[class.docked]': 'dock.isOpen()' },
   templateUrl: './home-page.html',
@@ -69,4 +64,10 @@ export class HomePage {
     return this.hasMail() ? withMailHelp(entries) : entries;
   });
   protected readonly helpKeys = HOME_HELP_KEYS;
+
+  constructor() {
+    const placement = inject(PlaylistPlacement);
+    effect(() => placement.setBesideDock(this.dock.isOpen()));
+    inject(DestroyRef).onDestroy(() => placement.setBesideDock(false));
+  }
 }

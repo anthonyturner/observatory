@@ -303,4 +303,11 @@ button:focus-visible {
   .opacity {
     display: none;
   }
+
+  /* In the flow on a phone, so the page's tools stack above the video too
+     rather than under it. */
+  .above {
+    position: static;
+    margin-bottom: 8px;
+  }
 }

@@ -1,0 +1,28 @@
+/* The playlist keeps the far end of every page's foot, clear of the page's own
+   tools at the near end. Only the bar takes the pointer. */
+.playlist {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.playlist > * {
+  pointer-events: auto;
+}
+
+/* Clear of Home's task dock, which opens beside the page on a wide screen. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .playlist--beside-dock {
+    padding-right: 476px;
+  }
+}
+
+@media (max-width: 720px) {
+  .playlist {
+    left: 0;
+    padding-inline: 16px;
+  }
+}

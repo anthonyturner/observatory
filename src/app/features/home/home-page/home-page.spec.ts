@@ -8,6 +8,7 @@ import { CORE_RENDERER } from '../../../core/instrument/core-tokens';
 import { CoreRenderer } from '../../../core/instrument/core-renderer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
 import { SKY_CANVAS, SkyCanvas } from '../../../core/sky/sky-painter';
+import { PlaylistPlacement } from '../../../core/playlist/playlist-placement';
 import { HelpState } from '../../../shared/help/help-state';
 import { HomePage } from './home-page';
 
@@ -155,5 +156,15 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
 
     expect((fixture.nativeElement as HTMLElement).querySelector('app-mail-section')).toBeNull();
     expect((fixture.nativeElement as HTMLElement).querySelector('a[href="#mail"]')).toBeNull();
+  });
+
+  it('leaves the playlist to the app shell, and lets go of the dock space on leaving', () => {
+    const fixture = renderFixture();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-transport-bar')).toBeNull();
+    const placement = TestBed.inject(PlaylistPlacement);
+    expect(placement.isBesideDock()).toBe(false);
+    placement.setBesideDock(true);
+    fixture.destroy();
+    expect(placement.isBesideDock()).toBe(false);
   });
 });

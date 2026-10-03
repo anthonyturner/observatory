@@ -18,6 +18,7 @@ import { PROJECTS } from '../projects/projects-source';
 import { TalkState } from '../voice/talk-state';
 import { AmbientPlayer, AmbientSynth } from './ambient-synth';
 import { homeVoicesOf } from './home-voices';
+import { PageScore } from './page-score';
 
 /** Makes the player the Sound button drives. */
 export const AMBIENT_PLAYER = new InjectionToken<() => AmbientPlayer>('AMBIENT_PLAYER', {
@@ -43,7 +44,8 @@ const GESTURES = ['pointerdown', 'keydown'] as const;
 /** Whether the page's score plays. Off until asked for: browsers refuse
  *  audio before a gesture, and a page that makes noise nobody chose is closed.
  *  Each page provides its own, with its own score, so leaving a page stops its
- *  music; the on/off choice is shared. The root one plays Home's score. */
+ *  music; the on/off choice is shared. The root one plays Home's score. The live one
+ *  registers with PageScore, for the playlist that outlives pages. */
 @Injectable({ providedIn: 'root' })
 export class SoundPreference {
   private readonly wanted = signal(readStoredChoice());
@@ -61,6 +63,9 @@ export class SoundPreference {
   readonly volume: Signal<number> = this.level.asReadonly();
 
   constructor() {
+    const page = inject(PageScore);
+    page.register(this);
+    this.destroyRef.onDestroy(() => page.unregister(this));
     if (this.wanted()) this.resume();
     this.destroyRef.onDestroy(() => this.player?.dispose());
     effect(() => {

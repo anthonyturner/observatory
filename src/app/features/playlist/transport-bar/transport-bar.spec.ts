@@ -332,6 +332,27 @@ describe('TransportBar', () => {
     expect(choice.preset()).toBeNull();
   });
 
+  it('groups the list controls apart from the sky controls, after the volume', () => {
+    const { element } = render();
+    const group = (label: string) =>
+      element.querySelector<HTMLElement>(`.extras > [role="group"][aria-label="${label}"]`);
+    const list = group('List');
+    const sky = group('Sky');
+
+    expect(list?.textContent).toContain('Mix');
+    expect(list?.textContent).toContain('Tracks');
+    expect(list?.querySelector('[aria-label="Export favourites"]')).not.toBeNull();
+    expect(sky?.textContent).toContain('Video');
+    expect(sky?.textContent).toContain('Sync');
+    expect(sky?.querySelector('select[aria-label="Milkdrop visual"]')).not.toBeNull();
+    expect(sky?.querySelector('input[aria-label="Milkdrop visuals opacity"]')).not.toBeNull();
+    expect([...(element.querySelector('.extras')?.children ?? [])]).toEqual([
+      element.querySelector('.volume'),
+      list,
+      sky,
+    ]);
+  });
+
   it('folds down to the seek bar, the transport, the heart and the name, and back', () => {
     const { fixture, element, button } = render();
     const fold = button('More playlist controls');

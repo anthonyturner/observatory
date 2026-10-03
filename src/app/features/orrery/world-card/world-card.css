@@ -209,7 +209,7 @@ dd {
   :host {
     top: auto;
     right: 10px;
-    bottom: calc(76px + var(--playlist-height, env(safe-area-inset-bottom, 0px)));
+    bottom: calc(76px + var(--playlist-clear-bottom, env(safe-area-inset-bottom, 0px)));
     left: 10px;
     width: auto;
     max-height: 55vh;

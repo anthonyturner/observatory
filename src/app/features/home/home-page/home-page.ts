@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+} from '@angular/core';
 import { AgentReviewCard } from '../agent-review-card/agent-review-card';
 import { AgentsSection } from '../agents-section/agents-section';
 import { AskPanel } from '../ask-panel/ask-panel';

@@ -7,13 +7,20 @@ import { App } from './app';
 import { PlaylistPlacement } from './core/playlist/playlist-placement';
 import { ELEMENT_SIZE } from './shared/element-size/element-size';
 
+const NOTHING = { width: 0, height: 0 };
+
 function render() {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       provideHttpClient(),
       provideHttpClientTesting(),
-      { provide: ELEMENT_SIZE, useValue: () => of({ width: 560, height: 84 }) },
+      {
+        provide: ELEMENT_SIZE,
+        // Nothing floats over the bar before the first play.
+        useValue: (element: Element) =>
+          of(element.classList.contains('above') ? NOTHING : { width: 560, height: 84 }),
+      },
     ],
   });
   const fixture = TestBed.createComponent(App);
@@ -47,7 +54,9 @@ describe('App', () => {
     const { fixture } = render();
     await fixture.whenStable();
     const style = document.documentElement.style;
-    expect(style.getPropertyValue('--playlist-width')).toBe('560px');
     expect(style.getPropertyValue('--playlist-height')).toBe('84px');
+    // jsdom's window is 1024px wide, under twice the bar's 560px: the tools stack above it.
+    expect(style.getPropertyValue('--playlist-clear-right')).toBe('20px');
+    expect(style.getPropertyValue('--playlist-clear-bottom')).toBe('84px');
   });
 });

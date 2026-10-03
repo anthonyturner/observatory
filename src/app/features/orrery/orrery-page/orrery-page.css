@@ -103,16 +103,8 @@ h1 {
   text-transform: uppercase;
 }
 
-/* The playlist holds the far end of the foot; the tools wrap short of it. */
+/* Beside the playlist while it leaves room, wrapping short of it; above it otherwise. */
 .hud.bottom {
-  padding-right: var(--playlist-width, 20px);
-}
-
-/* On a phone the playlist takes the whole foot, and the tools stack above it. */
-@media (max-width: 720px) {
-  .hud.bottom {
-    bottom: var(--playlist-height, 0px);
-    padding-right: 20px;
-    padding-bottom: 9px;
-  }
+  bottom: var(--playlist-clear-bottom, 0px);
+  padding-right: var(--playlist-clear-right, 20px);
 }

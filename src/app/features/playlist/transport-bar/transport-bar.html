@@ -100,115 +100,6 @@
     </p>
     @if (!fold.isFolded()) {
       <div id="playlist-extras" class="extras">
-        <div class="source" role="group" aria-label="Which list plays">
-          <button
-            type="button"
-            [attr.aria-pressed]="library.source() === 'mix'"
-            title="Play today's shuffled mix"
-            (click)="choose('mix')"
-          >
-            Mix
-          </button>
-          <button
-            type="button"
-            [attr.aria-pressed]="library.source() === 'favorites'"
-            [disabled]="!library.hasFavorites()"
-            [title]="favoritesHint()"
-            (click)="choose('favorites')"
-          >
-            <span aria-hidden="true">♥</span> {{ favorites.count() }}
-            <span class="visually-hidden">favourites</span>
-          </button>
-        </div>
-        <div class="transfer" role="group" aria-label="Favourites file">
-          <button
-            type="button"
-            aria-label="Export favourites"
-            [attr.aria-disabled]="library.hasFavorites() ? null : 'true'"
-            [title]="exportHint()"
-            (click)="transfer.exportFile()"
-          >
-            <span aria-hidden="true">⤓</span>
-          </button>
-          <button
-            type="button"
-            aria-label="Import favourites"
-            title="Add the favourites from an exported file to yours"
-            (click)="picker.click()"
-          >
-            <span aria-hidden="true">⤒</span>
-          </button>
-          <input
-            #picker
-            type="file"
-            accept=".json,application/json"
-            hidden
-            (change)="importPicked(picker)"
-          />
-        </div>
-        <button
-          type="button"
-          class="tracks"
-          aria-controls="playlist-tracks"
-          [attr.aria-expanded]="listOpen()"
-          (click)="listOpen.set(!listOpen())"
-        >
-          Tracks
-        </button>
-        @if (sky.isShown()) {
-          <button
-            type="button"
-            class="sync"
-            [attr.aria-pressed]="sync().isOn"
-            [disabled]="sync().isUnavailable"
-            [title]="sync().hint"
-            (click)="toggleSync()"
-          >
-            {{ sync().text }}
-          </button>
-          <button
-            type="button"
-            class="video"
-            [attr.aria-pressed]="videoBackground.isOn()"
-            [title]="
-              videoBackground.isOn()
-                ? 'Back to the Milkdrop visuals behind the page'
-                : 'Play the video full screen behind the page instead of Milkdrop'
-            "
-            (click)="videoBackground.toggle()"
-          >
-            Video
-          </button>
-          <label
-            class="visual"
-            title="Pick the Milkdrop visual, or Auto to change it with the music"
-            ><span aria-hidden="true">Visual</span
-            ><select
-              aria-label="Milkdrop visual"
-              [disabled]="videoBackground.isOn()"
-              (change)="onMilkdropPreset($event)"
-            >
-              <option value="" [selected]="milkdrop.preset() === null">Auto</option>
-              @for (preset of milkdrop.presets; track preset) {
-                <option [value]="preset" [selected]="milkdrop.preset() === preset">
-                  {{ preset }}
-                </option>
-              }
-            </select></label
-          >
-          <label class="opacity" title="How strongly the Milkdrop visuals show over the sky"
-            ><span aria-hidden="true">Sky</span
-            ><input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              aria-label="Milkdrop visuals opacity"
-              [value]="milkdropOpacity.level()"
-              [disabled]="videoBackground.isOn()"
-              (input)="onMilkdropOpacity($event)"
-          /></label>
-        }
         <label class="volume"
           ><span aria-hidden="true">Vol</span
           ><input
@@ -220,6 +111,119 @@
             [value]="player.volume()"
             (input)="onVolume($event)"
         /></label>
+        <div class="group" role="group" aria-label="List">
+          <div class="source" role="group" aria-label="Which list plays">
+            <button
+              type="button"
+              [attr.aria-pressed]="library.source() === 'mix'"
+              title="Play today's shuffled mix"
+              (click)="choose('mix')"
+            >
+              Mix
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="library.source() === 'favorites'"
+              [disabled]="!library.hasFavorites()"
+              [title]="favoritesHint()"
+              (click)="choose('favorites')"
+            >
+              <span aria-hidden="true">♥</span> {{ favorites.count() }}
+              <span class="visually-hidden">favourites</span>
+            </button>
+          </div>
+          <button
+            type="button"
+            class="tracks"
+            aria-controls="playlist-tracks"
+            [attr.aria-expanded]="listOpen()"
+            (click)="listOpen.set(!listOpen())"
+          >
+            Tracks
+          </button>
+          <div class="transfer" role="group" aria-label="Favourites file">
+            <button
+              type="button"
+              aria-label="Export favourites"
+              [attr.aria-disabled]="library.hasFavorites() ? null : 'true'"
+              [title]="exportHint()"
+              (click)="transfer.exportFile()"
+            >
+              <span aria-hidden="true">⤓</span>
+            </button>
+            <button
+              type="button"
+              aria-label="Import favourites"
+              title="Add the favourites from an exported file to yours"
+              (click)="picker.click()"
+            >
+              <span aria-hidden="true">⤒</span>
+            </button>
+            <input
+              #picker
+              type="file"
+              accept=".json,application/json"
+              hidden
+              (change)="importPicked(picker)"
+            />
+          </div>
+        </div>
+        @if (sky.isShown()) {
+          <div class="group" role="group" aria-label="Sky">
+            <button
+              type="button"
+              class="video"
+              [attr.aria-pressed]="videoBackground.isOn()"
+              [title]="
+                videoBackground.isOn()
+                  ? 'Back to the Milkdrop visuals behind the page'
+                  : 'Play the video full screen behind the page instead of Milkdrop'
+              "
+              (click)="videoBackground.toggle()"
+            >
+              Video
+            </button>
+            <label
+              class="visual"
+              title="Pick the Milkdrop visual, or Auto to change it with the music"
+              ><span aria-hidden="true">Visual</span
+              ><select
+                aria-label="Milkdrop visual"
+                [disabled]="videoBackground.isOn()"
+                (change)="onMilkdropPreset($event)"
+              >
+                <option value="" [selected]="milkdrop.preset() === null">Auto</option>
+                @for (preset of milkdrop.presets; track preset) {
+                  <option [value]="preset" [selected]="milkdrop.preset() === preset">
+                    {{ preset }}
+                  </option>
+                }
+              </select></label
+            >
+            <label class="opacity" title="How strongly the Milkdrop visuals show over the sky"
+              ><span aria-hidden="true">Sky</span
+              ><input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                aria-label="Milkdrop visuals opacity"
+                [value]="milkdropOpacity.level()"
+                [disabled]="videoBackground.isOn()"
+                (input)="onMilkdropOpacity($event)"
+            /></label>
+            <button
+              type="button"
+              class="sync"
+              [attr.aria-pressed]="sync().isOn"
+              [disabled]="sync().isUnavailable"
+              [title]="sync().hint"
+              (click)="toggleSync()"
+            >
+              {{ sync().text }}
+            </button>
+          </div>
+        }
       </div>
     }
     <button

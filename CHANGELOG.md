@@ -65,6 +65,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- The playlist bar's controls are grouped by purpose: volume follows the song's name, then a List group (Mix / Favourites, Tracks, export and import) and a Sky group (Video, Visual, Sky, Sync), each set apart by a firmer rule ([#292](https://github.com/anthonyturner/observatory/pull/292)).
 - Home's music is a trance groove with a lead melody, and it steps back while the mic is listening ([#173](https://github.com/anthonyturner/observatory/pull/173), [#175](https://github.com/anthonyturner/observatory/pull/175), [#179](https://github.com/anthonyturner/observatory/pull/179)).
 - Home and Help sit in the same place on every screen, and Home's tools move to a toolbar at the bottom ([#198](https://github.com/anthonyturner/observatory/pull/198), [#210](https://github.com/anthonyturner/observatory/pull/210)).
 - Jev runs on the owner's Claude Code subscription instead of OpenRouter ([#159](https://github.com/anthonyturner/observatory/pull/159)).

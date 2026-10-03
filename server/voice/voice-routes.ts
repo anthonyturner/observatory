@@ -4,9 +4,9 @@ import type { Clip, ElevenLabs } from './eleven-labs.ts';
 import { speakRequestFrom } from './speak-request.ts';
 import { voiceStatus } from './voice-status.ts';
 
-export const VOICE_PATH = '/api/voice';
-export const SPEAK_PATH = '/api/voice/speak';
-export const HEAR_PATH = '/api/voice/hear';
+const VOICE_PATH = '/api/voice';
+const SPEAK_PATH = '/api/voice/speak';
+const HEAR_PATH = '/api/voice/hear';
 
 /** A 30 s recording is a few hundred KB; base64 in JSON adds a third. */
 const HEAR_BODY_LIMIT = 2 * 1024 * 1024;

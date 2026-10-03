@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createApiHandler } from '../http/api-handler.ts';
 import { guardLoopback } from '../http/loopback-guard.ts';
-import { MAIL_PATH, MAIL_PATHS, withMailRoutes } from './mail-routes.ts';
+import { MAIL_PATH, withMailRoutes } from './mail-routes.ts';
 import type { Mailboxes } from './mailboxes.ts';
 import type { MailAccount, MailboxReport } from './mail-types.ts';
 
@@ -26,10 +26,7 @@ const OWN_PAGE = { 'x-observatory': '1', host: '127.0.0.1:4319' };
 
 function site() {
   const { box, calls } = recordingMailboxes();
-  const handle = guardLoopback(
-    createApiHandler(withMailRoutes({ get: {}, post: {} }, box)),
-    MAIL_PATHS,
-  );
+  const handle = guardLoopback(createApiHandler(withMailRoutes({ get: {}, post: {} }, box)));
   const get = (query: string, headers: Record<string, string> = OWN_PAGE) =>
     handle(new Request(`${LOCAL}${MAIL_PATH}${query}`, { headers }));
   return { get, calls };

@@ -91,3 +91,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 - Refresh reads GitHub right away instead of a cached answer, and Home's Refresh button works ([#181](https://github.com/anthonyturner/observatory/pull/181)).
 - On the Orrery, the pointer can reach a world's card before it hides ([#194](https://github.com/anthonyturner/observatory/pull/194)).
 - The weekly usage gauge reads plan limits live and shows today's share of the week ([#222](https://github.com/anthonyturner/observatory/pull/222)).
+
+### Security
+
+- The local API now refuses, on every route, a request that does not come from this machine: a website open in another tab can no longer read your pull requests, logs or usage, or merge or edit a pull request, by pointing its own address at your computer ([#317](https://github.com/anthonyturner/observatory/pull/317)).

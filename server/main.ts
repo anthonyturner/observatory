@@ -1,5 +1,5 @@
 import { cachedReads } from './app/api-reads.ts';
-import { ROUTE_PATH, ownerRoutes, withAssistant } from './app/api-routes.ts';
+import { ownerRoutes, withAssistant } from './app/api-routes.ts';
 import { jevAssistant } from './assistant/jev-assistant.ts';
 import { localKey } from './assistant/open-router-key.ts';
 import { localShells } from './assistant/shell-commands.ts';
@@ -26,7 +26,7 @@ import { claudeStarter } from './runner/claude-launcher.ts';
 import { processTreeKiller } from './runner/process-tree.ts';
 import { findClaude } from './runner/claude-command.ts';
 import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
-import { RUNS_PATH, withRunsRoutes } from './runner/runs-routes.ts';
+import { withRunsRoutes } from './runner/runs-routes.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { fileHandoffStore } from './agents/handoff-store.ts';
@@ -34,15 +34,15 @@ import { usageReport } from './usage/usage-report.ts';
 import { agentUsageReport } from './agents/agent-usage-report.ts';
 import { elevenLabs } from './voice/eleven-labs.ts';
 import { localElevenLabs } from './voice/eleven-labs-settings.ts';
-import { HEAR_PATH, SPEAK_PATH, VOICE_PATH, withVoiceRoutes } from './voice/voice-routes.ts';
+import { withVoiceRoutes } from './voice/voice-routes.ts';
 import { fetchPage } from './reader/page-fetch.ts';
-import { READ_PATH, withReaderRoutes } from './reader/reader-routes.ts';
+import { withReaderRoutes } from './reader/reader-routes.ts';
 import { cachedNews, withNewsRoutes } from './news/news-routes.ts';
 import { fileArchitecture } from './architecture/architecture-file.ts';
 import { withArchitectureRoutes } from './architecture/architecture-routes.ts';
 import { imapInbox } from './mail/imap-inbox.ts';
 import { imapflowClient } from './mail/imapflow-client.ts';
-import { MAIL_PATHS, withMailRoutes } from './mail/mail-routes.ts';
+import { withMailRoutes } from './mail/mail-routes.ts';
 import { localMailLogin } from './mail/mail-settings.ts';
 import { mailboxes } from './mail/mailboxes.ts';
 import { MAIL_ACCOUNTS } from './mail/mail-types.ts';
@@ -117,21 +117,8 @@ const voice = {
 const mailLogins = { icloud: localMailLogin('icloud'), gmail: localMailLogin('gmail') };
 const mail = mailboxes({ logins: mailLogins, fetchInbox: imapInbox(imapflowClient) });
 
-// Loopback only: the API reads files from this machine's home folder, acts as
-// the account `gh` is signed in with, and runs Claude Code once the owner
-// confirms a proposal.
-/** Routes that run code or spend the owner's money: this machine's own page only. */
-/** The reader fetches any public page on request, so only this machine's page may ask. */
-const LOOPBACK_ONLY: ReadonlySet<string> = new Set([
-  RUNS_PATH,
-  ROUTE_PATH,
-  VOICE_PATH,
-  SPEAK_PATH,
-  HEAR_PATH,
-  READ_PATH,
-  ...MAIL_PATHS,
-]);
-
+// The MCP endpoint sits outside the loopback guard: Claude Code posts to it
+// with no Origin, so it checks the Host and its own session token instead.
 const server = createApiServer(
   withMcpEndpoint(
     guardLoopback(
@@ -161,7 +148,6 @@ const server = createApiServer(
           ),
         ),
       ),
-      LOOPBACK_ONLY,
     ),
     mcpSessions,
   ),

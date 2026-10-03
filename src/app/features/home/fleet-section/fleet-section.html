@@ -9,8 +9,28 @@
     <h2 id="fleet-title">Projects</h2>
     <span class="sub">blocked first</span>
     <span class="sub sum">{{ summary() }}</span>
+    <div class="notify" role="group" aria-label="Project notifications">
+      <label
+        title="A browser notification when a pull request merges or an issue opens and Observatory is in the background"
+      >
+        <input
+          id="projects-notify"
+          type="checkbox"
+          aria-describedby="projects-notify-status"
+          [checked]="notify.isOn()"
+          [disabled]="!notify.isSupported"
+          (change)="setNotify($event)"
+        />
+        Notify me
+      </label>
+    </div>
     <app-top-link />
   </div>
+  <p id="projects-notify-status" class="blocked" role="status">
+    @if (notify.isRefused()) {
+      Blocked by the browser. Allow notifications for this site in its settings, then tick again.
+    }
+  </p>
   <div class="grid">
     @if (waiting(); as message) {
       <p class="empty" role="status">{{ message }}</p>

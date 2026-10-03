@@ -22,6 +22,11 @@ export const ORRERY_HELP_ENTRIES: readonly HelpEntry[] = [
       'Point at a world for its card: its counts, Review queue, and Show on Home. Click a world to open its review queue; on a touch screen, tap once for the card and again to open it.',
   },
   {
+    term: 'Notices',
+    meaning:
+      'A notice appears under the clock when a pull request merges or an issue opens in any project. For a desktop notification as well while this tab is in the background, tick Notify me in Home’s Projects heading.',
+  },
+  {
     term: 'Motion',
     meaning:
       'Follows your system’s reduced-motion setting until you press it; then it remembers your choice. Off, the system holds still.',

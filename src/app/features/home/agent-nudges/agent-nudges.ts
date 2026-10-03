@@ -22,10 +22,10 @@ const TAGS: Readonly<Record<NudgeKind, string>> = {
     @if (reminders.nudges().length) {
       <ul aria-label="Agent nudges">
         @for (nudge of reminders.nudges(); track nudge.id) {
-          <li>
+          <li class="readout">
             <button type="button" class="open" (click)="open(nudge)">
-              <span class="marker" aria-hidden="true"></span>
-              <span class="tag">{{ tags[nudge.kind] }}</span>
+              <span class="readout__marker" aria-hidden="true"></span>
+              <span class="readout__tag">{{ tags[nudge.kind] }}</span>
               <span class="text">{{ nudge.text }}</span>
             </button>
             <button
@@ -55,32 +55,15 @@ const TAGS: Readonly<Record<NudgeKind, string>> = {
       list-style: none;
     }
 
-    /* A readout: square corners, amber brackets at each one over a hairline
-       frame, and faint scanlines, as the HUD's gauges are framed. */
+    /* The HUD's readout (styles/readout.css), in amber. */
     li {
-      --bracket: var(--nudge-bracket);
-      --tick: 7px;
+      --readout-accent: var(--nudge-bracket);
+      --readout-frame: var(--nudge-frame);
+      --readout-scan: var(--nudge-scan);
+      --readout-edge-lit: var(--warm-edge);
+      --readout-fill: var(--panel-strong);
       display: flex;
       align-items: stretch;
-      border: 1px solid var(--nudge-frame);
-      background:
-        linear-gradient(var(--bracket), var(--bracket)) top left / var(--tick) 1px no-repeat,
-        linear-gradient(var(--bracket), var(--bracket)) top left / 1px var(--tick) no-repeat,
-        linear-gradient(var(--bracket), var(--bracket)) top right / var(--tick) 1px no-repeat,
-        linear-gradient(var(--bracket), var(--bracket)) top right / 1px var(--tick) no-repeat,
-        linear-gradient(var(--bracket), var(--bracket)) bottom left / var(--tick) 1px no-repeat,
-        linear-gradient(var(--bracket), var(--bracket)) bottom left / 1px var(--tick) no-repeat,
-        linear-gradient(var(--bracket), var(--bracket)) bottom right / var(--tick) 1px no-repeat,
-        linear-gradient(var(--bracket), var(--bracket)) bottom right / 1px var(--tick) no-repeat,
-        repeating-linear-gradient(0deg, var(--nudge-scan) 0 1px, transparent 1px 3px),
-        var(--panel-strong);
-      transition: border-color 0.2s;
-    }
-
-    li:hover,
-    li:focus-within {
-      --bracket: var(--ink);
-      border-color: var(--warm-edge);
     }
 
     button {
@@ -97,29 +80,6 @@ const TAGS: Readonly<Record<NudgeKind, string>> = {
       gap: 9px;
       padding: 6px 12px 6px 11px;
       text-align: left;
-    }
-
-    /* The live marker: a small diamond that breathes while the nudge stands. */
-    .marker {
-      flex: none;
-      width: 6px;
-      height: 6px;
-      background: var(--warm);
-      box-shadow: 0 0 6px var(--warm);
-      transform: rotate(45deg);
-      animation: breathe 2.4s ease-in-out infinite;
-    }
-
-    .tag {
-      flex: none;
-      padding-right: 9px;
-      border-right: 1px solid var(--nudge-frame);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--warm);
     }
 
     .text {
@@ -147,19 +107,6 @@ const TAGS: Readonly<Record<NudgeKind, string>> = {
     button:focus-visible {
       outline: 1px solid var(--ink);
       outline-offset: -3px;
-    }
-
-    @keyframes breathe {
-      50% {
-        opacity: 0.35;
-        box-shadow: 0 0 2px var(--warm);
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .marker {
-        animation: none;
-      }
     }
 
     @media (max-width: 720px) {

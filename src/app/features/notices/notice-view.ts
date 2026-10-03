@@ -43,14 +43,24 @@ const ONE_HEADINGS: Readonly<Record<ActivityKind, string>> = {
 
 const GITHUB = 'https://github.com';
 
+/** Where each kind's title goes, given the repository's owner and name. */
+const LINKS: Readonly<
+  Record<ActivityKind, (owner: string, name: string, number: number) => NoticeLink>
+> = {
+  merged: (owner, name, number) => ({
+    kind: 'external',
+    href: `${GITHUB}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pull/${number}`,
+  }),
+  issue: (owner, name, number) => ({
+    kind: 'route',
+    path: ['/p', owner, name],
+    query: { issue: number },
+  }),
+};
+
 function linkOf({ kind, repo, number }: ActivityItem): NoticeLink {
   const [owner = '', name = ''] = repo.split('/');
-  return kind === 'merged'
-    ? {
-        kind: 'external',
-        href: `${GITHUB}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pull/${number}`,
-      }
-    : { kind: 'route', path: ['/p', owner, name], query: { issue: number } };
+  return LINKS[kind](owner, name, number);
 }
 
 const rowOf = (item: ActivityItem): NoticeRowView => ({

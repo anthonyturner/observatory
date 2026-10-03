@@ -34,9 +34,21 @@ export const CLAUDE_DEADLINE_MS = 90_000;
 /** Haiku keeps a turn quick; the answers are short. */
 const MODEL = 'haiku';
 export const MCP_SERVER = 'observatory';
-/** Claude Code's own: the web, and nothing that reads or changes this machine. */
-const WEB_TOOLS = ['WebSearch', 'WebFetch'] as const;
-const NEVER_TOOLS = ['Bash', 'PowerShell', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'NotebookEdit'];
+/** Claude Code's own: web search, and nothing that reads or changes this machine. */
+const WEB_TOOLS = ['WebSearch'] as const;
+/** WebFetch is among them: a turn reads titles strangers write, and a fetch of an
+ *  address it was talked into could carry the owner's private details away in the URL. */
+const NEVER_TOOLS = [
+  'Bash',
+  'PowerShell',
+  'Read',
+  'Write',
+  'Edit',
+  'Glob',
+  'Grep',
+  'NotebookEdit',
+  'WebFetch',
+];
 const HIS_OWN_SEARCH = 'web_search';
 const BY = 'Claude Code · Haiku';
 
@@ -68,7 +80,7 @@ export function claudeFlags(mcpConfigFile: string): string[] {
 const ANSWER_SHAPE = [
   'Reply with only one JSON object and nothing else, no code fence:',
   '{"text": "your answer, plain text that reads well aloud", "sources": [{"title": "…", "url": "https://…"}]}',
-  'List in sources the pages you used from a web search or fetch, most useful first, at most five; otherwise [].',
+  'List in sources the pages you used from a web search, most useful first, at most five; otherwise [].',
   `For the owner's projects, pull requests, issues and usage, and to open a page, refresh, show help or propose a task, use the ${MCP_SERVER} tools. For news and anything current, use WebSearch.`,
 ].join('\n');
 

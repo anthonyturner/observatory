@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
@@ -26,10 +27,11 @@ import { TrackList } from './track-list/track-list';
 const BACK_STEP_S = 15;
 const FORWARD_STEP_S = 30;
 
-/** Home's playlist along the foot of the screen: the video, the seek bar, the transport, the
- *  heart, the Mix / Favourites switch, the favourites file, the sky's Sync, Milkdrop's
- *  opacity and the volume, with the track list above. It plays instead of the
- *  generated score, never over it. The page provides the playlist and the pulse. */
+/** Home's playlist along the foot of the screen: the video, the seek bar, the
+ *  transport, the heart, the Mix / Favourites switch, the favourites file, the
+ *  sky's Sync, Milkdrop's visual and opacity, and the volume, with the track
+ *  list above. It plays instead of the generated score, never over it. The
+ *  page provides the playlist and the pulse. */
 @Component({
   selector: 'app-transport-bar',
   imports: [TrackList],
@@ -47,6 +49,7 @@ export class TransportBar {
   private readonly sound = inject(SoundPreference);
   private readonly pulse = inject(MusicPulse);
   protected readonly motion = inject(MotionPreference);
+  protected readonly milkdrop = inject(MilkdropChoice);
   protected readonly milkdropOpacity = inject(MilkdropOpacity);
   protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
@@ -151,6 +154,11 @@ export class TransportBar {
 
   protected onVolume(event: Event): void {
     this.player.setVolume(Number((event.target as HTMLInputElement).value));
+  }
+
+  /** The select's empty value is Auto. */
+  protected onMilkdropPreset(event: Event): void {
+    this.milkdrop.choose((event.target as HTMLSelectElement).value || null);
   }
 
   private silenceScore(): void {

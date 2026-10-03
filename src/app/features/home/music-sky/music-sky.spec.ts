@@ -1,5 +1,7 @@
 import { Provider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
+import { CURATED_PRESETS } from '../../../core/music-sync/milkdrop/milkdrop-presets';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { MusicScene } from '../../../core/music-sync/motifs/motif-layer';
 import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painter';
@@ -33,6 +35,10 @@ class FakeCanvas implements MusicCanvas {
   }
   announce(song: SongName): void {
     this.songs.push(song);
+  }
+  presets: (string | null)[] = [];
+  setMilkdropPreset(preset: string | null): void {
+    this.presets.push(preset);
   }
   setSound(): void {
     // The fake draws nothing, so it has nothing to hear.
@@ -122,6 +128,18 @@ describe('MusicSky', () => {
     playlist.select(1);
     TestBed.tick();
     expect(canvas.songs.at(-1)).toEqual({ title: tracks[1].title, artist: tracks[1].artist });
+  });
+
+  it('keeps the Milkdrop preset picked, and goes back to Auto', async () => {
+    const { canvas } = await render();
+    const choice = TestBed.inject(MilkdropChoice);
+    expect(canvas.presets.at(-1)).toBeNull();
+    choice.choose(CURATED_PRESETS[1]);
+    TestBed.tick();
+    expect(canvas.presets.at(-1)).toBe(CURATED_PRESETS[1]);
+    choice.choose(null);
+    TestBed.tick();
+    expect(canvas.presets.at(-1)).toBeNull();
   });
 
   it('sets Milkdrop as strong as the slider asks, and follows it', async () => {

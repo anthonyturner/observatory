@@ -10,6 +10,8 @@ import {
 import { PLAYLIST_TRACKS, PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
+import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
+import { CURATED_PRESETS } from '../../../core/music-sync/milkdrop/milkdrop-presets';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { AUDIO_TAP, AudioTap } from '../../../core/music-sync/tab-audio';
 import { FILE_SAVER, FileSaver } from '../../../core/files/file-saver';
@@ -269,6 +271,25 @@ describe('TransportBar', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('picks the Milkdrop visual, starting on Auto and going back to it', () => {
+    const { fixture, element } = render();
+    const choice = TestBed.inject(MilkdropChoice);
+    const select = element.querySelector<HTMLSelectElement>('select[aria-label="Milkdrop visual"]');
+    expect(select?.options[0].textContent?.trim()).toBe('Auto');
+    expect(select?.options.length).toBe(CURATED_PRESETS.length + 1);
+    expect(select?.value).toBe('');
+
+    if (select) select.value = CURATED_PRESETS[4];
+    select?.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(choice.preset()).toBe(CURATED_PRESETS[4]);
+
+    if (select) select.value = '';
+    select?.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(choice.preset()).toBeNull();
   });
 
   it('offers a bigger video once the card shows, and back again', async () => {

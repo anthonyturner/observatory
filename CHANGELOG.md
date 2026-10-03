@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- A Visual picker on the playlist bar keeps the Milkdrop visual you choose on Home's sky, or Auto to let it change with the music as before; the choice is remembered in this browser ([#270](https://github.com/anthonyturner/observatory/pull/270)).
 - Export your favourite tracks from Home's playlist bar to a file, and import that file on another copy of Observatory or another browser; imported tracks join the ones already hearted, and a short message says how many were added and skipped ([#265](https://github.com/anthonyturner/observatory/pull/265)).
 - A Sky slider on the playlist bar sets how strongly the Milkdrop visuals show over Home's sky, from hidden to full, remembered in this browser ([#269](https://github.com/anthonyturner/observatory/pull/269)).
 - When a new song starts, its title and artist fade into Home's music sky below the core, swelling with the beat, then fade away ([#263](https://github.com/anthonyturner/observatory/pull/263)).

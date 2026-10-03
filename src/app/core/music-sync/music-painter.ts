@@ -24,6 +24,8 @@ export interface MusicCanvas {
   setTheme(theme: VisualTheme): void;
   /** The tab's sound, for a look that hears it directly. */
   setSound(sound: TabSound | null): void;
+  /** The Milkdrop preset to keep on screen, or null for Auto. */
+  setMilkdropPreset(preset: string | null): void;
   /** How strongly Milkdrop shows, from 0 (hidden) to 1 (full). */
   setMilkdropOpacity(level: number): void;
   /** Shows a new song's name in the sky. */
@@ -141,6 +143,10 @@ export class MusicPainter implements MusicCanvas {
 
   setSound(sound: TabSound | null): void {
     this.milkdrop.setSound(sound);
+  }
+
+  setMilkdropPreset(preset: string | null): void {
+    this.milkdrop.pin(preset);
   }
 
   setMilkdropOpacity(level: number): void {

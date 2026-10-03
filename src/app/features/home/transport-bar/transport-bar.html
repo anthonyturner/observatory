@@ -163,6 +163,15 @@
     >
       {{ sync().text }}
     </button>
+    <label class="visual" title="Pick the Milkdrop visual, or Auto to change it with the music"
+      ><span aria-hidden="true">Visual</span
+      ><select aria-label="Milkdrop visual" (change)="onMilkdropPreset($event)">
+        <option value="" [selected]="milkdrop.preset() === null">Auto</option>
+        @for (preset of milkdrop.presets; track preset) {
+          <option [value]="preset" [selected]="milkdrop.preset() === preset">{{ preset }}</option>
+        }
+      </select></label
+    >
     <label class="opacity" title="How strongly the Milkdrop visuals show over the sky"
       ><span aria-hidden="true">Sky</span
       ><input

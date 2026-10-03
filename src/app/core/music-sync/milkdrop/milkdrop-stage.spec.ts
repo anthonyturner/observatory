@@ -102,6 +102,48 @@ describe('MilkdropStage', () => {
     expect(visualizers).toHaveLength(1);
   });
 
+  it('keeps a pinned preset through the next turn, and lets go of it for Auto', async () => {
+    const { stage, visualizers } = setup();
+    stage.setSound(soundOf());
+    stage.show(0.1);
+    await warm(stage);
+    stage.frame(400, 300);
+    const [visualizer] = visualizers;
+
+    stage.pin(CURATED_PRESETS[5]);
+    expect(visualizer.presets.at(-1)).toEqual({
+      preset: PRESETS[CURATED_PRESETS[5]],
+      blendS: expect.any(Number),
+    });
+    stage.show(0.9);
+    expect(visualizer.presets.at(-1)?.preset).toBe(PRESETS[CURATED_PRESETS[5]]);
+
+    stage.pin(null);
+    expect(visualizer.presets.at(-1)?.preset).toBe(PRESETS[presetFor(0.9, CURATED_PRESETS) ?? '']);
+  });
+
+  it('starts on a preset pinned before Milkdrop loaded', async () => {
+    const { stage, visualizers } = setup();
+    stage.setSound(soundOf());
+    stage.pin(CURATED_PRESETS[3]);
+    stage.show(0.1);
+    await warm(stage);
+    stage.frame(400, 300);
+    expect(visualizers[0].presets).toEqual([{ preset: PRESETS[CURATED_PRESETS[3]], blendS: 0 }]);
+  });
+
+  it('lets the variant pick when the pinned preset is not in the pack', async () => {
+    const { stage, visualizers } = setup();
+    stage.setSound(soundOf());
+    stage.pin('missing from the pack');
+    stage.show(0.1);
+    await warm(stage);
+    stage.frame(400, 300);
+    expect(visualizers[0].presets.at(-1)?.preset).toBe(
+      PRESETS[presetFor(0.1, CURATED_PRESETS) ?? ''],
+    );
+  });
+
   it('starts a new visualizer for a new sound, letting go of the old one', async () => {
     const { stage, visualizers } = setup();
     stage.setSound(soundOf());

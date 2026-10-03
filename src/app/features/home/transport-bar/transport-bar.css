@@ -260,6 +260,7 @@ button:focus-visible {
   font-size: 10px;
 }
 
+.visual,
 .volume,
 .opacity {
   display: flex;
@@ -283,6 +284,26 @@ button:focus-visible {
   cursor: pointer;
 }
 
+.visual select {
+  width: 128px;
+  min-height: 26px;
+  padding: 0 4px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.visual select option {
+  background: var(--issue-option);
+}
+
+.visual select:focus-visible,
 .volume input:focus-visible,
 .opacity input:focus-visible {
   outline: 2px solid var(--flow);
@@ -299,6 +320,7 @@ button:focus-visible {
     width: auto;
   }
 
+  .visual,
   .volume,
   .opacity {
     display: none;

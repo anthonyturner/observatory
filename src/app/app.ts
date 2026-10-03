@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 import { fromEvent, map, startWith, combineLatest } from 'rxjs';
-import { footClearanceOf } from './core/playlist/foot-clearance';
+import { footClearanceOf, playlistReachOf } from './core/playlist/foot-clearance';
 import { PlaylistPlacement } from './core/playlist/playlist-placement';
 import { TransportBar } from './features/playlist/transport-bar/transport-bar';
 import { ELEMENT_SIZE, ElementSize } from './shared/element-size/element-size';
@@ -22,7 +22,8 @@ const NO_SIZE: ElementSize = { width: 0, height: 0 };
 /** The shell: the routed page, and the playlist outside it, so the music and its
  *  video carry on from page to page without reloading. Every page's tools and cards
  *  at the foot keep clear of it through `--playlist-clear-right` and
- *  `--playlist-clear-bottom`, and `--playlist-height`. */
+ *  `--playlist-clear-bottom`, and `--playlist-height`; the cards on the right keep
+ *  above its video through `--playlist-reach`. */
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet, PreviewBanner, TransportBar],
@@ -58,6 +59,7 @@ export class App {
           root.style.setProperty('--playlist-height', `${bar.height}px`);
           root.style.setProperty('--playlist-clear-right', `${clearance.right}px`);
           root.style.setProperty('--playlist-clear-bottom', `${clearance.bottom}px`);
+          root.style.setProperty('--playlist-reach', `${playlistReachOf(bar, aboveBar)}px`);
         });
     });
   }

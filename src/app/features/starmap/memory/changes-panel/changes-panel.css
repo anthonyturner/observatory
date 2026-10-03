@@ -2,13 +2,13 @@
 .changes {
   position: fixed;
   right: 20px;
-  /* Above the tools, and above the playlist that shares their row. */
+  /* Above the tools, and above the playlist and its video, at whatever size. */
   bottom: max(
     calc(70px + env(safe-area-inset-bottom, 0px)),
-    calc(var(--playlist-height, 0px) + 12px)
+    calc(var(--playlist-reach, 0px) + 12px)
   );
   width: min(350px, calc(100vw - 40px));
-  max-height: min(430px, calc(100vh - 260px));
+  max-height: min(430px, calc(100vh - 260px), calc(100vh - 202px - var(--playlist-reach, 0px)));
   display: flex;
   flex-direction: column;
   gap: 11px;

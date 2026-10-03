@@ -30,3 +30,10 @@ export function footClearanceOf(bar: Size, above: Size, windowWidth: number): Fo
     ? { right: besideAbove, bottom: bar.height }
     : { right: GUTTER_PX, bottom: bar.height + above.height + ABOVE_GAP_PX };
 }
+
+/** How far up from the window's foot the playlist reaches at its far end: the bar,
+ *  and the video or track list floating over it whenever either shows. Cards along
+ *  the right edge sit above it, so a bigger video lifts them. */
+export function playlistReachOf(bar: Size, above: Size): number {
+  return above.height === 0 ? bar.height : bar.height + ABOVE_GAP_PX + above.height;
+}

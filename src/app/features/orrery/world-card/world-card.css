@@ -1,11 +1,12 @@
 :host {
   position: fixed;
-  top: 50%;
+  /* Centred in the height the playlist and its video leave above them. */
+  top: calc((100vh - var(--playlist-reach, 0px)) / 2);
   right: 20px;
   z-index: 6;
   display: block;
   width: min(348px, calc(100vw - 40px));
-  max-height: min(580px, calc(100vh - 40px));
+  max-height: min(580px, calc(100vh - 40px - var(--playlist-reach, 0px)));
   overflow-y: auto;
   transform: translateY(-50%);
   animation: card-in 0.38s cubic-bezier(0.2, 0.8, 0.25, 1);

@@ -1,4 +1,4 @@
-import { footClearanceOf } from './foot-clearance';
+import { footClearanceOf, playlistReachOf } from './foot-clearance';
 
 const NOTHING_ABOVE = { width: 0, height: 0 };
 const VIDEO = { width: 356, height: 200 };
@@ -34,5 +34,16 @@ describe('footClearanceOf', () => {
       right: 20,
       bottom: 328,
     });
+  });
+});
+
+describe('playlistReachOf', () => {
+  it('reaches the top of the bar while nothing floats over it', () => {
+    expect(playlistReachOf({ width: 560, height: 84 }, NOTHING_ABOVE)).toBe(84);
+  });
+
+  it('reaches the top of the video floating over the bar, and grows with it', () => {
+    expect(playlistReachOf({ width: 560, height: 84 }, VIDEO)).toBe(292);
+    expect(playlistReachOf({ width: 560, height: 84 }, { width: 576, height: 324 })).toBe(416);
   });
 });

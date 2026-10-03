@@ -2,9 +2,10 @@
 .card {
   position: fixed;
   right: 20px;
-  top: 50%;
+  /* Centred in the height the playlist and its video leave above them. */
+  top: calc((100vh - var(--playlist-reach, 0px)) / 2);
   width: min(352px, calc(100vw - 40px));
-  max-height: min(580px, calc(100vh - 40px));
+  max-height: min(580px, calc(100vh - 40px - var(--playlist-reach, 0px)));
   display: flex;
   flex-direction: column;
   gap: 14px;

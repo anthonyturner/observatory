@@ -15,6 +15,7 @@ import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choic
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
+import { PlaylistBarFold } from '../../../core/playlist/playlist-bar-fold';
 import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { VideoBackground } from '../../../core/playlist/video-background';
@@ -31,7 +32,8 @@ const FORWARD_STEP_S = 30;
 /** Home's playlist along the foot of the screen: the video, the seek bar, the
  *  transport, the heart, the Mix / Favourites switch, the favourites file, the
  *  sky's Sync, the Video switch, Milkdrop's visual and opacity, and the volume,
- *  with the track list above. It plays instead of the generated score, never
+ *  with the track list above; folded, only the seek bar, the transport, the heart
+ *  and the song's name stay. It plays instead of the generated score, never
  *  over it. The page provides the playlist and the pulse. */
 @Component({
   selector: 'app-transport-bar',
@@ -40,7 +42,11 @@ const FORWARD_STEP_S = 30;
   templateUrl: './transport-bar.html',
   styleUrl: './transport-bar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(keydown.escape)': 'listOpen.set(false)', '[class.still]': 'motion.isStill()' },
+  host: {
+    '(keydown.escape)': 'listOpen.set(false)',
+    '[class.still]': 'motion.isStill()',
+    '[class.folded]': 'fold.isFolded()',
+  },
 })
 export class TransportBar {
   protected readonly player = inject(PlaylistPlayer);
@@ -53,6 +59,7 @@ export class TransportBar {
   protected readonly milkdrop = inject(MilkdropChoice);
   protected readonly milkdropOpacity = inject(MilkdropOpacity);
   protected readonly videoBackground = inject(VideoBackground);
+  protected readonly fold = inject(PlaylistBarFold);
   protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
@@ -167,6 +174,12 @@ export class TransportBar {
   /** The select's empty value is Auto. */
   protected onMilkdropPreset(event: Event): void {
     this.milkdrop.choose((event.target as HTMLSelectElement).value || null);
+  }
+
+  /** Folding hides the Tracks button, so it closes the list too. */
+  protected toggleFold(): void {
+    this.fold.toggle();
+    if (this.fold.isFolded()) this.listOpen.set(false);
   }
 
   private silenceScore(): void {

@@ -1,8 +1,7 @@
 :host {
-  --rule: var(--rule);
-  --fit: var(--fit);
-  --card: min(356px, var(--fit));
-  --large: min(clamp(463px, 30vw, 640px), var(--fit));
+  --rule: 1px solid var(--edge-soft);
+  --card: min(356px, calc(100vw - 32px));
+  --large: min(clamp(463px, 30vw, 640px), calc(100vw - 32px));
 
   position: relative;
   display: block;

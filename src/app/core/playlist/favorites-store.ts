@@ -1,9 +1,8 @@
 import { Injectable, Signal, computed, signal } from '@angular/core';
-import { Genre, Track } from './playlist.types';
+import { Track } from './playlist.types';
+import { isTrack } from './track-guard';
 
 const STORAGE_KEY = 'observatory.playlist.favorites';
-const GENRES: readonly Genre[] = ['trance', 'techno'];
-const VIDEO_ID = /^[\w-]{11}$/;
 
 /** The tracks hearted on this browser, oldest first. Kept in local storage
  *  only; where storage is blocked they last for this visit. */
@@ -28,6 +27,22 @@ export class FavoritesStore {
     );
     store(this.saved());
   }
+
+  /** Hearts each track not already a favourite, after the ones already hearted. */
+  addAll(tracks: readonly Track[]): void {
+    this.saved.update((saved) => mergedByVideoId(saved, tracks));
+    store(this.saved());
+  }
+}
+
+function mergedByVideoId(saved: readonly Track[], incoming: readonly Track[]): readonly Track[] {
+  const seen = new Set(saved.map((track) => track.videoId));
+  const added = incoming.filter((track) => {
+    if (seen.has(track.videoId)) return false;
+    seen.add(track.videoId);
+    return true;
+  });
+  return added.length === 0 ? saved : [...saved, ...added];
 }
 
 /** Storage is outside the program: anything that is not a list of tracks is dropped. */
@@ -46,16 +61,4 @@ function store(tracks: readonly Track[]): void {
   } catch {
     return;
   }
-}
-
-function isTrack(value: unknown): value is Track {
-  if (typeof value !== 'object' || value === null) return false;
-  const { videoId, title, artist, genre } = value as Record<string, unknown>;
-  return (
-    typeof videoId === 'string' &&
-    VIDEO_ID.test(videoId) &&
-    typeof title === 'string' &&
-    typeof artist === 'string' &&
-    GENRES.includes(genre as Genre)
-  );
 }

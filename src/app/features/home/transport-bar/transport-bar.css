@@ -176,6 +176,39 @@ button:focus-visible {
   cursor: not-allowed;
 }
 
+.transfer {
+  display: flex;
+  border-left: 1px solid var(--edge-soft);
+}
+
+.transfer button {
+  font-size: 15px;
+}
+
+/* aria-disabled rather than disabled: Export stays focusable, and pressing it says why. */
+.transfer button[aria-disabled='true'] {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
+.notice {
+  max-width: min(356px, calc(100vw - 32px));
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+/* Kept in the page while empty, so a screen reader hears the words when they arrive. */
+.notice:empty {
+  position: absolute;
+  padding: 0;
+  border: 0;
+}
+
 .tracks {
   border-left: 1px solid var(--edge-soft);
 }

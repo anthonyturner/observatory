@@ -11,16 +11,20 @@ export interface SongName {
 const FADE_IN_S = 0.6;
 const HOLD_S = 4.5;
 const FADE_OUT_S = 1.4;
-/** How far below the core's centre the card sits, in core radii, and the
- *  lowest it may sit, as a share of the screen's height: above the bar. */
-const BELOW_CORE = 2.1;
-const LOWEST = 0.78;
-const TITLE_PX = 40;
-const ARTIST_PX = 18;
-const LINE_GAP_PX = 14;
-/** The title never runs wider than this share of the screen. */
-const MAX_WIDTH_SHARE = 0.8;
+/** Where the line's baseline sits below the core's centre, in core radii: in
+ *  the band between the core and the name under it, which starts at least
+ *  1.47 radii down (the core is at most 0.34 of its box's height). */
+const BASELINE_BELOW_CORE = 1.3;
+/** The title's size, in core radii, kept readable and inside the band. */
+const TITLE_SIZE = 0.17;
+const MIN_TITLE_PX = 13;
+const MAX_TITLE_PX = 30;
+/** The artist is set smaller, spaced, after a gap, on the same line. */
+const ARTIST_SHARE = 0.62;
+const ARTIST_GAP_EM = 0.9;
 const ARTIST_SPACING = '0.3em';
+/** The line never runs wider than this share of the screen. */
+const MAX_WIDTH_SHARE = 0.8;
 const GLOW_PX = 18;
 /** How much bigger the card is at the height of a beat. */
 const BEAT_SWELL = 0.05;
@@ -59,31 +63,36 @@ export class TitleCard {
   draw(context: CanvasRenderingContext2D, scene: MusicScene, inks: MusicInks): void {
     const opacity = this.opacity();
     if (!this.song || opacity <= 0) return;
-    const x = scene.originX;
-    const y = Math.min(scene.originY + scene.coreRadius * BELOW_CORE, scene.height * LOWEST);
-    const swell = 1 + BEAT_SWELL * this.pulse;
+    const titlePx = Math.min(MAX_TITLE_PX, Math.max(MIN_TITLE_PX, scene.coreRadius * TITLE_SIZE));
+    const artistPx = titlePx * ARTIST_SHARE;
+    const titleFont = `600 ${titlePx}px ${this.fontFamily}`;
+    const artistFont = `500 ${artistPx}px ${this.fontFamily}`;
+    const artist = this.song.artist.toUpperCase();
     context.save();
-    context.translate(x, y);
+    context.font = titleFont;
+    const titleWidth = context.measureText(this.song.title).width;
+    context.font = artistFont;
+    context.letterSpacing = ARTIST_SPACING;
+    const artistWidth = context.measureText(artist).width;
+    const gap = titlePx * ARTIST_GAP_EM;
+    const width = titleWidth + gap + artistWidth;
+    const fit = Math.min(1, (scene.width * MAX_WIDTH_SHARE) / width);
+    const swell = (1 + BEAT_SWELL * this.pulse) * fit;
+    context.translate(scene.originX, scene.originY + scene.coreRadius * BASELINE_BELOW_CORE);
     context.scale(swell, swell);
     context.globalAlpha = opacity;
     // Painted over the look rather than added to it, so a bright preset never washes it out.
     context.globalCompositeOperation = 'source-over';
-    context.textAlign = 'center';
+    context.textAlign = 'left';
     context.textBaseline = 'alphabetic';
     context.shadowBlur = GLOW_PX;
     context.shadowColor = inks.primary;
-    context.fillStyle = inks.accent;
-    context.font = `600 ${TITLE_PX}px ${this.fontFamily}`;
-    context.fillText(this.song.title, 0, 0, scene.width * MAX_WIDTH_SHARE);
     context.fillStyle = inks.primary;
-    context.font = `500 ${ARTIST_PX}px ${this.fontFamily}`;
-    context.letterSpacing = ARTIST_SPACING;
-    context.fillText(
-      this.song.artist.toUpperCase(),
-      0,
-      ARTIST_PX + LINE_GAP_PX,
-      scene.width * MAX_WIDTH_SHARE,
-    );
+    context.fillText(artist, -width / 2 + titleWidth + gap, 0);
+    context.letterSpacing = '0px';
+    context.font = titleFont;
+    context.fillStyle = inks.accent;
+    context.fillText(this.song.title, -width / 2, 0);
     context.restore();
   }
 }

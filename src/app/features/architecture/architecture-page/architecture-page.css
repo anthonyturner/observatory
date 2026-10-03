@@ -129,10 +129,14 @@ h1 {
   text-align: center;
 }
 
+/* Shares the stage's cell, in its top-right corner: the playlist owns the foot. */
 .facts {
-  position: fixed;
-  right: 20px;
-  bottom: 18px;
+  position: relative;
+  grid-row: 2;
+  grid-column: 2;
+  align-self: start;
+  justify-self: end;
+  margin: 12px 20px 0;
   max-width: 380px;
   padding: 12px 14px;
   border: 1px solid var(--edge);

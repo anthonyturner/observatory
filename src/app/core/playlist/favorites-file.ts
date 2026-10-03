@@ -3,7 +3,7 @@ import { isTrack } from './track-guard';
 
 /** Marks a file as Observatory's favourites, so any other JSON is turned away. */
 const FORMAT = 'observatory.favorites';
-/** Raised only when a file this version writes could no longer be read the old way. */
+/** Raise it only for a change older copies could not read: files of any other version are turned away. */
 const VERSION = 1;
 const INDENT = 2;
 const FILE_PREFIX = 'observatory-favorites';

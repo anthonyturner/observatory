@@ -11,6 +11,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 ### Added
 
 - On your own machine with Speak on, Jev says each notice's news out loud, naming the project and the title ("Pull request 12 in observatory merged: transport bar fix"). He waits until he has finished speaking, listening, answering or showing a task, then says what came in meanwhile as one line. He says nothing while the tab is hidden, and nothing if the browser will not let him speak yet ([#309](https://github.com/anthonyturner/observatory/pull/309)).
+- A Beat slider on the playlist bar softens the hit Home's music sky lands on every beat (the ring thrown from the core, the flash round it, the glowing edges and the zoom), from full down to none; it starts at full and is remembered in this browser ([#311](https://github.com/anthonyturner/observatory/pull/311)).
 - A notice appears under the clock on every page when a pull request merges or an issue is opened in any tracked project, linking to GitHub or to the issue on its star map; several at once are grouped, F8 reaches them, Esc dismisses one, and a screen reader hears each check once ([#298](https://github.com/anthonyturner/observatory/pull/298)).
 - The playlist bar shows its Sync, Video, Visual and Sky controls on Home only, where the music sky is; on the Orrery, the Review Queue and Architecture they are hidden, and the choices come back with Home ([#286](https://github.com/anthonyturner/observatory/pull/286)).
 - The playlist bar now sits at the foot of the Orrery and the Review Queue as well as Home, and keeps playing the same track as you move between them, without reloading the video; each page's own Sound still pauses it, and playing it still turns that Sound off ([#278](https://github.com/anthonyturner/observatory/pull/278)).
@@ -81,6 +82,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- The playlist bar no longer shows Sync on a phone, or in any browser that cannot share a tab's audio, where it could never work; on a phone the Sky controls also stay on the screen, with the Sky slider on a row of its own ([#312](https://github.com/anthonyturner/observatory/pull/312)).
 - Home's music sky no longer jumps down and back on every beat once the page is scrolled; the beat's zoom now pulses in place while the core is out of view ([#301](https://github.com/anthonyturner/observatory/pull/301)).
 - Making the playlist's video bigger now moves the cards and panels on the right of the Orrery, the star map and the logs up out of its way, and they shrink to fit when the window is short ([#297](https://github.com/anthonyturner/observatory/pull/297)).
 - The Architecture page's centre-node card now sits at the top right of the diagram, no longer hidden behind the playlist bar ([#295](https://github.com/anthonyturner/observatory/pull/295)).

@@ -2,7 +2,13 @@ import { ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MusicPulse } from './music-pulse';
 import { SILENCE } from './music-sync.types';
-import { AUDIO_TAP, AudioTap, NoTabAudioError, TabAudioUnsupportedError } from './tab-audio';
+import {
+  AUDIO_TAP,
+  AudioTap,
+  NoTabAudioError,
+  TAB_AUDIO_SUPPORTED,
+  TabAudioUnsupportedError,
+} from './tab-audio';
 
 class FakeTap implements AudioTap {
   readonly binHz = 20;
@@ -20,13 +26,14 @@ class FakeTap implements AudioTap {
   }
 }
 
-function setup(open: () => Promise<AudioTap>) {
+function setup(open: () => Promise<AudioTap>, { canShare = true } = {}) {
   const errors: unknown[] = [];
   const opener = vi.fn(open);
   TestBed.configureTestingModule({
     providers: [
       MusicPulse,
       { provide: AUDIO_TAP, useValue: opener },
+      { provide: TAB_AUDIO_SUPPORTED, useValue: canShare },
       { provide: ErrorHandler, useValue: { handleError: (e: unknown) => errors.push(e) } },
     ],
   });
@@ -36,6 +43,15 @@ function setup(open: () => Promise<AudioTap>) {
 const settle = (): Promise<void> => new Promise((done) => setTimeout(done));
 
 describe('MusicPulse', () => {
+  it('never asks on its own where the browser cannot share a tab’s audio', () => {
+    const { pulse, opener } = setup(() => Promise.resolve(new FakeTap()), { canShare: false });
+    expect(pulse.canListen).toBe(false);
+
+    pulse.listenOnce();
+    expect(opener).not.toHaveBeenCalled();
+    expect(pulse.status()).toBe('off');
+  });
+
   it('listens once a visit from listenOnce, and hears the tab', async () => {
     const tap = new FakeTap();
     const { pulse, opener } = setup(() => Promise.resolve(tap));

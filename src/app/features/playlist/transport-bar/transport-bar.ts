@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { BeatStrength } from '../../../core/music-sync/beat-strength';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
@@ -32,7 +33,7 @@ const FORWARD_STEP_S = 30;
 
 /** The playlist along the foot of every page: the video, the seek bar, the transport,
  *  the heart, the Mix / Favourites switch, the favourites file, the sky's Sync, the
- *  Video switch, Milkdrop's visual and opacity, and the volume, with the track list
+ *  Video switch, Milkdrop's visual and opacity, the beat's strength, and the volume, with the track list
  *  above; folded, only the seek bar, the transport, the heart and the song's name
  *  stay. It plays instead of the page's score, never over it. The app shell shows
  *  it, so the music carries across pages. */
@@ -55,10 +56,11 @@ export class TransportBar {
   protected readonly favorites = inject(FavoritesStore);
   protected readonly transfer = inject(FavoritesTransfer);
   private readonly score = inject(PageScore);
-  private readonly pulse = inject(MusicPulse);
+  protected readonly pulse = inject(MusicPulse);
   protected readonly motion = inject(MotionPreference);
   protected readonly milkdrop = inject(MilkdropChoice);
   protected readonly milkdropOpacity = inject(MilkdropOpacity);
+  protected readonly beatStrength = inject(BeatStrength);
   protected readonly videoBackground = inject(VideoBackground);
   /** Sync, Video, Visual and Sky only do something on a page with a music sky. */
   protected readonly sky = inject(MusicSkyPresence);
@@ -168,6 +170,10 @@ export class TransportBar {
 
   protected onMilkdropOpacity(event: Event): void {
     this.milkdropOpacity.set(Number((event.target as HTMLInputElement).value));
+  }
+
+  protected onBeatStrength(event: Event): void {
+    this.beatStrength.set(Number((event.target as HTMLInputElement).value));
   }
 
   protected onVolume(event: Event): void {

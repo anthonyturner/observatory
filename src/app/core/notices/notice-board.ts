@@ -78,11 +78,17 @@ export class NoticeBoard {
     this.focusWithin.set(isWithin);
   }
 
+  /** A check with more kinds than the stack holds shows only the first few,
+   *  rather than pushing out its own merged pull requests; the announcement
+   *  still counts every item. */
   private show(items: readonly ActivityItem[]): void {
     this.spoken.set(announcementOf(items));
-    for (const kind of ACTIVITY_KINDS) {
-      const ofKind = items.filter((item) => item.kind === kind);
-      if (ofKind.length) this.place(kind, ofKind);
+    const kinds = ACTIVITY_KINDS.filter((kind) => items.some((item) => item.kind === kind));
+    for (const kind of kinds.slice(0, MOST_NOTICES)) {
+      this.place(
+        kind,
+        items.filter((item) => item.kind === kind),
+      );
     }
     while (this.shown().length > MOST_NOTICES) this.dismiss(this.shown()[0].id);
   }

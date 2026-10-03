@@ -76,6 +76,24 @@ describe('NoticeBoard', () => {
     expect(numbers()).toEqual([[2], [3], [4]]);
   });
 
+  it('shows the first three kinds of a check with four, rather than push out its merge', () => {
+    const { board, check } = setUp();
+
+    check(
+      merged(10),
+      { ...issue(5), kind: 'issue-closed' },
+      { ...merged(11), kind: 'pull-opened' },
+      issue(7),
+    );
+
+    expect(board.notices().map((notice) => notice.kind)).toEqual([
+      'merged',
+      'issue-closed',
+      'pull-opened',
+    ]);
+    expect(board.announcement()).toContain('and 1 more');
+  });
+
   it('lets a notice leave after ten seconds, and two more for each extra row', () => {
     const { check, numbers } = setUp();
     check(merged(1));

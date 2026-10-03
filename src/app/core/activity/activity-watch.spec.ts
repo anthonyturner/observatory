@@ -309,7 +309,7 @@ describe('ActivityWatch', () => {
     read(ready(10, alpha([12, 13, 14], [7, 15])));
 
     expect(pullState.mock.calls).toEqual([['me/alpha', 10]]);
-    // Issue 5 left; issue 15 is new, and is read once for its title as before.
+    // Issue 5 left; issue 15 is new, and is read once for its title.
     expect(issue.mock.calls).toEqual([
       ['me/alpha', 5],
       ['me/alpha', 15],

@@ -1,6 +1,7 @@
 import { CommitDiff } from '../../../../core/queue/commit-diff';
 import { CommitDiffState } from '../../../../core/queue/commit-diff-feed';
 import { CommitLine } from '../../../../core/queue/pull-detail';
+import { commitDiffKey } from '../../../../core/queue/viewed-files';
 
 /** What the open commit shows: still reading, unreadable, no changes, or its diff. */
 export type CommitShows = 'reading' | 'unreachable' | 'empty' | 'diff';
@@ -11,6 +12,8 @@ export interface CommitView {
   readonly oid: string;
   /** The commit on GitHub, within its pull request. */
   readonly url: string;
+  /** Names its diff for its viewed ticks. */
+  readonly viewedKey: string;
   /** Present once read. */
   readonly commit: CommitDiff | null;
 }
@@ -39,6 +42,7 @@ export function commitViewOf(
     shows: showsOf(state),
     oid: commit.oid,
     url: `https://github.com/${repo}/pull/${number}/commits/${commit.sha}`,
+    viewedKey: commitDiffKey(repo, number, commit.sha),
     commit: state.status === 'ready' ? state.commit : null,
   };
 }

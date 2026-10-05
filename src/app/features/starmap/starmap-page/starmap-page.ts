@@ -706,7 +706,10 @@ export class StarmapPage {
     if (!found) return;
     if (found.kind === 'pull') {
       this.selectedComet.set(null);
-      this.goTo(found.number);
+      if (this.filter() === null) return this.goTo(found.number);
+      // Clearing the legend's filter refits the sky; the flight waits for that.
+      this.filter.set(null);
+      setTimeout(() => this.goTo(found.number));
       return;
     }
     const comet = this.comets().find((each) => each.issue === found.issue);

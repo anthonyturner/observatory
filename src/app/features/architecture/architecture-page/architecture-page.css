@@ -58,12 +58,14 @@ h1 {
 }
 
 .index {
+  grid-row: 2;
+  grid-column: 1;
   min-height: 0;
   padding: 6px 14px 18px 20px;
   border-right: 1px solid var(--edge-soft);
 }
 
-/* Pinned, not auto-placed: the facts card claims this cell first and would push the stage into the index's column. */
+/* Pinned, not auto-placed: the facts card claims this cell first and would push the stage into a new row. */
 .stage {
   grid-row: 2;
   grid-column: 2;

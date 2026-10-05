@@ -34,6 +34,8 @@ import { IssueNarrowing } from '../../issues/issue-list';
 import { NurseryInput, issueStarOf } from '../nursery/nursery-layout';
 import { NurserySky } from '../nursery/nursery-sky';
 import { HoverDwell } from './hover-dwell';
+import { DoneItem } from '../../../core/queue/done-work';
+import { DoneLayer, isDoneHit } from '../engine/done-layer';
 
 /** What the pointer can rest on over the queue: a star's pull request, or a comet. */
 type QueueHover = number | Comet;
@@ -120,6 +122,10 @@ export class StarmapSky {
   readonly fog = input(0);
   readonly hidden = input(false);
   readonly insets = input<SkyInsets>(DEFAULT_INSETS);
+  /** Finished pull requests and issues, for the Spiral of Done. */
+  readonly done = input<readonly DoneItem[]>([]);
+  /** The finished work the Done list has lit, by key. */
+  readonly doneLit = input<string | null>(null);
   /** A star was clicked open, or empty sky (null). */
   readonly picked = output<number | null>();
   /** A star was rested on, or tapped once: show its card. */
@@ -132,6 +138,8 @@ export class StarmapSky {
   readonly pickedComet = output<Comet>();
   /** A comet was rested on, or tapped once: show its card. */
   readonly previewedComet = output<Comet>();
+  /** A light on the Spiral of Done was clicked open. */
+  readonly pickedDone = output<DoneItem>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('sky');
   private readonly document = inject(DOCUMENT);
@@ -144,6 +152,7 @@ export class StarmapSky {
   private readonly nurserySky = new NurserySky(this.document);
   private readonly cometLayer = new CometLayer<Comet>();
   private readonly planLayer = new PlanLayer();
+  private readonly doneLayer = new DoneLayer();
   private readonly tetherLayer = new TetherLayer(
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
     () => this.cometLayer.selectedAt(),
@@ -190,6 +199,11 @@ export class StarmapSky {
         this.select();
         engine.fit();
       });
+    });
+    effect(() => {
+      this.doneLayer.set(this.done(), Date.now());
+      this.doneLayer.lit = this.doneLit();
+      this.engine?.kick();
     });
     effect(() => {
       this.selected();
@@ -302,6 +316,13 @@ export class StarmapSky {
   private hoverQueue(engine: SkyEngine, event: PointerEvent | null): void {
     if (event?.pointerType === 'touch') return;
     const hit = event ? engine.hitAt(event.clientX, event.clientY) : null;
+    // A light on the Spiral of Done names itself; it has no card to dwell for.
+    const done = hit && 'other' in hit && isDoneHit(hit.other) ? hit.other.done : null;
+    if (this.doneLayer.hoverOn(done)) engine.kick();
+    if (done) {
+      this.canvas().nativeElement.style.cursor = 'pointer';
+      return this.hover.aim(null, null);
+    }
     const under: QueueHover | null = !hit
       ? null
       : 'star' in hit
@@ -354,7 +375,10 @@ export class StarmapSky {
             onLost,
           );
         },
-        pickedOther: (thing, touch) => this.emitComet(thing as Comet, touch),
+        pickedOther: (thing, touch) =>
+          isDoneHit(thing)
+            ? this.pickedDone.emit(thing.done)
+            : this.emitComet(thing as Comet, touch),
         failed: (error) => this.errors.handleError(error),
       });
     } catch (error) {
@@ -371,6 +395,7 @@ export class StarmapSky {
       this.planLayer,
       this.nurserySky.layer,
       this.tetherLayer,
+      this.doneLayer,
     ];
     this.engine.filter = filterFor(this.filter(), this.agentPrs());
     this.engine.fog = this.fog();

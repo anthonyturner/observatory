@@ -49,6 +49,7 @@ import {
 } from '../../../shared/gl/star-shader';
 import { starLook } from './star-type';
 import { GALAXY_FRAGMENT, GALAXY_VERTEX } from './galaxy-shader';
+import { galaxyUniforms, galaxyView } from './galaxy-geometry';
 import { IssuePlanet, PLANET_TONE_COUNT, issuePlanets, massOf, systemTurn } from './star-system';
 import {
   DISC_FRAGMENT,
@@ -133,12 +134,6 @@ interface SceneModel {
   dispose(): void;
 }
 
-/** The galaxy's arms turn this many radians a second: barely, but they turn. */
-const GALAXY_SPIN = 0.004;
-/** How much the galaxy shifts and grows with the camera: far, so very little. */
-const GALAXY_PARALLAX = 0.00003;
-const GALAXY_ZOOM_POWER = 0.1;
-
 /** A spiral galaxy behind everything: a full-screen layer at the far plane. */
 function galaxy3D(scene: Scene, owned: Owned): (f: SkyFrame) => void {
   const material = owned.own(
@@ -161,13 +156,13 @@ function galaxy3D(scene: Scene, owned: Owned): (f: SkyFrame) => void {
   sky.renderOrder = -1;
   scene.add(sky);
   return (f) => {
-    const { x, y, scale } = f.camera.current;
     const t = f.frozen ? 0 : f.t;
+    const { aspect, zoom, spin, driftX, driftY } = galaxyUniforms(galaxyView(f));
     material.uniforms['time'].value = t;
-    material.uniforms['aspect'].value = f.width / Math.max(1, f.height);
-    material.uniforms['zoom'].value = Math.pow(scale, GALAXY_ZOOM_POWER);
-    material.uniforms['spin'].value = t * GALAXY_SPIN;
-    material.uniforms['drift'].value.set(x * GALAXY_PARALLAX, -y * GALAXY_PARALLAX);
+    material.uniforms['aspect'].value = aspect;
+    material.uniforms['zoom'].value = zoom;
+    material.uniforms['spin'].value = spin;
+    material.uniforms['drift'].value.set(driftX, driftY);
   };
 }
 

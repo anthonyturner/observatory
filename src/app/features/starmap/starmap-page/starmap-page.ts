@@ -46,6 +46,8 @@ import { mergePlan } from '../merge-plan';
 import { ringedComet, ringedPull, tetherOf } from '../open-star';
 import { PlanPanel } from '../plan-panel/plan-panel';
 import { AgentsPanel } from '../agents-panel/agents-panel';
+import { DonePanel } from '../done-panel/done-panel';
+import { DoneItem, doneWork, isPull } from '../../../core/queue/done-work';
 import { AgentsFeed } from '../../../core/agents/agents-report';
 import { AGENT_FILTER } from '../starmap-sky/starmap-sky';
 import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
@@ -146,6 +148,7 @@ export interface SkyState {
     CometCard,
     PlanPanel,
     AgentsPanel,
+    DonePanel,
     LogCard,
     LogList,
     MeteorRecord,
@@ -219,6 +222,12 @@ export class StarmapPage {
   protected readonly planOn = signal(false);
   /** Whether the agent report cards are open; they and the plan never show at once. */
   protected readonly agentsOn = signal(false);
+  /** Whether the Done list is open; it shares the right edge with the plan and the agents. */
+  protected readonly doneOn = signal(false);
+  /** The finished work the Done list has lit on the spiral. */
+  protected readonly doneLit = signal<string | null>(null);
+  /** Everything finished in the last 60 days: the ledger's pull requests and the closed issues. */
+  protected readonly done = computed(() => doneWork(this.ledger.ledger(), this.issues.report()));
   /** The unclaimed issues passing through, and whether they are shown. */
   protected readonly showComets = signal(true);
   protected readonly selectedComet = signal<Comet | null>(null);
@@ -403,9 +412,13 @@ export class StarmapPage {
   protected readonly agentPrs = computed(
     () => this.agents.report()?.agents.find((a) => a.agent === this.litAgent())?.prs ?? [],
   );
+  protected readonly showDone = computed(
+    () => this.doneOn() && this.chart() === 'prs' && this.view() === 'map' && !this.memory.replay(),
+  );
   protected readonly showPlan = computed(
     () =>
       !this.agentsOn() &&
+      !this.doneOn() &&
       this.planOn() &&
       this.chart() === 'prs' &&
       this.view() === 'map' &&
@@ -417,6 +430,7 @@ export class StarmapPage {
     return (
       !this.showPlan() &&
       !this.showAgents() &&
+      !this.showDone() &&
       this.chart() === 'prs' &&
       this.view() === 'map' &&
       news.events.length > 0 &&
@@ -800,7 +814,10 @@ export class StarmapPage {
   /** Merge plan: on, the panel takes the right edge and the numbered stars are framed beside it. */
   protected togglePlan(): void {
     this.planOn.update((on) => !on);
-    if (this.planOn()) this.closeAgents();
+    if (this.planOn()) {
+      this.closeAgents();
+      this.closeDone();
+    }
     setTimeout(() => this.sky()?.fit());
   }
 
@@ -810,6 +827,7 @@ export class StarmapPage {
     else {
       this.agentsOn.set(true);
       this.planOn.set(false);
+      this.closeDone();
     }
     setTimeout(() => this.sky()?.fit());
   }
@@ -820,6 +838,25 @@ export class StarmapPage {
     this.filter.update((current) => (current === id ? null : id));
     this.openPull.set(null);
     setTimeout(() => this.sky()?.fit());
+  }
+
+  /** Done: on, the list of finished work takes the right edge beside the spiral it lights. */
+  protected toggleDone(): void {
+    if (this.doneOn()) return this.closeDone();
+    this.doneOn.set(true);
+    this.planOn.set(false);
+    this.closeAgents();
+  }
+
+  /** A finished pull request opens in the PR screen, a finished issue in the issue window. */
+  protected openDone(item: DoneItem): void {
+    if (isPull(item)) this.openSheet(item.number);
+    else this.openIssue(item.number);
+  }
+
+  private closeDone(): void {
+    this.doneOn.set(false);
+    this.doneLit.set(null);
   }
 
   private closeAgents(): void {

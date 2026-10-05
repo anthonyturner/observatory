@@ -29,6 +29,9 @@
   [nursery]="nurseryInput()"
   [issueNarrowing]="issues.narrowing()"
   [selectedIssue]="ringedIssue()"
+  [done]="done()"
+  [doneLit]="doneLit()"
+  (pickedDone)="openDone($event)"
   (pickedIssue)="pickIssue($event)"
 />
 
@@ -76,11 +79,7 @@
     (toggled)="toggleFilter($event)"
   />
   @if (chart() === 'prs') {
-    <app-starmap-search
-      [suggestions]="suggestions()"
-      [miss]="searchMiss()"
-      (find)="find($event)"
-    />
+    <app-starmap-search [suggestions]="suggestions()" [miss]="searchMiss()" (find)="find($event)" />
   }
   @if (docked()) {
     <div class="issuedock"><app-issue-bar /></div>
@@ -113,6 +112,7 @@
     [showCollisions]="showCollisions()"
     [planOn]="planOn()"
     [agentsOn]="agentsOn()"
+    [doneOn]="doneOn()"
     [refreshing]="refreshing() || usage.isRefreshing()"
     [(folded)]="folded"
     (chartChange)="setChart($event)"
@@ -123,12 +123,22 @@
     (collisions)="showCollisions.set(!showCollisions())"
     (plan)="togglePlan()"
     (agents)="toggleAgents()"
+    (done)="toggleDone()"
     (refresh)="refresh()"
   />
 </div>
 
 @if (showAgents()) {
   <app-agents-panel [report]="agents.report()" [lit]="litAgent()" (light)="lightAgent($event)" />
+}
+
+@if (showDone()) {
+  <app-done-panel
+    [items]="done()"
+    [lit]="doneLit()"
+    (light)="doneLit.set($event)"
+    (open)="openDone($event)"
+  />
 }
 
 @if (showPlan()) {

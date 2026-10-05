@@ -1,3 +1,4 @@
+import { FLOW_INK, LINK_GAP, LINK_INK, trimSegment } from './link-ink';
 import { rnd } from './rnd';
 import { SkyFrame, SkyRenderer } from './sky-frame';
 import { QUICK_COLOUR, SkyCluster, SkyStar } from './sky-model';
@@ -79,15 +80,17 @@ export function drawGrid(f: SkyFrame): void {
   ctx.restore();
 }
 
-/** The queue's order as a dashed line flowing from one constellation to the next. */
+/** The queue's order as a dotted silver chain flowing from one constellation to the next. */
 function drawFlow(f: SkyFrame, c: CanvasRenderingContext2D): void {
   const { clusters } = f;
   if (clusters.length < 2) return;
   c.save();
-  c.setLineDash([7, 9]);
+  c.setLineDash([0.5, 8]);
   c.lineDashOffset = -f.t * 30;
-  c.lineWidth = 1.3;
-  c.strokeStyle = 'rgba(142, 162, 255, .5)';
+  c.lineCap = 'round';
+  c.lineWidth = 2.2;
+  c.strokeStyle = FLOW_INK;
+  c.globalAlpha = 0.55;
   c.beginPath();
   clusters.forEach((cl, i) => {
     const last = cl.stars[cl.stars.length - 1];
@@ -109,19 +112,27 @@ function drawFlow(f: SkyFrame, c: CanvasRenderingContext2D): void {
   c.restore();
 }
 
+/** A constellation in atlas ink, each segment stopping short of its stars. */
 function drawCluster(f: SkyFrame, cluster: SkyCluster, c: CanvasRenderingContext2D): void {
   if (cluster.stars.length < 2 || cluster.arm) return;
   c.save();
-  const breath = 0.42 + Math.sin(f.t * 0.62 + cluster.cx * 0.004) * 0.13;
+  const breath = 0.5 + Math.sin(f.t * 0.62 + cluster.cx * 0.004) * 0.12;
   c.globalAlpha = breath * f.dimCluster(cluster);
-  c.strokeStyle = cluster.colour;
-  c.lineWidth = 1.1;
+  c.strokeStyle = LINK_INK;
+  c.lineWidth = 1;
   c.beginPath();
-  cluster.stars.forEach((s, i) => {
-    const [sx, sy] = f.toScreen(s.ax, s.ay, s.az);
-    if (i === 0) c.moveTo(sx, sy);
-    else c.lineTo(sx, sy);
+  const onScreen = cluster.stars.map((s) => {
+    const [x, y] = f.toScreen(s.ax, s.ay, s.az);
+    return { x, y, z: 0, gap: starRadius(f, s, f.born(s)) + LINK_GAP };
   });
+  for (let i = 1; i < onScreen.length; i++) {
+    const a = onScreen[i - 1];
+    const b = onScreen[i];
+    const segment = trimSegment(a, b, a.gap, b.gap);
+    if (!segment) continue;
+    c.moveTo(segment[0].x, segment[0].y);
+    c.lineTo(segment[1].x, segment[1].y);
+  }
   c.stroke();
   c.restore();
 }

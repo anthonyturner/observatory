@@ -6,6 +6,7 @@ import {
   Line,
   LineBasicMaterial,
   LineDashedMaterial,
+  LineSegments,
   Material,
   PerspectiveCamera,
   Points,
@@ -24,6 +25,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { CameraController } from './camera-controller';
 import { Kit, Owned, vec } from './gpu-kit';
+import { FLOW_INK, LINK_GAP, LINK_INK, trimSegment } from './link-ink';
 import { NewsEffects3D } from './news-3d';
 import { Threads3D } from './threads-3d';
 import {
@@ -189,10 +191,10 @@ function buildScene3D(
   const connections = data.clusters
     .filter((c) => c.stars.length > 1 && !c.arm)
     .map((cluster) => {
-      const object = kit.line(
-        cluster.stars.map((s) => vec(s.ax, s.ay, s.az)),
-        cluster.colour,
-        0.35,
+      const object = kit.segments(
+        cluster.stars.slice(1).flatMap(() => [vec(0, 0), vec(0, 0)]),
+        LINK_INK,
+        0.5,
       );
       scene.add(object);
       return { cluster, object };
@@ -202,10 +204,11 @@ function buildScene3D(
   );
   const flow = kit.line(
     route.map((s) => vec(s.ax, s.ay, s.az)),
-    '#8ea2ff',
-    0.5,
+    FLOW_INK,
+    0.55,
     true,
   );
+  Object.assign(flow.material, { dashSize: 1.5, gapSize: 7.5 });
   scene.add(flow);
   const dashTime = { value: 0 };
   (flow.material as Material).onBeforeCompile = (shader) => {
@@ -230,6 +233,25 @@ function buildScene3D(
   const updateLine = (object: Line, members: readonly SkyStar[]): void => {
     const p = object.geometry.attributes['position'];
     members.forEach((s, i) => p.setXYZ(i, s.ax, -s.ay, s.az));
+    p.needsUpdate = true;
+    object.geometry.computeBoundingSphere();
+  };
+
+  /** Each segment of a constellation, stopped short of its stars by their
+   *  on-screen gap carried back to each star's depth. */
+  const updateSegments = (f: SkyFrame, object: LineSegments, members: readonly SkyStar[]): void => {
+    const p = object.geometry.attributes['position'];
+    const scale = f.camera.current.scale;
+    const gap = (s: SkyStar): number =>
+      (starRadius(f, s, f.born(s)) + LINK_GAP) / (scale * camera.depth(s.az));
+    const at = (s: SkyStar) => ({ x: s.ax, y: -s.ay, z: s.az });
+    for (let i = 1; i < members.length; i++) {
+      const a = members[i - 1];
+      const b = members[i];
+      const [from, to] = trimSegment(at(a), at(b), gap(a), gap(b)) ?? [at(a), at(a)];
+      p.setXYZ(2 * i - 2, from.x, from.y, from.z);
+      p.setXYZ(2 * i - 1, to.x, to.y, to.z);
+    }
     p.needsUpdate = true;
     object.geometry.computeBoundingSphere();
   };
@@ -261,9 +283,9 @@ function buildScene3D(
         (pulse.material as LineBasicMaterial).opacity = f.dim(star) * grow * (1 - phase) * 0.34;
       }
       for (const { object, cluster } of connections) {
-        updateLine(object, cluster.stars);
+        updateSegments(f, object, cluster.stars);
         (object.material as LineBasicMaterial).opacity =
-          (0.42 + Math.sin(t * 0.62 + cluster.cx * 0.004) * 0.13) * f.dimCluster(cluster);
+          (0.5 + Math.sin(t * 0.62 + cluster.cx * 0.004) * 0.12) * f.dimCluster(cluster);
       }
       flow.visible = f.chart === 'prs' && route.length > 1;
       if (route.length) {

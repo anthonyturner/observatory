@@ -41,16 +41,8 @@ export class TierOneActions {
     this.log.say(pending.entryId, { ...noting('Stayed here. '), openHref: pending.url });
   }
 
-  private runOp(entryId: number, name: string, cutSpeech: boolean): void {
-    const op = this.ops[name];
-    if (!op) return;
-    const say = (text: string): void => this.log.say(entryId, saying(text));
-    Promise.resolve(op({ say, cutSpeech })).catch((error: unknown) => {
-      this.errors.handleError(error);
-    });
-  }
-
-  private jumpTo(entryId: number, href: string, says: string): void {
+  /** Says `says…` in the reply and goes to `href` after the grace second, with Stay here. */
+  jumpTo(entryId: number, href: string, says: string): void {
     if (this.jump.targetOf(href).kind === 'here') {
       this.log.say(entryId, noting('You’re on Home already.'));
       return;
@@ -58,5 +50,14 @@ export class TierOneActions {
     this.log.say(entryId, saying(`${says}…`));
     this.log.setActions(entryId, [{ kind: 'stay' }]);
     this.jump.schedule({ entryId, url: href });
+  }
+
+  private runOp(entryId: number, name: string, cutSpeech: boolean): void {
+    const op = this.ops[name];
+    if (!op) return;
+    const say = (text: string): void => this.log.say(entryId, saying(text));
+    Promise.resolve(op({ say, cutSpeech })).catch((error: unknown) => {
+      this.errors.handleError(error);
+    });
   }
 }

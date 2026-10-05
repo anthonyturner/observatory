@@ -31,6 +31,13 @@ export const TASK_CHIP: ReplyChip = {
   tone: 'task',
 };
 
+/** The chip on a spoken answer to Jev's question, which never went to the router. */
+export const QUESTION_ANSWER_CHIP: ReplyChip = {
+  pips: TIER_CHIP[1].pips,
+  text: 'Tier 1 · Your answer · heard here',
+  tone: 'tier',
+};
+
 const tookText = (ms: number): string =>
   ms < MS_PER_SECOND ? `${ms} ms` : `${(ms / MS_PER_SECOND).toFixed(1)} s`;
 

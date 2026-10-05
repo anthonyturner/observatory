@@ -1,0 +1,28 @@
+<h3 [id]="titleId">{{ question().words }}</h3>
+@if (question().hasTimedOut) {
+  <p class="note" role="status">{{ timedOutNote }}</p>
+  <div class="acts">
+    <button type="button" class="abtn quiet" (click)="dismissed.emit()">Dismiss</button>
+  </div>
+} @else {
+  <ul class="items">
+    @for (row of rows(); track row.key) {
+      <li>
+        <span class="kind">{{ row.kindName }}</span>
+        <span class="where">{{ row.where }}</span>
+        <span class="title">{{ row.title }}</span>
+        <button
+          type="button"
+          class="abtn go"
+          [attr.aria-label]="row.openLabel"
+          (click)="opened.emit(row.href)"
+        >
+          Open
+        </button>
+      </li>
+    }
+  </ul>
+  <div class="acts">
+    <button type="button" class="abtn quiet" (click)="dismissed.emit()">No thanks</button>
+  </div>
+}

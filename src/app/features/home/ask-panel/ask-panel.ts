@@ -1,10 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  viewChild,
+} from '@angular/core';
 import { AskBoxFocus } from '../../../core/assistant/ask-box-focus';
 import { AskDraft } from '../../../core/assistant/ask-draft';
 import { AskFeed, ELSEWHERE } from '../../../core/assistant/ask-feed';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
 import { Conversation } from '../../../core/assistant/conversation';
 import { jevOffNote } from '../../../core/assistant/jev-off-note';
+import { OpenQuestion } from '../../../core/assistant/open-question';
 import { ProposalSlot } from '../../../core/assistant/proposal';
 import { ReplyFocus } from '../../../core/assistant/reply-focus';
 import { ReplyLog } from '../../../core/assistant/reply-log';
@@ -16,6 +24,7 @@ import { HudSection } from '../../../shared/hud-section/hud-section';
 import { AskBar } from '../ask-bar/ask-bar';
 import { AskKeys } from './ask-keys';
 import { ProposalCard } from '../proposal-card/proposal-card';
+import { QuestionCard } from '../question-card/question-card';
 import { ReplyList } from '../reply-list/reply-list';
 import { RunCard } from '../run-card/run-card';
 import { VoiceControls } from '../voice-controls/voice-controls';
@@ -30,7 +39,16 @@ const WORKING = 'Working out how to handle it';
  *  would be paid for by the owner, and the API refuses them anyway. */
 @Component({
   selector: 'app-ask-panel',
-  imports: [HudSection, VoiceControls, AskBar, AskKeys, ReplyList, ProposalCard, RunCard],
+  imports: [
+    HudSection,
+    VoiceControls,
+    AskBar,
+    AskKeys,
+    ReplyList,
+    ProposalCard,
+    RunCard,
+    QuestionCard,
+  ],
   templateUrl: './ask-panel.html',
   styleUrl: './ask-panel.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +64,7 @@ export class AskPanel {
   protected readonly slot = inject(ProposalSlot);
   protected readonly draft = inject(AskDraft);
   protected readonly conversation = inject(Conversation);
+  protected readonly question = inject(OpenQuestion);
   private readonly bar = viewChild(AskBar);
 
   protected readonly isElsewhere = this.info.isElsewhere;
@@ -65,6 +84,11 @@ export class AskPanel {
     const first = [...this.projects()].sort(compareProjects)[0]?.name ?? null;
     return codeSpans(jevOffNote(this.info.where(), first));
   });
+
+  constructor() {
+    this.question.panelArrived();
+    inject(DestroyRef).onDestroy(() => this.question.panelLeft());
+  }
 
   /** Esc cancels a jump, else cuts off speech, else leaves the box. */
   protected onEscape(): void {

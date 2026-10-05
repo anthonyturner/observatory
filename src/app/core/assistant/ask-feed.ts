@@ -8,6 +8,7 @@ import { ASSISTANT_API, AssistantAbsent } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { Conversation } from './conversation';
 import { RoutePick, RouteReply, RouteRequest, Skill, Source } from './assistant.types';
+import { OpenQuestion } from './open-question';
 import { PageJump } from './page-jump';
 import { Proposal, ProposalSlot, RunProposal, commandProposalOf, runProposalOf } from './proposal';
 import { NO_ANSWER_CHIP, WAITING_CHIP, chipOf } from './reply-chip';
@@ -42,6 +43,7 @@ export class AskFeed implements AskChannel {
   private readonly actions = inject(TierOneActions);
   private readonly jump = inject(PageJump);
   private readonly proposals = inject(ProposalSlot);
+  private readonly question = inject(OpenQuestion);
   private readonly focus = inject(AskBoxFocus);
   private readonly draft = inject(AskDraft);
   private readonly clock = inject(Clock);
@@ -113,6 +115,18 @@ export class AskFeed implements AskChannel {
     this.jump.go(url);
   }
 
+  /** Open on the question's card goes at once: a click is no guess, so it
+   *  has no grace second. */
+  openAsked(href: string): void {
+    this.question.close();
+    this.jump.go(href);
+  }
+
+  dismissQuestion(): void {
+    this.question.close();
+    this.focus.request();
+  }
+
   dismissProposal(): void {
     this.proposals.dismiss();
     this.focus.request();
@@ -176,9 +190,10 @@ export class AskFeed implements AskChannel {
     }
   }
 
-  /** A new request cancels a jump and cuts off a reply being read. */
+  /** A new request cancels a jump, closes the open question and cuts off a reply being read. */
   private startWaiting(entryId: number): void {
     this.actions.cancelJump();
+    this.question.close();
     this.cutSpeech = this.speech.stop() || this.carriedCut;
     this.carriedCut = false;
     this.log.setActions(entryId, []);

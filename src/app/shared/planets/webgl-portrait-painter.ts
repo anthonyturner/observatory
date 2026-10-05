@@ -3,16 +3,18 @@ import {
   AdditiveBlending,
   Color,
   Group,
+  IUniform,
   Mesh,
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
   ShaderMaterial,
+  ShaderMaterialParameters,
   SphereGeometry,
   Vector3,
   WebGLRenderer,
 } from 'three';
-import { CLOUD_COVER, WORLD_KINDS } from '../../core/orrery/world-kind';
+import { CLOUD_COVER, WORLD_KINDS, WorldKind } from '../../core/orrery/world-kind';
 import {
   AIR_SCALE,
   ATMOSPHERE_FRAGMENT,
@@ -21,6 +23,7 @@ import {
   SPHERE_VERTEX,
   SURFACE_FRAGMENT,
   WORLD_TINT,
+  kindDefines,
 } from './planet-shaders';
 import {
   PortraitPainter,
@@ -55,9 +58,11 @@ export class WebglPortraitPainter implements PortraitPainter {
   private readonly geometry = new SphereGeometry(1, 64, 40);
   private readonly worldGroup = new Group();
   private readonly sunGroup = new Group();
-  private readonly ground: ShaderMaterial;
-  private readonly air: ShaderMaterial;
-  private readonly clouds: Mesh;
+  /** Every kind's ground and clouds read these, so a portrait sets them once. */
+  private readonly groundUniforms: Record<string, IUniform>;
+  /** A body, and its clouds where it has any, per kind: each kind is its own program. */
+  private readonly bodies = new Map<WorldKind, readonly Mesh[]>();
+  private readonly materials: ShaderMaterial[] = [];
   private readonly quad = new PlaneGeometry(2 * SUN_FRAME, 2 * SUN_FRAME);
   private readonly sunSurface: ShaderMaterial;
 
@@ -75,32 +80,66 @@ export class WebglPortraitPainter implements PortraitPainter {
       throw new Error('A planet shader did not compile');
     };
 
-    this.ground = new ShaderMaterial({
+    this.groundUniforms = {
+      ink: { value: new Color() },
+      seed: { value: 0 },
+      sun: { value: this.sunLight },
+      centre: { value: new Vector3() },
+      radius: { value: 1 },
+      ringNormal: { value: new Vector3(0, 0, 1) },
+      hasRing: { value: 0 },
+      isMoon: { value: 0 },
+      tint: { value: WORLD_TINT },
+      cloudCover: { value: 0 },
+      cloudTurn: { value: 0 },
+      lights: { value: 0 },
+      unrest: { value: 0 },
+      time: { value: 0 },
+      parentCentre: { value: new Vector3() },
+      parentRadius: { value: 0 },
+    };
+    const material = (parameters: ShaderMaterialParameters): ShaderMaterial => {
+      const made = new ShaderMaterial(parameters);
+      this.materials.push(made);
+      return made;
+    };
+    for (const kind of WORLD_KINDS) {
+      const ground = new Mesh(
+        this.geometry,
+        material({
+          uniforms: this.groundUniforms,
+          defines: kindDefines(kind),
+          vertexShader: SPHERE_VERTEX,
+          fragmentShader: SURFACE_FRAGMENT,
+        }),
+      );
+      const meshes = [ground];
+      if (CLOUD_COVER[kind] > 0) {
+        const clouds = new Mesh(
+          this.geometry,
+          material({
+            uniforms: {
+              sun: { value: this.sunLight },
+              seed: this.groundUniforms['seed'],
+              cloudCover: this.groundUniforms['cloudCover'],
+            },
+            defines: kindDefines(kind),
+            vertexShader: SPHERE_VERTEX,
+            fragmentShader: CLOUD_FRAGMENT,
+            transparent: true,
+            depthWrite: false,
+          }),
+        );
+        clouds.scale.setScalar(CLOUD_SCALE);
+        clouds.renderOrder = 1;
+        meshes.push(clouds);
+      }
+      this.bodies.set(kind, meshes);
+      this.worldGroup.add(...meshes);
+    }
+    const air = material({
       uniforms: {
-        ink: { value: new Color() },
-        seed: { value: 0 },
-        kind: { value: 0 },
-        sun: { value: this.sunLight },
-        centre: { value: new Vector3() },
-        radius: { value: 1 },
-        ringNormal: { value: new Vector3(0, 0, 1) },
-        hasRing: { value: 0 },
-        isMoon: { value: 0 },
-        tint: { value: WORLD_TINT },
-        cloudCover: { value: 0 },
-        cloudTurn: { value: 0 },
-        lights: { value: 0 },
-        unrest: { value: 0 },
-        time: { value: 0 },
-        parentCentre: { value: new Vector3() },
-        parentRadius: { value: 0 },
-      },
-      vertexShader: SPHERE_VERTEX,
-      fragmentShader: SURFACE_FRAGMENT,
-    });
-    this.air = new ShaderMaterial({
-      uniforms: {
-        ink: this.ground.uniforms['ink'],
+        ink: this.groundUniforms['ink'],
         sun: { value: this.sunLight },
         ground: { value: 1 / AIR_SCALE },
       },
@@ -110,29 +149,12 @@ export class WebglPortraitPainter implements PortraitPainter {
       depthWrite: false,
       blending: AdditiveBlending,
     });
-    const cloudShell = new ShaderMaterial({
-      uniforms: {
-        sun: { value: this.sunLight },
-        seed: this.ground.uniforms['seed'],
-        kind: this.ground.uniforms['kind'],
-        cloudCover: this.ground.uniforms['cloudCover'],
-      },
-      vertexShader: SPHERE_VERTEX,
-      fragmentShader: CLOUD_FRAGMENT,
-      transparent: true,
-      depthWrite: false,
-    });
-    this.worldGroup.add(new Mesh(this.geometry, this.ground));
-    this.clouds = new Mesh(this.geometry, cloudShell);
-    this.clouds.scale.setScalar(CLOUD_SCALE);
-    this.clouds.renderOrder = 1;
-    this.worldGroup.add(this.clouds);
-    const airShell = new Mesh(this.geometry, this.air);
+    const airShell = new Mesh(this.geometry, air);
     airShell.scale.setScalar(AIR_SCALE);
     airShell.renderOrder = 2;
     this.worldGroup.add(airShell);
 
-    this.sunSurface = new ShaderMaterial({
+    this.sunSurface = material({
       uniforms: {
         ink: { value: new Color() },
         type: { value: 0 },
@@ -155,12 +177,13 @@ export class WebglPortraitPainter implements PortraitPainter {
   world(portrait: WorldPortrait): string {
     const { x, y } = portrait.towardSun;
     this.sunLight.set(x, -y, LIGHT_LIFT).normalize().multiplyScalar(LIGHT_DISTANCE);
-    const uniforms = this.ground.uniforms;
+    const uniforms = this.groundUniforms;
     uniforms['ink'].value.copy(rgb(portrait.air));
     uniforms['seed'].value = portrait.seed;
-    uniforms['kind'].value = WORLD_KINDS.indexOf(portrait.kind);
     uniforms['cloudCover'].value = CLOUD_COVER[portrait.kind];
-    this.clouds.visible = CLOUD_COVER[portrait.kind] > 0;
+    for (const [kind, meshes] of this.bodies) {
+      for (const mesh of meshes) mesh.visible = kind === portrait.kind;
+    }
     this.worldGroup.visible = true;
     this.sunGroup.visible = false;
     return this.snap(portrait.px, WORLD_FRAME);
@@ -174,17 +197,20 @@ export class WebglPortraitPainter implements PortraitPainter {
     return this.snap(portrait.px, SUN_FRAME);
   }
 
+  /**
+   * Compiles every kind's programs off the main thread, so the first
+   * portraits do not stall the page while a driver works through them.
+   */
+  compile(): Promise<unknown> {
+    for (const meshes of this.bodies.values()) for (const mesh of meshes) mesh.visible = true;
+    this.worldGroup.visible = true;
+    this.sunGroup.visible = true;
+    this.camera.position.set(0, 0, 10);
+    return this.gl.compileAsync(this.scene, this.camera);
+  }
+
   dispose(): void {
-    for (const resource of [
-      this.geometry,
-      this.ground,
-      this.air,
-      this.clouds.material as ShaderMaterial,
-      this.quad,
-      this.sunSurface,
-    ]) {
-      resource.dispose();
-    }
+    for (const resource of [this.geometry, this.quad, ...this.materials]) resource.dispose();
     this.gl.dispose();
   }
 

@@ -3,6 +3,7 @@
    computed per pixel from noise, so no textures load and every repo's world is
    its own. */
 
+import { WORLD_KINDS, WorldKind } from '../../core/orrery/world-kind';
 import { SIMPLEX_GLSL } from '../gl/simplex-glsl';
 
 /** How far a world's own surface takes its severity colour; its air carries the rest. */
@@ -12,6 +13,11 @@ export const AIR_SCALE = 1.12;
 /** The cloud shell sits just above the ground. */
 export const CLOUD_SCALE = 1.015;
 
+/** The defines a surface or cloud material compiles its kind with. */
+export const kindDefines = (kind: WorldKind): { KIND: number } => ({
+  KIND: WORLD_KINDS.indexOf(kind),
+});
+
 export const SPHERE_VERTEX = `varying vec3 wp; varying vec3 wn; varying vec3 local;
   void main() { local = position; vec4 p = modelMatrix * vec4(position,1.);
     wp = p.xyz; wn = normalize(mat3(modelMatrix) * normal);
@@ -19,8 +25,10 @@ export const SPHERE_VERTEX = `varying vec3 wp; varying vec3 wn; varying vec3 loc
 
 /* The kinds, numbered as WORLD_KINDS orders them: rocky, gas, ice, desert.
    Each gives a height, for relief, and a colour; `vary` picks a palette
-   within the kind, so two rocky worlds need not look alike. */
-const KINDS = `uniform float kind, seed;
+   within the kind, so two rocky worlds need not look alike. The kind is fixed
+   when the program compiles: a driver can take twenty seconds over all four
+   kinds in one program, and a few seconds over one. */
+const KINDS = `const float kind = float(KIND); uniform float seed;
   vec3 offset() { return vec3(seed * .137, seed * .071, seed * .193); }
   float vary() { return fract(seed * .6180339); }
   float rockyLand(vec3 p) { vec3 s = offset();

@@ -54,6 +54,7 @@ import {
   RING_VERTEX,
 } from './orrery-shaders';
 import { MILKY_WAY_FRAGMENT, MILKY_WAY_VERTEX } from './milky-way-shader';
+import { SKY_TURN, skyUniforms } from '../milky-way-geometry';
 import {
   AIR_SCALE,
   ATMOSPHERE_FRAGMENT,
@@ -69,11 +70,6 @@ const DEG = Math.PI / 180;
 /** The 3D sky holds more stars over a wider field, so it can turn without bare corners. */
 const FIELD_STARS_3D = 1800;
 const FIELD_SPREAD_3D = 1.7;
-/** The sky turns this many radians a second: once round in about an hour and a half. */
-const SKY_TURN = 0.0012;
-/** How much the Milky Way shifts and grows with the camera: far, so very little. */
-const SKY_PARALLAX = 0.00004;
-const SKY_ZOOM_POWER = 0.12;
 /** Bloom only on what is luminous: deep space stays black so stars have something to be brighter than. */
 const BLOOM_STRENGTH = 0.32;
 const BLOOM_RADIUS = 0.25;
@@ -457,9 +453,8 @@ export class OrreryWebGL {
     return {
       update: (frame) => {
         const { time, camera } = frame;
-        const turn = time * SKY_TURN;
-        updateSky(frame, turn);
-        updateField(time, turn);
+        updateSky(frame);
+        updateField(time, time * SKY_TURN);
         corona.uniforms['time'].value = time;
         dial.quaternion.setFromAxisAngle(planeNormal, -time * DIAL_TURN);
         dial.visible = worlds.length > 0;
@@ -499,9 +494,8 @@ export class OrreryWebGL {
     });
   }
 
-  /** The background stars as points far behind the system, twinkling. */
   /** The Milky Way: a full-screen layer behind everything, turning with the stars. */
-  private buildMilkyWay(scene: Scene, owned: Owned): (frame: SceneFrame, turn: number) => void {
+  private buildMilkyWay(scene: Scene, owned: Owned): (frame: SceneFrame) => void {
     const material = owned.own(
       new ShaderMaterial({
         uniforms: {
@@ -521,16 +515,21 @@ export class OrreryWebGL {
     sky.frustumCulled = false;
     sky.renderOrder = -1;
     scene.add(sky);
-    return ({ time, view, camera }, turn) => {
-      const { x, y, scale } = camera.current;
+    return ({ time, view, camera }) => {
+      const { aspect, zoom, turn, driftX, driftY } = skyUniforms({
+        view,
+        camera: camera.current,
+        time,
+      });
       material.uniforms['time'].value = time;
-      material.uniforms['aspect'].value = view.width / Math.max(1, view.height);
-      material.uniforms['zoom'].value = Math.pow(scale, SKY_ZOOM_POWER);
+      material.uniforms['aspect'].value = aspect;
+      material.uniforms['zoom'].value = zoom;
       material.uniforms['turn'].value = turn;
-      material.uniforms['drift'].value.set(x * SKY_PARALLAX, -y * SKY_PARALLAX);
+      material.uniforms['drift'].value.set(driftX, driftY);
     };
   }
 
+  /** The background stars as points far behind the system, twinkling. */
   private buildField(scene: Scene, owned: Owned): (time: number, turn: number) => void {
     const positions: number[] = [];
     const colours: number[] = [];

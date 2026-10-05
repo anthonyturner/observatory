@@ -44,6 +44,7 @@ import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { OrreryPalette } from '../orrery-palette';
 import { DIAL_BEYOND_ORBIT, SceneFrame } from '../orrery-scene';
 import {
+  CORONA_FRAGMENT,
   FIELD_FRAGMENT,
   FIELD_VERTEX,
   FINISH_FRAGMENT,
@@ -60,17 +61,16 @@ import {
   SURFACE_FRAGMENT,
   WORLD_TINT,
 } from '../../../../shared/planets/planet-shaders';
-import {
-  CORONA_FRAGMENT,
-  CORONA_REACH,
-  SUN_OVERBRIGHT,
-} from '../../../../shared/planets/sun-shaders';
 
 const DEG = Math.PI / 180;
 /** Bloom only on what is luminous: deep space stays black so stars have something to be brighter than. */
 const BLOOM_STRENGTH = 0.32;
 const BLOOM_RADIUS = 0.25;
 const BLOOM_THRESHOLD = 0.85;
+/** Just bright enough that the bloom catches the sun's rim, and no more. */
+const SUN_OVERBRIGHT = 1.3;
+/** How far the corona reaches, in sun radii. */
+const CORONA_REACH = 1.9;
 /** Bloom runs at no more than this pixel ratio: it is about to be blurred. */
 const BLOOM_MAX_RATIO = 1.25;
 const MAX_PIXEL_RATIO = 2;

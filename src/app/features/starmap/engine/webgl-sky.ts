@@ -41,8 +41,13 @@ import {
 import { rnd } from './rnd';
 import { SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
 import { FieldStar, SkyStar } from './sky-model';
-import { STAR_FRAGMENT, STAR_QUAD_REACH, STAR_VERTEX } from './star-shader';
-import { STAR_TYPES, starLook } from './star-type';
+import {
+  STAR_FRAGMENT,
+  STAR_QUAD_REACH,
+  STAR_TYPES,
+  STAR_VERTEX,
+} from '../../../shared/gl/star-shader';
+import { starLook } from './star-type';
 
 /* pr-starmap's WebGL sky: a perspective camera over the same world, bloom on
    the luminous cores only, a vignette and grain pass, a nebula of cloud

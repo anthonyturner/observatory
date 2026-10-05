@@ -1,9 +1,10 @@
 import { WorldKind } from '../../core/orrery/world-kind';
+import { StarType } from '../gl/star-shader';
 
 /** A world's image spans this many of its radii each side of its centre, room for its air. */
 export const WORLD_FRAME = 1.2;
 /** A sun's image spans this many of its radii each side, room for its corona. */
-export const SUN_FRAME = 2;
+export const SUN_FRAME = 2.4;
 
 /** One world to paint, lit from one side. */
 export interface WorldPortrait {
@@ -17,9 +18,11 @@ export interface WorldPortrait {
   readonly px: number;
 }
 
-/** A sun to paint, its body an `r, g, b` triple. */
+/** A sun to paint, drawn as the review queue draws a star close up. */
 export interface SunPortrait {
-  readonly body: string;
+  readonly type: StarType;
+  /** Its colour, as an `r, g, b` triple. */
+  readonly ink: string;
   readonly px: number;
 }
 

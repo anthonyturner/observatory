@@ -1,12 +1,11 @@
 import {
   ACESFilmicToneMapping,
   AdditiveBlending,
-  BackSide,
   Color,
   Group,
   Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
   ShaderMaterial,
   SphereGeometry,
@@ -30,20 +29,23 @@ import {
   WORLD_FRAME,
   WorldPortrait,
 } from './planet-portrait.types';
-import { CORONA_FRAGMENT, CORONA_REACH, SUN_OVERBRIGHT } from './sun-shaders';
+import { STAR_FRAGMENT, STAR_QUAD_REACH, STAR_TYPES, STAR_VERTEX } from '../gl/star-shader';
 
 /** Narrow enough to look flat, as a far-off world does, wide enough for the shaders' view rays. */
 const FIELD_OF_VIEW = 10;
 const LIGHT_DISTANCE = 1000;
 /** The light sits a little in front of the map, so a world shows a crescent of night, not half. */
 const LIGHT_LIFT = 0.45;
+/** How lively a giant's flares are: a hot spot is busy, not in crisis. */
+const SUN_ACTIVITY = 0.5;
 
 const rgb = (channels: string): Color => new Color(`rgb(${channels})`);
 
 /**
- * One offscreen WebGL canvas that paints each world or sun once, with the
- * orrery's shaders, into an image. Drawn over black: a page shows it with a
- * screen blend, so black falls away and the air glows over its background.
+ * One offscreen WebGL canvas that paints each world once with the orrery's
+ * shaders, or a sun with the review queue's star shader, into an image. Drawn
+ * over black: a page shows it with a screen blend, so black falls away and
+ * the air glows over its background.
  */
 export class WebglPortraitPainter implements PortraitPainter {
   private readonly gl: WebGLRenderer;
@@ -56,8 +58,8 @@ export class WebglPortraitPainter implements PortraitPainter {
   private readonly ground: ShaderMaterial;
   private readonly air: ShaderMaterial;
   private readonly clouds: Mesh;
-  private readonly sunBody: MeshBasicMaterial;
-  private readonly corona: ShaderMaterial;
+  private readonly quad = new PlaneGeometry(2 * SUN_FRAME, 2 * SUN_FRAME);
+  private readonly sunSurface: ShaderMaterial;
 
   /** Throws where WebGL cannot start or a shader will not compile; the caller keeps flat circles. */
   constructor(document: Document) {
@@ -130,20 +132,22 @@ export class WebglPortraitPainter implements PortraitPainter {
     airShell.renderOrder = 2;
     this.worldGroup.add(airShell);
 
-    this.sunBody = new MeshBasicMaterial();
-    this.corona = new ShaderMaterial({
-      uniforms: { time: { value: 0 }, radius: { value: 1 }, reach: { value: CORONA_REACH } },
-      vertexShader: SPHERE_VERTEX,
-      fragmentShader: CORONA_FRAGMENT,
-      transparent: true,
-      side: BackSide,
-      depthWrite: false,
-      blending: AdditiveBlending,
+    this.sunSurface = new ShaderMaterial({
+      uniforms: {
+        ink: { value: new Color() },
+        type: { value: 0 },
+        seed: { value: 0 },
+        time: { value: 0 },
+        detail: { value: 1 },
+        opacity: { value: 1 },
+        activity: { value: SUN_ACTIVITY },
+        // The quad spans SUN_FRAME sun radii each side; the shader measures in its own reach.
+        disc: { value: STAR_QUAD_REACH / SUN_FRAME },
+      },
+      vertexShader: STAR_VERTEX,
+      fragmentShader: STAR_FRAGMENT,
     });
-    this.sunGroup.add(new Mesh(this.geometry, this.sunBody));
-    const coronaShell = new Mesh(this.geometry, this.corona);
-    coronaShell.scale.setScalar(CORONA_REACH);
-    this.sunGroup.add(coronaShell);
+    this.sunGroup.add(new Mesh(this.quad, this.sunSurface));
 
     this.scene.add(this.worldGroup, this.sunGroup);
   }
@@ -163,7 +167,8 @@ export class WebglPortraitPainter implements PortraitPainter {
   }
 
   sun(portrait: SunPortrait): string {
-    this.sunBody.color.copy(rgb(portrait.body)).multiplyScalar(SUN_OVERBRIGHT);
+    this.sunSurface.uniforms['ink'].value.copy(rgb(portrait.ink));
+    this.sunSurface.uniforms['type'].value = STAR_TYPES.indexOf(portrait.type);
     this.worldGroup.visible = false;
     this.sunGroup.visible = true;
     return this.snap(portrait.px, SUN_FRAME);
@@ -175,8 +180,8 @@ export class WebglPortraitPainter implements PortraitPainter {
       this.ground,
       this.air,
       this.clouds.material as ShaderMaterial,
-      this.sunBody,
-      this.corona,
+      this.quad,
+      this.sunSurface,
     ]) {
       resource.dispose();
     }

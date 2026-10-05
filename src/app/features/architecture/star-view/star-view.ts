@@ -11,17 +11,26 @@ import { Heat } from '../../../core/architecture/architecture-graph';
 import { AIR_TOKEN, planetLook } from '../../../core/architecture/planet-look';
 import { Planet, SUN_RADIUS, StarSystem } from '../../../core/architecture/star-layout';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { StarType } from '../../../shared/gl/star-shader';
 import { channelReader } from '../../../shared/night-sky/night-sky';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
-import { PortraitPainter, SUN_FRAME, WORLD_FRAME } from '../../../shared/planets/planet-portrait.types';
+import {
+  PortraitPainter,
+  SUN_FRAME,
+  WORLD_FRAME,
+} from '../../../shared/planets/planet-portrait.types';
 
 /** Image pixels per map unit: the map is usually drawn larger than its viewBox. */
 const PIXELS_PER_UNIT = 3;
 const MAX_PIXELS = 256;
 /** Enough pictures for several systems; past it the cache starts over. */
 const MAX_PAINTED = 400;
-/** A sun keeps the orrery's colour unless its heat has something to say. */
-const SUN_TOKEN: Readonly<Record<Heat, string>> = { ...AIR_TOKEN, plain: 'orrery-sun-body' };
+/** A plain sun burns clear in the orrery's colour; a hot spot is a flaring giant; an unused one rests. */
+const SUN_LOOK: Readonly<Record<Heat, { type: StarType; token: string }>> = {
+  plain: { type: 'bright', token: 'orrery-sun-body' },
+  hot: { type: 'giant', token: AIR_TOKEN.hot },
+  unused: { type: 'calm', token: AIR_TOKEN.unused },
+};
 
 interface Portraits {
   readonly sun: string;
@@ -83,7 +92,11 @@ export class StarView {
   private paintSun(painter: PortraitPainter, heat: Heat): string {
     const px = pixelsFor(SUN_RADIUS * SUN_FRAME);
     return this.once(`sun|${heat}|${px}`, () =>
-      painter.sun({ body: this.channels(`var(--${SUN_TOKEN[heat]})`), px }),
+      painter.sun({
+        type: SUN_LOOK[heat].type,
+        ink: this.channels(`var(--${SUN_LOOK[heat].token})`),
+        px,
+      }),
     );
   }
 

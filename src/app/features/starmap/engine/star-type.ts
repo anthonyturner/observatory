@@ -1,8 +1,5 @@
+import { StarType } from '../../../shared/gl/star-shader';
 import { BucketId, SkyStar } from './sky-model';
-
-/** What a pull request's star is, in the order the star shader numbers them. */
-export type StarType = 'bright' | 'giant' | 'veiled' | 'calm';
-export const STAR_TYPES: readonly StarType[] = ['bright', 'giant', 'veiled', 'calm'];
 
 /** Blocked work swells and flares; an unsettled merge is veiled in gas; work
  *  waiting on you burns clear; what you have seen recently rests. */

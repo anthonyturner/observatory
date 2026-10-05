@@ -91,13 +91,8 @@ svg {
   animation-duration: 14s;
 }
 
-/* A moving target is hard to click: the system holds while the pointer is over it. */
-svg:hover .orbit,
-svg:hover .upright,
-svg:hover .moons,
-svg:focus-within .orbit,
-svg:focus-within .upright,
-svg:focus-within .moons {
+/* A moving target is hard to click: the system holds only while the pointer is on a body, or a planet holds focus. */
+svg:has(.planet:hover, .planet:focus, .sun .body:hover) :is(.orbit, .upright, .moons) {
   animation-play-state: paused;
 }
 

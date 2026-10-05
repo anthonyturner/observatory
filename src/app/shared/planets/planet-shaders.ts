@@ -75,11 +75,11 @@ const KINDS = `const float kind = float(KIND); uniform float seed;
     float storm = 1. - smoothstep(.07, .16, length((p - eye) * vec3(1., 2.3, 1.)) + snoise(p * 14.) * .02);
     return mix(c, mix(vec3(.62, .25, .15), vec3(.95), cool), storm * .85); }
   vec3 iceColour(vec3 p) { float b = fbm(p * 2. + offset());
-    vec3 c = mix(vec3(.62, .76, .9), vec3(.9, .95, 1.), smoothstep(-.4, .4, b));
+    vec3 c = mix(vec3(.46, .6, .76), vec3(.74, .82, .9), smoothstep(-.4, .4, b));
     return mix(c, vec3(.4, .58, .78), iceCracks(p) * .45); }
   vec3 desertColour(vec3 p) { float b = fbm(p * 2.5 + offset());
     float rust = step(.5, vary());
-    vec3 light = mix(vec3(.58, .56, .52), vec3(.76, .52, .32), rust);
+    vec3 light = mix(vec3(.5, .46, .4), vec3(.72, .48, .29), rust);
     vec3 dark = mix(vec3(.32, .31, .3), vec3(.46, .27, .16), rust);
     float grain = fbm(p * 14. + offset()) * .18;
     return mix(dark, light, clamp(smoothstep(-.5, .5, b) * .8 + grain + craters(p * 3.2 + offset()) * .3, 0., 1.)); }
@@ -149,7 +149,7 @@ export const SURFACE_FRAGMENT = `${SIMPLEX_GLSL} ${KINDS} ${CLOUDS}
     // Sunlight reddens where it grazes the air, along the terminator.
     float dusk = smoothstep(-.05, .1, sunward) * (1. - smoothstep(.1, .45, sunward));
     vec3 light = mix(vec3(1., .97, .92), vec3(1., .58, .36), dusk * .7);
-    vec3 colour = albedo * (.03 + day * shadow * 1.35 * light) + ink * .012;
+    vec3 colour = albedo * (.03 + day * shadow * 1.05 * light) + ink * .012;
     // Water and ice shine; rock and cloud tops barely do.
     float gloss = mix(.04, .55, wet) + (kind > 1.5 && kind < 2.5 ? .15 : 0.);
     float sharp = mix(18., 70., wet);

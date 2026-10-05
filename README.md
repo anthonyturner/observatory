@@ -23,7 +23,10 @@ kept the same for each project on every load. Each page's help card (press
 
 **The Orrery**: one world per project you own.
 
-![Five Orrery worlds: two rocky worlds with clouds and city lights, one with glowing cracks, a cratered desert, an ice world and a ringed gas giant](docs/images/orrery-worlds.png)
+<table><tr>
+<td><img src="docs/images/orrery-overview.jpg" alt="The Orrery: eight project worlds orbiting a sun labelled 45, the open pull request count, inside a dial of constellation names"></td>
+<td><img src="docs/images/orrery-close-up.jpg" alt="The Orrery zoomed in: lit worlds with moons, the sun, and comets for unclaimed issues"></td>
+</tr></table>
 
 - **Air colour** is the project's most urgent state; a bigger world has more
   open work, and a world further out has been neglected longer.
@@ -38,7 +41,10 @@ kept the same for each project on every load. Each page's help card (press
 **The review queue**: one star per open pull request, grouped by what blocks
 it and spaced along a spiral per group. Zoom in for detail.
 
-![Four review-queue stars up close: a blocked red giant, a quick win with a green disc, a veiled star with planets, and a large change with a wide disc](docs/images/review-queue-stars.png)
+<table><tr>
+<td><img src="docs/images/review-queue-overview.jpg" alt="A review queue: a large spiral of pull requests with no issue linked, a smaller group with failing checks, and two waiting on review, joined by lines"></td>
+<td><img src="docs/images/review-queue-close-up.jpg" alt="The review queue zoomed in: failing-check stars with discs of gas, and stars with no issue linked, each tagged with its pull request number"></td>
+</tr></table>
 
 - **Colour** is why it's stuck, and **size** is how long it has waited.
 - **Kind**: a blocked pull request is a deep giant that throws flares, more
@@ -50,8 +56,9 @@ it and spaced along a spiral per group. Zoom in for detail.
 - **Planets** are the issues it closes, up to four. No planets, no linked
   issue.
 
-The pictures are rendered with the app's own shaders. Where WebGL can't
-start, both pages fall back to a simpler flat drawing.
+These are screenshots of the app running on real data, with only the public
+repositories shown. Where WebGL can't start, both pages fall back to a
+simpler flat drawing.
 
 ## Stack
 

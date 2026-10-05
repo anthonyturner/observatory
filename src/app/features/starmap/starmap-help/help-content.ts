@@ -17,7 +17,8 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['Colour', 'Why it is stuck. Click a colour at the top to show only that kind.'],
       ['Size', 'How long it has waited untouched.'],
       ['Ring', 'Blocked: it cannot merge, or its checks fail.'],
-      ['Thread', 'The dashed line runs through the groups in the order to work them.'],
+      ['Lines', 'Silver lines join the pull requests in a group, in the order to work them.'],
+      ['Thread', 'The dotted silver line runs through the groups in the order to work them.'],
       [
         'Changes',
         'What changed since you last looked. A shockwave marks a pull request that became blocked, a white flash a new one, falling green rings one that was unblocked; merged and closed ones cross the sky as shooting stars. The panel lists them; Got it clears the marks.',

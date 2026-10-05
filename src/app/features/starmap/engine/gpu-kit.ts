@@ -5,6 +5,7 @@ import {
   Line,
   LineBasicMaterial,
   LineDashedMaterial,
+  LineSegments,
   Material,
   Object3D,
   SRGBColorSpace,
@@ -96,5 +97,14 @@ export class Kit {
     const object = new Line(geometry, material);
     if (dashed) object.computeLineDistances();
     return object;
+  }
+
+  /** Unjoined segments, one per pair of points. */
+  segments(points: Vector3[], colour: string, opacity = 1): LineSegments {
+    const geometry = this.owned.own(new BufferGeometry().setFromPoints(points));
+    const material = this.owned.own(
+      new LineBasicMaterial({ color: colour, transparent: true, opacity, depthWrite: false }),
+    );
+    return new LineSegments(geometry, material);
   }
 }

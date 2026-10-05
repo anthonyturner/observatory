@@ -11,7 +11,6 @@ const SHOWN = 8;
  */
 @Component({
   selector: 'app-starmap-search',
-  host: { '(mouseleave)': 'close()' },
   templateUrl: './starmap-search.html',
   styleUrl: './starmap-search.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -68,7 +68,7 @@ describe('StarmapSearch', () => {
     };
 
     reopen();
-    element.dispatchEvent(new MouseEvent('mouseleave'));
+    element.querySelector('form')?.dispatchEvent(new MouseEvent('mouseleave'));
     fixture.detectChanges();
     expect(list.hidden).toBe(true);
 

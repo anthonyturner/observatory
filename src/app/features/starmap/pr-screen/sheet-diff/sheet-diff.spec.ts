@@ -46,27 +46,37 @@ describe('SheetDiff', () => {
     expect(tally()).toBe('1 / 2 viewed');
   });
 
-  it('puts a file away when it is ticked, and brings it back when unticked', () => {
-    const { header, checkbox, click } = render();
+  it('ticks a file as viewed when it is opened, and keeps the tick when closed', () => {
+    const { header, checkbox, click, tally } = render();
     click(header(0));
     expect(header(0).getAttribute('aria-expanded')).toBe('true');
-
-    click(checkbox('x.ts'));
     expect(checkbox('x.ts').checked).toBe(true);
+    expect(tally()).toBe('1 / 2 viewed');
+
+    click(header(0));
     expect(header(0).getAttribute('aria-expanded')).toBe('false');
+    expect(checkbox('x.ts').checked).toBe(true);
+  });
+
+  it('leaves an open file open when its tick is cleared and set again', () => {
+    const { header, checkbox, click } = render();
+    click(header(0));
 
     click(checkbox('x.ts'));
     expect(checkbox('x.ts').checked).toBe(false);
     expect(header(0).getAttribute('aria-expanded')).toBe('true');
+
+    click(checkbox('x.ts'));
+    expect(checkbox('x.ts').checked).toBe(true);
+    expect(header(0).getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('opens a viewed file again from its header without unticking it', () => {
+  it('leaves a closed file closed when it is ticked', () => {
     const { header, checkbox, click } = render();
     click(checkbox('x.ts'));
-    click(header(0));
 
-    expect(header(0).getAttribute('aria-expanded')).toBe('true');
     expect(checkbox('x.ts').checked).toBe(true);
+    expect(header(0).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('unticks a file whose changes are different the next time', () => {

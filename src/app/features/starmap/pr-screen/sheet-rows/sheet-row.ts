@@ -30,7 +30,7 @@ export function commitRows(detail: PullDetail, locale?: string): SheetRow[] {
     .slice()
     .reverse()
     .map((commit) => ({
-      key: commit.oid,
+      key: commit.sha,
       cells: [
         { text: commit.oid, classes: 'mono dim' },
         { text: commit.headline, classes: 'grow' },

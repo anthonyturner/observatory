@@ -28,7 +28,15 @@ const detail = {
   deletions: 1,
   changedFiles: 1,
   files: [{ path: 'src/a.ts', additions: 1, deletions: 1, change: 'MODIFIED' }],
-  commits: [{ oid: '5645cda', headline: 'fix it', date: '2026-09-24T09:02:45Z', authors: [] }],
+  commits: [
+    {
+      oid: '5645cda',
+      sha: '5645cda',
+      headline: 'fix it',
+      date: '2026-09-24T09:02:45Z',
+      authors: [],
+    },
+  ],
   commitsTotal: 1,
   diff: 'diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-old\n+new',
   diffBytes: 80,

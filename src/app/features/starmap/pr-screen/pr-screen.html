@@ -33,7 +33,7 @@
             <app-sheet-rows [rows]="files()" />
           }
           @case ('commits') {
-            <app-sheet-rows [rows]="commits()" [note]="commitsNote()" />
+            <app-sheet-commits [repo]="repo()" [detail]="pull" />
           }
           @case ('checks') {
             <app-sheet-rows [rows]="checks()" empty="No checks ran on this pull request." />

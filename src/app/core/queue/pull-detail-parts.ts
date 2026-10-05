@@ -17,6 +17,8 @@ export interface FileLine {
 export interface CommitLine {
   /** The first seven characters of its hash. */
   readonly oid: string;
+  /** Its full hash, to read its diff by; the short one where an older API sent no other. */
+  readonly sha: string;
   readonly headline: string;
   readonly date: string;
   readonly authors: readonly string[];
@@ -59,6 +61,7 @@ export function parseCommit(value: unknown): CommitLine | null {
   if (!isObject(value) || !isString(value['oid']) || !isString(value['headline'])) return null;
   return {
     oid: value['oid'],
+    sha: isString(value['sha']) ? value['sha'] : value['oid'],
     headline: value['headline'],
     date: isString(value['date']) ? value['date'] : '',
     authors: strings(value['authors']),

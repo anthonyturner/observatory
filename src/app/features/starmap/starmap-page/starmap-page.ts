@@ -61,8 +61,10 @@ import { StarmapHelp } from '../starmap-help/starmap-help';
 import { HelpKey } from '../starmap-help/help-content';
 import { PrScreen } from '../pr-screen/pr-screen';
 import { skyItemOf, skyPairOf } from '../sky-items';
+import { SearchedIssue, findOnSky, searchSuggestions } from '../sky-search';
 import { StarmapHeader } from '../starmap-header/starmap-header';
 import { StarmapPrList } from '../starmap-pr-list/starmap-pr-list';
+import { StarmapSearch } from '../starmap-search/starmap-search';
 import { SkyChart, SkyInsets, StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapTools } from '../starmap-tools/starmap-tools';
 import { StarmapUsage } from '../starmap-usage/starmap-usage';
@@ -83,6 +85,8 @@ import {
 const TOP_INSET = 140;
 /** With the issue bar docked under the title, over the nursery. */
 const TOP_INSET_WITH_DOCK = 205;
+/** The review queue's search box, under its legend. */
+const SEARCH_HEIGHT = 44;
 const BOTTOM_INSET = 70;
 /** With a chart along the bottom, as the Log Sky's meteor record. */
 const BOTTOM_INSET_WITH_STRIP = 200;
@@ -127,6 +131,7 @@ export interface SkyState {
   imports: [
     StarmapSky,
     StarmapHeader,
+    StarmapSearch,
     StarmapTools,
     StarmapPrList,
     IssuesPanel,
@@ -448,6 +453,16 @@ export class StarmapPage {
       this.comets(),
     ),
   );
+  /** Every issue the page knows, open or recently closed, for the search. */
+  private readonly searchIssues = computed((): readonly SearchedIssue[] => {
+    const report = this.issues.report();
+    return report ? [...report.open, ...report.closed] : [];
+  });
+  protected readonly suggestions = computed(() =>
+    searchSuggestions(this.shownItems(), this.searchIssues()),
+  );
+  /** What the last search said when it found nothing. */
+  protected readonly searchMiss = signal<string | null>(null);
   /** The body the nursery rings: an open issue's, else the card's. */
   protected readonly ringedIssue = computed(
     () => this.issues.windowIssue() ?? this.issues.picked()?.issue?.number ?? null,
@@ -492,7 +507,9 @@ export class StarmapPage {
   protected readonly insets = computed((): SkyInsets => {
     const wide = (this.window?.innerWidth ?? 0) > SIDE_PANEL_MIN_WIDTH;
     return {
-      top: this.docked() ? TOP_INSET_WITH_DOCK : TOP_INSET,
+      top: this.docked()
+        ? TOP_INSET_WITH_DOCK
+        : TOP_INSET + (this.chart() === 'prs' ? SEARCH_HEIGHT : 0),
       bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
       side: !wide
         ? 0
@@ -576,6 +593,7 @@ export class StarmapPage {
     this.memory.endReplay();
     this.filter.set(null);
     this.openPull.set(null);
+    this.searchMiss.set(null);
     this.logs.clear();
     this.logs.filter.set(null);
     this.issues.leave();
@@ -679,6 +697,27 @@ export class StarmapPage {
     this.skyView.set('map');
     this.openPull.set(number);
     this.sky()?.goTo(number);
+  }
+
+  /** A search lands on its star or comet, with its card, or opens an issue with neither. */
+  protected find(query: string): void {
+    const found = findOnSky(query, this.shownItems(), this.searchIssues());
+    this.searchMiss.set(found ? null : `Nothing matches “${query.trim()}”.`);
+    if (!found) return;
+    if (found.kind === 'pull') {
+      this.selectedComet.set(null);
+      if (this.filter() === null) return this.goTo(found.number);
+      // Clearing the legend's filter refits the sky; the flight waits for that.
+      this.filter.set(null);
+      setTimeout(() => this.goTo(found.number));
+      return;
+    }
+    const comet = this.comets().find((each) => each.issue === found.issue);
+    if (found.kind === 'issue' || !comet) return this.openIssue(found.issue);
+    this.skyView.set('map');
+    this.showComets.set(true);
+    this.openPull.set(null);
+    this.selectedComet.set(comet);
   }
 
   protected refresh(): void {

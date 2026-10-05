@@ -1,0 +1,20 @@
+<form role="search" (submit)="submit($event, box.value)">
+  <input
+    #box
+    type="search"
+    placeholder="Find a PR or issue: title or #n"
+    aria-label="Find a pull request or issue by title or number"
+    autocomplete="off"
+    list="starmap-search-suggestions"
+    [attr.aria-describedby]="miss() ? 'starmap-search-miss' : null"
+  />
+  <button type="submit">Go</button>
+  <datalist id="starmap-search-suggestions">
+    @for (suggestion of suggestions(); track suggestion) {
+      <option [value]="suggestion"></option>
+    }
+  </datalist>
+  @if (miss(); as words) {
+    <span id="starmap-search-miss" class="miss" role="status">{{ words }}</span>
+  }
+</form>

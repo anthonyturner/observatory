@@ -12,6 +12,10 @@ export const MILKY_WAY_VERTEX = `varying vec2 vUv;
  *  dark dust lanes, over a haze of faint unresolved stars densest in the band.
  *  `turn` turns the whole sky; `drift` and `zoom` give it a little parallax. */
 export const MILKY_WAY_FRAGMENT = `${SIMPLEX_GLSL}
+  // Glow and dust are soft, so three octaves do: it runs on every pixel.
+  float haze(vec3 p) { float s = 0., a = .5;
+    for (int i = 0; i < 3; i++) { s += a * snoise(p); p = p * 2.03 + vec3(1.7, 9.2, 3.1); a *= .5; }
+    return s; }
   varying vec2 vUv;
   uniform float time, aspect, zoom, turn;
   uniform vec2 drift;
@@ -23,13 +27,13 @@ export const MILKY_WAY_FRAGMENT = `${SIMPLEX_GLSL}
     vec2 along = normalize(vec2(1., .38)), across = vec2(-along.y, along.x);
     // Off the centre, so the busiest part of the system sits on darker sky.
     float u = dot(p, along), v = dot(p, across) + .24;
-    v += fbm(vec3(u * 1.3, 0., 7.)) * .09;
-    float width = .17 + .05 * fbm(vec3(u * 2., 3., 1.));
+    v += haze(vec3(u * 1.3, 0., 7.)) * .09;
+    float width = .17 + .05 * haze(vec3(u * 2., 3., 1.));
     float band = exp(-v * v / (width * width));
     float core = exp(-(u - .25) * (u - .25) * 1.8);
 
-    float clouds = .55 + .45 * fbm(vec3(p * 4., 11.));
-    float lanes = smoothstep(.05, .5, fbm(vec3(p * 6.5, 2.))) * exp(-v * v / (width * width * .22));
+    float clouds = .55 + .45 * haze(vec3(p * 4., 11.));
+    float lanes = smoothstep(.05, .5, haze(vec3(p * 6.5, 2.))) * exp(-v * v / (width * width * .22));
     float glow = band * clouds * (.55 + .9 * core) * (1. - lanes * .8);
     vec3 tint = mix(vec3(.42, .52, .86), vec3(1., .8, .58), core * band);
 

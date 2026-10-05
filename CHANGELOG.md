@@ -73,6 +73,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- The PR screen's diffs are easier to read: added and removed lines keep the normal code colour, marked by a faint wash, a thin coloured bar on the left and a coloured + or − sign, instead of turning the whole line green or red; copying a line no longer copies its sign ([#335](https://github.com/anthonyturner/observatory/pull/335)).
 - The local site now reads your iCloud and Gmail inboxes on every page, not only while Home is open: every five minutes while the tab is in view, and once when you come back to it ([#320](https://github.com/anthonyturner/observatory/pull/320)).
 - Clicking one of Observatory's desktop notifications, including the Agent review's, brings its tab forward and closes the notification ([#308](https://github.com/anthonyturner/observatory/pull/308)).
 - On a phone, Home's foot takes less of the screen: the playlist bar starts folded to one row under the seek bar, unfolds its List and Sky controls as tidy rows of their own, and Home's tools fold behind one Tools button ([#302](https://github.com/anthonyturner/observatory/pull/302)).

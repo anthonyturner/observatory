@@ -38,6 +38,10 @@ const ORBIT_PER_RANK = 64;
 /** An empty world is still a world. */
 const BASE_RADIUS = 14;
 const RADIUS_PER_ROOT_OPEN = 7.6;
+/** The air shell's radius, in world radii: how far a world reaches on screen. */
+export const AIR_SCALE = 1.12;
+/** Clear space between two neighbouring worlds' air, side by side. */
+const LANE_CLEARANCE = 28;
 /** Kepler, loosely: outer worlds take longer to come round. */
 const INNER_SPEED = 0.5 * 0.22;
 const KEPLER_POWER = 1.5;
@@ -63,16 +67,26 @@ export const cometCount = (unclaimed: number): number =>
 
 /** Every project as a world, most urgent first so the worst sit innermost. */
 export function layoutWorlds(projects: readonly ProjectSnapshot[]): OrreryWorld[] {
-  return [...projects].sort(compareProjects).map((project, rank) => {
+  const ranked = [...projects].sort(compareProjects);
+  const radii = ranked.map(
+    (project) => BASE_RADIUS + Math.sqrt(project.open) * RADIUS_PER_ROOT_OPEN,
+  );
+  const orbits = clearLanes(
+    ranked.map((project, rank) => {
+      const idleDays = Math.min(project.oldestIdleDays ?? 0, MAX_IDLE_DAYS);
+      return FIRST_ORBIT + idleDays * ORBIT_PER_IDLE_DAY + rank * ORBIT_PER_RANK;
+    }),
+    radii,
+  );
+  return ranked.map((project, rank) => {
     const random = seededRandom(hashString(project.repo));
-    const idleDays = Math.min(project.oldestIdleDays ?? 0, MAX_IDLE_DAYS);
-    const orbit = FIRST_ORBIT + idleDays * ORBIT_PER_IDLE_DAY + rank * ORBIT_PER_RANK;
+    const orbit = orbits[rank];
     const { conflicted, failing, unclaimed } = project.counts;
     return {
       project,
       color: severityOf(project).color,
       orbit,
-      radius: BASE_RADIUS + Math.sqrt(project.open) * RADIUS_PER_ROOT_OPEN,
+      radius: radii[rank],
       angle: random() * Math.PI * 2,
       speed: INNER_SPEED / Math.pow(orbit / FIRST_ORBIT, KEPLER_POWER),
       tilt: (random() - 0.5) * 2 * MAX_TILT,
@@ -83,6 +97,24 @@ export function layoutWorlds(projects: readonly ProjectSnapshot[]): OrreryWorld[
       delay: FIRST_DELAY + rank * DELAY_PER_WORLD,
     };
   });
+}
+
+/**
+ * Pushes each orbit, innermost first, clear of the one inside it by both
+ * worlds' air and a clearance, so neighbours never sit on top of each other.
+ * Behind the sun the slant brings lanes closer, so a nearer world can still
+ * pass in front of a farther one there, as a planet transits. Order holds, so
+ * distance still grows with neglect.
+ */
+function clearLanes(orbits: readonly number[], radii: readonly number[]): number[] {
+  const cleared = [...orbits];
+  const outward = orbits.map((_, index) => index).sort((a, b) => orbits[a] - orbits[b]);
+  outward.slice(1).forEach((index, step) => {
+    const inner = outward[step];
+    const apart = (radii[inner] + radii[index]) * AIR_SCALE + LANE_CLEARANCE;
+    cleared[index] = Math.max(cleared[index], cleared[inner] + apart);
+  });
+  return cleared;
 }
 
 /** The furthest orbit, or the first one when there are no worlds. */

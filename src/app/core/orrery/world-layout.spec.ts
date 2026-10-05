@@ -1,5 +1,12 @@
 import { ProjectCounts, ProjectSnapshot } from '../projects/project.types';
-import { cometCount, layoutWorlds, outermostOrbit, sunRadius } from './world-layout';
+import {
+  AIR_SCALE,
+  OrreryWorld,
+  cometCount,
+  layoutWorlds,
+  outermostOrbit,
+  sunRadius,
+} from './world-layout';
 
 const quiet: ProjectCounts = {
   conflicted: 0,
@@ -19,6 +26,24 @@ const project = (name: string, extra: Partial<ProjectSnapshot> = {}): ProjectSna
 });
 
 describe('layoutWorlds', () => {
+  it('keeps neighbouring worlds clear of each other side by side, in the same order', () => {
+    const worlds = layoutWorlds([
+      project('busy-stale', { open: 31, oldestIdleDays: 22, counts: { ...quiet, unlinked: 24 } }),
+      project('busy-fresh', { open: 7, oldestIdleDays: 11, counts: { ...quiet, failing: 1 } }),
+      project('big', { open: 25, oldestIdleDays: 10 }),
+      project('small', { oldestIdleDays: 9 }),
+    ]);
+    const outward = [...worlds].sort((a, b) => a.orbit - b.orbit);
+    const reach = (world: OrreryWorld): number => world.radius * AIR_SCALE;
+
+    outward.slice(1).forEach((world, i) => {
+      const inner = outward[i];
+      expect(world.orbit - inner.orbit).toBeGreaterThanOrEqual(
+        reach(inner) + reach(world) + 28 - 1e-9,
+      );
+    });
+  });
+
   it('puts the most urgent project innermost', () => {
     const [first, second] = layoutWorlds([
       project('calm'),
@@ -75,6 +100,7 @@ describe('orrery measures', () => {
 
   it('finds the outermost orbit, with a floor for an empty system', () => {
     expect(outermostOrbit([])).toBe(260);
-    expect(outermostOrbit(layoutWorlds([project('a'), project('b')]))).toBe(324);
+    const worlds = layoutWorlds([project('a'), project('b')]);
+    expect(outermostOrbit(worlds)).toBe(Math.max(...worlds.map((world) => world.orbit)));
   });
 });

@@ -107,6 +107,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- Big neighbouring worlds on the Orrery no longer sit on top of each other: each orbit keeps clear of the one inside it by both worlds' size, so one world can't hide the next or its label. Behind the sun one can still pass in front of another for a while, like a planet in transit ([#396](https://github.com/anthonyturner/observatory/pull/396)).
 - Ice and grey desert worlds on the Orrery are no longer washed out to white: they show their surface, and every kind of world is lit a little more softly ([#395](https://github.com/anthonyturner/observatory/pull/395)).
 - The Orrery and the Architecture page no longer freeze the tab for about 25 seconds while their planets load: the planet shaders compile in the background (the 2D orrery and the flat circles show meanwhile), each kind of world is its own smaller shader so they are ready in seconds, and the Orrery no longer stalls again when its data refreshes ([#374](https://github.com/anthonyturner/observatory/pull/374)).
 - On the Architecture page, the star system and the UML diagram fill the stage beside the node list again, instead of dropping into the node list's narrow column under it ([#353](https://github.com/anthonyturner/observatory/pull/353)).

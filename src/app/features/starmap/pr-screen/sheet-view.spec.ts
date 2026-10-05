@@ -15,8 +15,20 @@ const detail = {
   fetchedAt: '2026-09-26T04:48:07Z',
   files: [{ path: 'a.sql', additions: 18, deletions: 0, change: 'ADDED' }],
   commits: [
-    { oid: '5f0d0cc', headline: 'first', date: '2026-09-24T08:57:06Z', authors: [] },
-    { oid: '5645cda', headline: 'second', date: '2026-09-24T09:02:45Z', authors: [] },
+    {
+      oid: '5f0d0cc',
+      sha: '5f0d0cc',
+      headline: 'first',
+      date: '2026-09-24T08:57:06Z',
+      authors: [],
+    },
+    {
+      oid: '5645cda',
+      sha: '5645cda',
+      headline: 'second',
+      date: '2026-09-24T09:02:45Z',
+      authors: [],
+    },
   ],
   commitsTotal: 2,
   checks: [

@@ -11,6 +11,7 @@ import {
 import { PullEdits } from '../../../core/edits/pull-edits';
 import { PullDetailFeed } from '../../../core/queue/pull-detail-feed';
 import { QueueBucket } from '../../../core/queue/queue-report';
+import { pullDiffKey } from '../../../core/queue/viewed-files';
 import { Draggable } from '../../../shared/draggable/draggable';
 import { BUCKET_LOOK } from '../../queue/queue-view';
 import { SheetDiff } from './sheet-diff/sheet-diff';
@@ -18,7 +19,8 @@ import { SheetEditor } from './sheet-editor/sheet-editor';
 import { HeaderState, SheetHeader } from './sheet-header/sheet-header';
 import { MergeBox } from './merge-box/merge-box';
 import { SheetMarkdown } from './sheet-markdown/sheet-markdown';
-import { checkRows, commitRows, commitsNote, fileRows } from './sheet-rows/sheet-row';
+import { SheetCommits } from './sheet-commits/sheet-commits';
+import { checkRows, fileRows } from './sheet-rows/sheet-row';
 import { SheetRows } from './sheet-rows/sheet-rows';
 import { NO_COUNTS, SHEET_TABS, SheetTab, kickerOf, routeOf, tabCounts } from './sheet-view';
 import { AgentLanes } from '../../../shared/agent-lanes/agent-lanes';
@@ -39,6 +41,7 @@ const TYPING = 'input, textarea, select';
     SheetHeader,
     SheetMarkdown,
     SheetRows,
+    SheetCommits,
     SheetDiff,
     SheetEditor,
     AgentLanes,
@@ -90,6 +93,7 @@ export class PrScreen {
   protected readonly url = computed(
     () => `https://github.com/${this.repo()}/pull/${this.number()}`,
   );
+  protected readonly viewedKey = computed(() => pullDiffKey(this.repo(), this.number()));
   protected readonly header = computed((): HeaderState => {
     const detail = this.detail();
     return {
@@ -104,14 +108,6 @@ export class PrScreen {
   protected readonly files = computed(() => {
     const detail = this.detail();
     return detail ? fileRows(detail) : [];
-  });
-  protected readonly commits = computed(() => {
-    const detail = this.detail();
-    return detail ? commitRows(detail) : [];
-  });
-  protected readonly commitsNote = computed(() => {
-    const detail = this.detail();
-    return detail ? commitsNote(detail) : null;
   });
   protected readonly checks = computed(() => {
     const detail = this.detail();

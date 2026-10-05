@@ -43,6 +43,7 @@ import { StarCard } from '../star-card/star-card';
 import { CometCard } from '../comet-card/comet-card';
 import { StarmapSound } from '../sound/starmap-sound';
 import { mergePlan } from '../merge-plan';
+import { ringedComet, ringedPull } from '../open-star';
 import { PlanPanel } from '../plan-panel/plan-panel';
 import { AgentsPanel } from '../agents-panel/agents-panel';
 import { AgentsFeed } from '../../../core/agents/agents-report';
@@ -426,6 +427,21 @@ export class StarmapPage {
   );
   protected readonly openItem = computed(
     () => this.shownItems().find((each) => each.number === this.openPull()) ?? null,
+  );
+  /** The star the queue sky rings: an open screen's or issue's, else the card's. */
+  protected readonly ringedPull = computed(() =>
+    ringedPull(
+      { card: this.openPull(), sheet: this.sheetPull(), issue: this.issues.windowIssue() },
+      this.shownItems(),
+    ),
+  );
+  /** The comet the queue sky rings: an open issue's, else the picked one. */
+  protected readonly ringedComet = computed(() =>
+    ringedComet(this.issues.windowIssue(), this.comets(), this.selectedComet()),
+  );
+  /** The body the nursery rings: an open issue's, else the card's. */
+  protected readonly ringedIssue = computed(
+    () => this.issues.windowIssue() ?? this.issues.picked()?.issue?.number ?? null,
   );
   /** What the rest of the sky says about the selected pull request, for its card. */
   protected readonly cardContext = computed((): CardContext => {

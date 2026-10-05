@@ -33,6 +33,8 @@ export interface FileLine {
 export interface CommitLine {
   /** The first seven characters of its hash. */
   readonly oid: string;
+  /** Its full hash, to read its diff by. */
+  readonly sha: string;
   readonly headline: string;
   readonly date: string;
   readonly authors: readonly string[];
@@ -151,6 +153,7 @@ const fileLineOf = (file: RawFile): FileLine => ({
 
 const commitLineOf = (commit: RawCommit): CommitLine => ({
   oid: commit.oid.slice(0, SHORT_OID_LENGTH),
+  sha: commit.oid,
   headline: commit.messageHeadline,
   date: commit.committedDate ?? commit.authoredDate,
   authors: (commit.authors ?? []).map((author) => author.login || author.name).filter(Boolean),
@@ -208,8 +211,16 @@ export function pullDetailOf(raw: RawPull, extras: PullExtras): PullDetail {
   });
 }
 
-/** A pull request without its code, as the preview shows a private repository's. */
-export const withoutCode = (detail: PullDetail): PullDetail => ({
+/** The diff a pull request or a commit carries. */
+interface WithCode {
+  readonly diff: string;
+  readonly diffBytes: number;
+  readonly diffTruncated: boolean;
+  readonly diffHidden: boolean;
+}
+
+/** A pull request or a commit without its code, as the preview shows a private repository's. */
+export const withoutCode = <T extends WithCode>(detail: T): T => ({
   ...detail,
   diff: '',
   diffBytes: 0,

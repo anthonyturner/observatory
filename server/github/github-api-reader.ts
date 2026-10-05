@@ -3,7 +3,7 @@ import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
 import { githubApiWriter } from './github-api-writer.ts';
 import { type GraphQl, type GraphQlConfig, githubGraphQl } from './github-graphql.ts';
-import { githubRest } from './github-rest.ts';
+import { DIFF_MEDIA_TYPE, githubRest } from './github-rest.ts';
 import { ISSUE_GRAPHQL, PULL_GRAPHQL, nodesOf, selectionOf } from './graphql-fields.ts';
 import {
   CLOSING_PULL_FIELDS,
@@ -25,7 +25,6 @@ const ISSUE_LIMIT = 1000;
 const REPO_LIMIT = 1000;
 const PAGE_SIZE = 100;
 const LABEL_LIMIT = 100;
-const DIFF_MEDIA_TYPE = 'application/vnd.github.diff';
 /** As the `gh` reader asks for: sixty days of a busy repository. */
 const LEDGER_LIMIT = 400;
 /** As the `gh` reader asks for: enough for the agents' report cards. */
@@ -227,6 +226,8 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
       shaped<RawPull>([await onePull(repo, number, PULL_DETAIL_FIELDS)])[0],
     pullDiff: (repo, number) =>
       rest({ method: 'GET', path: `/repos/${repo}/pulls/${number}`, accept: DIFF_MEDIA_TYPE }),
+    commitDiff: (repo, sha) =>
+      rest({ method: 'GET', path: `/repos/${repo}/commits/${sha}`, accept: DIFF_MEDIA_TYPE }),
     repoLabels: async (repo) => {
       const repository = await repositoryOf(
         `query($owner: String!, $name: String!, $first: Int!) {

@@ -18,6 +18,7 @@ const reads = {
   history: async (repo: string) => ({ repo, frames: [] }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
+  commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
 } as unknown as ApiReads;
 const visible = async () => new Set(['me/app']);
 
@@ -100,5 +101,14 @@ describe('visitorRoutes', () => {
 
     assert.deepEqual(await response.json(), { faults: [{ text: 'mail [hidden] bounced' }] });
     assert.equal((await get(visitor(true), '/api/logs?repo=me/secret')).status, 404);
+  });
+
+  it('reads a commit of a visible repository only, and refuses a hash that is not hex', async () => {
+    const handle = visitor(false);
+
+    const response = await get(handle, '/api/commit?repo=me/app&sha=abc1234');
+    assert.deepEqual(await response.json(), { sha: 'abc1234', diff: 'diff --git a/x b/x' });
+    assert.equal((await get(handle, '/api/commit?repo=me/secret&sha=abc1234')).status, 404);
+    assert.equal((await get(handle, '/api/commit?repo=me/app&sha=nothex')).status, 400);
   });
 });

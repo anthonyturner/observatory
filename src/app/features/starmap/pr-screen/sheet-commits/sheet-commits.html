@@ -1,0 +1,42 @@
+<app-sheet-rows
+  [rows]="rows()"
+  [note]="note()"
+  [detail]="changes"
+  [openKey]="openSha()"
+  (toggled)="toggle($event)"
+/>
+<ng-template #changes>
+  @if (view(); as open) {
+    <section class="commit" [attr.aria-label]="'Changes in commit ' + open.oid">
+      @switch (open.shows) {
+        @case ('reading') {
+          <p class="note" role="status">Reading this commit’s changes…</p>
+        }
+        @case ('unreachable') {
+          <p class="note warn" role="alert">This commit’s changes could not be read from GitHub.</p>
+          <div class="actions">
+            <button type="button" class="act" (click)="retry()">Try again</button>
+            <a class="act" [href]="open.url" target="_blank" rel="noopener">Open on GitHub</a>
+          </div>
+        }
+        @case ('empty') {
+          <p class="note">This commit changes no file’s content.</p>
+        }
+        @case ('diff') {
+          @if (open.commit; as commit) {
+            <app-sheet-diff
+              [diff]="commit.diff"
+              [diffBytes]="commit.diffBytes"
+              [truncated]="commit.diffTruncated"
+              [viewedKey]="open.viewedKey"
+              [codeHidden]="commit.diffHidden"
+            />
+          }
+        }
+      }
+      <div class="actions">
+        <button type="button" class="act" (click)="close()">Close commit {{ open.oid }}</button>
+      </div>
+    </section>
+  }
+</ng-template>

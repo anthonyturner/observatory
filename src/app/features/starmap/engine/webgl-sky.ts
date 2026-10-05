@@ -129,21 +129,21 @@ function buildScene3D(
     const map = kit.texture((c) => {
       const r = 14;
       const mid = 64;
-      const glow = r * 3.4;
+      const glow = r * 2.6;
       const g = c.createRadialGradient(mid, mid, 0, mid, mid, glow);
       g.addColorStop(0, colour);
       g.addColorStop(0.3, colour + '80');
       g.addColorStop(1, colour + '00');
-      c.globalAlpha = 0.5;
+      c.globalAlpha = 0.3;
       c.fillStyle = g;
       c.fillRect(0, 0, 128, 128);
-      c.globalAlpha = 0.55;
+      c.globalAlpha = 0.28;
       c.lineWidth = r * 0.11;
       for (const [dx, dy] of [
         [1, 0],
         [0, 1],
       ]) {
-        const len = r * 4;
+        const len = r * 2.4;
         const lg = c.createLinearGradient(
           mid - dx * len,
           mid - dy * len,
@@ -159,11 +159,12 @@ function buildScene3D(
         c.lineTo(mid + dx * len, mid + dy * len);
         c.stroke();
       }
-      c.globalAlpha = 1;
+      c.globalAlpha = 0.85;
       c.fillStyle = colour;
       c.beginPath();
       c.arc(mid, mid, r * 0.46, 0, Math.PI * 2);
       c.fill();
+      c.globalAlpha = 0.7;
       c.fillStyle = '#ffffff';
       c.beginPath();
       c.arc(mid, mid, r * 0.21, 0, Math.PI * 2);
@@ -357,7 +358,7 @@ export class WebGLSkyRenderer implements SkyRenderer {
     this.composer = new EffectComposer(this.gl);
     this.renderPass = new RenderPass(this.scene, this.camera3d);
     // Restraint: only luminous cores feed bloom, never the whole nebula.
-    this.bloom = new UnrealBloomPass(new Vector2(1, 1), 0.6, 0.55, 0.7);
+    this.bloom = new UnrealBloomPass(new Vector2(1, 1), 0.4, 0.5, 0.75);
     this.finish = new ShaderPass({
       uniforms: { tDiffuse: { value: null }, time: { value: 0 } },
       vertexShader:

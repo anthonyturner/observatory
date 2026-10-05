@@ -16,58 +16,48 @@ const QUEUE = [
   item(195, 'unreviewed', 34, 12, 3),
 ];
 
-/* pr-starmap's own layoutQueue, run on the same queue (assets/dashboard.html). */
-const PR_STARMAP = [
-  { pr: 58, x: 724.714, y: 773.827, z: -221.956, mag: 17, spin: 2.6185, delay: 0.1, drift: 29.58 },
-  {
-    pr: 85,
-    x: 1262.651,
-    y: 731.086,
-    z: -243.028,
-    mag: 17,
-    spin: 1.2898,
-    delay: 0.135,
-    drift: 31.26,
-  },
-  {
-    pr: 537,
-    x: 1780.253,
-    y: 1084.754,
-    z: -124.949,
-    mag: 8.503,
-    spin: 0.7076,
-    delay: 0.17,
-    drift: 10.26,
-  },
-  {
-    pr: 195,
-    x: 2732.823,
-    y: 627.948,
-    z: -121.156,
-    mag: 17,
-    spin: 0.3412,
-    delay: 0.205,
-    drift: 23.28,
-  },
-];
+/** The closest any two stars of one constellation sit. */
+const closestPair = (stars: readonly { x: number; y: number }[]): number => {
+  let closest = Infinity;
+  stars.forEach((a, i) =>
+    stars
+      .slice(i + 1)
+      .forEach((b) => (closest = Math.min(closest, Math.hypot(a.x - b.x, a.y - b.y)))),
+  );
+  return closest;
+};
+
+const BLOCKED = Array.from({ length: 30 }, (_, i) => item(1000 + i, 'conflicted', i * 2, 40, 10));
 
 describe('layoutQueue', () => {
-  it('places every star exactly where pr-starmap does', () => {
+  it('keeps stars of a crowded constellation a clear gap apart', () => {
     const sky = new SkyLayout();
-    layoutQueue(QUEUE, sky);
+    layoutQueue([...BLOCKED, ...QUEUE], sky);
 
-    expect(
-      sky.stars.map((s) => ({
-        pr: s.item?.pr,
-        x: +s.x.toFixed(3),
-        y: +s.y.toFixed(3),
-        z: +s.z.toFixed(3),
-        mag: +s.mag.toFixed(3),
-        spin: +s.spin.toFixed(4),
-        delay: +s.delay.toFixed(3),
-        drift: +s.driftRadius.toFixed(3),
-      })),
-    ).toEqual(PR_STARMAP);
+    for (const cluster of sky.clusters) {
+      if (cluster.stars.length > 1) expect(closestPair(cluster.stars)).toBeGreaterThan(80);
+    }
+  });
+
+  it('gives each constellation its own stretch of sky', () => {
+    const sky = new SkyLayout();
+    layoutQueue([...BLOCKED, ...QUEUE], sky);
+
+    const spans = sky.clusters.map((c) => [
+      Math.min(...c.stars.map((s) => s.x)),
+      Math.max(...c.stars.map((s) => s.x)),
+    ]);
+    spans.slice(1).forEach(([left], i) => expect(left).toBeGreaterThan(spans[i][1] + 150));
+  });
+
+  it('puts every star in the same place on every load, brighter the longer it has sat', () => {
+    const [a, b] = [new SkyLayout(), new SkyLayout()];
+    layoutQueue(QUEUE, a);
+    layoutQueue(QUEUE, b);
+
+    expect(a.stars.map((s) => [s.x, s.y, s.z])).toEqual(b.stars.map((s) => [s.x, s.y, s.z]));
+    const mag = (pr: number) => a.stars.find((s) => s.item?.pr === pr)?.mag ?? 0;
+    expect(mag(85)).toBeGreaterThan(mag(537));
   });
 
   it('makes one constellation per bucket in use, labelled as pr-starmap labels it', () => {

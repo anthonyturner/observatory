@@ -28,13 +28,13 @@ export interface OrreryWorld {
 }
 
 /** The innermost orbit, clear of the sun. */
-const FIRST_ORBIT = 200;
+const FIRST_ORBIT = 260;
 /** Distance is neglect: each idle day moves a world this far out... */
 const ORBIT_PER_IDLE_DAY = 7.6;
 /** ...up to this many days, so one abandoned project cannot empty the middle. */
 const MAX_IDLE_DAYS = 70;
 /** Worlds of equal idleness still need their own lanes. */
-const ORBIT_PER_RANK = 28;
+const ORBIT_PER_RANK = 64;
 /** An empty world is still a world. */
 const BASE_RADIUS = 14;
 const RADIUS_PER_ROOT_OPEN = 7.6;

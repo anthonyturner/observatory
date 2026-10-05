@@ -2,6 +2,8 @@ import { rgba } from '../../../shared/night-sky/night-sky';
 import { OrreryPalette } from './orrery-palette';
 
 const RAYS = 16;
+/** The halo stays close, so the space round the sun stays dark. */
+const HALO_REACH = 2.2;
 /** Below this zoom the total on the sun is too small to read. */
 const LABEL_MIN_SCALE = 0.2;
 
@@ -15,11 +17,11 @@ export function paintSun(
   palette: OrreryPalette,
 ): void {
   const breathe = 0.9 + Math.sin(time * 0.7) * 0.1;
-  const haloRadius = radius * 5 * breathe;
+  const haloRadius = radius * HALO_REACH * breathe;
   c.save();
   const halo = c.createRadialGradient(cx, cy, 0, cx, cy, haloRadius);
-  halo.addColorStop(0, rgba(palette.sunGlow, 0.85));
-  halo.addColorStop(0.25, rgba(palette.sunHalo, 0.32));
+  halo.addColorStop(0.4, rgba(palette.sunGlow, 0.5));
+  halo.addColorStop(0.6, rgba(palette.sunHalo, 0.12));
   halo.addColorStop(1, rgba(palette.sunHalo, 0));
   c.fillStyle = halo;
   c.beginPath();
@@ -28,11 +30,11 @@ export function paintSun(
 
   // A star seen through any real optic has rays, and they give the centre of
   // the system somewhere to radiate from.
-  c.globalAlpha = 0.5;
+  c.globalAlpha = 0.2;
   c.lineWidth = Math.max(radius * 0.05, 0.6);
   for (let ray = 0; ray < RAYS; ray++) {
     const angle = ray * ((Math.PI * 2) / RAYS) + time * 0.05;
-    const length = radius * (2.4 + Math.sin(time * 1.3 + ray) * 0.55);
+    const length = radius * (1.6 + Math.sin(time * 1.3 + ray) * 0.25);
     const ex = cx + Math.cos(angle) * length;
     const ey = cy + Math.sin(angle) * length;
     const fade = c.createLinearGradient(cx, cy, ex, ey);

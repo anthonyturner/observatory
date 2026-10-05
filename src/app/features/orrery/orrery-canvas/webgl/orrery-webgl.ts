@@ -1,4 +1,5 @@
 import {
+  ACESFilmicToneMapping,
   AdditiveBlending,
   BackSide,
   Color,
@@ -15,7 +16,6 @@ import {
   PointLight,
   Points,
   Quaternion,
-  ReinhardToneMapping,
   RingGeometry,
   Scene,
   ShaderMaterial,
@@ -38,11 +38,11 @@ import {
   outermostOrbit,
   sunRadius,
 } from '../../../../core/orrery/world-layout';
+import { WORLD_KINDS, WorldKind, worldKind } from '../../../../core/orrery/world-kind';
 import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { OrreryPalette } from '../orrery-palette';
 import { DIAL_BEYOND_ORBIT, SceneFrame } from '../orrery-scene';
 import {
-  ATMOSPHERE_FRAGMENT,
   CORONA_FRAGMENT,
   FIELD_FRAGMENT,
   FIELD_VERTEX,
@@ -51,8 +51,8 @@ import {
   RING_FRAGMENT,
   RING_VERTEX,
   SPHERE_VERTEX,
-  SURFACE_FRAGMENT,
 } from './orrery-shaders';
+import { ATMOSPHERE_FRAGMENT, SURFACE_FRAGMENT } from './planet-shaders';
 
 const DEG = Math.PI / 180;
 /** Bloom only on what is luminous: deep space stays black so stars have something to be brighter than. */
@@ -68,6 +68,12 @@ const BLOOM_MAX_RATIO = 1.25;
 const MAX_PIXEL_RATIO = 2;
 /** The dial turns this many radians a second about the plane's normal, as the 2D one does. */
 const DIAL_TURN = 0.006;
+/** How far a world's own surface takes its severity colour; its air carries the rest. */
+const WORLD_TINT = 0.14;
+/** A moon is cratered rock in the palette's moon grey. */
+const MOON_TINT = 0.7;
+/** The air shell's radius, in world radii. */
+const AIR_SCALE = 1.12;
 /** A moon is never smaller than this many screen pixels. */
 const MIN_MOON_PX = 1.3;
 
@@ -122,8 +128,9 @@ export class OrreryWebGL {
       powerPreference: 'high-performance',
     });
     this.gl.setClearColor('#000000');
-    this.gl.toneMapping = ReinhardToneMapping;
-    this.gl.toneMappingExposure = 1.15;
+    // Filmic: deeper shadows and saturated mid-tones, so the surfaces read as lit rock and cloud.
+    this.gl.toneMapping = ACESFilmicToneMapping;
+    this.gl.toneMappingExposure = 1.05;
     this.gl.debug.onShaderError = () => {
       throw new Error('The orrery shader did not compile');
     };
@@ -201,20 +208,28 @@ export class OrreryWebGL {
     const updateField = this.buildField();
     const light = new PointLight('#fff2dd', 1);
     scene.add(light);
-    const surfaceGeometry = own(new SphereGeometry(1, 40, 24));
-    const moonGeometry = own(new SphereGeometry(1, 12, 8));
-    const surface = (colour: Color, seed: number, ringNormal: Vector3, isMoon = false) =>
+    const surfaceGeometry = own(new SphereGeometry(1, 64, 40));
+    const moonGeometry = own(new SphereGeometry(1, 20, 14));
+    const surface = (
+      colour: Color,
+      seed: number,
+      ringNormal: Vector3,
+      kind: WorldKind,
+      isMoon = false,
+    ) =>
       own(
         new ShaderMaterial({
           uniforms: {
             ink: { value: colour },
             seed: { value: seed },
+            kind: { value: WORLD_KINDS.indexOf(kind) },
             sun: { value: light.position },
             centre: { value: new Vector3() },
             radius: { value: 1 },
             ringNormal: { value: ringNormal },
             hasRing: { value: 0 },
             isMoon: { value: isMoon ? 1 : 0 },
+            tint: { value: isMoon ? MOON_TINT : WORLD_TINT },
             parentCentre: { value: new Vector3() },
             parentRadius: { value: 0 },
           },
@@ -225,7 +240,11 @@ export class OrreryWebGL {
     const atmosphere = (colour: Color) =>
       own(
         new ShaderMaterial({
-          uniforms: { ink: { value: colour }, sun: { value: light.position } },
+          uniforms: {
+            ink: { value: colour },
+            sun: { value: light.position },
+            ground: { value: 1 / AIR_SCALE },
+          },
           vertexShader: SPHERE_VERTEX,
           fragmentShader: ATMOSPHERE_FRAGMENT,
           transparent: true,
@@ -304,12 +323,12 @@ export class OrreryWebGL {
       );
       const ringNormal = new Vector3(0, 0, 1).applyQuaternion(ringRotation);
       const seed = hashString(world.project.repo) % 997;
-      const material = surface(colour, seed, ringNormal);
+      const material = surface(colour, seed, ringNormal, worldKind(world.project.repo));
       material.uniforms['hasRing'].value = world.hasRing ? 1 : 0;
       const body = new Mesh(surfaceGeometry, material);
       group.add(body);
       const air = new Mesh(surfaceGeometry, atmosphere(colour));
-      air.scale.setScalar(1.045);
+      air.scale.setScalar(AIR_SCALE);
       group.add(air);
       if (world.hasRing) {
         const ring = new Mesh(
@@ -329,7 +348,7 @@ export class OrreryWebGL {
       const moons = Array.from({ length: world.moons }, (_, i) => {
         const moon = new Mesh(
           moonGeometry,
-          surface(moonInk.clone(), seed + i * 17, ringNormal, true),
+          surface(moonInk.clone(), seed + i * 17, ringNormal, 'desert', true),
         );
         scene.add(moon);
         return moon;

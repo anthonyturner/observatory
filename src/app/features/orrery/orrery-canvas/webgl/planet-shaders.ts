@@ -1,0 +1,179 @@
+/* The worlds' own shaders: procedural surfaces of four kinds, relief lit from
+   the one sun, and a shell of air in the severity colour. Everything is
+   computed per pixel from noise, so no textures load and every repo's world is
+   its own. */
+
+/* Simplex noise in 3D, after Ian McEwan and Ashima Arts (MIT licence), with
+   fractal sums over it. Smooth gradients, unlike hashed value noise, so
+   coastlines and cloud bands read as terrain rather than blobs. */
+const SIMPLEX = `vec3 mod289(vec3 x) { return x - floor(x * (1. / 289.)) * 289.; }
+  vec4 mod289(vec4 x) { return x - floor(x * (1. / 289.)) * 289.; }
+  vec4 permute(vec4 x) { return mod289(((x * 34.) + 1.) * x); }
+  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - .85373472095314 * r; }
+  float snoise(vec3 v) {
+    const vec2 C = vec2(1. / 6., 1. / 3.); const vec4 D = vec4(0., .5, 1., 2.);
+    vec3 i = floor(v + dot(v, C.yyy)); vec3 x0 = v - i + dot(i, C.xxx);
+    vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1. - g;
+    vec3 i1 = min(g.xyz, l.zxy); vec3 i2 = max(g.xyz, l.zxy);
+    vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy;
+    i = mod289(i);
+    vec4 p = permute(permute(permute(i.z + vec4(0., i1.z, i2.z, 1.))
+      + i.y + vec4(0., i1.y, i2.y, 1.)) + i.x + vec4(0., i1.x, i2.x, 1.));
+    vec3 ns = .142857142857 * D.wyz - D.xzx;
+    vec4 j = p - 49. * floor(p * ns.z * ns.z);
+    vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7. * x_);
+    vec4 x = x_ * ns.x + ns.yyyy; vec4 y = y_ * ns.x + ns.yyyy; vec4 h = 1. - abs(x) - abs(y);
+    vec4 b0 = vec4(x.xy, y.xy); vec4 b1 = vec4(x.zw, y.zw);
+    vec4 s0 = floor(b0) * 2. + 1.; vec4 s1 = floor(b1) * 2. + 1.; vec4 sh = -step(h, vec4(0.));
+    vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy; vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+    vec3 p0 = vec3(a0.xy, h.x); vec3 p1 = vec3(a0.zw, h.y);
+    vec3 p2 = vec3(a1.xy, h.z); vec3 p3 = vec3(a1.zw, h.w);
+    vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+    vec4 m = max(.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.); m = m * m;
+    return 42. * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+  }
+  float fbm(vec3 p) { float s = 0., a = .5;
+    for (int i = 0; i < 5; i++) { s += a * snoise(p); p = p * 2.03 + vec3(1.7, 9.2, 3.1); a *= .5; }
+    return s; }
+  float ridged(vec3 p) { float s = 0., a = .5;
+    for (int i = 0; i < 4; i++) { s += a * (1. - abs(snoise(p))); p *= 2.1; a *= .5; }
+    return s; }
+  vec3 hash3(vec3 p) { p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)),
+    dot(p, vec3(113.5, 271.9, 124.6))); return fract(sin(p) * 43758.5453); }`;
+
+/* The kinds, numbered as WORLD_KINDS orders them: rocky, gas, ice, desert.
+   Each gives a height, for relief, and a colour; `vary` picks a palette
+   within the kind, so two rocky worlds need not look alike. */
+const KINDS = `uniform float kind, seed;
+  vec3 offset() { return vec3(seed * .137, seed * .071, seed * .193); }
+  float vary() { return fract(seed * .6180339); }
+  float rockyLand(vec3 p) { vec3 s = offset();
+    vec3 warp = vec3(fbm(p * 1.4 + s), fbm(p * 1.4 + s + 5.2), fbm(p * 1.4 + s + 9.7)) * .35;
+    return fbm(p * 1.8 + warp + s) + .16 * ridged(p * 6. + s) - .12; }
+  float craters(vec3 p) { vec3 cell = floor(p), f = fract(p); float h = 0.;
+    for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) for (int z = -1; z <= 1; z++) {
+      vec3 o = vec3(float(x), float(y), float(z)); vec3 r = hash3(cell + o);
+      if (r.y < .45) continue;
+      float k = length(f - o - r) / (.18 + .22 * r.x);
+      h += (k < 1. ? (k * k - 1.) * .5 : 0.) + exp(-pow((k - 1.) * 5., 2.)) * .2; }
+    return h; }
+  float iceCracks(vec3 p) { vec3 s = offset();
+    return 1. - smoothstep(0., .09, abs(snoise(p * 4.5 + s) + .3 * snoise(p * 11. + s))); }
+  float height(vec3 p) {
+    if (kind < .5) return max(rockyLand(p), 0.);
+    if (kind < 1.5) return 0.;
+    if (kind < 2.5) return fbm(p * 2. + offset()) * .25 - iceCracks(p) * .03;
+    return fbm(p * 2.5 + offset()) * .25 + fbm(p * 12. + offset()) * .05
+      + craters(p * 3.2 + offset()) * .3 + craters(p * 8.3 + offset()) * .12; }
+  vec3 rockyColour(vec3 p, out float wet) { float h = rockyLand(p); wet = step(h, 0.);
+    float lush = step(.4, vary());
+    vec3 deep = mix(vec3(.01, .05, .12), vec3(.02, .07, .1), lush);
+    vec3 shallow = mix(vec3(.04, .2, .3), vec3(.05, .24, .26), lush);
+    vec3 low = mix(vec3(.42, .34, .2), vec3(.12, .26, .09), lush);
+    vec3 high = mix(vec3(.5, .4, .3), vec3(.36, .3, .2), lush);
+    vec3 c = h < 0. ? mix(deep, shallow, smoothstep(-.35, 0., h))
+      : mix(mix(low, high, smoothstep(.05, .35, h)), vec3(.92), smoothstep(.42, .55, h));
+    float cap = abs(p.y) + fbm(p * 3. + offset()) * .12;
+    return mix(c, vec3(.93, .96, 1.), smoothstep(.8, .86, cap)); }
+  vec3 gasColour(vec3 p) { vec3 s = offset();
+    vec3 q = p + vec3(fbm(p * 3. + s), 0., fbm(p * 3. + s + 4.1)) * .12;
+    float eddies = fbm(vec3(q.x * 3., q.y * 14., q.z * 3.) + s);
+    float t = q.y + eddies * .06 + fbm(q * 9. + s) * .015;
+    float cool = step(.55, vary());
+    vec3 c1 = mix(vec3(.86, .76, .58), vec3(.62, .76, .92), cool);
+    vec3 c2 = mix(vec3(.6, .4, .25), vec3(.2, .36, .68), cool);
+    vec3 c3 = mix(vec3(.45, .22, .13), vec3(.88, .93, .98), cool);
+    float band = sin(t * 19. + seed) + .55 * sin(t * 43. + seed * 1.3) + .3 * sin(t * 97.);
+    vec3 c = mix(c1, c2, smoothstep(-.9, .9, band));
+    c = mix(c, c3, smoothstep(.6, 1.4, band) * .7);
+    c *= .9 + eddies * .2;
+    float a = seed * 2.4; vec3 eye = normalize(vec3(cos(a), -.32, sin(a)));
+    float storm = 1. - smoothstep(.07, .16, length((p - eye) * vec3(1., 2.3, 1.)) + snoise(p * 14.) * .02);
+    return mix(c, mix(vec3(.62, .25, .15), vec3(.95), cool), storm * .85); }
+  vec3 iceColour(vec3 p) { float b = fbm(p * 2. + offset());
+    vec3 c = mix(vec3(.62, .76, .9), vec3(.9, .95, 1.), smoothstep(-.4, .4, b));
+    return mix(c, vec3(.4, .58, .78), iceCracks(p) * .45); }
+  vec3 desertColour(vec3 p) { float b = fbm(p * 2.5 + offset());
+    float rust = step(.5, vary());
+    vec3 light = mix(vec3(.58, .56, .52), vec3(.76, .52, .32), rust);
+    vec3 dark = mix(vec3(.32, .31, .3), vec3(.46, .27, .16), rust);
+    float grain = fbm(p * 14. + offset()) * .18;
+    return mix(dark, light, clamp(smoothstep(-.5, .5, b) * .8 + grain + craters(p * 3.2 + offset()) * .3, 0., 1.)); }
+  vec3 surfaceColour(vec3 p, out float wet) { wet = 0.;
+    if (kind < .5) return rockyColour(p, wet);
+    if (kind < 1.5) return gasColour(p);
+    if (kind < 2.5) return iceColour(p);
+    return desertColour(p); }`;
+
+/** A world or moon: a surface of its kind with its relief lit from the sun,
+ *  shadowed by its own ring or, for a moon, by the world it circles. Severity
+ *  tints the surface by `tint` and hazes the limb; the air shell carries the rest. */
+export const SURFACE_FRAGMENT = `${SIMPLEX} ${KINDS}
+  uniform mat4 modelMatrix;
+  varying vec3 wp; varying vec3 wn; varying vec3 local;
+  uniform vec3 ink, sun, centre, ringNormal, parentCentre;
+  uniform float radius, hasRing, isMoon, parentRadius, tint;
+  void main() {
+    // Relief: tilt the normal down the height's slope, measured a step either way.
+    vec3 n = normalize(local);
+    vec3 t1 = normalize(cross(abs(n.y) < .99 ? vec3(0., 1., 0.) : vec3(1., 0., 0.), n));
+    vec3 t2 = cross(n, t1);
+    const float E = .004;
+    float h0 = height(n);
+    vec3 slope = t1 * (height(normalize(n + t1 * E)) - h0) + t2 * (height(normalize(n + t2 * E)) - h0);
+    vec3 N = normalize(mat3(modelMatrix) * normalize(n - slope / E * .05));
+    vec3 G = normalize(wn), L = normalize(sun - wp), V = normalize(cameraPosition - wp);
+    float wet;
+    vec3 albedo = surfaceColour(n, wet);
+    float luma = dot(albedo, vec3(.299, .587, .114));
+    albedo = mix(albedo, ink * luma * 1.5, tint);
+    float sunward = dot(G, L);
+    float day = max(dot(N, L), 0.) * smoothstep(-.05, .12, sunward);
+    // Deep air scatters light round a gas giant, so its terminator is soft.
+    if (kind > .5 && kind < 1.5) day = smoothstep(-.15, .65, sunward) * .9;
+    float shadow = 1.;
+    if (hasRing > .5) {
+      float denom = dot(L, ringNormal);
+      float hit = -dot(wp - centre, ringNormal) / (abs(denom) < .0001 ? .0001 : denom);
+      float r = length(wp + L * hit - centre) / max(radius, .001);
+      float band = smoothstep(1.72, 1.82, r) * (1. - smoothstep(2.24, 2.34, r));
+      if (hit > 0.) shadow *= 1. - band * .32;
+    }
+    if (isMoon > .5) {
+      vec3 toParent = parentCentre - wp;
+      float ahead = dot(toParent, L);
+      float miss = length(toParent - L * ahead);
+      if (ahead > 0.) shadow *= smoothstep(parentRadius * .92, parentRadius * 1.08, miss);
+    }
+    // Sunlight reddens where it grazes the air, along the terminator.
+    float dusk = smoothstep(-.05, .1, sunward) * (1. - smoothstep(.1, .45, sunward));
+    vec3 light = mix(vec3(1., .97, .92), vec3(1., .58, .36), dusk * .7);
+    vec3 colour = albedo * (.03 + day * shadow * 1.35 * light) + ink * .012;
+    // Water and ice shine; rock and cloud tops barely do.
+    float gloss = mix(.04, .55, wet) + (kind > 1.5 && kind < 2.5 ? .15 : 0.);
+    float sharp = mix(18., 70., wet);
+    colour += vec3(1., .95, .85) * pow(max(dot(reflect(-L, N), V), 0.), sharp) * gloss * day * shadow;
+    float limb = pow(1. - max(dot(G, V), 0.), 4.) * smoothstep(-.2, .4, sunward);
+    colour += ink * limb * .35 * (1. - isMoon);
+    gl_FragColor = vec4(colour, 1.);
+  }`;
+
+/** A shell of air in the severity colour: densest just above the ground,
+ *  thinning with altitude, lit on the day side and warming to sunset along
+ *  the terminator. Altitude is where the view ray passes closest to the world. */
+export const ATMOSPHERE_FRAGMENT = `uniform mat4 modelMatrix;
+  varying vec3 wp; uniform vec3 ink, sun; uniform float ground;
+  void main() {
+    vec3 centre = modelMatrix[3].xyz;
+    float shell = length(modelMatrix[0].xyz), solid = shell * ground;
+    vec3 ray = normalize(wp - cameraPosition), toCentre = centre - cameraPosition;
+    vec3 nearest = cameraPosition + ray * dot(toCentre, ray);
+    float reach = length(nearest - centre);
+    float altitude = clamp((reach - solid) / (shell - solid), 0., 1.);
+    float density = reach < solid ? pow(reach / solid, 8.) * .55 : exp(-altitude * 4.) * (1. - altitude);
+    float sunward = dot(normalize(nearest - centre), normalize(sun - centre));
+    float day = smoothstep(-.35, .45, sunward);
+    float dusk = smoothstep(-.3, 0., sunward) * (1. - smoothstep(0., .35, sunward));
+    vec3 colour = mix(ink * 1.5, vec3(1., .55, .3) * 1.3, dusk * .5);
+    gl_FragColor = vec4(colour, density * (.06 + .94 * day) * .85); }`;

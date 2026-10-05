@@ -16,45 +16,6 @@ const NOISE = `float noise3(vec3 p) {
     mix(mix(fract(sin(n+a.z)*43758.5),fract(sin(n+a.x+a.z)*43758.5),f.x),
     mix(fract(sin(n+a.y+a.z)*43758.5),fract(sin(n+a.x+a.y+a.z)*43758.5),f.x),f.y),f.z); }`;
 
-/** A world or moon: noisy land and bands in its colour, lit from the sun, shadowed
- *  by its own ring or, for a moon, by the world it circles. A dim night side
- *  keeps the severity hue. */
-export const SURFACE_FRAGMENT = `${NOISE}
-  varying vec3 wp; varying vec3 wn; varying vec3 local;
-  uniform vec3 ink, sun, centre, ringNormal, parentCentre;
-  uniform float seed, radius, hasRing, isMoon, parentRadius;
-  void main() {
-    vec3 N = normalize(wn), L = normalize(sun-wp), V = normalize(cameraPosition-wp);
-    float land = noise3(local*4. + seed) * .6 + noise3(local*11. + seed)*.28 + noise3(local*28. + seed)*.12;
-    float bands = sin(local.y * 25. + land * 9. + seed) * .025;
-    vec3 albedo = ink * (.72 + land * .42 + bands);
-    float day = max(dot(N,L),0.);
-    float shadow = 1.;
-    if (hasRing > .5) {
-      float denom = dot(L,ringNormal);
-      float hit = -dot(wp-centre,ringNormal) / (abs(denom) < .0001 ? .0001 : denom);
-      float r = length(wp + L*hit - centre) / max(radius,.001);
-      float band = smoothstep(1.72,1.82,r) * (1.-smoothstep(2.24,2.34,r));
-      if (hit > 0.) shadow *= 1. - band*.32;
-    }
-    if (isMoon > .5) {
-      vec3 toParent = parentCentre - wp;
-      float ahead = dot(toParent,L);
-      float miss = length(toParent - L*ahead);
-      if (ahead > 0.) shadow *= smoothstep(parentRadius*.92,parentRadius*1.08,miss);
-    }
-    vec3 colour = albedo * (.055 + day * shadow * 1.32);
-    float spec = pow(max(dot(reflect(-L,N),V),0.),28.) * day * .13 * shadow;
-    gl_FragColor = vec4(colour + vec3(spec),1.);
-  }`;
-
-/** A thin shell of air, brightest at the limb on the day side. */
-export const ATMOSPHERE_FRAGMENT = `varying vec3 wp; varying vec3 wn; uniform vec3 ink, sun;
-  void main() { vec3 N = normalize(wn), V = normalize(cameraPosition-wp);
-    float fresnel = pow(1. - max(dot(N,V),0.),3.5);
-    float day = .12 + .88 * max(dot(N,normalize(sun-wp)),0.);
-    gl_FragColor = vec4(ink * 1.7, fresnel * day * .62); }`;
-
 /** The sun's corona, marched through in twelve steps, with slowly moving wisps.
  *  It reaches `reach` sun radii, and fades fast so the space round the sun stays dark. */
 export const CORONA_FRAGMENT = `${NOISE} varying vec3 wp; uniform float time, radius, reach;

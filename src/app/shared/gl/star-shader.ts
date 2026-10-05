@@ -1,4 +1,4 @@
-import { SIMPLEX_GLSL } from '../../../shared/gl/simplex-glsl';
+import { SIMPLEX_GLSL } from './simplex-glsl';
 
 /* A pull request's star, drawn on a camera-facing quad. Far off it is a calm
    point with a soft glow; as the camera closes in (`detail` rising to 1) its
@@ -7,6 +7,10 @@ import { SIMPLEX_GLSL } from '../../../shared/gl/simplex-glsl';
 
 /** How far the quad reaches, in units of `starRadius`: the old sprite's extent. */
 export const STAR_QUAD_REACH = 128 / 14 / 2;
+
+/** What a star is, in the order the star shader numbers them. */
+export type StarType = 'bright' | 'giant' | 'veiled' | 'calm';
+export const STAR_TYPES: readonly StarType[] = ['bright', 'giant', 'veiled', 'calm'];
 
 export const STAR_VERTEX = `varying vec2 vUv;
   void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;

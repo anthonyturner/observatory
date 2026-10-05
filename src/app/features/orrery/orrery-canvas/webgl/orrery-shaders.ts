@@ -2,11 +2,6 @@
    the one sun: shadows are ray/plane and ray/sphere tests rather than shadow
    maps, which would cost six renders a frame on a laptop. */
 
-export const SPHERE_VERTEX = `varying vec3 wp; varying vec3 wn; varying vec3 local;
-  void main() { local = position; vec4 p = modelMatrix * vec4(position,1.);
-    wp = p.xyz; wn = normalize(mat3(modelMatrix) * normal);
-    gl_Position = projectionMatrix * viewMatrix * p; }`;
-
 const NOISE = `float noise3(vec3 p) {
   vec3 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
   vec3 a = vec3(17.1,113.5,27.7);

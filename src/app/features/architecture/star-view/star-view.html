@@ -6,12 +6,6 @@
     }
   }
 
-  <g class="sun" [attr.data-heat]="system().sun.heat">
-    <circle class="glow" [attr.r]="sunRadius * 2" />
-    <circle class="body" [attr.r]="sunRadius" />
-    <text class="name" [attr.y]="sunRadius + 20">{{ system().sun.node.name }}</text>
-  </g>
-
   @for (orbit of system().orbits; track orbit.key) {
     <g class="orbit" [style.animation-duration.s]="orbit.period">
       @for (planet of orbit.planets; track planet.entry.node.id) {
@@ -26,6 +20,18 @@
       }
       @for (planet of orbit.planets; track planet.entry.node.id) {
         <g [attr.transform]="'translate(' + planet.x + ' ' + planet.y + ')'">
+          <!-- Turns with the orbit, so the lit side keeps facing the sun. -->
+          @if (portraits()?.planets?.get(planet.entry.node.id); as src) {
+            <circle class="backing" [attr.r]="planet.size" />
+            <image
+              class="portrait"
+              [attr.href]="src"
+              [attr.x]="-planet.size * worldFrame"
+              [attr.y]="-planet.size * worldFrame"
+              [attr.width]="planet.size * worldFrame * 2"
+              [attr.height]="planet.size * worldFrame * 2"
+            />
+          }
           <g class="upright" [style.animation-duration.s]="orbit.period">
             <g
               class="planet"
@@ -53,4 +59,23 @@
       }
     </g>
   }
+
+  <!-- Last, so the links run from under the sun rather than across its face. -->
+  <g class="sun" [attr.data-heat]="system().sun.heat">
+    @if (portraits(); as portraits) {
+      <circle class="backing" [attr.r]="sunRadius" />
+      <image
+        class="portrait"
+        [attr.href]="portraits.sun"
+        [attr.x]="-sunRadius * sunFrame"
+        [attr.y]="-sunRadius * sunFrame"
+        [attr.width]="sunRadius * sunFrame * 2"
+        [attr.height]="sunRadius * sunFrame * 2"
+      />
+    } @else {
+      <circle class="glow" [attr.r]="sunRadius * 2" />
+      <circle class="body" [attr.r]="sunRadius" />
+    }
+    <text class="name" [attr.y]="sunRadius + 20">{{ system().sun.node.name }}</text>
+  </g>
 </svg>

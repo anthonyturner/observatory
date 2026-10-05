@@ -115,8 +115,60 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 720px) {
+/* On a small screen, narrow or short, the header keeps to fixed rows: the stamp
+   to one line and the legend to one row that scrolls sideways, so neither wraps
+   down over the sky. The padding leaves room for the focus ring. */
+@media (max-width: 720px), (max-height: 500px) {
   h1 {
-    font-size: 26px;
+    font-size: 24px;
+  }
+
+  .stamp {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .legend {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin: 4px -6px 0;
+    padding: 6px;
+  }
+
+  .legend::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lg {
+    flex: none;
+  }
+}
+
+/* Short, as a phone on its side: the way back shares the title's row. */
+@media (max-height: 500px) {
+  :host {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 14px;
+  }
+
+  app-up-link {
+    margin-bottom: 0;
+  }
+
+  .brand {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+
+  .legend {
+    flex-basis: 100%;
   }
 }

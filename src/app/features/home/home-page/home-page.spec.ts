@@ -134,7 +134,7 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
     expect(sections).toEqual(['app-news-section', 'app-fleet-section', 'app-agents-section']);
   });
 
-  it('puts Mail above the news once the local API answers for it', async () => {
+  it('puts Mail in the HUD, after the vitals, once the local API answers for it', async () => {
     const fixture = renderFixture();
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('app-mail-section')).toBeNull();
@@ -146,11 +146,11 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
       expect(element.querySelector('app-mail-section')).not.toBeNull();
     });
 
-    const sections = Array.from(element.querySelectorAll('main > *')).map((each) =>
+    const panels = Array.from(element.querySelectorAll('.hud-body > *')).map((each) =>
       each.tagName.toLowerCase(),
     );
-    expect(sections[0]).toBe('app-mail-section');
-    expect(sections[1]).toBe('app-news-section');
+    expect(panels.slice(2, 4)).toEqual(['app-vitals-panel', 'app-mail-section']);
+    expect(element.querySelector('.hud-body')?.classList).toContain('has-mail');
     expect(
       Array.from(element.querySelectorAll('.jumps a')).map((link) => link.textContent?.trim())[0],
     ).toContain('Mail');

@@ -1,20 +1,9 @@
-<section
-  id="mail"
-  class="mail"
-  tabindex="-1"
-  aria-labelledby="mail-title"
-  [attr.aria-busy]="isFirstRead()"
->
-  <div class="head">
-    <h2 id="mail-title">Mail</h2>
-    <span class="sub">newest first</span>
+<div id="mail" class="mail" tabindex="-1" [attr.aria-busy]="isFirstRead()">
+  <app-hud-section heading="Mail" note="newest first">
     @if (summary(); as summary) {
-      <span class="sub note">{{ summary }}</span>
+      <p class="note">{{ summary }}</p>
     }
-    <app-top-link />
-  </div>
-  @let view = panel();
-  <div class="pane">
+    @let view = panel();
     <div class="bar">
       <app-tab-strip
         [name]="tabStrip"
@@ -117,6 +106,6 @@
         }
       }
     </div>
-  </div>
+  </app-hud-section>
   <p class="visually-hidden" aria-live="polite">{{ announcement() }}</p>
-</section>
+</div>

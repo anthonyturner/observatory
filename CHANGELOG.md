@@ -75,6 +75,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- Mail on Home is now a small side panel in the left column, under System vitals, rather than a full-width band below the HUD ([#338](https://github.com/anthonyturner/observatory/pull/338)).
 - The PR screen's diffs are easier to read: added and removed lines keep the normal code colour, marked by a faint wash, a thin coloured bar on the left and a coloured + or − sign, instead of turning the whole line green or red; copying a line no longer copies its sign ([#335](https://github.com/anthonyturner/observatory/pull/335)).
 - The local site now reads your iCloud and Gmail inboxes on every page, not only while Home is open: every five minutes while the tab is in view, and once when you come back to it ([#320](https://github.com/anthonyturner/observatory/pull/320)).
 - Clicking one of Observatory's desktop notifications, including the Agent review's, brings its tab forward and closes the notification ([#308](https://github.com/anthonyturner/observatory/pull/308)).

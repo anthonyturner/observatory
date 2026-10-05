@@ -263,7 +263,7 @@ const RUN_HELP_ENTRIES: readonly HelpEntry[] = [
 const MAIL_HELP_ENTRY: HelpEntry = {
   term: 'Mail',
   meaning:
-    'Above the news (Mail in the menu jumps there): the 20 newest messages in your iCloud and Gmail inboxes, one tab each, newest first. New marks unread mail; Home only reads, and never marks anything read. Refresh reads both again. New unread mail also shows as a notice on any page, and with Speak on Jev says it: only how many with ElevenLabs, the sender and subject with Kokoro. The settings go in ~/.claude/observatory/.env (the README says how to make an app password). Only on this machine.',
+    'In the left column, under System vitals (Mail in the menu jumps there): the 20 newest messages in your iCloud and Gmail inboxes, one tab each, newest first. New marks unread mail; Home only reads, and never marks anything read. Refresh reads both again. New unread mail also shows as a notice on any page, and with Speak on Jev says it: only how many with ElevenLabs, the sender and subject with Kokoro. The settings go in ~/.claude/observatory/.env (the README says how to make an app password). Only on this machine.',
   section: USING,
 };
 

@@ -48,6 +48,7 @@ import {
   STAR_VERTEX,
 } from '../../../shared/gl/star-shader';
 import { starLook } from './star-type';
+import { GALAXY_FRAGMENT, GALAXY_VERTEX } from './galaxy-shader';
 import { IssuePlanet, PLANET_TONE_COUNT, issuePlanets, massOf, systemTurn } from './star-system';
 import {
   DISC_FRAGMENT,
@@ -132,6 +133,44 @@ interface SceneModel {
   dispose(): void;
 }
 
+/** The galaxy's arms turn this many radians a second: barely, but they turn. */
+const GALAXY_SPIN = 0.004;
+/** How much the galaxy shifts and grows with the camera: far, so very little. */
+const GALAXY_PARALLAX = 0.00003;
+const GALAXY_ZOOM_POWER = 0.1;
+
+/** A spiral galaxy behind everything: a full-screen layer at the far plane. */
+function galaxy3D(scene: Scene, owned: Owned): (f: SkyFrame) => void {
+  const material = owned.own(
+    new ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        aspect: { value: 1 },
+        zoom: { value: 1 },
+        spin: { value: 0 },
+        drift: { value: new Vector2() },
+      },
+      vertexShader: GALAXY_VERTEX,
+      fragmentShader: GALAXY_FRAGMENT,
+      depthTest: false,
+      depthWrite: false,
+    }),
+  );
+  const sky = new Mesh(owned.own(new PlaneGeometry(2, 2)), material);
+  sky.frustumCulled = false;
+  sky.renderOrder = -1;
+  scene.add(sky);
+  return (f) => {
+    const { x, y, scale } = f.camera.current;
+    const t = f.frozen ? 0 : f.t;
+    material.uniforms['time'].value = t;
+    material.uniforms['aspect'].value = f.width / Math.max(1, f.height);
+    material.uniforms['zoom'].value = Math.pow(scale, GALAXY_ZOOM_POWER);
+    material.uniforms['spin'].value = t * GALAXY_SPIN;
+    material.uniforms['drift'].value.set(x * GALAXY_PARALLAX, -y * GALAXY_PARALLAX);
+  };
+}
+
 function buildScene3D(
   scene: Scene,
   kit: Kit,
@@ -139,6 +178,7 @@ function buildScene3D(
   data: SkyScene,
 ): SceneModel {
   const { owned } = kit;
+  const updateGalaxy = galaxy3D(scene, owned);
   const updateField = field3D(scene, owned, data.field);
   // Soft cloud cells at distinct depths form the nebula volume.
   const cloudMap = kit.texture((c, size) => {
@@ -325,6 +365,7 @@ function buildScene3D(
     update(f: SkyFrame): void {
       const { t } = f;
       const cam = f.camera.current;
+      updateGalaxy(f);
       updateField(t, Math.min(globalThis.devicePixelRatio || 1, 1.25));
       for (const { cloud, x, y, z, phase } of clouds) {
         cloud.position.copy(vec(x + Math.sin(t * 0.035 + phase) * 50, y, z));

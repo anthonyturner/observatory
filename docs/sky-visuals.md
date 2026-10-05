@@ -122,6 +122,18 @@ and the disc and planet shaders are `engine/star-system-shaders.ts`.
 
 ![PR stars rendered on their own, zoomed in: a flaring giant with a gas disc and planets, a clear star with a green quick-win disc, a veiled star with planets, and a large change with a wide disc](images/review-queue-stars.png)
 
+### The sky behind (scenery)
+
+Where the Orrery shows the Milky Way from inside, the review queue shows a
+neighbour from outside: a spiral galaxy (`engine/galaxy-shader.ts`) drawn as a
+full-screen layer at the far plane, up and to the right, tilted away. It has a
+warm core, two bluish arms on a logarithmic spiral with pink star-forming
+knots and a dust lane on their inner edge, and a sparse haze of faint stars.
+The arms turn at 0.004 rad/s and the layer shifts slightly with the camera;
+both hold still when motion is off. The coloured nebula clouds stay, and the
+field stars (`buildField`) keep their places and count but now follow the
+same power law as the Orrery's: mostly faint, a few bright.
+
 ### Layout
 
 `layoutQueue` in `engine/sky-layout.ts` makes each bucket a constellation laid

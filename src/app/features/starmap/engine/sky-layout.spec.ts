@@ -75,6 +75,18 @@ describe('layoutQueue', () => {
 });
 
 describe('buildField', () => {
+  it("is mostly faint stars and a few bright ones, within each layer's limits", () => {
+    const field = buildField();
+    const faint = field.filter((s) => s.a < 0.15).length;
+    const bright = field.filter((s) => s.a > 0.3).length;
+
+    expect(faint).toBeGreaterThan(bright * 3);
+    for (const s of field) {
+      expect(s.a).toBeLessThanOrEqual(0.55);
+      expect(s.r).toBeLessThanOrEqual(1.6);
+    }
+  });
+
   it('is the same field every time: 520 far stars and 220 near ones', () => {
     const [a, b] = [buildField(), buildField()];
     expect(a.length).toBe(740);

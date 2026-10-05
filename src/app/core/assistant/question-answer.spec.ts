@@ -88,6 +88,8 @@ describe('answerTo', () => {
       ['dark crash', UNMATCHED],
       ['what is the weather', null],
       ['open issues', null],
+      ['open pull requests', null],
+      ['show me the pull requests', null],
       ['refresh', null],
       ['stop', null],
       ['remind me in 5 minutes', null],

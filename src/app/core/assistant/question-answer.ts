@@ -41,7 +41,6 @@ const KIND_WORDS: ReadonlyMap<string, OpenKind> = new Map([
   ['pr', 'pull'],
   ['issue', 'issue'],
 ]);
-const REQUEST_WORDS: ReadonlySet<string> = new Set(['request', 'requests']);
 
 const ORDINALS: ReadonlyMap<string, number> = new Map([
   ['first', 0],
@@ -118,11 +117,12 @@ const both =
   (item, index, items) =>
     first(item, index, items) && second(item, index, items);
 
-/** "pull request 12", "PR 12", "issue 12", or the kind alone ("the issue"). */
+/** "pull request 12", "PR 12", "issue 12", or the kind alone ("the issue").
+ *  Only the singular: "open pull requests" is a request, not an answer. */
 const readKind: Reader = (words, at, heard) => {
   const kind = KIND_WORDS.get(words[at]);
   if (!kind) return 0;
-  const taken = REQUEST_WORDS.has(words[at + 1] ?? '') ? 2 : 1;
+  const taken = words[at + 1] === 'request' ? 2 : 1;
   const number = numberAt(words, at + taken);
   heard.clues.push(number ? both(sameKind(kind), sameNumber(number.value)) : sameKind(kind));
   return taken + (number?.length ?? 0);
@@ -191,7 +191,7 @@ const READERS: readonly Reader[] = [
 
 /** Each word of the items' titles, and which items hold it. A stand-in
  *  title ("Open the issue") is all filler and kind words, so it never
- *  matches: the readers before this one take those words first. */
+ *  matches: the readers before readTitleWord take those words first. */
 function cardOf(items: readonly OpenItem[]): Card {
   const titleWords = new Map<string, number[]>();
   items.forEach(({ title }, index) => {

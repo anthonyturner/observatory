@@ -36,6 +36,24 @@ Code: `features/orrery/orrery-canvas/webgl/orrery-webgl.ts` builds the scene;
 the shaders are in `shared/planets/planet-shaders.ts` (shared with the
 Architecture page's star view) and `orrery-shaders.ts` (sun, rings, field).
 
+### The shipped Milky Way (data: merged pull requests)
+
+The band holds every pull request merged in the last 60 days across the projects
+on show (`orrery-canvas/shipped-layer.ts`). `ShippedFeed`
+(`core/orrery/shipped-feed.ts`) reads each shown project's `/api/ledger` in the
+browser, so the server's per-repository access rules apply to each, and drops any
+it can't read. `shippedWork` (`core/orrery/shipped.ts`) gathers the merges, newest
+first. `placeShipped` runs them along the band from the oldest shown (at least a
+week) to today, eased so recent days get more room, spread through their own day
+and across the band, densest on its centre line. `milky-way-geometry.ts` holds
+the band's direction, offset, turn and parallax for both the shader and
+`bandToScreen`, so specks sit in the band and turn with it (the shader's small
+noisy wander isn't reproduced, so a speck can sit just off the glow).
+
+Each speck is a near-white core in a faint halo of its project's world colour,
+fading in oldest first. A world in front hides it. Hover names it (project,
+number, merge date, title); click opens that project's review queue.
+
 ### Lanes
 
 `layoutWorlds` sets each orbit from urgency and neglect, then `clearLanes`

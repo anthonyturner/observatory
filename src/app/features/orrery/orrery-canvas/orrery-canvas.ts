@@ -23,6 +23,11 @@ import { OrreryPalette, readOrreryPalette } from './orrery-palette';
 import { OrreryScene, SceneFrame } from './orrery-scene';
 import type { OrreryWebGL } from './webgl/orrery-webgl';
 import { CardHover } from './card-hover';
+import { ShippedItem } from '../../../core/orrery/shipped';
+import { ShippedLayer } from './shipped-layer';
+
+/** A speck whose project has no world on show: a cool white. */
+const SHIPPED_FALLBACK = '200, 215, 255';
 
 const FRAMES_PER_SECOND = 30;
 /** Retina and beyond cost more than they show on a moving sky. */
@@ -63,6 +68,8 @@ export class OrreryCanvas {
   readonly worlds = input.required<readonly OrreryWorld[]>();
   /** The repository of the world whose card is shown, or null. */
   readonly selected = model<string | null>(null);
+  /** What every shown project merged lately: specks in the Milky Way. */
+  readonly shipped = input<readonly ShippedItem[]>([]);
   /** Asks to open a world's review queue: a click, or a second tap on a touch screen. */
   readonly open = output<string>();
 
@@ -71,6 +78,12 @@ export class OrreryCanvas {
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
   private readonly camera = new OrreryCamera();
+  private readonly shippedLayer = new ShippedLayer();
+  /** A project's world colour as `r, g, b`, so its specks match its world. */
+  private readonly colourOf = (repo: string): string => {
+    const world = this.worlds().find((each) => each.project.repo === repo);
+    return world && this.palette ? this.palette.channels(world.color) : SHIPPED_FALLBACK;
+  };
   private readonly teardown: (() => void)[] = [];
   private scene: OrreryScene | null = null;
   private palette: OrreryPalette | null = null;
@@ -104,6 +117,10 @@ export class OrreryCanvas {
       this.scene?.setWorlds(worlds);
       if (this.webgl) void this.giveWorlds(this.webgl, worlds);
       if (worlds.length && this.shownAt === null) this.showSystem();
+      this.loop?.kick();
+    });
+    effect(() => {
+      this.shippedLayer.set(this.shipped(), Date.now());
       this.loop?.kick();
     });
     effect(() => {
@@ -243,6 +260,7 @@ export class OrreryCanvas {
       selectedKey: this.selected(),
     };
     this.drawn = this.drawFrame(ctx, frame);
+    this.shippedLayer.draw(ctx, frame, wall, this.drawn, this.colourOf);
     // Worlds move under a still pointer, so what it rests on can change.
     if (this.pointer && !this.press) this.hoverAt(this.pointer.x, this.pointer.y);
   }
@@ -405,7 +423,10 @@ export class OrreryCanvas {
 
   private hoverAt(x: number, y: number): void {
     const key = pickWorld(this.drawn, x, y);
-    this.isOverWorld.set(key !== null);
+    // A world is in front of the Milky Way, so only open sky offers a speck.
+    const speck = key === null ? this.shippedLayer.pick(x, y) : null;
+    if (this.shippedLayer.hoverOn(speck)) this.loop?.kick();
+    this.isOverWorld.set(key !== null || speck !== null);
     this.cardHover.over(key);
   }
 
@@ -415,6 +436,9 @@ export class OrreryCanvas {
   private clickAt(x: number, y: number, isTouch: boolean): void {
     const key = pickWorld(this.drawn, x, y);
     this.cardHover.cancel();
+    // A shipped speck opens its project's review queue, where its Spiral of Done is.
+    const speck = key === null ? this.shippedLayer.pick(x, y) : null;
+    if (speck) return this.open.emit(speck.repo);
     const isFirstTap = isTouch && key !== this.selected();
     if (key && !isFirstTap) {
       this.open.emit(key);

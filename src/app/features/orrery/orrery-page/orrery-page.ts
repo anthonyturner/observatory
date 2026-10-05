@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { ShippedFeed } from '../../../core/orrery/shipped-feed';
 import { Router } from '@angular/router';
 import { orreryStamp } from '../../../core/orrery/orrery-stamp';
 import { DataAge } from '../../../core/projects/data-age';
@@ -27,7 +35,7 @@ const WAITING_MESSAGE = {
   selector: 'app-orrery-page',
   imports: [UpLink, OrreryCanvas, OrreryTools, WorldCard, HelpCard, FogVeil],
   hostDirectives: [HelpShortcuts],
-  providers: [provideOrrerySound()],
+  providers: [provideOrrerySound(), ShippedFeed],
   templateUrl: './orrery-page.html',
   styleUrl: './orrery-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,6 +46,8 @@ export class OrreryPage {
   private readonly state = inject(PROJECTS_STATE);
   private readonly now = inject(Clock).now;
   private readonly projects = inject(PROJECTS);
+  /** What the shown projects merged lately, for the Milky Way. */
+  protected readonly shipped = inject(ShippedFeed);
 
   protected readonly helpEntries = ORRERY_HELP_ENTRIES;
   protected readonly helpKeys = ORRERY_HELP_KEYS;
@@ -58,6 +68,10 @@ export class OrreryPage {
       ? null
       : 'No worlds yet: the signed-in GitHub account owns no repositories.';
   });
+
+  constructor() {
+    effect(() => this.shipped.load(this.projects().map((project) => project.repo)));
+  }
 
   /** A world's review queue, one level down; Back returns here. */
   protected openQueue(repo: string): void {

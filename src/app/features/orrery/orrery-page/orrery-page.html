@@ -1,4 +1,10 @@
-<app-orrery-canvas #canvas [worlds]="worlds()" [(selected)]="selected" (open)="openQueue($event)" />
+<app-orrery-canvas
+  #canvas
+  [worlds]="worlds()"
+  [shipped]="shipped.items()"
+  [(selected)]="selected"
+  (open)="openQueue($event)"
+/>
 <app-fog-veil class="fog" [level]="fog().level" />
 
 <header class="hud top">

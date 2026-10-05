@@ -1,4 +1,8 @@
 import { SIMPLEX_GLSL } from '../../../../shared/gl/simplex-glsl';
+import { BAND_ALONG_X, BAND_ALONG_Y, BAND_OFFSET } from '../milky-way-geometry';
+
+/** A number as a GLSL float literal. */
+const glsl = (n: number): string => n.toFixed(4);
 
 /* The Milky Way behind the Orrery: a full-screen layer drawn before anything
    else, so it is always the farthest thing in the sky. It is scenery, kept
@@ -24,9 +28,9 @@ export const MILKY_WAY_FRAGMENT = `${SIMPLEX_GLSL}
     float c = cos(turn), s = sin(turn);
     p = vec2(c * p.x - s * p.y, s * p.x + c * p.y);
 
-    vec2 along = normalize(vec2(1., .38)), across = vec2(-along.y, along.x);
+    vec2 along = normalize(vec2(${glsl(BAND_ALONG_X)}, ${glsl(BAND_ALONG_Y)})), across = vec2(-along.y, along.x);
     // Off the centre, so the busiest part of the system sits on darker sky.
-    float u = dot(p, along), v = dot(p, across) + .24;
+    float u = dot(p, along), v = dot(p, across) + ${glsl(BAND_OFFSET)};
     v += haze(vec3(u * 1.3, 0., 7.)) * .09;
     float width = .17 + .05 * haze(vec3(u * 2., 3., 1.));
     float band = exp(-v * v / (width * width));

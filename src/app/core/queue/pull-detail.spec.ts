@@ -34,7 +34,13 @@ const detail = {
   changedFiles: 4,
   files: [{ path: 'src/a.ts', additions: 90, deletions: 95, change: 'MODIFIED' }, { path: 3 }],
   commits: [
-    { oid: '5f0d0cc', headline: 'chore: start', date: '2026-07-30T05:00:00Z', authors: ['a'] },
+    {
+      oid: '5f0d0cc',
+      sha: '5f0d0ccf681704ba3da2fa65bcda258add87f98d',
+      headline: 'chore: start',
+      date: '2026-07-30T05:00:00Z',
+      authors: ['a'],
+    },
   ],
   commitsTotal: 1,
   diff: 'diff --git a/src/a.ts b/src/a.ts\n',
@@ -67,6 +73,12 @@ describe('parsePullDetail', () => {
       true,
     ]);
     expect(parsed?.fetchedAt).toBe(detail.fetchedAt);
+  });
+
+  it('reads a commit by its short hash when no full one is sent', () => {
+    const commits = [{ oid: '5f0d0cc', headline: 'chore: start' }];
+
+    expect(parsePullDetail({ ...detail, commits })?.commits[0].sha).toBe('5f0d0cc');
   });
 
   it('names a check by its name when it has no run, and reads no result as pending', () => {

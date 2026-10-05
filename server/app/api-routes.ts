@@ -4,6 +4,7 @@ import { editRequestFrom, editTargetFrom } from '../edits/edit-request.ts';
 import type { PullEditor } from '../edits/pull-editor.ts';
 import type { RouteTable } from '../http/api-handler.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
+import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { triageRequestFrom } from '../triage/triage.ts';
@@ -58,6 +59,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
         return reads.pull(repo, number);
       },
       '/api/pull-state': (query) => reads.pullState(repoOf(query), numberOf(query)),
+      '/api/commit': (query) => reads.commit(repoOf(query), commitShaFrom(query.get('sha'))),
       '/api/labels': (query) => reads.labels(repoOf(query)),
       '/api/edit': (query) => editor.read({ repo: repoOf(query), number: numberOf(query) }),
     },

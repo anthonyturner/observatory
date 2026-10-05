@@ -1,4 +1,5 @@
 import { gh, ghJson } from './gh-cli.ts';
+import { DIFF_MEDIA_TYPE } from './github-rest.ts';
 import { ghCliWriter } from './gh-cli-writer.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
@@ -139,6 +140,8 @@ export function ghCliReader(): GitHub {
         PULL_DETAIL_FIELDS.join(','),
       ]),
     pullDiff: (repo, number) => gh(['pr', 'diff', String(number), '--repo', repo]),
+    commitDiff: (repo, sha) =>
+      gh(['api', `repos/${repo}/commits/${sha}`, '-H', `Accept: ${DIFF_MEDIA_TYPE}`]),
     repoLabels: (repo) =>
       ghJson<RawLabel[]>([
         'label',

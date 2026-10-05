@@ -12,6 +12,7 @@ import { type IssuesReport, issuesReport } from '../issues/issues-report.ts';
 import type { LogSnapshot, LogsUnconfigured } from '../logs/log-types.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
 import { projectsReport } from '../projects/projects-report.ts';
+import { type CommitDiff, commitDiffOf } from '../queue/commit-diff.ts';
 import { type PullDetail, pullDetailOf } from '../queue/pull-detail.ts';
 import { type QueueReport, queueReport } from '../queue/queue-report.ts';
 import type { UsageReport } from '../usage/usage-types.ts';
@@ -24,6 +25,8 @@ const PROJECTS_TTL_MS = 5 * 60_000;
 const QUEUE_TTL_MS = 2 * 60_000;
 /** One pull request is read when it is opened, and again a minute later at most. */
 const PULL_TTL_MS = 60_000;
+/** A commit never changes; the limit only keeps the cache from holding every one ever opened. */
+const COMMIT_TTL_MS = 10 * 60_000;
 /** A repository's labels change rarely; the Edit tab offers them. */
 const LABELS_TTL_MS = 5 * 60_000;
 /** Merging every pair in a clone takes a while: at most every ten minutes. */
@@ -79,6 +82,8 @@ export interface ApiReads {
   pull(repo: string, number: number): Promise<PullDetail>;
   /** The next read of this pull request goes to GitHub, not the cache. */
   forgetPull(repo: string, number: number): void;
+  /** One commit's diff, for the PR screen's Commits tab. */
+  commit(repo: string, sha: string): Promise<CommitDiff>;
   /** Whether one pull request is open, merged or closed, and its title. */
   pullState(repo: string, number: number): Promise<PullState>;
   labels(repo: string): Promise<RawLabel[]>;
@@ -121,6 +126,12 @@ export function cachedReads(sources: ReadSources): ApiReads {
     ]);
     return pullDetailOf(raw, { diff, fetchedAt: new Date().toISOString() });
   }, PULL_TTL_MS);
+  const commitKey = (repo: string, sha: string): string => `${repo}@${sha}`;
+  const commitOf = keyedCache(async (key) => {
+    const [repo, sha] = key.split('@');
+    const diff = await github.commitDiff(repo, sha);
+    return commitDiffOf(sha, { diff, fetchedAt: new Date().toISOString() });
+  }, COMMIT_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
     return github.pullState(repo, Number(number));
@@ -137,6 +148,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     forgetIssue: (repo, number) => issueOf.forget(numberKey(repo, number)),
     pull: (repo, number) => pullOf.read(numberKey(repo, number)),
     forgetPull: (repo, number) => pullOf.forget(numberKey(repo, number)),
+    commit: (repo, sha) => commitOf.read(commitKey(repo, sha)),
     pullState: (repo, number) => pullStateOf.read(numberKey(repo, number)),
     labels: cachedByKey((repo) => github.repoLabels(repo), LABELS_TTL_MS),
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),

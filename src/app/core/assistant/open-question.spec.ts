@@ -61,6 +61,18 @@ describe('OpenQuestion', () => {
     expect(question.question()?.words).toBe('second');
   });
 
+  it('remembers an unclear answer was said until a new question is asked', () => {
+    const question = TestBed.inject(OpenQuestion);
+    question.ask('first', [ITEM]);
+    expect(question.hasSaidUnclear()).toBe(false);
+
+    question.noteUnclearSaid();
+    expect(question.hasSaidUnclear()).toBe(true);
+
+    question.ask('second', [ITEM]);
+    expect(question.hasSaidUnclear()).toBe(false);
+  });
+
   it('can ask only while the Ask panel is on screen, and closes when it goes', () => {
     const question = TestBed.inject(OpenQuestion);
     expect(question.canAsk()).toBe(false);

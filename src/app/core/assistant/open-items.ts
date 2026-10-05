@@ -30,6 +30,15 @@ const NOUNS: Readonly<Record<OpenKind, { readonly one: string; readonly many: st
 };
 const KIND_ORDER: readonly OpenKind[] = ['pull', 'issue'];
 
+export const KIND_NAMES: Readonly<Record<OpenKind, string>> = {
+  pull: 'Pull request',
+  issue: 'Issue',
+};
+
+/** How a line names the item: "pull request 12 in alpha". */
+export const itemNameOf = ({ kind, number, label }: OpenItem): string =>
+  `${KIND_NAMES[kind].toLowerCase()} ${number} in ${label}`;
+
 const keyOf = (kind: OpenKind, repo: string, number: number): string =>
   `${kind}:${repo}#${number}`;
 

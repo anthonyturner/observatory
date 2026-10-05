@@ -15,6 +15,7 @@ import { NO_ANSWER_CHIP, WAITING_CHIP, chipOf } from './reply-chip';
 import { AskedHow, EntryAction, answering, noting, saying } from './reply-entry';
 import { ReplyLog } from './reply-log';
 import { ReplySpeech } from './reply-speech';
+import { SpokenAnswer } from './spoken-answer';
 import { TierOneActions } from './tier-one-actions';
 import { Clock } from '../time/clock';
 
@@ -44,6 +45,7 @@ export class AskFeed implements AskChannel {
   private readonly jump = inject(PageJump);
   private readonly proposals = inject(ProposalSlot);
   private readonly question = inject(OpenQuestion);
+  private readonly answers = inject(SpokenAnswer);
   private readonly focus = inject(AskBoxFocus);
   private readonly draft = inject(AskDraft);
   private readonly clock = inject(Clock);
@@ -67,6 +69,8 @@ export class AskFeed implements AskChannel {
   submit(text: string, options?: { readonly spoken?: boolean }): void {
     const asked = text.trim();
     const spoken = options?.spoken ?? false;
+    const answer = spoken ? this.answers.answerOf(asked) : null;
+    if (answer) return this.answers.carryOut(asked, answer);
     if (asked && spoken && this.holdsSpeech()) return this.hold(asked);
     if (!asked || this.asking()) return;
     this.carriedCut = spoken && this.cutSpeech;

@@ -25,6 +25,7 @@ export class OpenQuestion {
   private readonly destroyRef = inject(DestroyRef);
   private readonly asked = signal<AskedQuestion | null>(null);
   private readonly isPanelShown = signal(false);
+  private readonly unclearSaid = signal(false);
   private expiry = Subscription.EMPTY;
   private askedCount = 0;
 
@@ -32,6 +33,8 @@ export class OpenQuestion {
   /** True while a question can still be answered; a timed-out one cannot. */
   readonly isWaiting = computed(() => this.asked()?.hasTimedOut === false);
   readonly canAsk = this.isPanelShown.asReadonly();
+  /** Only the first unclear answer to a question is spoken; the rest are only shown. */
+  readonly hasSaidUnclear = this.unclearSaid.asReadonly();
 
   /** Puts up a new question in place of any other. */
   ask(words: string, items: readonly OpenItem[]): void {
@@ -45,6 +48,11 @@ export class OpenQuestion {
   close(): void {
     this.expiry.unsubscribe();
     this.asked.set(null);
+    this.unclearSaid.set(false);
+  }
+
+  noteUnclearSaid(): void {
+    this.unclearSaid.set(true);
   }
 
   panelArrived(): void {

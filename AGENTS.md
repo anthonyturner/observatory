@@ -73,6 +73,7 @@ authorization and its limits are in
 | add, rename or thin an agent skill | [agent-workflows/skills.md](docs/agent-workflows/skills.md) |
 | add a changelog entry, or cut a release | [changelog.md](docs/changelog.md) |
 | record a decision that constrains future work | [decisions/README.md](docs/decisions/README.md) |
+| change how the Orrery worlds or Review Queue stars look | [sky-visuals.md](docs/sky-visuals.md) |
 | check what the project is built on | [tech-stack.md](docs/tech-stack.md) |
 
 When guidance conflicts: this file, then [docs/rules.md](docs/rules.md), then

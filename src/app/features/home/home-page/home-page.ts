@@ -12,6 +12,7 @@ import { AskPanel } from '../ask-panel/ask-panel';
 import { CorePanel } from '../core-panel/core-panel';
 import { FleetSection } from '../fleet-section/fleet-section';
 import { MailSection } from '../mail-section/mail-section';
+import { NewsSection } from '../news-section/news-section';
 import { ReaderWindow } from '../../reader/reader-window/reader-window';
 import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
@@ -35,7 +36,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
 /** The Mail section's id, which a mail notice's link names. */
 const MAIL_SECTION = 'mail';
 
-/** Home: the HUD over the sky with mail under the vitals, the projects below the fold, and a
+/** Home: the HUD over the sky with mail under the vitals, the news and the projects below the fold, and a
  *  task's panel beside them. It lays the sections out and nothing more. */
 @Component({
   selector: 'app-home-page',
@@ -53,6 +54,7 @@ const MAIL_SECTION = 'mail';
     AgentsSection,
     AgentReviewCard,
     MailSection,
+    NewsSection,
     HelpCard,
     RunDockPanel,
     HomeTools,

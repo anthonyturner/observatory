@@ -67,7 +67,7 @@ describe('landOnFragment', () => {
     isShown.set(true);
     const { harness, land, settle } = await arrive('/');
 
-    await harness.navigateByUrl('/#projects');
+    await harness.navigateByUrl('/#news');
     await settle();
 
     expect(land).not.toHaveBeenCalled();

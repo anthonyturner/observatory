@@ -5,7 +5,7 @@ proposes coding-agent work that runs on your machine. Around him, your GitHub
 work is drawn as a live, animated space scene:
 
 - **Home**: a glowing core that shows what the assistant is doing, a card per
-  project, Claude Code usage and mail.
+  project, Claude Code usage, news and mail.
 - **The Orrery**: one world per project, its look driven by that project's
   health.
 - **The review queue**: one star per open pull request, grouped by what blocks
@@ -18,7 +18,7 @@ migrated one small piece at a time into typed, tested Angular components.
 
 > **Status:** Home, the Orrery and each project's star map are built, and all
 > of them show live data from GitHub and Claude Code: project cards, usage,
-> directives, the review queue, issues, logs and agent report cards.
+> directives, news, the review queue, issues, logs and agent report cards.
 > Jev, Home's assistant, answers typed or spoken requests and proposes work
 > that can run on this machine.
 
@@ -202,7 +202,7 @@ files on this machine, so it listens on loopback only:
   you name), skipping any already recorded. Install this hook before removing
   pr-starmap's plugin, or handoffs in between go unrecorded.
 
-- **News** (`GET /api/news`; Home no longer shows it) comes from free public
+- **News** (Home's News section, below the projects) comes from free public
   RSS and Atom feeds, read by the API at most every half hour with no key and
   no AI: AI news from Simon Willison, the GitHub Changelog (its AI items),
   Hacker News, Hugging Face, OpenAI, Google AI, The Verge and TechCrunch, with
@@ -343,7 +343,7 @@ set on Agent Speak is never touched: Observatory writes only that one file.
 
 ### Mail (iCloud and Gmail)
 
-Home's Mail section lists the 20 newest messages in your
+Home's Mail section, above the news, lists the 20 newest messages in your
 iCloud and Gmail inboxes, one tab each: sender, subject, when it arrived and a
 **New** mark on unread mail. `GET /api/mail?account=icloud|gmail` reads one
 inbox over IMAP (the standard protocol mail apps read with), signing in with

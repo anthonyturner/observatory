@@ -127,11 +127,11 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
     expect(terms).toContain('Fog');
   });
 
-  it('puts the projects, then the agents below the HUD, in the main landmark', () => {
+  it('puts the news, the projects, then the agents below the HUD, in the main landmark', () => {
     const sections = Array.from(render().querySelectorAll('main > *')).map((each) =>
       each.tagName.toLowerCase(),
     );
-    expect(sections).toEqual(['app-fleet-section', 'app-agents-section']);
+    expect(sections).toEqual(['app-news-section', 'app-fleet-section', 'app-agents-section']);
   });
 
   it('puts Mail in the HUD, after the vitals, once the local API answers for it', async () => {

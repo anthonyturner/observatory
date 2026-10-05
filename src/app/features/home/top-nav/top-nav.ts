@@ -18,6 +18,7 @@ const MAIL_JUMP: Jump = {
 };
 
 const JUMPS: readonly Jump[] = [
+  { id: 'news', label: 'News', hint: 'Jump to the AI and software engineering news' },
   { id: 'projects', label: 'Projects', hint: 'Jump to your project cards' },
   { id: 'agents', label: 'Agents', hint: 'Jump to what each agent you use costs' },
 ];

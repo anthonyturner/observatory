@@ -716,7 +716,7 @@ export class StarmapPage {
   /** A search lands on its star or comet, with its card, or opens an issue with neither. */
   protected find(query: string): void {
     const found = findOnSky(query, this.shownItems(), this.searchIssues());
-    this.searchMiss.set(found ? null : `Nothing matches ì${query.trim()}î.`);
+    this.searchMiss.set(found ? null : `Nothing matches ‚Äú${query.trim()}‚Äù.`);
     if (!found) return;
     if (found.kind === 'pull') {
       this.selectedComet.set(null);

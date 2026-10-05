@@ -627,12 +627,21 @@ export class StarmapPage {
   }
 
   /** Flies to a star from the list, and opens it. */
-  /** A click on the sky: a star's pull request, or empty sky. */
+  /** A click on the sky: a star opens its pull request's screen; empty sky closes its card. */
   protected pick(number: number | null): void {
     this.selectedComet.set(null);
     this.openPull.set(number);
     const item = this.skyItems().find((each) => each.pr === number);
-    if (item) this.sound.ping(BLOCKED.has(item.bucket), item.pr);
+    if (!item) return;
+    this.sound.ping(BLOCKED.has(item.bucket), item.pr);
+    this.openSheet(item.pr);
+  }
+
+  /** A star rested on: its card, unless a full screen is already open over the sky. */
+  protected preview(number: number): void {
+    if (this.coveredByScreen()) return;
+    this.selectedComet.set(null);
+    this.openPull.set(number);
   }
 
   protected pickLog(star: LogStar | null): void {
@@ -646,11 +655,24 @@ export class StarmapPage {
     if (star) this.sound.ping(false);
   }
 
-  /** A click on a comet opens its card, with the soft tone a picked star gives. */
+  /** A click on a comet opens its issue, with the soft tone a picked star gives. */
   protected pickComet(comet: Comet): void {
     this.openPull.set(null);
     this.selectedComet.set(comet);
     this.sound.ping(false);
+    this.openIssue(comet.issue);
+  }
+
+  /** A comet rested on: its card, unless a full screen is already open over the sky. */
+  protected previewComet(comet: Comet): void {
+    if (this.coveredByScreen()) return;
+    this.openPull.set(null);
+    this.selectedComet.set(comet);
+  }
+
+  /** Whether a PR screen or issue window is open, so hovering the sky behind it changes nothing. */
+  private coveredByScreen(): boolean {
+    return this.sheetPull() !== null || this.issues.windowIssue() !== null;
   }
 
   protected goTo(number: number): void {

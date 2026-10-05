@@ -24,6 +24,9 @@ export interface FitInsets {
 }
 
 /** What the engine needs from the page around it. */
+/** What lies under a point on screen: a star, or something a layer drew. */
+export type SkyHit = { readonly star: SkyStar } | { readonly other: unknown };
+
 export interface SkyHost {
   readonly document: Document;
   readonly canvas: HTMLCanvasElement;
@@ -31,10 +34,10 @@ export interface SkyHost {
   frozen(): boolean;
   /** Chrome to frame the sky between. */
   insets(): FitInsets;
-  /** A star was clicked, or empty sky (null). */
-  picked(star: SkyStar | null): void;
+  /** A star was clicked, or empty sky (null); `touch` when a finger tapped it. */
+  picked(star: SkyStar | null, touch: boolean): void;
   /** A layer's own thing was clicked where no star was, as a comet. */
-  pickedOther?(thing: unknown): void;
+  pickedOther?(thing: unknown, touch: boolean): void;
   /** Loads the 3D renderer; rejects if the browser cannot run it. */
   loadWebGL?(
     camera: CameraController,
@@ -243,15 +246,24 @@ export class SkyEngine {
     return best;
   }
 
-  /** A click: a star, else something a layer drew there, else empty sky. */
-  private click(sx: number, sy: number): void {
+  /** A star under the point, else something a layer drew there, else nothing. */
+  hitAt(sx: number, sy: number): SkyHit | null {
     const star = this.pick(sx, sy);
-    if (star) return this.host.picked(star);
+    if (star) return { star };
     for (const layer of this.layers) {
-      const thing = layer.pick?.(sx, sy);
-      if (thing && this.host.pickedOther) return this.host.pickedOther(thing);
+      const other = layer.pick?.(sx, sy);
+      if (other) return { other };
     }
-    this.host.picked(null);
+    return null;
+  }
+
+  /** A click: a star, else something a layer drew there, else empty sky. */
+  private click(sx: number, sy: number, touch: boolean): void {
+    const hit = this.hitAt(sx, sy);
+    if (hit && 'other' in hit && this.host.pickedOther) {
+      return this.host.pickedOther(hit.other, touch);
+    }
+    this.host.picked(hit && 'star' in hit ? hit.star : null, touch);
   }
 
   /** Where a world point is on screen, through the active renderer. */
@@ -504,7 +516,7 @@ export class SkyEngine {
       if (wasClick) {
         velocity.x = 0;
         velocity.y = 0;
-        this.click(e.clientX, e.clientY);
+        this.click(e.clientX, e.clientY, e.pointerType === 'touch');
       }
       this.kick();
     });

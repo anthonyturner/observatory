@@ -41,7 +41,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Comet',
-        'A comet is an open issue no pull request closes — work nobody has picked up. Its head grows with age, its tail with how long it has sat untouched. Click one, then Open to read the issue. The legend entry shows or hides them.',
+        'A comet is an open issue no pull request closes — work nobody has picked up. Its head grows with age, its tail with how long it has sat untouched. Rest the pointer on one for its card; click it to read the issue. The legend entry shows or hides them.',
       ],
       [
         'Binary',
@@ -64,8 +64,12 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'The strip at the bottom: open pull requests per day for 60 days, each merge a green streak, each recorded refresh a tick. Drag across it, or press Replay, to watch the sky change refresh by refresh; [ and ] step, Live returns to now.',
       ],
       [
+        'Hover',
+        'Rest the pointer on a star for its card: the essentials, plus Snooze and Dismiss. It stays until you rest on another star or click empty sky. Issue #n reads its issue here. On a touch screen, tap once for the card.',
+      ],
+      [
         'Click',
-        'A card with the essentials, plus Snooze and Dismiss. Open shows the whole pull request: description, files, commits, checks and diff. Issue #n reads its issue here.',
+        'Opens the whole pull request: description, files, commits, checks and diff. The card’s Open does the same. On a touch screen, tap the star a second time.',
       ],
       [
         'Edit',

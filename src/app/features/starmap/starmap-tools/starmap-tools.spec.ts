@@ -48,7 +48,7 @@ describe('StarmapTools', () => {
       ['Collisions', 'Merge plan', 'Agents'],
       ['Refresh', 'Motion on', 'Sound off', '?'],
     ]);
-    expect(element.querySelector('.hint')?.textContent).toBe('drag · scroll · click a star');
+    expect(element.querySelector('.hint')?.textContent).toBe('drag · scroll · hover or click a star');
   });
 
   it('asks for another screen, and hides what means nothing there', () => {

@@ -33,6 +33,12 @@ import { IssueStar } from '../../issues/issue-look';
 import { IssueNarrowing } from '../../issues/issue-list';
 import { NurseryInput, issueStarOf } from '../nursery/nursery-layout';
 import { NurserySky } from '../nursery/nursery-sky';
+import { HoverDwell } from './hover-dwell';
+
+/** What the pointer can rest on over the queue: a star's pull request, or a comet. */
+type QueueHover = number | Comet;
+const hoverKey = (under: QueueHover): string =>
+  typeof under === 'number' ? `pr${under}` : `issue${under.issue}`;
 
 /** Which sky the engine draws. */
 export type SkyChart = 'prs' | 'logs' | 'issues';
@@ -60,8 +66,9 @@ const PANS: Readonly<Record<string, readonly [number, number]>> = {
 
 /**
  * pr-starmap's star map: the review queue as constellations, drawn in 3D with
- * Three.js when the browser can, in Canvas 2D when it cannot. A click on a
- * star picks its pull request.
+ * Three.js when the browser can, in Canvas 2D when it cannot. Resting the
+ * pointer on a star or comet previews it; a click opens it. A finger has no
+ * hover, so its first tap previews and a second tap opens.
  */
 @Component({
   selector: 'app-starmap-sky',
@@ -113,13 +120,18 @@ export class StarmapSky {
   readonly fog = input(0);
   readonly hidden = input(false);
   readonly insets = input<SkyInsets>(DEFAULT_INSETS);
+  /** A star was clicked open, or empty sky (null). */
   readonly picked = output<number | null>();
+  /** A star was rested on, or tapped once: show its card. */
+  readonly previewed = output<number>();
   /** A log star was clicked, or empty sky (null), on the Log Sky. */
   readonly pickedLog = output<LogStar | null>();
   /** An issue's body was clicked, or empty sky (null), on the nursery. */
   readonly pickedIssue = output<IssueStar | null>();
-  /** A comet was clicked. */
+  /** A comet was clicked open. */
   readonly pickedComet = output<Comet>();
+  /** A comet was rested on, or tapped once: show its card. */
+  readonly previewedComet = output<Comet>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('sky');
   private readonly document = inject(DOCUMENT);
@@ -136,6 +148,9 @@ export class StarmapSky {
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
     () => this.cometLayer.selectedAt(),
   );
+  private readonly hover = new HoverDwell<QueueHover>((settled) =>
+    typeof settled === 'number' ? this.previewed.emit(settled) : this.previewedComet.emit(settled),
+  );
   private engine: SkyEngine | null = null;
   private isFramed = false;
   /** The skies already framed once, so a data refresh keeps the viewer's camera. */
@@ -143,7 +158,10 @@ export class StarmapSky {
 
   constructor() {
     afterNextRender(() => this.start());
-    inject(DestroyRef).onDestroy(() => this.engine?.dispose());
+    inject(DestroyRef).onDestroy(() => {
+      this.hover.cancel();
+      this.engine?.dispose();
+    });
     effect(() => {
       const chart = this.chart();
       const items = this.items();
@@ -268,14 +286,29 @@ export class StarmapSky {
     if (star) this.engine?.goTo(star);
   }
 
-  /** On the nursery, the body under the pointer is named. */
+  /** On the queue, a star or comet rested on is previewed; on the nursery,
+   *  the body under the pointer is named. */
   protected onHover(event: PointerEvent | null): void {
     const engine = this.engine;
-    if (!engine || this.chart() !== 'issues' || this.hidden()) return;
+    if (!engine || this.hidden()) return;
     if (event?.buttons) return;
+    if (this.chart() === 'prs') return this.hoverQueue(engine, event);
+    if (this.chart() !== 'issues') return;
     if (!this.nurserySky.hover(engine, event?.clientX ?? null, event?.clientY ?? null)) return;
     this.canvas().nativeElement.style.cursor = this.nurserySky.isHovering ? 'pointer' : '';
     engine.kick();
+  }
+
+  private hoverQueue(engine: SkyEngine, event: PointerEvent | null): void {
+    if (event?.pointerType === 'touch') return;
+    const hit = event ? engine.hitAt(event.clientX, event.clientY) : null;
+    const under: QueueHover | null = !hit
+      ? null
+      : 'star' in hit
+        ? (hit.star.item?.pr ?? null)
+        : (hit.other as Comet);
+    this.canvas().nativeElement.style.cursor = under === null ? '' : 'pointer';
+    this.hover.aim(under === null ? null : hoverKey(under), under);
   }
 
   /** A dragged window takes its line with it, even on a still sky. */
@@ -307,7 +340,7 @@ export class StarmapSky {
         canvas,
         frozen: () => this.motion.isStill(),
         insets: () => this.insets(),
-        picked: (star: SkyStar | null) => this.emitPicked(star),
+        picked: (star: SkyStar | null, touch: boolean) => this.emitPicked(star, touch),
         loadWebGL: async (camera, onLost) => {
           const { WebGLSkyRenderer } = await import('../engine/webgl-sky');
           return new WebGLSkyRenderer(
@@ -321,7 +354,7 @@ export class StarmapSky {
             onLost,
           );
         },
-        pickedOther: (thing) => this.pickedComet.emit(thing as Comet),
+        pickedOther: (thing, touch) => this.emitComet(thing as Comet, touch),
         failed: (error) => this.errors.handleError(error),
       });
     } catch (error) {
@@ -345,11 +378,20 @@ export class StarmapSky {
     this.layOut(this.chart(), this.items(), this.logLayout(), this.nursery());
   }
 
-  private emitPicked(star: SkyStar | null): void {
+  private emitPicked(star: SkyStar | null, touch: boolean): void {
     const chart = this.chart();
-    if (chart === 'logs') this.pickedLog.emit(logStarOf(star));
-    else if (chart === 'issues') this.pickedIssue.emit(issueStarOf(star));
-    else this.picked.emit(star?.item?.pr ?? null);
+    if (chart === 'logs') return this.pickedLog.emit(logStarOf(star));
+    if (chart === 'issues') return this.pickedIssue.emit(issueStarOf(star));
+    this.hover.cancel();
+    const pr = star?.item?.pr ?? null;
+    if (pr !== null && touch && this.selected() !== pr) this.previewed.emit(pr);
+    else this.picked.emit(pr);
+  }
+
+  private emitComet(comet: Comet, touch: boolean): void {
+    this.hover.cancel();
+    if (touch && this.selectedComet()?.issue !== comet.issue) this.previewedComet.emit(comet);
+    else this.pickedComet.emit(comet);
   }
 
   /** Lays out the sky on screen. Within one sky stars glide to their new places;

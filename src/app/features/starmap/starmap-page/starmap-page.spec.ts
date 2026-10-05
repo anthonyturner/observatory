@@ -244,12 +244,12 @@ describe('StarmapPage', () => {
     expect(element.querySelector('app-issue-card')).toBeNull();
   });
 
-  it('opens a star’s card, and its full screen from Open; Esc closes them in turn', () => {
+  it('previews a star’s card, and its full screen from Open; Esc closes them in turn', () => {
     const { fixture, element, http, button } = render();
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
 
-    sky.picked.emit(7);
+    sky.previewed.emit(7);
     fixture.detectChanges();
     expect(element.querySelector('.prno')?.textContent).toBe('#7');
     button('Open')?.click();
@@ -272,7 +272,7 @@ describe('StarmapPage', () => {
     const { fixture, http, button } = render();
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
-    sky.picked.emit(9);
+    sky.previewed.emit(9);
     fixture.detectChanges();
 
     button('Snooze 7d')?.click();
@@ -283,15 +283,42 @@ describe('StarmapPage', () => {
     http.expectOne('/api/queue?repo=me/a');
   });
 
-  it('pings softly when a comet is picked, as it does for a star', () => {
-    const { fixture } = render();
+  it('opens a clicked star’s full screen at once, and keeps the sky behind it still', () => {
+    const { fixture, element, http } = render();
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    sky.picked.emit(7);
+    fixture.detectChanges();
+    http.expectOne('/api/pull?repo=me/a&number=7');
+    http.expectOne('/api/edit?repo=me/a&number=7');
+    http.expectOne('/api/labels?repo=me/a');
+    expect(element.querySelector('app-pr-screen')).not.toBeNull();
+
+    sky.previewed.emit(9);
+    fixture.detectChanges();
+    expect(element.querySelector('.prno')?.textContent).toBe('#7');
+  });
+
+  it('opens a clicked comet’s issue, pinging softly as a star does', () => {
+    const { fixture, element, http } = render();
     const ping = vi.spyOn(TestBed.inject(StarmapSound), 'ping');
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
 
-    sky.pickedComet.emit({ key: 'me/a#4' } as never);
+    sky.pickedComet.emit({
+      issue: 4,
+      title: 'Stalled',
+      url: 'https://github.com/me/a/issues/4',
+      labels: [],
+      ageDays: 3,
+      idleDays: 2,
+    });
+    fixture.detectChanges();
 
     expect(ping).toHaveBeenCalledWith(false);
+    http.expectOne('/api/issue?repo=me/a&number=4');
+    expect(element.querySelector('app-issue-window')).not.toBeNull();
   });
 
   it('offers a visitor to the hosted preview no triage to change', () => {
@@ -300,7 +327,7 @@ describe('StarmapPage', () => {
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
 
-    sky.picked.emit(7);
+    sky.previewed.emit(7);
     fixture.detectChanges();
 
     expect(button('Open')).toBeDefined();

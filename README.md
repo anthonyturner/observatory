@@ -5,7 +5,7 @@ proposes coding-agent work that runs on your machine. Around him, your GitHub
 work is drawn as a live, animated space scene:
 
 - **Home**: a glowing core that shows what the assistant is doing, a card per
-  project, Claude Code usage, news, mail and notices.
+  project, Claude Code usage, news and mail.
 - **The Orrery**: one world per project, its look driven by that project's
   health.
 - **The review queue**: one star per open pull request, grouped by what blocks

@@ -56,9 +56,13 @@ import {
 
 const DEG = Math.PI / 180;
 /** Bloom only on what is luminous: deep space stays black so stars have something to be brighter than. */
-const BLOOM_STRENGTH = 0.6;
-const BLOOM_RADIUS = 0.55;
-const BLOOM_THRESHOLD = 0.7;
+const BLOOM_STRENGTH = 0.32;
+const BLOOM_RADIUS = 0.25;
+const BLOOM_THRESHOLD = 0.85;
+/** Just bright enough that the bloom catches the sun's rim, and no more. */
+const SUN_OVERBRIGHT = 1.3;
+/** How far the corona reaches, in sun radii. */
+const CORONA_REACH = 1.9;
 /** Bloom runs at no more than this pixel ratio: it is about to be blurred. */
 const BLOOM_MAX_RATIO = 1.25;
 const MAX_PIXEL_RATIO = 2;
@@ -241,13 +245,21 @@ export class OrreryWebGL {
     const sunSize = sunRadius(worlds);
     const sun = new Mesh(
       surfaceGeometry,
-      own(new MeshBasicMaterial({ color: rgb(this.palette.sunBody).multiplyScalar(2.8) })),
+      own(
+        new MeshBasicMaterial({
+          color: rgb(this.palette.sunBody).multiplyScalar(SUN_OVERBRIGHT),
+        }),
+      ),
     );
     sun.scale.setScalar(sunSize);
     scene.add(sun);
     const corona = own(
       new ShaderMaterial({
-        uniforms: { time: { value: 0 }, radius: { value: sunSize } },
+        uniforms: {
+          time: { value: 0 },
+          radius: { value: sunSize },
+          reach: { value: CORONA_REACH },
+        },
         vertexShader: SPHERE_VERTEX,
         fragmentShader: CORONA_FRAGMENT,
         transparent: true,
@@ -256,7 +268,7 @@ export class OrreryWebGL {
         blending: AdditiveBlending,
       }),
     );
-    scene.add(new Mesh(own(new SphereGeometry(sunSize * 3.5, 32, 20)), corona));
+    scene.add(new Mesh(own(new SphereGeometry(sunSize * CORONA_REACH, 32, 20)), corona));
 
     // The dial: two rings and 72 ticks in the plane, turning slowly.
     const dial = new Group();

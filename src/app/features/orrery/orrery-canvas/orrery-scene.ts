@@ -192,8 +192,8 @@ export class OrreryScene {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const [blur, alpha] of [
-      ['blur(6px)', 0.9],
-      ['blur(24px)', 0.36],
+      ['blur(6px)', 0.5],
+      ['blur(24px)', 0.12],
       ['none', 1],
     ] as const) {
       ctx.filter = blur;

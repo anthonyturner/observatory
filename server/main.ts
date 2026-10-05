@@ -1,3 +1,6 @@
+import { agentSpeechReader } from './agent-speech/agent-speech-state.ts';
+import { withAgentSpeechRoutes } from './agent-speech/agent-speech-routes.ts';
+import { jevHold } from './agent-speech/jev-hold.ts';
 import { cachedReads } from './app/api-reads.ts';
 import { ownerRoutes, withAssistant } from './app/api-routes.ts';
 import { jevAssistant } from './assistant/jev-assistant.ts';
@@ -114,6 +117,8 @@ const voice = {
   preferredVoice: voiceSettings.preferredVoice,
 };
 
+const agentSpeech = { speech: agentSpeechReader(), hold: jevHold() };
+
 const mailLogins = { icloud: localMailLogin('icloud'), gmail: localMailLogin('gmail') };
 const mail = mailboxes({ logins: mailLogins, fetchInbox: imapInbox(imapflowClient) });
 
@@ -131,7 +136,7 @@ const server = createApiServer(
                   withRunsRoutes(
                     withNewsRoutes(
                       withArchitectureRoutes(
-                        ownerRoutes(reads, triage, editor),
+                        withAgentSpeechRoutes(ownerRoutes(reads, triage, editor), agentSpeech),
                         fileArchitecture(),
                       ),
                       news,

@@ -6,8 +6,9 @@ import { fileURLToPath } from 'node:url';
 
 const SERVER = dirname(dirname(fileURLToPath(import.meta.url)));
 const HOSTED_ENTRY = join(SERVER, '..', 'api', 'index.mjs');
-/** Only this machine's server may hold these: they sign in to the owner's own accounts. */
-const LOCAL_ONLY = [join(SERVER, 'mail') + sep];
+/** Only this machine's server may hold these: they sign in to the owner's own
+ *  accounts, or read and write files in the owner's home folder. */
+const LOCAL_ONLY = [join(SERVER, 'mail') + sep, join(SERVER, 'agent-speech') + sep];
 /** A static `import … from './x.ts'` or `export … from` at the start of a line: the server has no dynamic imports. */
 const RELATIVE_IMPORT = /^(?:import|export)\b[^'"]*?['"](\.{1,2}\/[^'"]+)['"]/gm;
 

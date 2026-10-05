@@ -1,8 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { ActivityWatch } from '../activity/activity-watch';
 import { ActivityItem } from '../activity/activity.types';
+import { AGENT_POLL_MS } from '../agent-speech/agent-quiet';
+import { AGENT_SPEECH_API } from '../agent-speech/agent-speech-api';
 import { MailNews } from '../mail/mail-memory';
 import { MailWatch } from '../mail/mail-watch';
 import { MailMessage } from '../mail/mail.types';
@@ -48,6 +50,8 @@ function setUp(options: { readonly speakOn?: boolean; readonly isKokoro?: boolea
   const asking = signal(false);
   const isBusy = signal(false);
   const announce = vi.fn<(text: string) => void>();
+  const isAgentBusy = signal(false);
+  const askedAgent = vi.fn();
   TestBed.configureTestingModule({
     providers: [
       { provide: ActivityWatch, useValue: { checks } },
@@ -57,6 +61,15 @@ function setUp(options: { readonly speakOn?: boolean; readonly isKokoro?: boolea
       { provide: SpeakPreference, useValue: { isOn } },
       { provide: ASK_CHANNEL, useValue: { submit: () => undefined, busy: asking } },
       { provide: ANNOUNCEMENT_VOICE, useValue: { announce, isBusy } },
+      {
+        provide: AGENT_SPEECH_API,
+        useValue: {
+          isBusy: () => {
+            askedAgent();
+            return of(isAgentBusy());
+          },
+        },
+      },
     ],
   });
   TestBed.inject(NoticeAnnouncer);
@@ -82,6 +95,8 @@ function setUp(options: { readonly speakOn?: boolean; readonly isKokoro?: boolea
     asking,
     isBusy,
     isOnThisMachine,
+    isAgentBusy,
+    askedAgent,
     talk,
     slot,
   };
@@ -226,6 +241,56 @@ describe('NoticeAnnouncer', () => {
       'Pull request 1 in alpha merged: Pull 1.',
       'Pull request 2 in alpha merged: Pull 2. Pull request 3 in alpha merged: Pull 3.',
     ]);
+  });
+
+  describe('with Agent Speak', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const poll = (settle: () => void): void => {
+      vi.advanceTimersByTime(AGENT_POLL_MS);
+      settle();
+    };
+
+    it('holds the news while the agent talks, then says it within a poll of it going quiet', () => {
+      const { check, settle, announce, isAgentBusy } = setUp();
+
+      isAgentBusy.set(true);
+      check(merged(1));
+      poll(settle);
+      expect(announce).not.toHaveBeenCalled();
+
+      isAgentBusy.set(false);
+      poll(settle);
+      expect(announce).toHaveBeenCalledExactlyOnceWith('Pull request 1 in alpha merged: Pull 1.');
+    });
+
+    it('asks about the agent only while news is held', () => {
+      const { check, settle, askedAgent } = setUp();
+
+      poll(settle);
+      expect(askedAgent).not.toHaveBeenCalled();
+
+      check(merged(1));
+      poll(settle);
+      poll(settle);
+      expect(askedAgent).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not ask while Jev himself is busy, and asks once he is free', () => {
+      const { check, settle, announce, isBusy, askedAgent } = setUp();
+
+      isBusy.set(true);
+      settle();
+      check(merged(1));
+      poll(settle);
+      expect(askedAgent).not.toHaveBeenCalled();
+
+      isBusy.set(false);
+      settle();
+      expect(askedAgent).toHaveBeenCalledTimes(1);
+      expect(announce).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('new mail', () => {

@@ -6,6 +6,7 @@ const detail = {
   number: 572,
   base: 'main',
   head: 'fix/569',
+  state: 'open',
   isDraft: true,
   mergeable: 'MERGEABLE',
   additions: 144,
@@ -53,6 +54,7 @@ describe('the PR screen’s view', () => {
     expect(routeOf({ ...detail, isDraft: false, mergeable: 'UNKNOWN' }).state).toBe(
       'ready for review',
     );
+    expect(routeOf({ ...detail, state: 'merged' }).state).toBe('merged');
     expect(routeOf({ ...detail, mergeable: 'CONFLICTING' }).mergeClass).toBe('bad');
     expect(routeOf({ ...detail, mergeable: 'UNKNOWN' }).mergeClass).toBe('meh');
   });

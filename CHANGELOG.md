@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- The PR screen has a GitHub-style merge box along its foot, on every tab: it shows whether the pull request is a draft, conflicts, how its checks went and its review decision, then merges with Squash and merge (or a merge commit or rebase, picked from the arrow and remembered in this browser) after one Confirm. A draft gets a Ready for review button, and merging is held back with the reason while it is a draft or conflicts. Merging and marking ready have left the Edit tab ([#328](https://github.com/anthonyturner/observatory/pull/328)).
 - On your own machine, new unread iCloud and Gmail mail now shows as a notice on any page, with its sender and subject and a link to Home's Mail. With Speak on, Jev says it: only how many arrived while ElevenLabs is the voice ("2 new emails in Gmail, 1 in iCloud"), and the sender and subject of a lone message with Kokoro. Mail already there when the page opened, and mail already read, is not announced. A refused sign-in shows one quiet notice per tab ([#320](https://github.com/anthonyturner/observatory/pull/320)).
 - Notices, Jev's spoken news and desktop notifications now also tell you when a pull request is opened or an issue is closed in any tracked project, each named by its title; a merge and the issue it closes in the same check come as one ("Pull request 12 in observatory merged: transport bar fix, closing issue 10, bar stutters"), and an issue that was moved or deleted rather than closed is not reported ([#319](https://github.com/anthonyturner/observatory/pull/319)).
 - A Notify me box in Home's Projects heading sends a desktop notification when a pull request merges or an issue is opened in any tracked project while Observatory's tab is in the background, one per kind for each check; it asks the browser once, says so when the browser blocks it, and is remembered in this browser ([#308](https://github.com/anthonyturner/observatory/pull/308)).
@@ -87,6 +88,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- After a merge from the PR screen, nothing can send a second one: the merge box shows "Merged ✓ via squash" straight away, before the details are read again, and a pull request GitHub reports merged or closed shows no merge button at all ([#328](https://github.com/anthonyturner/observatory/pull/328)).
 - The playlist bar no longer shows Sync on a phone, or in any browser that cannot share a tab's audio, where it could never work; on a phone the Sky controls also stay on the screen, with the Sky slider on a row of its own ([#312](https://github.com/anthonyturner/observatory/pull/312)).
 - Home's music sky no longer jumps down and back on every beat once the page is scrolled; the beat's zoom now pulses in place while the core is out of view ([#301](https://github.com/anthonyturner/observatory/pull/301)).
 - Making the playlist's video bigger now moves the cards and panels on the right of the Orrery, the star map and the logs up out of its way, and they shrink to fit when the window is short ([#297](https://github.com/anthonyturner/observatory/pull/297)).

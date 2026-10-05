@@ -23,6 +23,18 @@ export interface CheckLine {
   readonly result: string;
 }
 
+export type PullState = 'open' | 'merged' | 'closed';
+
+export type ReviewDecision = 'approved' | 'changes-requested' | 'review-required' | 'none';
+
+const PULL_STATES: readonly PullState[] = ['open', 'merged', 'closed'];
+const REVIEW_DECISIONS: readonly ReviewDecision[] = [
+  'approved',
+  'changes-requested',
+  'review-required',
+  'none',
+];
+
 /** What `GET /api/pull` returns that the PR screen shows. */
 export interface PullDetail {
   readonly number: number;
@@ -31,6 +43,8 @@ export interface PullDetail {
   /** Cut to fit: the rest is on GitHub, so it must not be edited here. */
   readonly bodyTruncated: boolean;
   readonly url: string;
+  /** Details from before the API sent a state read as open; the API refuses to merge one that is not. */
+  readonly state: PullState;
   readonly isDraft: boolean;
   /** `MERGEABLE`, `CONFLICTING` or `UNKNOWN`. */
   readonly mergeable: string;
@@ -42,6 +56,7 @@ export interface PullDetail {
   readonly labels: readonly LabelLine[];
   readonly assignees: readonly string[];
   readonly checks: readonly CheckLine[];
+  readonly reviewDecision: ReviewDecision;
   readonly requestedReviewers: readonly string[];
   readonly additions: number;
   readonly deletions: number;
@@ -69,6 +84,9 @@ function parseCheck(value: unknown): CheckLine | null {
   if (!isString(run)) return null;
   return { run, result: isString(value['result']) ? value['result'] : 'PENDING' };
 }
+
+const oneOf = <T extends string>(options: readonly T[], value: unknown, fallback: T): T =>
+  options.find((option) => option === value) ?? fallback;
 
 /** The fields a detail cannot be shown without, or null. */
 function coreOf(
@@ -100,12 +118,14 @@ export function parsePullDetail(value: unknown): PullDetail | null {
     ...core,
     body: text('body'),
     bodyTruncated: value['bodyTruncated'] === true,
+    state: oneOf(PULL_STATES, value['state'], 'open'),
     isDraft: value['isDraft'] === true,
     mergeable: text('mergeable', 'UNKNOWN'),
     headOid: text('headOid'),
     labels: listOf(value['labels'], parseLabel),
     assignees: strings(value['assignees']),
     checks: listOf(value['checks'], parseCheck),
+    reviewDecision: oneOf(REVIEW_DECISIONS, value['reviewDecision'], 'none'),
     requestedReviewers: strings(value['requestedReviewers']),
     additions: count('additions'),
     deletions: count('deletions'),

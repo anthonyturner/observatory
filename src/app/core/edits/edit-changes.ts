@@ -1,6 +1,6 @@
 import { plural } from '../../shared/text/plural';
 import { PullDetail } from '../queue/pull-detail';
-import { EditChanges, MergeMethod } from './edit-record';
+import { EditChanges } from './edit-record';
 
 /** What the Edit tab holds as typed. */
 export interface EditForm {
@@ -10,18 +10,6 @@ export interface EditForm {
   /** Logins, comma separated. */
   readonly assignees: string;
   readonly reviewers: string;
-  readonly ready: boolean;
-  /** Empty for "don't merge". */
-  readonly mergeMethod: MergeMethod | '';
-  /** The pull request's number, typed to confirm a merge. */
-  readonly confirm: string;
-}
-
-/** The changes the form asks for, and whether a merge was chosen but not confirmed. */
-export interface FormChanges {
-  readonly changes: EditChanges;
-  /** A merge was picked but its number not typed: nothing may be saved until it is. */
-  readonly mergeUnconfirmed: boolean;
 }
 
 /** A textarea turns every line break into `\n`, so GitHub's `\r\n` must not read as an edit. */
@@ -85,33 +73,21 @@ function textChanges(form: EditForm, detail: PullDetail): Pick<EditChanges, 'tit
 }
 
 /** What saving the form would ask GitHub to do, as pr-starmap's editor works it out. */
-export function formChanges(form: EditForm, detail: PullDetail): FormChanges {
-  const confirmed = form.confirm.trim() === String(detail.number);
-  const merge =
-    form.mergeMethod && confirmed ? { method: form.mergeMethod, headOid: detail.headOid } : null;
-  return {
-    changes: {
-      ...textChanges(form, detail),
-      ...listChanges(form, detail),
-      ...(form.ready && detail.isDraft ? { ready: true as const } : {}),
-      ...(merge ? { merge } : {}),
-    },
-    mergeUnconfirmed: Boolean(form.mergeMethod) && !confirmed,
-  };
-}
+export const formChanges = (form: EditForm, detail: PullDetail): EditChanges => ({
+  ...textChanges(form, detail),
+  ...listChanges(form, detail),
+});
 
-/** The line beside Save: what is about to be sent, or what is still missing. */
-export function changeSummary({ changes, mergeUnconfirmed }: FormChanges, number: number): string {
-  if (mergeUnconfirmed) return `Type ${number} to confirm the merge.`;
+/** The line beside Save: what is about to be sent. */
+export function changeSummary(changes: EditChanges): string {
   const keys = Object.keys(changes);
   return keys.length
     ? `${plural(keys.length, 'change')} ready to save: ${keys.join(', ')}.`
     : 'No changes.';
 }
 
-/** Save waits for something to send, and for a chosen merge to be confirmed. */
-export const canSave = ({ changes, mergeUnconfirmed }: FormChanges): boolean =>
-  !mergeUnconfirmed && Object.keys(changes).length > 0;
+/** Save waits for something to send. */
+export const canSave = (changes: EditChanges): boolean => Object.keys(changes).length > 0;
 
 /** The form as GitHub has the pull request now. */
 export const formOf = (detail: PullDetail): EditForm => ({
@@ -120,7 +96,4 @@ export const formOf = (detail: PullDetail): EditForm => ({
   labels: new Set(detail.labels.map((label) => label.name)),
   assignees: detail.assignees.join(', '),
   reviewers: detail.requestedReviewers.join(', '),
-  ready: false,
-  mergeMethod: '',
-  confirm: '',
 });

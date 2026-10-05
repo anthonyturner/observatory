@@ -63,4 +63,7 @@
       }
     </section>
   }
+  @if (detail(); as pull) {
+    <app-merge-box [detail]="pull" (saved)="refresh()" />
+  }
 </div>

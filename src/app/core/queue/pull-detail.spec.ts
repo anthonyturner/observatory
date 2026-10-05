@@ -6,6 +6,7 @@ const detail = {
   body: '<script>alert(1)</script> Closes #57',
   bodyTruncated: false,
   url: 'https://github.com/me/a/pull/58',
+  state: 'merged',
   isDraft: true,
   mergeable: 'CONFLICTING',
   bucket: 'conflicted',
@@ -67,6 +68,14 @@ describe('parsePullDetail', () => {
       true,
     ]);
     expect(parsed?.fetchedAt).toBe(detail.fetchedAt);
+  });
+
+  it('keeps its state and review decision, reading unknown words as open and none', () => {
+    const parsed = parsePullDetail(detail);
+    expect([parsed?.state, parsed?.reviewDecision]).toEqual(['merged', 'changes-requested']);
+
+    const odd = parsePullDetail({ ...detail, state: 'LOCKED', reviewDecision: 7 });
+    expect([odd?.state, odd?.reviewDecision]).toEqual(['open', 'none']);
   });
 
   it('names a check by its name when it has no run, and reads no result as pending', () => {

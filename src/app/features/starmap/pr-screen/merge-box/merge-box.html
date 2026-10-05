@@ -1,0 +1,50 @@
+@let shown = view();
+<section class="mergebox" aria-label="Merge this pull request">
+  @if (shown.ending; as ending) {
+    <p class="ending" [class]="ending.state" role="status">{{ ending.text }}</p>
+  } @else {
+    <ul class="rows">
+      @for (row of shown.rows; track row.key) {
+        <li [class]="row.tone"><span class="dot" aria-hidden="true"></span>{{ row.text }}</li>
+      }
+    </ul>
+    <div class="actions">
+      @if (confirming()) {
+        <button
+          type="button"
+          class="confirm"
+          #confirmButton
+          [disabled]="!canMerge()"
+          (click)="merge()"
+        >
+          {{ words().confirm }}
+        </button>
+        <button type="button" (click)="cancel()">Cancel</button>
+        <span class="note"
+          >Pinned to <code>{{ shortOid() }}</code
+          >: anything pushed since will not merge.</span
+        >
+      } @else {
+        @if (shown.isDraft) {
+          <button type="button" class="ready" [disabled]="isSending()" (click)="markReady()">
+            Ready for review
+          </button>
+        }
+        <app-merge-split
+          [method]="method()"
+          [disabled]="!canMerge()"
+          (press)="askToMerge()"
+          (pick)="pick($event)"
+        />
+        @if (shown.blockedBy; as reason) {
+          <span class="note warn">{{ reason }}</span>
+        } @else if (isSending()) {
+          <span class="note">Sending to GitHub…</span>
+        }
+      }
+    </div>
+    @if (problem(); as message) {
+      <p class="note warn" role="alert">{{ message }}</p>
+    }
+  }
+</section>

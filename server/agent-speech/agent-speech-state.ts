@@ -54,7 +54,7 @@ export function agentSpeechReader(options: AgentSpeechOptions = {}): AgentSpeech
   return {
     async read() {
       const speaking = await isLive(AGENT_SPEAK_FILES.player);
-      const paused = textOf(join(root, AGENT_SPEAK_FILES.control)) === PAUSED;
+      const paused = textOf(join(root, AGENT_SPEAK_FILES.control)).toLowerCase() === PAUSED;
       const queued =
         hasQueuedLine(join(root, AGENT_SPEAK_FILES.queue)) ||
         (await isLive(AGENT_SPEAK_FILES.drainer));

@@ -49,7 +49,7 @@ describe('agentSpeechReader', () => {
 
   it('is not busy while Anthony has it paused, even with more queued', async () => {
     put('.tts.pid', LIVE_PLAYER);
-    put('.tts.ctl', 'pause');
+    put('.tts.ctl', 'Pause');
     queueLine('0001__s__x.txt');
 
     assert.deepEqual(await reader().read(), {

@@ -277,6 +277,17 @@ Without a key the voice is off, makes no call, and the page falls back to
 Kokoro. The key is sent to ElevenLabs only, in its own header, and scrubbed
 from every error and log line. Like Jev, the voice is local only.
 
+**Taking turns with Agent Speak.** On this machine, Jev and
+[Agent Speak](https://github.com/anthonyturner/agent-speak) never talk over
+each other. While any line of Jev's is under way, the page renews a hold every
+2 s. The local server keeps it as `~/.claude/agent-speak/.jev-speaking`
+(`<expiryUnixMs>|<token>`, 6 s ahead), and Agent Speak pauses while it is
+valid, then resumes where it stopped. A closed tab or stopped server lets the
+hold lapse within 6 s, and one hold is never renewed past 5 minutes. Jev in
+turn holds his news and mail while Agent Speak is busy, asking
+`GET /api/agent-speech` once a second only while something waits. A pause you
+set on Agent Speak is never touched: Observatory writes only that one file.
+
 ### Mail (iCloud and Gmail)
 
 Home's Mail section, above the news, lists the 20 newest messages in your

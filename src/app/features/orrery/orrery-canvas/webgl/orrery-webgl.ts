@@ -2,17 +2,18 @@ import {
   ACESFilmicToneMapping,
   AdditiveBlending,
   BackSide,
+  BufferGeometry,
   Color,
   DoubleSide,
   Euler,
   Float32BufferAttribute,
-  BufferGeometry,
   Group,
   Line,
   LineBasicMaterial,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
+  PlaneGeometry,
   PointLight,
   Points,
   Quaternion,
@@ -52,6 +53,7 @@ import {
   RING_FRAGMENT,
   RING_VERTEX,
 } from './orrery-shaders';
+import { MILKY_WAY_FRAGMENT, MILKY_WAY_VERTEX } from './milky-way-shader';
 import {
   AIR_SCALE,
   ATMOSPHERE_FRAGMENT,
@@ -64,6 +66,14 @@ import {
 } from '../../../../shared/planets/planet-shaders';
 
 const DEG = Math.PI / 180;
+/** The 3D sky holds more stars over a wider field, so it can turn without bare corners. */
+const FIELD_STARS_3D = 1800;
+const FIELD_SPREAD_3D = 1.7;
+/** The sky turns this many radians a second: once round in about an hour and a half. */
+const SKY_TURN = 0.0012;
+/** How much the Milky Way shifts and grows with the camera: far, so very little. */
+const SKY_PARALLAX = 0.00004;
+const SKY_ZOOM_POWER = 0.12;
 /** Bloom only on what is luminous: deep space stays black so stars have something to be brighter than. */
 const BLOOM_STRENGTH = 0.32;
 const BLOOM_RADIUS = 0.25;
@@ -121,7 +131,7 @@ export class OrreryWebGL {
   /** Counts builds, so a slow compile cannot swap in worlds a newer build replaced. */
   private builds = 0;
   private isDisposed = false;
-  private readonly field: readonly FieldStar[] = starField();
+  private readonly field: readonly FieldStar[] = starField(FIELD_STARS_3D, FIELD_SPREAD_3D);
   private model: SceneModel | null = null;
   private isLost = false;
 
@@ -246,6 +256,7 @@ export class OrreryWebGL {
 
   private build(worlds: readonly OrreryWorld[], scene: Scene, owned: Owned): SceneModel {
     const own = <T extends { dispose(): void }>(resource: T): T => owned.own(resource);
+    const updateSky = this.buildMilkyWay(scene, owned);
     const updateField = this.buildField(scene, owned);
     const light = new PointLight('#fff2dd', 1);
     scene.add(light);
@@ -446,7 +457,9 @@ export class OrreryWebGL {
     return {
       update: (frame) => {
         const { time, camera } = frame;
-        updateField(time);
+        const turn = time * SKY_TURN;
+        updateSky(frame, turn);
+        updateField(time, turn);
         corona.uniforms['time'].value = time;
         dial.quaternion.setFromAxisAngle(planeNormal, -time * DIAL_TURN);
         dial.visible = worlds.length > 0;
@@ -487,7 +500,38 @@ export class OrreryWebGL {
   }
 
   /** The background stars as points far behind the system, twinkling. */
-  private buildField(scene: Scene, owned: Owned): (time: number) => void {
+  /** The Milky Way: a full-screen layer behind everything, turning with the stars. */
+  private buildMilkyWay(scene: Scene, owned: Owned): (frame: SceneFrame, turn: number) => void {
+    const material = owned.own(
+      new ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          aspect: { value: 1 },
+          zoom: { value: 1 },
+          turn: { value: 0 },
+          drift: { value: new Vector2() },
+        },
+        vertexShader: MILKY_WAY_VERTEX,
+        fragmentShader: MILKY_WAY_FRAGMENT,
+        depthTest: false,
+        depthWrite: false,
+      }),
+    );
+    const sky = new Mesh(owned.own(new PlaneGeometry(2, 2)), material);
+    sky.frustumCulled = false;
+    sky.renderOrder = -1;
+    scene.add(sky);
+    return ({ time, view, camera }, turn) => {
+      const { x, y, scale } = camera.current;
+      material.uniforms['time'].value = time;
+      material.uniforms['aspect'].value = view.width / Math.max(1, view.height);
+      material.uniforms['zoom'].value = Math.pow(scale, SKY_ZOOM_POWER);
+      material.uniforms['turn'].value = turn;
+      material.uniforms['drift'].value.set(x * SKY_PARALLAX, -y * SKY_PARALLAX);
+    };
+  }
+
+  private buildField(scene: Scene, owned: Owned): (time: number, turn: number) => void {
     const positions: number[] = [];
     const colours: number[] = [];
     const sizes: number[] = [];
@@ -514,8 +558,10 @@ export class OrreryWebGL {
         blending: AdditiveBlending,
       }),
     );
-    scene.add(new Points(geometry, material));
-    return (time) => {
+    const points = new Points(geometry, material);
+    scene.add(points);
+    return (time, turn) => {
+      points.rotation.z = turn;
       material.uniforms['time'].value = time;
       material.uniforms['pixelRatio'].value = Math.min(this.gl.getPixelRatio(), BLOOM_MAX_RATIO);
     };

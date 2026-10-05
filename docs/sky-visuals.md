@@ -102,6 +102,18 @@ brighter when the sun is behind them (forward scatter), and dark where the
 world's shadow crosses them. Moons use the desert surface in the palette's moon
 grey with no air, lights or fissures.
 
+### The sky behind (scenery)
+
+A full-screen Milky Way (`milky-way-shader.ts`) is drawn before anything else:
+a tilted, wandering band of glow set off the centre, warmer at its core,
+split by dark dust lanes, over a haze of faint unresolved stars densest in the
+band. In front of it, 1,800 field stars (`starField(1800, 1.7)`) sit far
+behind the system in 3D, mostly faint with a few bright ones (brightness falls
+off as the cube of an even draw). The whole sky turns at 0.0012 rad/s (about
+once in 90 minutes) and shifts slightly with the camera. It stays under the
+bloom threshold. There are no shooting stars on purpose: a comet here means
+an unclaimed issue, and a shooting star on the review queue a merged PR.
+
 ## Review Queue stars
 
 Code: `features/starmap/engine/webgl-sky.ts` builds and updates the stars; the

@@ -134,14 +134,20 @@ export function layoutQueue(items: readonly SkyItem[], sky: SkyLayout): void {
 /** Real starfields are not white: a spread of colour temperature. */
 const FIELD_TINTS = ['#ffffff', '#dce8ff', '#bcd2ff', '#fff0d6', '#ffd9b8'];
 
+const glow = (magnitude: number, glint: number, maxR: number, maxA: number) => ({
+  r: magnitude * maxR + 0.2,
+  a: 0.05 + maxA * (0.75 * magnitude + 0.25 * glint * glint),
+});
+
 export function buildField(): FieldStar[] {
   const fr = rnd(90210);
   const make = (n: number, depth: number, maxR: number, maxA: number): FieldStar[] =>
     Array.from({ length: n }, () => ({
       x: fr() * WORLD.w * 1.8 - WORLD.w * 0.4,
       y: fr() * WORLD.h * 1.8 - WORLD.h * 0.4,
-      r: fr() * maxR + 0.2,
-      a: fr() * maxA + 0.05,
+      // Mostly faint stars and a few bright ones: brightness falls off as a
+      // power of an even draw, the largest also the brightest.
+      ...glow(Math.pow(fr(), 3), fr(), maxR, maxA),
       depth,
       phase: fr() * Math.PI * 2,
       rate: 0.3 + fr() * 1.9,

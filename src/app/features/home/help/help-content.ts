@@ -1,7 +1,7 @@
 import { HelpEntry, HelpKey } from '../../../shared/help/help-entry';
 
 const TIER_3 = 'Tier 3';
-const NEWS = 'News';
+const ASK = 'Ask';
 /** What each thing in the scene stands for, first, then how to work Home. */
 const SKY = 'The sky';
 const AGENTS = 'Agents';
@@ -159,13 +159,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
     section: USING,
   },
   {
-    term: NEWS,
-    meaning:
-      'Above the projects (News in the menu jumps there): the latest AI news, new tools for building software first (marked tool), and the latest in software engineering, each with a paragraph or two from the feed or the story itself, from public feeds such as Simon Willison, the GitHub Changelog, Hacker News and InfoQ. Read every half hour, no AI credits spent. Click a headline to read it in the floating window (Ctrl-click opens a tab).',
-    section: USING,
-  },
-  {
-    term: 'Ask',
+    term: ASK,
     meaning:
       'Type a request and press Enter. Plainly named app actions are matched by keyword; Jev answers the rest, thinking with Claude Code on your own subscription and looking up your projects, usage or the web as it needs, and remembers this visit’s conversation. A web answer lists its sources under it: click one to read it in a floating window you can drag and resize (Ctrl-click opens a tab instead). Each reply says which tier it took and how.',
     section: USING,
@@ -267,10 +261,10 @@ const MAIL_HELP_ENTRY: HelpEntry = {
   section: USING,
 };
 
-/** `entries` with Mail, just before News, for a site that has mail. */
+/** `entries` with Mail, just before Ask, for a site that has mail. */
 export function withMailHelp(entries: readonly HelpEntry[]): readonly HelpEntry[] {
-  const news = entries.findIndex((entry) => entry.term === NEWS);
-  return [...entries.slice(0, news), MAIL_HELP_ENTRY, ...entries.slice(news)];
+  const ask = entries.findIndex((entry) => entry.term === ASK);
+  return [...entries.slice(0, ask), MAIL_HELP_ENTRY, ...entries.slice(ask)];
 }
 
 /** Home's help card: with a local runner, tier 3 runs here and says how. */

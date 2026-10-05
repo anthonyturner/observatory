@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- You can answer Jev's "Would you like to open any of them?" by push-to-talk: say its number ("12", "twelve", "number 12", "pull request 12", "issue 12"), its place ("the first one" to "the fifth one", "the last one") or a word only its title has, and Jev opens it after a second, with Stay here. "No", "no thanks" or "nope" closes the card; "yes" opens the only item, or asks which one when there are several; "all of them" gets "I can open one at a time". When he can't tell which you mean he says what he heard (aloud only the first time), keeps the card and puts your words in the box. Anything else you say is taken as a request, as before ([#391](https://github.com/anthonyturner/observatory/pull/391)).
 - On your own machine with Speak on, when Jev's news names a pull request that was opened or a new issue, and Home's Ask panel is on screen, he ends by asking whether to open it ("Would you like to open any of them?"), and a card on Home lists each one with an Open button and No thanks. Open goes straight to the pull request's screen or the issue's window on its Review Queue. The question closes after 2 minutes with no answer, when you send a request or when you leave Home, and later news waits until it does ([#382](https://github.com/anthonyturner/observatory/pull/382)).
 - The Review Queue has a search box under its legend: type a pull request's or issue's title, or its number, and press Enter or Go. A pull request, or an issue an open pull request closes, flies to that star and opens its card; an unclaimed issue rings its comet and opens its card; any other issue opens in its window. Clicking the box opens a list of the open pull requests and known issues that narrows as you type and closes when you move or click away; a search that finds nothing says so ([#369](https://github.com/anthonyturner/observatory/pull/369), [#384](https://github.com/anthonyturner/observatory/pull/384)).
 - Zoom in on the Review Queue and each pull request's star shows a small planet for every issue it closes, up to four, and its review cost becomes a slowly turning disc of glowing gas, larger and brighter the more lines change (green for a quick win, none under twenty lines). A star with no planets closes no issue ([#365](https://github.com/anthonyturner/observatory/pull/365)).
@@ -101,6 +102,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Removed
 
+- Home's News section (AI news and software engineering headlines) and the News jump in Home's menu ([#394](https://github.com/anthonyturner/observatory/pull/394)).
 - The assistant and voice are no longer available on the hosted site, for anyone ([#151](https://github.com/anthonyturner/observatory/pull/151)).
 
 ### Fixed

@@ -119,9 +119,12 @@ export class ProposalSlot {
   }
 }
 
+/** Heard words as a line quotes them, without the full stop a transcript ends on. */
+export const quotedWords = (words: string): string => words.replace(/[.!?]$/, '');
+
 /** Speech never starts a task: the card says the words wait in the box. */
 function heardLineFor(proposal: Proposal, words: string): string {
-  const said = words.replace(/[.!?]$/, '');
+  const said = quotedWords(words);
   return proposal.kind === 'run'
     ? `Heard “${said}”. Home never starts a run from speech. Press Run.`
     : `Heard “${said}”. Home never starts a task from speech, so it is in the box for you to send.`;

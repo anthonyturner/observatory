@@ -15,14 +15,30 @@
   overflow: hidden;
 }
 
-.dfile > button {
+.tally {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+}
+
+.head {
   display: flex;
-  width: 100%;
+  align-items: stretch;
+  background: var(--sheet-file-wash);
+}
+
+.head:hover {
+  background: var(--flow-soft);
+}
+
+.head > button {
+  display: flex;
+  flex: 1;
+  min-width: 0;
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
   border: 0;
-  background: var(--sheet-file-wash);
+  background: none;
   color: var(--starmap-row-title);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -30,8 +46,37 @@
   cursor: pointer;
 }
 
-.dfile > button:hover {
-  background: var(--flow-soft);
+.mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mark input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--flow);
+  cursor: pointer;
+}
+
+.head > button:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+.mark input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.viewed .head > button {
+  color: var(--muted);
 }
 
 .p {

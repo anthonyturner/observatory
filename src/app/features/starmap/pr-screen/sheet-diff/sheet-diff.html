@@ -13,13 +13,27 @@
       Shortened to fit — the full diff is on GitHub. Files near the end may be missing.
     </p>
   }
+  @if (views().length) {
+    <p class="note tally" aria-live="polite">{{ viewedCount() }} / {{ views().length }} viewed</p>
+  }
   @for (view of views(); track view.file) {
-    <div class="dfile">
-      <button type="button" [attr.aria-expanded]="view.expanded" (click)="toggle(view.file)">
-        <span class="p">{{ view.file.path }}</span>
-        <span>+{{ view.file.additions }}</span>
-        <span>−{{ view.file.deletions }}</span>
-      </button>
+    <div class="dfile" [class.viewed]="view.viewed">
+      <div class="head">
+        <button type="button" [attr.aria-expanded]="view.expanded" (click)="toggle(view.file)">
+          <span class="p">{{ view.file.path }}</span>
+          <span>+{{ view.file.additions }}</span>
+          <span>−{{ view.file.deletions }}</span>
+        </button>
+        <label class="mark">
+          <input
+            type="checkbox"
+            [checked]="view.viewed"
+            [attr.aria-label]="'Viewed ' + view.file.path"
+            (change)="onViewedChange($event, view)"
+          />
+          Viewed
+        </label>
+      </div>
       @if (view.lines; as lines) {
         <pre
           [hidden]="!view.expanded"

@@ -33,7 +33,11 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Mass',
-        'The tilted disc around a star is its review cost: it reaches further and weighs more the more lines the change touches. Under twenty lines there is none.',
+        'The tilted disc of gas around a star is its review cost: it reaches further and glows heavier the more lines the change touches. Under twenty lines there is none.',
+      ],
+      [
+        'Planets',
+        'Zoom in to see a small planet orbiting a star for each issue its pull request closes, up to four. A star with none closes no issue.',
       ],
       [
         'Quick',

@@ -2,6 +2,8 @@ import { FLOW_INK, LINK_GAP, LINK_INK, trimSegment } from './link-ink';
 import { rnd } from './rnd';
 import { SkyFrame, SkyRenderer } from './sky-frame';
 import { QUICK_COLOUR, SkyCluster, SkyStar } from './sky-model';
+import { massOf, systemTurn } from './star-system';
+import { SYSTEM_TILT } from './star-system-shaders';
 
 /* pr-starmap's Canvas 2D sky, function for function. It is the whole sky when
    WebGL is unavailable, and its words and marks are the overlay over the 3D one. */
@@ -279,26 +281,25 @@ export function drawMass(
   a: number,
   c: CanvasRenderingContext2D,
 ): void {
-  const m = Math.log10((star.cost ?? 0) + 1);
-  if (m < 1.3) return; // under twenty lines there is nothing to weigh
-  const reach = r * (1.5 + m * 0.75);
-  const tilt = 0.34;
+  const mass = massOf(star);
+  if (!mass) return;
+  const reach = r * mass.reach;
   const spin = f.frozen ? star.spin : star.spin + f.t * 0.12;
   c.save();
   c.translate(sx, sy);
-  c.rotate(spin * 0.2 - 0.35);
+  c.rotate(systemTurn(star.spin, f.t, f.frozen));
   for (const [k, alpha] of [
     [1, 0.28],
     [0.78, 0.18],
     [1.22, 0.1],
   ]) {
-    c.globalAlpha = a * alpha * Math.min(1, m / 3);
-    c.strokeStyle = star.quick ? QUICK_COLOUR : star.colour;
-    c.lineWidth = Math.max(0.6, m * 0.55);
+    c.globalAlpha = a * alpha * mass.weight;
+    c.strokeStyle = mass.colour;
+    c.lineWidth = Math.max(0.6, mass.log * 0.55);
     c.setLineDash([reach * 0.5, reach * 0.18]);
     c.lineDashOffset = spin * reach;
     c.beginPath();
-    c.ellipse(0, 0, reach * k, reach * k * tilt, 0, 0, Math.PI * 2);
+    c.ellipse(0, 0, reach * k, reach * k * SYSTEM_TILT, 0, 0, Math.PI * 2);
     c.stroke();
   }
   c.restore();

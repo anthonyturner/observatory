@@ -25,17 +25,18 @@
           >: anything pushed since will not merge.</span
         >
       } @else {
-        @if (shown.isDraft) {
-          <button type="button" class="ready" [disabled]="isSending()" (click)="markReady()">
-            Ready for review
-          </button>
-        }
+        <!-- First in the row, so its menu has the box's width to open into at phone width. -->
         <app-merge-split
           [method]="method()"
           [disabled]="!canMerge()"
           (press)="askToMerge()"
           (pick)="pick($event)"
         />
+        @if (shown.isDraft) {
+          <button type="button" class="ready" [disabled]="isSending()" (click)="markReady()">
+            Ready for review
+          </button>
+        }
         @if (shown.blockedBy; as reason) {
           <span class="note warn">{{ reason }}</span>
         } @else if (isSending()) {

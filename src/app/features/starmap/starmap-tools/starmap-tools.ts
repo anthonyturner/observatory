@@ -40,6 +40,7 @@ export class StarmapTools {
   readonly showCollisions = input(true);
   readonly planOn = input(false);
   readonly agentsOn = input(false);
+  readonly doneOn = input(false);
   readonly refreshing = input(false);
   readonly refreshFailed = input(false);
 
@@ -51,6 +52,7 @@ export class StarmapTools {
   readonly collisions = output<void>();
   readonly plan = output<void>();
   readonly agents = output<void>();
+  readonly done = output<void>();
   readonly refresh = output<void>();
 
   protected readonly charts = CHARTS;

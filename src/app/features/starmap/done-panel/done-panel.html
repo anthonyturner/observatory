@@ -1,0 +1,33 @@
+<aside class="plan done" aria-labelledby="donetitle">
+  <div>
+    <h2 id="donetitle">Done</h2>
+    <div class="sub">{{ summary() }}</div>
+    <div class="key" aria-hidden="true">
+      <span class="k merged">merged</span><span class="k closed">closed</span
+      ><span class="k issue">issue done</span><span class="k dropped">dropped</span>
+    </div>
+  </div>
+  <div class="days" (mouseleave)="light.emit(null)">
+    @for (group of days(); track group.day) {
+      <section>
+        <h3>{{ group.label }}</h3>
+        @for (item of group.items; track item.key) {
+          <button
+            type="button"
+            [class]="'row ' + item.kind"
+            [attr.aria-current]="lit() === item.key ? 'true' : null"
+            (mouseenter)="light.emit(item.key)"
+            (focus)="light.emit(item.key)"
+            (blur)="light.emit(null)"
+            (click)="open.emit(item)"
+          >
+            <span class="dot" aria-hidden="true"></span>
+            <span class="num">{{ isPull(item) ? '#' : 'issue ' }}{{ item.number }}</span>
+            <span class="title">{{ item.title }}</span>
+            <span class="kind">{{ kindLabel[item.kind] }}</span>
+          </button>
+        }
+      </section>
+    }
+  </div>
+</aside>

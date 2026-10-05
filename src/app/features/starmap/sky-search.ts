@@ -56,3 +56,9 @@ export function searchSuggestions(
 ): string[] {
   return [...pulls, ...issues].map((each) => `#${each.number} ${each.title}`);
 }
+
+/** The suggestions a typed query leaves, at most `cap`: all of them for a blank box. */
+export function suggestionsFor(all: readonly string[], query: string, cap: number): string[] {
+  const text = query.trim().toLowerCase();
+  return all.filter((each) => each.toLowerCase().includes(text)).slice(0, cap);
+}

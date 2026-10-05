@@ -22,10 +22,57 @@ button {
   backdrop-filter: blur(14px) saturate(140%);
 }
 
-input {
+/* Holds the box and the list that drops from it. */
+.field {
+  position: relative;
   flex: 1 1 220px;
   min-width: 0;
+}
+
+input {
+  width: 100%;
+  box-sizing: border-box;
   padding: 6px 14px;
+  appearance: none;
+}
+
+ul {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 1;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  border: 1px solid var(--edge-soft);
+  border-radius: 14px;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.8);
+}
+
+ul[hidden] {
+  display: none;
+}
+
+li {
+  padding: 6px 10px;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+li:hover,
+li[aria-selected='true'] {
+  background: var(--edge-soft);
+  color: var(--ink);
 }
 
 input::placeholder {

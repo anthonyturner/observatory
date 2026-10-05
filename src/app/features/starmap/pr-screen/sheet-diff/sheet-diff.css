@@ -89,3 +89,8 @@ pre > span {
   color: var(--sheet-hunk-ink);
   background: var(--sheet-hunk-wash);
 }
+
+/* A hunk header has no sign, so it keeps the left edge. */
+.h .s {
+  display: none;
+}

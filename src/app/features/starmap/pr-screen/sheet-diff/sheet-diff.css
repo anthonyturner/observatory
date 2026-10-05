@@ -50,19 +50,38 @@ pre {
   line-height: 1.55;
 }
 
-pre span {
+pre > span {
   display: block;
   padding: 0 14px;
+  color: var(--sheet-code-ink);
   white-space: pre;
 }
 
+/* The sign sits in its own column; on a changed line it alone carries the colour. */
+.s {
+  display: inline-block;
+  width: 1.5ch;
+  font-weight: 600;
+  user-select: none;
+}
+
+/* A changed line keeps the code's own ink: a faint wash and an edge bar mark it,
+   so a long addition reads as code rather than a block of green. */
 .a {
   background: var(--sheet-add-wash);
+  box-shadow: inset 3px 0 var(--sheet-add-edge);
+}
+
+.a .s {
   color: var(--sheet-add-ink);
 }
 
 .d {
   background: var(--sheet-del-wash);
+  box-shadow: inset 3px 0 var(--sheet-del-edge);
+}
+
+.d .s {
   color: var(--sheet-del-ink);
 }
 

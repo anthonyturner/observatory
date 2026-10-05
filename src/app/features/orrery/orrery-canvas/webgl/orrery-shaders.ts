@@ -55,11 +55,12 @@ export const ATMOSPHERE_FRAGMENT = `varying vec3 wp; varying vec3 wn; uniform ve
     float day = .12 + .88 * max(dot(N,normalize(sun-wp)),0.);
     gl_FragColor = vec4(ink * 1.7, fresnel * day * .62); }`;
 
-/** The sun's corona, marched through in twelve steps, with slowly moving wisps. */
-export const CORONA_FRAGMENT = `${NOISE} varying vec3 wp; uniform float time, radius;
+/** The sun's corona, marched through in twelve steps, with slowly moving wisps.
+ *  It reaches `reach` sun radii, and fades fast so the space round the sun stays dark. */
+export const CORONA_FRAGMENT = `${NOISE} varying vec3 wp; uniform float time, radius, reach;
   void main() {
     vec3 ray = normalize(wp-cameraPosition); float b = dot(cameraPosition,ray);
-    float d = b*b-dot(cameraPosition,cameraPosition)+radius*radius*12.25;
+    float d = b*b-dot(cameraPosition,cameraPosition)+radius*radius*reach*reach;
     if (d < 0.) discard;
     float start = max(0.,-b-sqrt(d)), finish = -b+sqrt(d);
     float stepSize = (finish-start)/12., sum = 0.;
@@ -68,9 +69,9 @@ export const CORONA_FRAGMENT = `${NOISE} varying vec3 wp; uniform float time, ra
       float altitude = max(0.,length(p)/radius-1.);
       vec3 direction = normalize(p);
       float wisps = .55 + .45 * noise3(direction*9. + vec3(time*.07));
-      sum += exp(-altitude*3.4) * wisps * stepSize/radius;
+      sum += exp(-altitude*6.) * wisps * stepSize/radius;
     }
-    gl_FragColor = vec4(vec3(1.,.48,.16)*1.5, min(.5,sum*.19));
+    gl_FragColor = vec4(vec3(1.,.62,.3), min(.3,sum*.14));
   }`;
 
 export const RING_VERTEX = `varying vec3 p; void main() { p = position;

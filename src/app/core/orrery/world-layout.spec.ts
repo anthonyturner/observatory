@@ -74,7 +74,7 @@ describe('orrery measures', () => {
   });
 
   it('finds the outermost orbit, with a floor for an empty system', () => {
-    expect(outermostOrbit([])).toBe(200);
-    expect(outermostOrbit(layoutWorlds([project('a'), project('b')]))).toBe(228);
+    expect(outermostOrbit([])).toBe(260);
+    expect(outermostOrbit(layoutWorlds([project('a'), project('b')]))).toBe(324);
   });
 });

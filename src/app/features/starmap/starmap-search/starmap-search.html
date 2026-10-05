@@ -1,19 +1,40 @@
-<form role="search" (submit)="submit($event, box.value)">
-  <input
-    #box
-    type="search"
-    placeholder="Find a PR or issue: title or #n"
-    aria-label="Find a pull request or issue by title or number"
-    autocomplete="off"
-    list="starmap-search-suggestions"
-    [attr.aria-describedby]="miss() ? 'starmap-search-miss' : null"
-  />
+<form role="search" (submit)="submit($event)">
+  <div class="field">
+    <input
+      type="search"
+      role="combobox"
+      placeholder="Find a PR or issue: title or #n"
+      aria-label="Find a pull request or issue by title or number"
+      aria-autocomplete="list"
+      aria-controls="starmap-search-list"
+      autocomplete="off"
+      [attr.aria-expanded]="expanded()"
+      [attr.aria-activedescendant]="active() >= 0 ? 'starmap-search-option-' + active() : null"
+      [attr.aria-describedby]="miss() ? 'starmap-search-miss' : null"
+      [value]="query()"
+      (click)="open()"
+      (focus)="open()"
+      (blur)="close()"
+      (input)="type($any($event.target).value)"
+      (keydown)="onKey($event)"
+    />
+    <ul id="starmap-search-list" role="listbox" aria-label="Suggestions" [hidden]="!expanded()">
+      @for (suggestion of shown(); track suggestion; let index = $index) {
+        <li
+          role="option"
+          [id]="'starmap-search-option-' + index"
+          [attr.aria-selected]="index === active()"
+          (mousedown)="$event.preventDefault()"
+          tabindex="-1"
+          (click)="pick(suggestion)"
+          (keydown.enter)="pick(suggestion)"
+        >
+          {{ suggestion }}
+        </li>
+      }
+    </ul>
+  </div>
   <button type="submit">Go</button>
-  <datalist id="starmap-search-suggestions">
-    @for (suggestion of suggestions(); track suggestion) {
-      <option [value]="suggestion"></option>
-    }
-  </datalist>
   @if (miss(); as words) {
     <span id="starmap-search-miss" class="miss" role="status">{{ words }}</span>
   }

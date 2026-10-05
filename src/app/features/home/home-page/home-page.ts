@@ -36,7 +36,7 @@ import { RunsStore } from '../../../core/runs/runs-store';
 /** The Mail section's id, which a mail notice's link names. */
 const MAIL_SECTION = 'mail';
 
-/** Home: the HUD over the sky, then mail, the news and the projects below the fold, and a
+/** Home: the HUD over the sky with mail under the vitals, the news and the projects below the fold, and a
  *  task's panel beside them. It lays the sections out and nothing more. */
 @Component({
   selector: 'app-home-page',

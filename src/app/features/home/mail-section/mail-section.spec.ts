@@ -161,7 +161,7 @@ describe('MailSection', () => {
     fixture.detectChanges();
     expect(button()?.textContent?.trim()).toBe('Reading…');
     expect(button()?.getAttribute('aria-disabled')).toBe('true');
-    expect(element.querySelector('section')?.getAttribute('aria-busy')).toBe('false');
+    expect(element.querySelector('#mail')?.getAttribute('aria-busy')).toBe('false');
   });
 
   it('keeps focus on Refresh while it reads, and ignores presses until it is done', () => {
@@ -186,7 +186,7 @@ describe('MailSection', () => {
       gmail: { ...UNFETCHED_STATES.gmail, isReading: true },
     });
 
-    expect(element.querySelector('section')?.getAttribute('aria-busy')).toBe('true');
+    expect(element.querySelector('#mail')?.getAttribute('aria-busy')).toBe('true');
     expect(element.querySelector('[role="status"]')?.textContent).toBe(
       'Reading your iCloud inbox…',
     );

@@ -1,5 +1,5 @@
 import { Comet } from './comets';
-import { ringedComet, ringedPull } from './open-star';
+import { ringedComet, ringedPull, tetherOf } from './open-star';
 
 const comet = (issue: number): Comet => ({
   issue,
@@ -48,5 +48,34 @@ describe('ringedComet', () => {
   it('keeps the picked comet when the open issue has none', () => {
     expect(ringedComet(9, comets, comets[0])).toBe(comets[0]);
     expect(ringedComet(null, comets, null)).toBeNull();
+  });
+});
+
+describe('tetherOf', () => {
+  const pulls = [{ number: 10, closes: [3] }];
+  const comets = [comet(4)];
+  const open = (sheet: number | null, issue: number | null) => ({ card: 10, sheet, issue });
+
+  it('ties an open PR screen to its star on the queue sky', () => {
+    expect(tetherOf('prs', open(11, null), pulls, comets)).toBe('star');
+  });
+
+  it('ties an issue window to its comet, or to the pull request that closes it', () => {
+    expect(tetherOf('prs', open(null, 4), pulls, comets)).toBe('comet');
+    expect(tetherOf('prs', open(null, 3), pulls, comets)).toBe('star');
+  });
+
+  it('ties nothing for an issue with no comet and no pull request, or with no window open', () => {
+    expect(tetherOf('prs', open(null, 9), pulls, comets)).toBeNull();
+    expect(tetherOf('prs', open(null, null), pulls, comets)).toBeNull();
+  });
+
+  it('ties an issue window to its body on the nursery, never a PR screen', () => {
+    expect(tetherOf('issues', open(null, 9), pulls, comets)).toBe('star');
+    expect(tetherOf('issues', open(11, null), pulls, comets)).toBeNull();
+  });
+
+  it('ties nothing on the Log Sky', () => {
+    expect(tetherOf('logs', open(11, null), pulls, comets)).toBeNull();
   });
 });

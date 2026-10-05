@@ -5,18 +5,18 @@
 <div id="top" class="hud" tabindex="-1">
   <app-top-bar />
   <!-- Source order is the order a phone stacks them in and keys reach them. -->
-  <div class="hud-body">
+  <div class="hud-body" [class.has-mail]="hasMail()">
     <app-core-panel />
     <app-ask-panel class="column" />
     <app-vitals-panel class="column" />
+    @if (hasMail()) {
+      <app-mail-section class="column" />
+    }
     <app-skills-panel class="column" />
   </div>
 </div>
 
 <main>
-  @if (hasMail()) {
-    <app-mail-section />
-  }
   <app-news-section />
   <app-fleet-section />
   <app-agents-section />

@@ -12,7 +12,7 @@ import { MailTabChoice } from '../../../core/mail/mail-tab-choice';
 import { MAIL_ACCOUNTS } from '../../../core/mail/mail.types';
 import { Clock } from '../../../core/time/clock';
 import { ageOf } from '../../../core/usage/usage-format';
-import { TopLink } from '../../../shared/section-jump/top-link';
+import { HudSection } from '../../../shared/hud-section/hud-section';
 import { TabStrip, tabStripTabId } from '../../../shared/tab-strip/tab-strip';
 import { MAIL_ENV_FILE, mailPanel, mailSummary, mailTab, shownAccount } from './mail-view';
 
@@ -20,10 +20,10 @@ const MINUTE_MS = 60_000;
 const TAB_STRIP = 'mail';
 const PANEL_ID = 'mail-panel';
 
-/** Below the HUD, above the news: the newest mail in each inbox, one tab each. Local only. */
+/** A side panel under the vitals: the newest mail in each inbox, one tab each. Local only. */
 @Component({
   selector: 'app-mail-section',
-  imports: [TabStrip, TopLink],
+  imports: [HudSection, TabStrip],
   templateUrl: './mail-section.html',
   styleUrl: './mail-section.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

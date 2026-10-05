@@ -100,6 +100,21 @@ app-home-tools {
     min-height: 0;
     overflow-y: auto;
   }
+
+  /* Mail takes the lower half of the left column, under the vitals. */
+  .hud-body.has-mail {
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'left core skills'
+      'left core ask'
+      'mail core ask';
+  }
+
+  app-mail-section {
+    grid-area: mail;
+    min-height: 0;
+    overflow-y: auto;
+  }
 }
 
 /* A task's panel docks on the right of a wide screen, and the page makes

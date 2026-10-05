@@ -1,8 +1,16 @@
 # Observatory
 
-An Angular dashboard that charts a developer's open pull requests, projects and
-coding agents as an animated space scene: a glowing core that shows what the
-assistant is doing, a card per project, and gauges for the work waiting on you.
+An AI OS for developers. Jev, its assistant, takes typed or spoken requests and
+proposes coding-agent work that runs on your machine. Around him, your GitHub
+work is drawn as a live, animated space scene:
+
+- **Home**: a glowing core that shows what the assistant is doing, a card per
+  project, Claude Code usage, news and mail.
+- **The Orrery**: one world per project, its look driven by that project's
+  health.
+- **The review queue**: one star per open pull request, grouped by what blocks
+  it, with a PR screen to review and merge without leaving the page.
+- **Issues, logs and agent report cards** for each project.
 
 Observatory is a rebuild of [pr-starmap](https://github.com/anthonyturner/pr-starmap),
 whose pages grew into single HTML files thousands of lines long. It is being

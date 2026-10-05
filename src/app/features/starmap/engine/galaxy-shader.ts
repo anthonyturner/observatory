@@ -1,4 +1,14 @@
 import { SIMPLEX_GLSL } from '../../../shared/gl/simplex-glsl';
+import {
+  GALAXY_CENTRE_X,
+  GALAXY_CENTRE_Y,
+  GALAXY_TILT,
+  GALAXY_TURN,
+  GALAXY_WIND,
+} from './galaxy-geometry';
+
+/** A number as a GLSL float literal. */
+const glsl = (n: number): string => n.toFixed(4);
 
 /* A spiral galaxy far behind the review queue: the Orrery has the Milky Way
    seen from inside, this sky has a neighbour seen from outside. A full-screen
@@ -22,13 +32,13 @@ export const GALAXY_FRAGMENT = `${SIMPLEX_GLSL}
     vec2 p = (vUv - .5) * vec2(aspect, 1.) / zoom + drift;
 
     // Into the galaxy's own plane: off to the upper right, turned, and tilted away.
-    vec2 q = p - vec2(.3 * aspect, .17);
-    float c = cos(.55), s = sin(.55);
+    vec2 q = p - vec2(${glsl(GALAXY_CENTRE_X)} * aspect, ${glsl(GALAXY_CENTRE_Y)});
+    float c = cos(${glsl(GALAXY_TURN)}), s = sin(${glsl(GALAXY_TURN)});
     q = vec2(c * q.x - s * q.y, s * q.x + c * q.y);
-    q.y /= .42;
+    q.y /= ${glsl(GALAXY_TILT)};
     float r = length(q), theta = atan(q.y, q.x);
 
-    float wind = theta - log(max(r, .004)) * 2.6 - spin;
+    float wind = theta - log(max(r, .004)) * ${glsl(GALAXY_WIND)} - spin;
     float arms = pow(.5 + .5 * cos(2. * wind), 2.5);
     float lane = pow(.5 + .5 * cos(2. * wind - .7), 6.);
     float disc = exp(-r / .115);

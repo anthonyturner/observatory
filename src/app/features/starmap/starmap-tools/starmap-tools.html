@@ -55,6 +55,14 @@
       >
         Agents
       </button>
+      <button
+        type="button"
+        title="What finished in the last 60 days, on the Spiral of Done"
+        [attr.aria-pressed]="doneOn()"
+        (click)="done.emit()"
+      >
+        Done
+      </button>
     </div>
   }
   <div class="toolgroup">

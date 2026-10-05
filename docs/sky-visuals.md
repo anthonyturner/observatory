@@ -134,6 +134,25 @@ both hold still when motion is off. The coloured nebula clouds stay, and the
 field stars (`buildField`) keep their places and count but now follow the
 same power law as the Orrery's: mostly faint, a few bright.
 
+### The Spiral of Done (data: finished work)
+
+The galaxy's arms hold the last 60 days of finished work (`engine/done-layer.ts`).
+`doneWork` (`core/queue/done-work.ts`) merges the ledger's merged and
+closed-unmerged pull requests with the issues report's closed issues, newest
+first. `placeDone` (`engine/done-spiral.ts`) treats each arm as a timeline:
+radius runs from 0.22 (today) in to 0.035 (the oldest work shown, or a week
+ago if that is sooner), on an eased scale so recent days get more room, with each light on one of the two arms and a small,
+stable lean off the arm's centre. `galaxy-geometry.ts` holds the galaxy's
+centre, turn, tilt and winding for both the shader and `galaxyToScreen`, so a
+light always sits on a drawn arm and turns with it.
+
+Merged pull requests are blue-white, closed-unmerged ones embers, closed issues
+gold, and issues closed as not planned grey. On load the lights spiral in from
+beyond the tips, oldest first; the newest six things finished in the last day pulse. A
+light under the pointer shows its number, title and date; clicking opens the
+PR screen or the issue window. The toolbar's **Done** list groups the same
+items by day and lights a row's spot on the spiral.
+
 ### Layout
 
 `layoutQueue` in `engine/sky-layout.ts` makes each bucket a constellation laid

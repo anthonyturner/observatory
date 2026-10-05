@@ -45,10 +45,12 @@ describe('StarmapTools', () => {
       ['Pull requests', 'Logs', 'Issues', 'Usage'],
       ['−', '+', 'Fit'],
       ['Starmap', 'List'],
-      ['Collisions', 'Merge plan', 'Agents'],
+      ['Collisions', 'Merge plan', 'Agents', 'Done'],
       ['Refresh', 'Motion on', 'Sound off', '?'],
     ]);
-    expect(element.querySelector('.hint')?.textContent).toBe('drag · scroll · hover or click a star');
+    expect(element.querySelector('.hint')?.textContent).toBe(
+      'drag · scroll · hover or click a star',
+    );
   });
 
   it('asks for another screen, and hides what means nothing there', () => {

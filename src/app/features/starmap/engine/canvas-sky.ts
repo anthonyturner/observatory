@@ -203,20 +203,21 @@ function drawStar(f: SkyFrame, star: SkyStar, c: CanvasRenderingContext2D): void
 
   if (star.cost) drawMass(f, star, sx, sy, r, a, c);
 
-  const glowR = r * 3.4 * pulse;
+  // Restraint: a soft halo and faint spikes, so a full queue reads calm, not glaring.
+  const glowR = r * 2.6 * pulse;
   const g = c.createRadialGradient(sx, sy, 0, sx, sy, glowR);
   g.addColorStop(0, star.colour);
   g.addColorStop(0.3, star.colour + '80');
   g.addColorStop(1, 'rgba(0,0,0,0)');
-  c.globalAlpha = 0.5 * a * pulse;
+  c.globalAlpha = 0.3 * a * pulse;
   c.fillStyle = g;
   c.beginPath();
   c.arc(sx, sy, glowR, 0, Math.PI * 2);
   c.fill();
 
   // Diffraction spikes: what a bright point looks like through a lens.
-  const spike = r * (2.2 + pulse * 1.8);
-  c.globalAlpha = a * 0.55 * pulse;
+  const spike = r * (1.4 + pulse * 1.0);
+  c.globalAlpha = a * 0.28 * pulse;
   c.lineWidth = Math.max(r * 0.11, 0.55);
   for (const [dx, dy] of [
     [1, 0],
@@ -238,13 +239,13 @@ function drawStar(f: SkyFrame, star: SkyStar, c: CanvasRenderingContext2D): void
     c.stroke();
   }
 
-  c.globalAlpha = a;
+  c.globalAlpha = a * 0.85;
   c.fillStyle = star.colour;
   c.beginPath();
   c.arc(sx, sy, r * 0.46, 0, Math.PI * 2);
   c.fill();
 
-  c.globalAlpha = a * 0.95;
+  c.globalAlpha = a * 0.7;
   c.fillStyle = '#ffffff';
   c.beginPath();
   c.arc(sx, sy, r * 0.21 * pulse, 0, Math.PI * 2);
@@ -453,10 +454,10 @@ export class CanvasSkyRenderer implements SkyRenderer {
       // unblurred layer last so the cores stay sharp inside their own glow.
       ctx.globalCompositeOperation = 'lighter';
       ctx.filter = 'blur(6px)';
-      ctx.globalAlpha = 0.95;
+      ctx.globalAlpha = 0.7;
       ctx.drawImage(this.glow, 0, 0, width, height);
       ctx.filter = 'blur(22px)';
-      ctx.globalAlpha = 0.34;
+      ctx.globalAlpha = 0.22;
       ctx.drawImage(this.glow, 0, 0, width, height);
       ctx.filter = 'none';
       ctx.globalAlpha = 1;

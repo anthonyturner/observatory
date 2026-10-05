@@ -37,7 +37,7 @@ export class SkyLayout {
       az: 0,
     };
     // The depth draws on the generator after the motion, as pr-starmap's does,
-    // so the same seed places every star exactly where pr-starmap put it.
+    // so the same seed gives every star the depth pr-starmap gave it.
     star.z = (fields.cluster.z ?? 0) + (r() - 0.5) * 150;
     star.az = star.z;
     fields.cluster.stars.push(star);
@@ -46,33 +46,64 @@ export class SkyLayout {
   }
 }
 
+/* A constellation is a spiral arm: the first PR in queue order at its heart,
+   the rest winding outward a fixed step apart, so a big group grows wider
+   instead of packing tighter. */
+/** Distance between neighbouring stars along the arm. */
+const ARM_STEP = 130;
+/** Distance between one turn of the arm and the next. */
+const TURN_GAP = 165;
+const ARM_START = 30;
+/** A little disorder, well inside the gaps, so the arm does not look ruled. */
+const JITTER = 18;
+/** Clear sky between neighbouring constellations. */
+const CLUSTER_GAP = 240;
+/** A lone star still needs room for its label. */
+const MIN_HALF_WIDTH = 140;
+/** The constellation's name sits under its arm, not on its heart. */
+const LABEL_GAP = 90;
+
+/** Offsets from the constellation's centre for `n` stars along one arm. */
+export function spiralArm(n: number, turn: number): { dx: number; dy: number }[] {
+  const b = TURN_GAP / (Math.PI * 2);
+  let theta = 0;
+  return Array.from({ length: n }, () => {
+    const radius = ARM_START + b * theta;
+    const at = { dx: Math.cos(theta + turn) * radius, dy: Math.sin(theta + turn) * radius };
+    theta += ARM_STEP / Math.hypot(radius, b);
+    return at;
+  });
+}
+
 /** Each bucket in use a constellation, left to right, alternately above and below. */
 export function layoutQueue(items: readonly SkyItem[], sky: SkyLayout): void {
-  const used = BUCKETS.filter((b) => items.some((i) => i.bucket === b.id));
-  const slot = WORLD.w / (used.length + 1);
-
-  used.forEach((bucket, ci) => {
+  const groups = BUCKETS.map((bucket, bi) => {
     const mine = items.filter((i) => i.bucket === bucket.id);
-    const cx = slot * (ci + 1);
-    const cy = WORLD.h / 2 + (ci % 2 === 0 ? -1 : 1) * (170 + ((ci * 37) % 120));
+    const arm = spiralArm(mine.length, bi * 1.9);
+    const half = Math.max(MIN_HALF_WIDTH, ...arm.map((p) => Math.abs(p.dx) + JITTER));
+    const below = Math.max(...arm.map((p) => p.dy)) + JITTER;
+    return { bucket, mine, arm, half, below };
+  }).filter((g) => g.mine.length);
+  const span = groups.reduce((sum, g) => sum + g.half * 2, 0) + CLUSTER_GAP * (groups.length - 1);
+  let left = WORLD.w / 2 - span / 2;
+
+  groups.forEach(({ bucket, mine, arm, half, below }, ci) => {
+    const cx = left + half;
+    left += half * 2 + CLUSTER_GAP;
+    const cy = WORLD.h / 2 + (ci % 2 === 0 ? -1 : 1) * (140 + ((ci * 37) % 100));
     const cluster: SkyCluster = {
       cx,
       cy,
       z: (ci - 2.5) * 95,
-      labelY: cy,
+      labelY: cy + below + LABEL_GAP,
       colour: bucket.colour,
       label: bucket.label,
       sub: `${bucket.sub.toUpperCase()} · ${mine.length}`,
       stars: [],
     };
-    const n = mine.length;
-    const spread = Math.min(300 + n * 42, 620);
 
     mine.forEach((item, i) => {
       const r = rnd((item.pr * 2654435761) % 2147483647);
-      const t = n === 1 ? 0.5 : i / (n - 1);
-      const angle = (-0.85 + t * 1.7) * Math.PI * 0.42;
-      const radius = spread * (0.45 + 0.55 * t);
       sky.makeStar(
         {
           kind: 'pr',
@@ -83,15 +114,16 @@ export function layoutQueue(items: readonly SkyItem[], sky: SkyLayout): void {
           quick: isQuick(item),
           tag: `#${item.pr}`,
           caption: item.title,
-          x: cx + Math.sin(angle) * radius + (r() - 0.5) * 70,
-          y: cy - Math.cos(angle) * radius * 0.52 + (r() - 0.5) * 70,
+          x: cx + arm[i].dx + (r() - 0.5) * 2 * JITTER,
+          y: cy + arm[i].dy + (r() - 0.5) * 2 * JITTER,
           // Magnitude follows neglect: the longer it has sat, the bigger it burns.
-          mag: 4 + Math.min(Math.sqrt(Math.max(item.idleDays, 0)) * 2.6, 13),
+          mag: 3.5 + Math.min(Math.sqrt(Math.max(item.idleDays, 0)) * 2.2, 9.5),
           colour: bucket.colour,
           cluster,
         },
         r,
-        9 + Math.min(item.idleDays * 0.42, 26),
+        // Drift stays well inside the gaps, so neighbours never wander together.
+        5 + Math.min(item.idleDays * 0.2, 11),
       );
     });
 

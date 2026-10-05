@@ -291,7 +291,7 @@ export class StarmapSky {
   protected onHover(event: PointerEvent | null): void {
     const engine = this.engine;
     if (!engine || this.hidden()) return;
-    if (event?.buttons) return;
+    if (event?.buttons) return this.hover.cancel();
     if (this.chart() === 'prs') return this.hoverQueue(engine, event);
     if (this.chart() !== 'issues') return;
     if (!this.nurserySky.hover(engine, event?.clientX ?? null, event?.clientY ?? null)) return;

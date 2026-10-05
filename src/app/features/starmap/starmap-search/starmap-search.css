@@ -24,6 +24,7 @@ button {
 
 /* Holds the box and the list that drops from it. */
 .field {
+  --list-gap: 6px;
   position: relative;
   flex: 1 1 220px;
   min-width: 0;
@@ -36,9 +37,20 @@ input {
   appearance: none;
 }
 
+/* Spans the gap between the box and its open list, so the pointer crossing it
+   has not left the form and the list stays open. */
+.field:has(ul:not([hidden]))::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: var(--list-gap);
+}
+
 ul {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + var(--list-gap));
   left: 0;
   right: 0;
   z-index: 1;

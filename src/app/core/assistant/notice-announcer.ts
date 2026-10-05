@@ -1,8 +1,9 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { ActivityWatch } from '../activity/activity-watch';
 import { ActivityItem } from '../activity/activity.types';
+import { AgentQuiet } from '../agent-speech/agent-quiet';
 import { NewMail } from '../mail/mail-memory';
 import { MailWatch } from '../mail/mail-watch';
 import { mailSayingOf } from '../notices/mail-words';
@@ -26,9 +27,10 @@ const NOTHING_HELD: Held = { items: [], mail: [] };
 /**
  * Jev says each check's news, and new mail, aloud in one line, with Speak on
  * and the tab in view. News that comes while he is busy (reading a line,
- * hearing the mic, on a request, or showing a task) is held and joined by any
- * that follows, then said once he is free. News while the tab is hidden, or
- * Speak is off, is not said at all. A refused mail sign-in is never said.
+ * hearing the mic, on a request, or showing a task), or while Agent Speak is
+ * talking, is held and joined by any that follows, then said once both are
+ * quiet. News while the tab is hidden, or Speak is off, is not said at all. A
+ * refused mail sign-in is never said.
  * Made only on this machine: see provideNoticeAnnouncer.
  */
 @Injectable({ providedIn: 'root' })
@@ -44,13 +46,21 @@ export class NoticeAnnouncer {
   private readonly held = signal<Held>(NOTHING_HELD);
 
   private readonly canHear = computed(() => this.speakOn() && !this.hidden());
-  private readonly isIdle = computed(
+  private readonly isJevIdle = computed(
     () => !this.voice.isBusy() && !this.talking() && !this.asking() && this.proposal() === null,
   );
   private readonly hasHeld = computed(
     () => this.held().items.length > 0 || this.held().mail.length > 0,
   );
-  private readonly isDue = computed(() => this.canHear() && this.isIdle() && this.hasHeld());
+  /** Agent Speak is asked about only while news waits on it alone. */
+  private readonly isWaitingOnAgent = computed(
+    () => this.canHear() && this.isJevIdle() && this.hasHeld(),
+  );
+  private readonly isAgentQuiet = toSignal(
+    inject(AgentQuiet).whileWaiting(toObservable(this.isWaitingOnAgent)),
+    { initialValue: false },
+  );
+  private readonly isDue = computed(() => this.isWaitingOnAgent() && this.isAgentQuiet());
 
   constructor() {
     inject(ActivityWatch)

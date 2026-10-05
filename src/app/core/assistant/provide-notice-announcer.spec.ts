@@ -71,15 +71,20 @@ describe('provideNoticeAnnouncer', () => {
     answerSession({ access: 'owner', signIn: '/api/auth/login' });
     check();
 
+    TestBed.inject(HttpTestingController).expectNone('/api/agent-speech');
     expect(asked).not.toHaveBeenCalled();
     expect(announce).not.toHaveBeenCalled();
   });
 
-  it('says the news once the API confirms this machine', () => {
+  it('says the news once the API confirms this machine, and Agent Speak is quiet', () => {
     const { announce, check } = setUp();
 
     answerSession({ access: 'local', signIn: null });
     check();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/agent-speech')
+      .flush({ busy: false, speaking: false, paused: false, queued: false });
+    TestBed.tick();
 
     expect(announce).toHaveBeenCalledExactlyOnceWith('Pull request 1 in a merged: Fix.');
   });

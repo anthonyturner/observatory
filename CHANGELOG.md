@@ -74,6 +74,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- Mail on Home is now a small side panel in the left column, under System vitals, rather than a full-width band below the HUD ([#338](https://github.com/anthonyturner/observatory/pull/338)).
 - The local site now reads your iCloud and Gmail inboxes on every page, not only while Home is open: every five minutes while the tab is in view, and once when you come back to it ([#320](https://github.com/anthonyturner/observatory/pull/320)).
 - Clicking one of Observatory's desktop notifications, including the Agent review's, brings its tab forward and closes the notification ([#308](https://github.com/anthonyturner/observatory/pull/308)).
 - On a phone, Home's foot takes less of the screen: the playlist bar starts folded to one row under the seek bar, unfolds its List and Sky controls as tidy rows of their own, and Home's tools fold behind one Tools button ([#302](https://github.com/anthonyturner/observatory/pull/302)).

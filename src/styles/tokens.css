@@ -314,6 +314,7 @@
   --sheet-savebar: rgba(6, 10, 22, 0.96);
   --sheet-decide-edge: rgba(255, 194, 77, 0.3);
   --sheet-decide-wash: rgba(255, 194, 77, 0.05);
+  --sheet-merge-hover: rgba(95, 227, 161, 0.22);
   --sheet-ask-edge: rgba(142, 162, 255, 0.55);
   --sheet-ask-wash: rgba(142, 162, 255, 0.18);
   --sheet-ask-hover: rgba(142, 162, 255, 0.3);

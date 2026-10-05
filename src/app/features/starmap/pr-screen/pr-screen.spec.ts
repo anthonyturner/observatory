@@ -10,6 +10,7 @@ const detail = {
   body: '## Summary\n<img src=x onerror=alert(1)> **bold** [docs](https://x.dev)',
   bodyTruncated: false,
   url: 'https://github.com/me/app/pull/572',
+  state: 'open',
   isDraft: true,
   mergeable: 'MERGEABLE',
   bucket: 'unlinked',
@@ -57,8 +58,8 @@ function render() {
   const settle = () => {
     fixture.detectChanges();
   };
-  const open = () => {
-    http.expectOne('/api/pull?repo=me/app&number=572').flush(detail);
+  const open = (shown: object = detail) => {
+    http.expectOne('/api/pull?repo=me/app&number=572').flush(shown);
     http.expectOne('/api/edit?repo=me/app&number=572').flush(null);
     http.expectOne('/api/labels?repo=me/app').flush([{ name: 'bug', color: 'd73a4a' }]);
     settle();
@@ -71,10 +72,26 @@ function render() {
     settle();
   };
   const visible = () => element.querySelector<HTMLElement>('.pane:not([hidden])');
-  return { fixture, http, element, open, tab, visible, settle };
+  const box = () => element.querySelector<HTMLElement>('app-merge-box')!;
+  const press = (selector: string) => {
+    box().querySelector<HTMLButtonElement>(selector)!.click();
+    settle();
+  };
+  return { fixture, http, element, open, tab, visible, settle, box, press };
 }
 
+const MERGED_RECORD = {
+  pr: 572,
+  status: 'applied',
+  message: 'applied: merge',
+  changes: { merge: { method: 'squash', headOid: HEAD } },
+  applied: ['merge'],
+  appliedAt: '2026-09-26T10:01:00Z',
+};
+
 describe('PrScreen', () => {
+  beforeEach(() => localStorage.clear());
+
   it('shows the bucket, title and route, and the description as text', () => {
     const { element, open, visible } = render();
     open();
@@ -186,5 +203,132 @@ describe('PrScreen', () => {
     http.expectOne('/api/pull?repo=me/app&number=572&fresh=1').flush(detail);
     settle();
     expect(element.querySelector('.route')?.textContent).toContain('main');
+  });
+
+  it('shows the merge box on every tab, holding a draft back with the reason', () => {
+    const { box, open, tab } = render();
+    open();
+
+    expect(box().textContent).toContain('Still a draft');
+    expect(box().textContent).toContain('1 check passed');
+    expect(box().textContent).toContain('Mark it ready for review to merge.');
+    expect(box().querySelector<HTMLButtonElement>('.main')!.disabled).toBe(true);
+    tab('Files');
+    expect(box().querySelector('.ready')?.textContent).toContain('Ready for review');
+  });
+
+  it('marks a draft ready from the merge box, and lets it merge straight after', () => {
+    const { box, http, open, press, settle } = render();
+    open();
+    press('.ready');
+
+    const sent = http.expectOne('/api/edit');
+    expect(sent.request.body.changes).toEqual({ ready: true });
+    sent.flush({ ...MERGED_RECORD, changes: { ready: true }, applied: ['ready'] });
+    http.expectOne('/api/pull?repo=me/app&number=572&fresh=1');
+    settle();
+    expect(box().querySelector('.ready')).toBeNull();
+    expect(box().querySelector<HTMLButtonElement>('.main')!.disabled).toBe(false);
+  });
+
+  it('merges only after a confirm, pinned to the commit seen', () => {
+    const { box, http, open, press } = render();
+    open({ ...detail, isDraft: false });
+
+    expect(box().querySelector('.main')?.textContent).toContain('Squash and merge');
+    press('.main');
+    expect(box().querySelector('.confirm')?.textContent).toContain('Confirm squash and merge');
+    http.expectNone('/api/edit');
+    press('.confirm');
+
+    const sent = http.expectOne('/api/edit');
+    expect(sent.request.body.changes).toEqual({ merge: { method: 'squash', headOid: HEAD } });
+    sent.flush(MERGED_RECORD);
+    http.expectOne('/api/pull?repo=me/app&number=572&fresh=1');
+  });
+
+  it('cannot send a second merge, before or after GitHub answers', () => {
+    const { box, element, http, open, press, settle } = render();
+    open({ ...detail, isDraft: false });
+    press('.main');
+    const confirm = box().querySelector<HTMLButtonElement>('.confirm')!;
+    confirm.click();
+    confirm.click();
+    settle();
+
+    http.expectOne('/api/edit').flush(MERGED_RECORD);
+    settle();
+    expect(box().querySelector('.ending')?.textContent).toBe('Merged ✓ via squash');
+    expect(box().querySelector('button')).toBeNull();
+
+    http
+      .expectOne('/api/pull?repo=me/app&number=572&fresh=1')
+      .flush({ ...detail, isDraft: false, fetchedAt: '2026-09-26T10:02:00Z' });
+    settle();
+    element.querySelector<HTMLButtonElement>('.newer')!.click();
+    settle();
+    expect(box().querySelector('button')).toBeNull();
+    http.expectNone('/api/edit');
+  });
+
+  it('shows a pull request GitHub says is merged or closed without any merge button', () => {
+    const { box, open } = render();
+    open({ ...detail, state: 'closed' });
+
+    expect(box().querySelector('.ending')?.textContent).toBe('Closed without merging');
+    expect(box().querySelector('button')).toBeNull();
+  });
+
+  it('says why a merge did not happen, and offers it again', () => {
+    const { box, http, open, press, settle } = render();
+    open({ ...detail, isDraft: false });
+    press('.main');
+    press('.confirm');
+
+    http.expectOne('/api/edit').flush({
+      ...MERGED_RECORD,
+      status: 'failed',
+      message: 'not merged: the branch conflicts with its base',
+      applied: [],
+    });
+    http.expectOne('/api/pull?repo=me/app&number=572&fresh=1');
+    settle();
+    expect(box().querySelector('[role="alert"]')?.textContent).toContain('conflicts');
+    expect(box().querySelector<HTMLButtonElement>('.main')!.disabled).toBe(false);
+  });
+
+  it('cancels a confirm on Esc and stays open', () => {
+    const { fixture, box, open, press, settle } = render();
+    open({ ...detail, isDraft: false });
+    let closed = 0;
+    fixture.componentInstance.closed.subscribe(() => closed++);
+    press('.main');
+
+    box()
+      .querySelector('.confirm')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    settle();
+    expect(closed).toBe(0);
+    expect(box().querySelector('.confirm')).toBeNull();
+  });
+
+  it('remembers the method picked from the menu', () => {
+    const { box, open, press, settle } = render();
+    open({ ...detail, isDraft: false });
+    press('.caret');
+    const rebase = Array.from(box().querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'));
+    rebase[2].click();
+    settle();
+
+    expect(box().querySelector('.main')?.textContent).toContain('Rebase and merge');
+    expect(localStorage.getItem('observatory.merge-method')).toBe('rebase');
+  });
+
+  it('keeps merging out of the Edit tab', () => {
+    const { open, tab, visible } = render();
+    open();
+    tab('Edit');
+
+    expect(visible()?.querySelector('#ed-merge, #ed-confirm, input[type="checkbox"]')).toBeNull();
   });
 });

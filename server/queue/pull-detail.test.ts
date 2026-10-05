@@ -9,6 +9,7 @@ const raw: RawPull = {
   title: 'Replace the facade',
   body: 'Closes #57',
   url: 'https://github.com/me/a/pull/58',
+  state: 'OPEN',
   isDraft: true,
   mergeable: 'CONFLICTING',
   author: { login: 'anthony' },
@@ -103,6 +104,14 @@ describe('pullDetailOf', () => {
       [extras.diff, extras.diff.length, false, false],
     );
     assert.equal(detail.fetchedAt, extras.fetchedAt);
+  });
+
+  it('says whether it is open, merged or closed, reading anything else as open', () => {
+    const states = ['OPEN', 'MERGED', 'CLOSED', ''].map(
+      (state) => pullDetailOf({ ...raw, state }, extras).state,
+    );
+
+    assert.deepEqual(states, ['open', 'merged', 'closed', 'open']);
   });
 
   it('keeps the latest fifty commits and counts them all', () => {

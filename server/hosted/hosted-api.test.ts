@@ -62,6 +62,7 @@ const github = {
     ...pull(number),
     url: `https://github.com/${repo}/pull/${number}`,
     body: '',
+    state: 'OPEN',
     author: null,
     baseRefName: 'main',
     headRefOid: 'f'.repeat(40),

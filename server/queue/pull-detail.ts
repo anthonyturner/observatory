@@ -18,6 +18,8 @@ export interface CheckLine {
   readonly url: string | null;
 }
 
+export type PullState = 'open' | 'merged' | 'closed';
+
 export type ReviewDecision = 'approved' | 'changes-requested' | 'review-required' | 'none';
 
 export interface FileLine {
@@ -46,6 +48,7 @@ export interface PullDetail {
   /** The description was cut to fit; the rest is on GitHub, and it must not be sent back. */
   readonly bodyTruncated: boolean;
   readonly url: string;
+  readonly state: PullState;
   readonly isDraft: boolean;
   /** `MERGEABLE`, `CONFLICTING` or `UNKNOWN`. */
   readonly mergeable: string;
@@ -134,6 +137,11 @@ const DECISIONS: Readonly<Record<string, ReviewDecision>> = {
   REVIEW_REQUIRED: 'review-required',
 };
 
+const STATES: Readonly<Record<string, PullState>> = { MERGED: 'merged', CLOSED: 'closed' };
+
+/** Anything GitHub does not call merged or closed is still open, so a merge box stays offered. */
+const pullStateOf = (state: string): PullState => STATES[state] ?? 'open';
+
 const reviewStateOf = (state: string): string => state.toLowerCase().replace(/_/g, ' ');
 
 const fileLineOf = (file: RawFile): FileLine => ({
@@ -174,6 +182,7 @@ export function pullDetailOf(raw: RawPull, extras: PullExtras): PullDetail {
     title: raw.title,
     ...clipBody(raw.body),
     url: raw.url,
+    state: pullStateOf(raw.state),
     isDraft: raw.isDraft,
     mergeable: raw.mergeable,
     bucket: bucketOf(raw),

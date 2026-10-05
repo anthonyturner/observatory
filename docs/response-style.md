@@ -47,6 +47,10 @@ report back to the requester after a pull request is shorter still: it does
 not repeat what the pull request says, but links the issue and the pull
 request. Plain English and glossed terms still apply.
 
+**A response that proposes or reports a change carries a diagram** of what
+changes: before and after, the parts touched, and how data flows. When to draw
+one, how big, and where it goes are in [diagrams.md](diagrams.md).
+
 [agent-workflows/refinement.md](agent-workflows/refinement.md) extends these
 rules for the refinement assessment, the one stage whose entire output is its
 reasoning.

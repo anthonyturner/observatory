@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Change diagram</title>
+<!--
+  Change diagram page. See docs/diagrams.md.
+  Copy this file and replace only the text inside <script id="diagram">.
+  The first `title:` line in its front matter becomes the page heading.
+  Flowcharts get the classes add, del and chg for free: `A[New thing]:::add`.
+-->
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --surface: #f6f7f9;
+    --text: #1b1f24;
+    --muted: #5b6470;
+    --border: #d8dde3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0f1216;
+      --surface: #171b21;
+      --text: #e6e9ed;
+      --muted: #9aa4af;
+      --border: #2c333c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1216;
+    --surface: #171b21;
+    --text: #e6e9ed;
+    --muted: #9aa4af;
+    --border: #2c333c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 40px;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.35rem; line-height: 1.3; margin: 0 0 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 16px; padding: 0; list-style: none; color: var(--muted); font-size: 0.875rem; }
+  .legend span { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; border: 2px solid; }
+  .add { background: #2da44e33; border-color: #2da44e; }
+  .del { background: #cf222e33; border-color: #cf222e; }
+  .chg { background: #d4a72c33; border-color: #d4a72c; }
+  figure { margin: 0; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; }
+  figure svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+  pre { margin: 0; white-space: pre-wrap; font: 0.875rem/1.5 ui-monospace, Consolas, monospace; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="heading">Change diagram</h1>
+  <ul class="legend" aria-label="Legend">
+    <li><span class="add"></span>Added</li>
+    <li><span class="chg"></span>Changed</li>
+    <li><span class="del"></span>Removed</li>
+  </ul>
+  <figure id="figure" aria-live="polite"><pre id="fallback"></pre></figure>
+</main>
+
+<script type="text/plain" id="diagram">
+---
+title: Example - cache the project list
+---
+flowchart TB
+  subgraph Before
+    direction LR
+    UI1[Dashboard] --> API1[GET /projects] --> GH1[(GitHub API)]
+  end
+  subgraph After
+    direction LR
+    UI2[Dashboard] --> API2[GET /projects]:::chg
+    API2 --> C[(Cache, 60 s)]:::add
+    C -- miss --> GH2[(GitHub API)]
+  end
+  Before ~~~ After
+</script>
+
+<script>
+  (function () {
+    var source = document.getElementById('diagram').textContent.trim();
+    var titleMatch = /^---\s*\n[\s\S]*?^title:\s*(.+)$/m.exec(source);
+    var heading = titleMatch ? titleMatch[1].trim() : 'Change diagram';
+    var body = source.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '');
+    var classes =
+      '\n  classDef add fill:#2da44e33,stroke:#2da44e,stroke-width:2px' +
+      '\n  classDef del fill:#cf222e33,stroke:#cf222e,stroke-width:2px,stroke-dasharray:4 3' +
+      '\n  classDef chg fill:#d4a72c33,stroke:#d4a72c,stroke-width:2px';
+    if (/^\s*(flowchart|graph)\b/.test(body)) body = body.replace(/^(.*)$/m, '$1' + classes);
+
+    document.title = heading;
+    document.getElementById('heading').textContent = heading;
+    document.getElementById('fallback').textContent = source;
+
+    var figure = document.getElementById('figure');
+    var media = window.matchMedia('(prefers-color-scheme: dark)');
+    var isDark = function () {
+      var forced = document.documentElement.getAttribute('data-theme');
+      return forced ? forced === 'dark' : media.matches;
+    };
+    var count = 0;
+    var draw = function () {
+      if (!window.mermaid) return;
+      window.mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: isDark() ? 'dark' : 'default' });
+      window.mermaid.render('change-diagram-' + count++, body).then(function (out) {
+        figure.innerHTML = out.svg;
+        var svg = figure.querySelector('svg');
+        if (svg) { svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', heading); }
+      }).catch(function (err) {
+        var pre = document.createElement('pre');
+        pre.textContent = source + '\n\nDiagram did not render: ' + (err && err.message ? err.message : err);
+        figure.replaceChildren(pre);
+      });
+    };
+    if (media.addEventListener) media.addEventListener('change', draw);
+    new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    var load = function (urls) {
+      if (!urls.length) return;
+      var s = document.createElement('script');
+      s.src = urls[0];
+      s.onload = draw;
+      s.onerror = function () { load(urls.slice(1)); };
+      document.head.appendChild(s);
+    };
+    load([
+      'https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.15.0/mermaid.min.js',
+      'https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js'
+    ]);
+  })();
+</script>
+</body>
+</html>

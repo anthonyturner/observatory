@@ -97,6 +97,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- On the Architecture page, the star system and the UML diagram fill the stage beside the node list again, instead of dropping into the node list's narrow column under it ([#353](https://github.com/anthonyturner/observatory/pull/353)).
 - After a merge from the PR screen, nothing can send a second one: the merge box shows "Merged ✓ via squash" straight away, before the details are read again, and a pull request GitHub reports merged or closed shows no merge button at all ([#328](https://github.com/anthonyturner/observatory/pull/328)).
 - The playlist bar no longer shows Sync on a phone, or in any browser that cannot share a tab's audio, where it could never work; on a phone the Sky controls also stay on the screen, with the Sky slider on a row of its own ([#312](https://github.com/anthonyturner/observatory/pull/312)).
 - Home's music sky no longer jumps down and back on every beat once the page is scrolled; the beat's zoom now pulses in place while the core is out of view ([#301](https://github.com/anthonyturner/observatory/pull/301)).

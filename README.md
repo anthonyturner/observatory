@@ -12,9 +12,46 @@ migrated one small piece at a time into typed, tested Angular components.
 > of them show live data from GitHub and Claude Code: project cards, usage,
 > directives, news, the review queue, issues, logs and agent report cards.
 > Jev, Home's assistant, answers typed or spoken requests and proposes work
-> that can run on this machine. What pr-starmap still has that Observatory
-> doesn't: Home's star trails and the core's voice ring, and the Orrery's 3D
-> view and fog.
+> that can run on this machine.
+
+## Reading the sky
+
+Every mark that carries meaning is driven by your data; the rest is scenery,
+kept the same for each project on every load. Each page's help card (press
+`?`) has the one-line version, and
+[docs/sky-visuals.md](docs/sky-visuals.md) has the rules behind each mark.
+
+**The Orrery**: one world per project you own.
+
+![Five Orrery worlds: two rocky worlds with clouds and city lights, one with glowing cracks, a cratered desert, an ice world and a ringed gas giant](docs/images/orrery-worlds.png)
+
+- **Air colour** is the project's most urgent state; a bigger world has more
+  open work, and a world further out has been neglected longer.
+- **City lights** on the night side are work in motion: more open pull
+  requests, more lights, fading as the oldest goes stale.
+- **Glowing cracks** mean checks are failing.
+- **Moons** are blocked pull requests, a **ring** is branches that no longer
+  merge, and **comets** are unclaimed issues.
+- The kind of world (rocky, gas giant, ice or desert), its land and its clouds
+  are scenery.
+
+**The review queue**: one star per open pull request, grouped by what blocks
+it and spaced along a spiral per group. Zoom in for detail.
+
+![Four review-queue stars up close: a blocked red giant, a quick win with a green disc, a veiled star with planets, and a large change with a wide disc](docs/images/review-queue-stars.png)
+
+- **Colour** is why it's stuck, and **size** is how long it has waited.
+- **Kind**: a blocked pull request is a deep giant that throws flares, more
+  often the longer it waits; one GitHub hasn't settled hides in a veil of gas;
+  one waiting on you burns clear, with spikes; one you saw recently rests,
+  small and calm.
+- **The disc of gas** is review cost: larger and brighter the more lines
+  change, green for a quick win, none under twenty lines.
+- **Planets** are the issues it closes, up to four. No planets, no linked
+  issue.
+
+The pictures are rendered with the app's own shaders. Where WebGL can't
+start, both pages fall back to a simpler flat drawing.
 
 ## Stack
 
@@ -22,7 +59,8 @@ migrated one small piece at a time into typed, tested Angular components.
 - **TypeScript 6**, strict mode
 - **Angular CDK** for behaviour (overlays, focus management, accessibility,
   breakpoints), with a hand-built design system instead of a component library
-- **Three.js** for the 3D core, with a Canvas 2D fallback
+- **Three.js** for the 3D core, the Orrery and the review queue sky, drawn with
+  procedural shaders (no textures), each with a Canvas 2D fallback
 - **Vitest** for unit tests, **angular-eslint** and **Prettier** for code quality
 
 ## Principles

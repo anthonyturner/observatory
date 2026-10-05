@@ -101,6 +101,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Removed
 
+- Home's News section (AI news and software engineering headlines) and the News jump in Home's menu ([#394](https://github.com/anthonyturner/observatory/pull/394)).
 - The assistant and voice are no longer available on the hosted site, for anyone ([#151](https://github.com/anthonyturner/observatory/pull/151)).
 
 ### Fixed

@@ -102,7 +102,7 @@ export class OrreryCanvas {
     effect(() => {
       const worlds = this.worlds();
       this.scene?.setWorlds(worlds);
-      this.webgl?.setWorlds(worlds);
+      if (this.webgl) void this.giveWorlds(this.webgl, worlds);
       if (worlds.length && this.shownAt === null) this.showSystem();
       this.loop?.kick();
     });
@@ -170,13 +170,30 @@ export class OrreryCanvas {
       const { OrreryWebGL } = await import('./webgl/orrery-webgl');
       if (this.isStopped || !this.palette) return;
       const webgl = new OrreryWebGL(this.document, this.palette, () => this.dropWebgl());
+      // The 2D orrery keeps drawing while the shaders compile, which can take seconds.
+      const worlds = this.worlds();
+      await webgl.setWorlds(worlds);
+      if (this.isStopped) {
+        webgl.dispose();
+        return;
+      }
       webgl.mount(canvas);
-      webgl.setWorlds(this.worlds());
       webgl.resize(this.view.width, this.view.height, this.pixelRatio());
       this.webgl = webgl;
+      if (this.worlds() !== worlds) void this.giveWorlds(webgl, this.worlds());
       this.loop?.kick();
     } catch (error: unknown) {
       console.warn('The 3D orrery is unavailable; drawing in 2D.', error);
+    }
+  }
+
+  private async giveWorlds(webgl: OrreryWebGL, worlds: readonly OrreryWorld[]): Promise<void> {
+    try {
+      await webgl.setWorlds(worlds);
+      this.loop?.kick();
+    } catch (error: unknown) {
+      console.warn('The 3D orrery could not show the new worlds; drawing in 2D.', error);
+      if (this.webgl === webgl) this.dropWebgl();
     }
   }
 

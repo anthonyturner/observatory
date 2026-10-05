@@ -1,4 +1,4 @@
-import { findOnSky, searchSuggestions } from './sky-search';
+import { findOnSky, searchSuggestions, suggestionsFor } from './sky-search';
 
 describe('findOnSky', () => {
   const pulls = [
@@ -56,5 +56,14 @@ describe('searchSuggestions', () => {
         [{ number: 4, title: 'An issue', comet: true }],
       ),
     ).toEqual(['#3 A pull', '#4 An issue']);
+  });
+});
+
+describe('suggestionsFor', () => {
+  const all = ['#3 Add search', '#4 Fix orrery', '#5 Search tweaks'];
+
+  it('keeps the ones holding the text, ignoring case, up to the cap', () => {
+    expect(suggestionsFor(all, 'SEARCH', 5)).toEqual(['#3 Add search', '#5 Search tweaks']);
+    expect(suggestionsFor(all, '', 2)).toEqual(['#3 Add search', '#4 Fix orrery']);
   });
 });

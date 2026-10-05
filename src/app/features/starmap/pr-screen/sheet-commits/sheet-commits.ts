@@ -40,14 +40,12 @@ export class SheetCommits {
     source: () => `${this.repo()}#${this.detail().number}`,
     computation: () => null,
   });
+  /** None when no commit is open, or a refresh dropped the open one from the list. */
   protected readonly view = computed((): CommitView | null => {
     const sha = this.openSha();
-    if (!sha) return null;
-    return commitViewOf(this.feed.state(), {
-      repo: this.repo(),
-      number: this.detail().number,
-      sha,
-    });
+    const { number, commits } = this.detail();
+    const commit = commits.find((each) => each.sha === sha);
+    return commit ? commitViewOf(this.feed.state(), { repo: this.repo(), number, commit }) : null;
   });
 
   protected toggle(sha: string): void {

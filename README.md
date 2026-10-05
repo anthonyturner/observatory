@@ -32,8 +32,8 @@ kept the same for each project on every load. Each page's help card (press
 **The Orrery**: one world per project you own.
 
 <table><tr>
-<td><img src="docs/images/orrery-overview.jpg" alt="The Orrery: eight project worlds orbiting a sun labelled 45, the open pull request count, inside a dial of constellation names"></td>
-<td><img src="docs/images/orrery-close-up.jpg" alt="The Orrery zoomed in: lit worlds with moons, the sun, and comets for unclaimed issues"></td>
+<td><img src="docs/images/orrery-overview.jpg" alt="The Orrery: eight project worlds on separate orbits round a sun labelled 45, the open pull request count, inside a dial of constellation names, over a band of the Milky Way"></td>
+<td><img src="docs/images/orrery-close-up.jpg" alt="The Orrery zoomed in: lit worlds with moons, two with glowing fissures for failing checks, the sun, and comets for unclaimed issues, over the Milky Way"></td>
 </tr></table>
 
 - **Air colour** is the project's most urgent state; a bigger world has more

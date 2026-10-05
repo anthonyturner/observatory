@@ -30,6 +30,8 @@ TypeScript and the shader only draws it.
 
 ## Orrery worlds
 
+![The four kinds of world rendered on their own, lit from the front: rocky worlds with clouds and city lights, one with glowing fissures, a cratered desert, an ice world and a ringed gas giant](images/orrery-worlds.png)
+
 Code: `features/orrery/orrery-canvas/webgl/orrery-webgl.ts` builds the scene;
 the shaders are in `shared/planets/planet-shaders.ts` (shared with the
 Architecture page's star view) and `orrery-shaders.ts` (sun, rings, field).
@@ -96,6 +98,8 @@ grey with no air, lights or fissures.
 Code: `features/starmap/engine/webgl-sky.ts` builds and updates the stars; the
 star shader is `shared/gl/star-shader.ts` (shared with the Architecture page),
 and the disc and planet shaders are `engine/star-system-shaders.ts`.
+
+![PR stars rendered on their own, zoomed in: a flaring giant with a gas disc and planets, a clear star with a green quick-win disc, a veiled star with planets, and a large change with a wide disc](images/review-queue-stars.png)
 
 ### Layout
 

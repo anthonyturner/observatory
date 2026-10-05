@@ -54,6 +54,8 @@ interface Drawn {
 export class DoneLayer implements SkyLayer {
   /** The key the Done list has lit, if any. */
   lit: string | null = null;
+  /** How much of the right edge a panel covers, so labels stay clear of it. */
+  clearRight = 0;
   private places: DonePlace[] = [];
   private drawn: Drawn[] = [];
   private hovered: string | null = null;
@@ -174,8 +176,7 @@ export class DoneLayer implements SkyLayer {
     const headWidth = ctx.measureText(head).width;
     ctx.font = '400 12px "IBM Plex Sans", sans-serif';
     const width = Math.max(headWidth, ctx.measureText(title).width) + 20;
-    // Beside the light, kept on screen.
-    const left = Math.min(Math.max(x + 14, 8), f.width - width - 8);
+    const left = labelLeft(x, width, f.width - this.clearRight);
     const top = Math.min(Math.max(y - 46, 8), f.height - 52);
     ctx.globalAlpha = 0.92;
     ctx.fillStyle = 'rgba(8, 12, 28, 0.86)';
@@ -197,3 +198,11 @@ export class DoneLayer implements SkyLayer {
 }
 
 const clamp = (value: number): number => Math.min(Math.max(value, 0), 1);
+
+/** Where a label `width` wide starts beside a light at `x`: toward the middle
+ *  of the clear sky `clearWidth` wide (the screen less any panel on its right
+ *  edge), and kept inside it either way. */
+export function labelLeft(x: number, width: number, clearWidth: number): number {
+  const beside = x > clearWidth / 2 ? x - 14 - width : x + 14;
+  return Math.min(Math.max(beside, 8), clearWidth - width - 8);
+}

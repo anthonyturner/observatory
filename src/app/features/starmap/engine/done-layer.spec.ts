@@ -1,6 +1,6 @@
 import { DoneItem } from '../../../core/queue/done-work';
 import { CameraController } from './camera-controller';
-import { DoneLayer, isDoneHit } from './done-layer';
+import { DoneLayer, isDoneHit, labelLeft } from './done-layer';
 import { SkyFrame } from './sky-frame';
 
 const NOW = Date.parse('2026-10-05T12:00:00Z');
@@ -71,5 +71,24 @@ describe('DoneLayer', () => {
     expect(layer.hoverOn(item)).toBe(true);
     expect(layer.hoverOn(item)).toBe(false);
     expect(layer.hoverOn(null)).toBe(true);
+  });
+});
+
+describe('labelLeft', () => {
+  it('opens toward the middle: right of a light on the left half, left of one on the right', () => {
+    expect(labelLeft(300, 200, 1600)).toBe(314);
+    expect(labelLeft(1300, 200, 1600)).toBe(1086);
+  });
+
+  it('stays clear of a panel on the right edge', () => {
+    // The screen is 1600 wide with a 390 panel on its right: 1210 of clear sky.
+    expect(labelLeft(1205, 200, 1210)).toBe(991);
+    expect(labelLeft(1300, 200, 1210)).toBe(1002);
+  });
+
+  it('keeps the label on screen', () => {
+    expect(labelLeft(100, 400, 1600)).toBe(114);
+    expect(labelLeft(1590, 200, 1600)).toBe(1376);
+    expect(labelLeft(820, 900, 1600)).toBe(8);
   });
 });

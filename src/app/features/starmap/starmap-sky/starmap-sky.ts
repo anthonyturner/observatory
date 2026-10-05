@@ -203,6 +203,7 @@ export class StarmapSky {
     effect(() => {
       this.doneLayer.set(this.done(), Date.now());
       this.doneLayer.lit = this.doneLit();
+      this.doneLayer.clearRight = this.insets().side;
       this.engine?.kick();
     });
     effect(() => {

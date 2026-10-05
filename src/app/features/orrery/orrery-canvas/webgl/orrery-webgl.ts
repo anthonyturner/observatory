@@ -44,39 +44,40 @@ import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { OrreryPalette } from '../orrery-palette';
 import { DIAL_BEYOND_ORBIT, SceneFrame } from '../orrery-scene';
 import {
-  CORONA_FRAGMENT,
   FIELD_FRAGMENT,
   FIELD_VERTEX,
   FINISH_FRAGMENT,
   FINISH_VERTEX,
   RING_FRAGMENT,
   RING_VERTEX,
-  SPHERE_VERTEX,
 } from './orrery-shaders';
-import { ATMOSPHERE_FRAGMENT, CLOUD_FRAGMENT, SURFACE_FRAGMENT } from './planet-shaders';
+import {
+  AIR_SCALE,
+  ATMOSPHERE_FRAGMENT,
+  CLOUD_FRAGMENT,
+  CLOUD_SCALE,
+  SPHERE_VERTEX,
+  SURFACE_FRAGMENT,
+  WORLD_TINT,
+} from '../../../../shared/planets/planet-shaders';
+import {
+  CORONA_FRAGMENT,
+  CORONA_REACH,
+  SUN_OVERBRIGHT,
+} from '../../../../shared/planets/sun-shaders';
 
 const DEG = Math.PI / 180;
 /** Bloom only on what is luminous: deep space stays black so stars have something to be brighter than. */
 const BLOOM_STRENGTH = 0.32;
 const BLOOM_RADIUS = 0.25;
 const BLOOM_THRESHOLD = 0.85;
-/** Just bright enough that the bloom catches the sun's rim, and no more. */
-const SUN_OVERBRIGHT = 1.3;
-/** How far the corona reaches, in sun radii. */
-const CORONA_REACH = 1.9;
 /** Bloom runs at no more than this pixel ratio: it is about to be blurred. */
 const BLOOM_MAX_RATIO = 1.25;
 const MAX_PIXEL_RATIO = 2;
 /** The dial turns this many radians a second about the plane's normal, as the 2D one does. */
 const DIAL_TURN = 0.006;
-/** How far a world's own surface takes its severity colour; its air carries the rest. */
-const WORLD_TINT = 0.14;
 /** A moon is cratered rock in the palette's moon grey. */
 const MOON_TINT = 0.7;
-/** The air shell's radius, in world radii. */
-const AIR_SCALE = 1.12;
-/** The cloud shell sits just above the ground. */
-const CLOUD_SCALE = 1.015;
 /** Clouds turn a little faster than the ground beneath them, in radians a second. */
 const GROUND_TURN = 0.035;
 const CLOUD_TURN = 0.05;

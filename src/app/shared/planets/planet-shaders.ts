@@ -3,7 +3,19 @@
    computed per pixel from noise, so no textures load and every repo's world is
    its own. */
 
-import { SIMPLEX_GLSL } from '../../../../shared/gl/simplex-glsl';
+import { SIMPLEX_GLSL } from '../gl/simplex-glsl';
+
+/** How far a world's own surface takes its severity colour; its air carries the rest. */
+export const WORLD_TINT = 0.14;
+/** The air shell's radius, in world radii. */
+export const AIR_SCALE = 1.12;
+/** The cloud shell sits just above the ground. */
+export const CLOUD_SCALE = 1.015;
+
+export const SPHERE_VERTEX = `varying vec3 wp; varying vec3 wn; varying vec3 local;
+  void main() { local = position; vec4 p = modelMatrix * vec4(position,1.);
+    wp = p.xyz; wn = normalize(mat3(modelMatrix) * normal);
+    gl_Position = projectionMatrix * viewMatrix * p; }`;
 
 /* The kinds, numbered as WORLD_KINDS orders them: rocky, gas, ice, desert.
    Each gives a height, for relief, and a colour; `vary` picks a palette

@@ -156,3 +156,18 @@ svg:focus-within .moons {
 .moon {
   fill: var(--ink-soft);
 }
+
+/* A portrait is painted over black: the screen blend drops the black and lets the air glow over the sky. */
+.backing {
+  fill: var(--void);
+}
+
+.portrait {
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* With a portrait beneath, a body keeps only its outline: hollow for a component, dashed for unused, lit on hover. */
+:host(.real) .planet .body {
+  fill: transparent;
+}

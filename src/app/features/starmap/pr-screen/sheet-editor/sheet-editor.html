@@ -71,19 +71,6 @@
   />
 </div>
 
-<app-sheet-decisions
-  [number]="pull.number"
-  [isDraft]="pull.isDraft"
-  [mergeable]="pull.mergeable"
-  [headOid]="pull.headOid"
-  [ready]="typed.ready"
-  (readyChange)="change({ ready: $event })"
-  [method]="typed.mergeMethod"
-  (methodChange)="change({ mergeMethod: $event })"
-  [confirm]="typed.confirm"
-  (confirmChange)="change({ confirm: $event })"
-/>
-
 <app-sheet-savebar
   [summary]="summary()"
   [canSave]="canSave()"

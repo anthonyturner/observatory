@@ -1,10 +1,11 @@
 :host {
   display: block;
+  padding: 12px 14px 14px;
+  /* The rows lay out by the panel's width, which a side column keeps narrow. */
+  container-type: inline-size;
 }
 
 .mail {
-  max-width: 1180px;
-  margin: 0 auto 28px;
   scroll-margin-top: 16px;
 }
 
@@ -12,48 +13,11 @@
   outline: none;
 }
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 14px;
-  margin: 0 0 14px;
-  padding: 10px 16px 11px;
-  border: 1px solid var(--edge-soft);
-  border-radius: var(--radius-panel);
-  background: var(--glass-strong);
-}
-
-h2 {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 26px;
-  line-height: 1.1;
-}
-
-.sub {
+.note {
+  margin: 0 0 8px;
   font-family: var(--font-mono);
   font-size: 11px;
-  font-style: normal;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--muted);
-}
-
-.note {
-  margin-left: auto;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.pane {
-  padding: 14px 16px 10px;
-  border: 1px solid var(--edge);
-  border-radius: 14px;
-  background: var(--panel);
 }
 
 .bar {
@@ -213,7 +177,7 @@ code {
   }
 }
 
-@media (min-width: 720px) {
+@container (min-width: 600px) {
   .row {
     grid-template-columns: 56px minmax(140px, 220px) 1fr auto;
     grid-template-areas: 'marker from subject age';

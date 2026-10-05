@@ -21,6 +21,9 @@ export class PullEdits {
   /** The badge under the title, or null. */
   readonly badge = computed(() => editBadgeOf(this.sending(), this.record()));
   readonly hasRecord = computed(() => this.record() !== null);
+  /** How the last edit went, or null. */
+  readonly last = this.record.asReadonly();
+  readonly isSending = computed(() => this.sending() !== null);
   readonly labels = this.known.asReadonly();
 
   constructor() {

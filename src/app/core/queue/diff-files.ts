@@ -9,8 +9,10 @@ export interface DiffFile {
 /** `h` a hunk header, `a` an added line, `d` a removed one, `''` context. */
 export type DiffLineKind = 'h' | 'a' | 'd' | '';
 
+/** A line's `+`, `-` or space is kept apart from its code, so only the sign is coloured. */
 export interface DiffLine {
   readonly kind: DiffLineKind;
+  readonly sign: string;
   readonly text: string;
 }
 
@@ -19,7 +21,7 @@ const FILE_HEADER = 'diff --git';
 const PATH = /^diff --git a\/(.+?) b\//;
 const UNNAMED = 'file';
 const HUNK = '@@';
-/** An empty line still takes a line's height. */
+/** An empty line still takes a line's height: its missing sign is drawn as a space. */
 const BLANK = ' ';
 
 const isAdded = (line: string): boolean => line.startsWith('+') && !line.startsWith('+++');
@@ -44,8 +46,14 @@ export function diffFilesOf(diff: string): DiffFile[] {
 const kindOf = (line: string): DiffLineKind =>
   line.startsWith(HUNK) ? 'h' : line.startsWith('+') ? 'a' : line.startsWith('-') ? 'd' : '';
 
+const lineOf = (line: string): DiffLine => {
+  const kind = kindOf(line);
+  if (kind === 'h') return { kind, sign: '', text: line };
+  return { kind, sign: line.charAt(0) || BLANK, text: line.slice(1) };
+};
+
 /** A file's lines from its first hunk on, each marked for how it is drawn. */
 export function diffLinesOf(file: DiffFile): DiffLine[] {
   const first = file.lines.findIndex((line) => line.startsWith(HUNK));
-  return file.lines.slice(first).map((line) => ({ kind: kindOf(line), text: line || BLANK }));
+  return file.lines.slice(first).map(lineOf);
 }

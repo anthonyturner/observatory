@@ -11,6 +11,8 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 ### Added
 
 - On your own machine, Jev and Agent Speak now take turns: Jev holds his spoken news and mail while the agent is talking and says them once it goes quiet, and while any line of Jev's is under way the agent's speech waits for him, then carries on where it stopped. A pause you set on Agent Speak stays yours. This needs an Agent Speak version that honours Jev's hold ([#337](https://github.com/anthonyturner/observatory/pull/337)).
+- The PR screen has a GitHub-style merge box along its foot, on every tab: it shows whether the pull request is a draft, conflicts, how its checks went and its review decision, then merges with Squash and merge (or a merge commit or rebase, picked from the arrow and remembered in this browser) after one Confirm. A draft gets a Ready for review button, and merging is held back with the reason while it is a draft or conflicts. Merging and marking ready have left the Edit tab ([#328](https://github.com/anthonyturner/observatory/pull/328)).
+- On the Review Queue, a dotted line now ties an open PR screen or issue window to its star, comet or nursery body. It leaves from the window's nearest edge, follows the window as you drag it, and runs off the edge toward a star that is off screen ([#332](https://github.com/anthonyturner/observatory/pull/332)).
 - Each file in a pull request's diff, on the PR screen's Diff tab and in each commit's diff on the Commits tab, has a Viewed checkbox like GitHub's: ticking it folds the file away, unticking opens it again, and a "3 / 7 viewed" count sits above the files. Ticks are remembered in this browser, and a file whose changes are different next time comes back unticked so you look at it again ([#330](https://github.com/anthonyturner/observatory/pull/330)).
 - On the Review Queue, an open PR screen or issue window now rings its star on the sky, with the collision threads following it: the pull request's star, the issue's comet or the pull request that closes it, or its body on the Issues nursery ([#326](https://github.com/anthonyturner/observatory/pull/326)).
 - On the PR screen's Commits tab, click a commit to open its code changes right beneath it, file by file like the Diff tab, without leaving Observatory; one commit is open at a time, Close puts you back on its line, and a commit that changes nothing, cannot be read or is too large says so, with a link to it on GitHub ([#324](https://github.com/anthonyturner/observatory/pull/324)).
@@ -75,6 +77,8 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- Mail on Home is now a small side panel in the left column, under System vitals, rather than a full-width band below the HUD ([#338](https://github.com/anthonyturner/observatory/pull/338)).
+- The PR screen's diffs are easier to read: added and removed lines keep the normal code colour, marked by a faint wash, a thin coloured bar on the left and a coloured + or − sign, instead of turning the whole line green or red; copying a line no longer copies its sign ([#335](https://github.com/anthonyturner/observatory/pull/335)).
 - The local site now reads your iCloud and Gmail inboxes on every page, not only while Home is open: every five minutes while the tab is in view, and once when you come back to it ([#320](https://github.com/anthonyturner/observatory/pull/320)).
 - Clicking one of Observatory's desktop notifications, including the Agent review's, brings its tab forward and closes the notification ([#308](https://github.com/anthonyturner/observatory/pull/308)).
 - On a phone, Home's foot takes less of the screen: the playlist bar starts folded to one row under the seek bar, unfolds its List and Sky controls as tidy rows of their own, and Home's tools fold behind one Tools button ([#302](https://github.com/anthonyturner/observatory/pull/302)).
@@ -91,6 +95,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- After a merge from the PR screen, nothing can send a second one: the merge box shows "Merged ✓ via squash" straight away, before the details are read again, and a pull request GitHub reports merged or closed shows no merge button at all ([#328](https://github.com/anthonyturner/observatory/pull/328)).
 - The playlist bar no longer shows Sync on a phone, or in any browser that cannot share a tab's audio, where it could never work; on a phone the Sky controls also stay on the screen, with the Sky slider on a row of its own ([#312](https://github.com/anthonyturner/observatory/pull/312)).
 - Home's music sky no longer jumps down and back on every beat once the page is scrolled; the beat's zoom now pulses in place while the core is out of view ([#301](https://github.com/anthonyturner/observatory/pull/301)).
 - Making the playlist's video bigger now moves the cards and panels on the right of the Orrery, the star map and the logs up out of its way, and they shrink to fit when the window is short ([#297](https://github.com/anthonyturner/observatory/pull/297)).

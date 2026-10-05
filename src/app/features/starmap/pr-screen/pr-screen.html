@@ -1,5 +1,6 @@
 <div
   class="sheet"
+  data-tether
   role="dialog"
   aria-modal="false"
   [attr.aria-label]="'Pull request ' + number()"
@@ -63,5 +64,8 @@
         <p class="note">Loading…</p>
       }
     </section>
+  }
+  @if (detail(); as pull) {
+    <app-merge-box [detail]="pull" (saved)="refresh()" />
   }
 </div>

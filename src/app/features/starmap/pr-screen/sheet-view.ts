@@ -57,13 +57,19 @@ export interface Route {
   readonly fetched: string;
 }
 
+/** Merged or closed says so; an open one says whether it is still a draft. */
+const stateOf = (detail: PullDetail): string => {
+  if (detail.state !== 'open') return detail.state;
+  return detail.isDraft ? 'draft' : 'ready for review';
+};
+
 const MERGE_CLASS: Readonly<Record<string, 'ok' | 'bad'>> = { MERGEABLE: 'ok', CONFLICTING: 'bad' };
 
 export function routeOf(detail: PullDetail, locale?: string): Route {
   return {
     base: detail.base,
     head: detail.head,
-    state: detail.isDraft ? 'draft' : 'ready for review',
+    state: stateOf(detail),
     mergeable: (detail.mergeable || 'unknown').toLowerCase(),
     mergeClass: MERGE_CLASS[detail.mergeable] ?? 'meh',
     additions: `+${detail.additions}`,

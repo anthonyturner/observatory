@@ -17,6 +17,7 @@ import { BUCKET_LOOK } from '../../queue/queue-view';
 import { SheetDiff } from './sheet-diff/sheet-diff';
 import { SheetEditor } from './sheet-editor/sheet-editor';
 import { HeaderState, SheetHeader } from './sheet-header/sheet-header';
+import { MergeBox } from './merge-box/merge-box';
 import { SheetMarkdown } from './sheet-markdown/sheet-markdown';
 import { SheetCommits } from './sheet-commits/sheet-commits';
 import { checkRows, fileRows } from './sheet-rows/sheet-row';
@@ -31,7 +32,7 @@ const TYPING = 'input, textarea, select';
 /**
  * pr-starmap's PR screen: one pull request's description, files, commits,
  * checks and diff in a window that can be dragged by its header, with an Edit
- * tab that changes it on GitHub.
+ * tab that changes it on GitHub and a merge box along its foot.
  */
 @Component({
   selector: 'app-pr-screen',
@@ -44,6 +45,7 @@ const TYPING = 'input, textarea, select';
     SheetDiff,
     SheetEditor,
     AgentLanes,
+    MergeBox,
   ],
   providers: [PullDetailFeed, PullEdits],
   templateUrl: './pr-screen.html',

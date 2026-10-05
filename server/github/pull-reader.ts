@@ -21,6 +21,8 @@ export interface RawPull {
   readonly title: string;
   readonly body: string;
   readonly url: string;
+  /** `OPEN`, `MERGED` or `CLOSED`. */
+  readonly state: string;
   readonly isDraft: boolean;
   readonly mergeable: string;
   readonly author: { readonly login: string } | null;
@@ -84,6 +86,7 @@ export const PULL_DETAIL_FIELDS: readonly string[] = [
   'title',
   'body',
   'url',
+  'state',
   'isDraft',
   'mergeable',
   'author',

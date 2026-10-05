@@ -1,0 +1,38 @@
+@let chosen = words();
+<div class="split">
+  <button type="button" class="main" #main [disabled]="disabled()" (click)="press.emit()">
+    {{ chosen.button }}
+  </button>
+  <button
+    type="button"
+    class="caret"
+    #caret
+    aria-haspopup="menu"
+    aria-label="Choose how to merge"
+    [attr.aria-expanded]="isOpen()"
+    [attr.aria-controls]="menuId"
+    (click)="toggle()"
+    (keydown)="onCaretKey($event)"
+  >
+    <span aria-hidden="true">▾</span>
+  </button>
+</div>
+@if (isOpen()) {
+  <div class="menu" role="menu" aria-label="Merge method" [id]="menuId">
+    @for (choice of choices(); track choice.method; let index = $index) {
+      <button
+        type="button"
+        role="menuitemradio"
+        #item
+        [attr.aria-checked]="choice.isChecked"
+        [tabIndex]="index === active() ? 0 : -1"
+        (click)="choose(choice.method)"
+        (keydown)="onMenuKey($event)"
+      >
+        <span class="tick" aria-hidden="true">{{ choice.isChecked ? '✓' : '' }}</span>
+        <span class="name">{{ choice.words.menu }}</span>
+        <span class="hint">{{ choice.words.hint }}</span>
+      </button>
+    }
+  </div>
+}

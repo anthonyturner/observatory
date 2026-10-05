@@ -19,7 +19,7 @@
   @for (view of views(); track view.file) {
     <div class="dfile" [class.viewed]="view.viewed">
       <div class="head">
-        <button type="button" [attr.aria-expanded]="view.expanded" (click)="toggle(view.file)">
+        <button type="button" [attr.aria-expanded]="view.expanded" (click)="toggle(view)">
           <span class="p">{{ view.file.path }}</span>
           <span>+{{ view.file.additions }}</span>
           <span>−{{ view.file.deletions }}</span>

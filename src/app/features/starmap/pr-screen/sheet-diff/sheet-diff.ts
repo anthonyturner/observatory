@@ -67,21 +67,21 @@ export class SheetDiff {
     () => this.views().filter((view) => view.viewed).length,
   );
 
-  protected toggle(file: DiffFile): void {
-    if (this.isExpanded(file)) this.collapse(file);
-    else this.expand(file);
+  /** Opening a file to read it ticks it as viewed; closing it leaves the tick. */
+  protected toggle({ file, seen }: FileEntry): void {
+    if (this.isExpanded(file)) {
+      this.collapse(file);
+      return;
+    }
+    this.expand(file);
+    this.viewedFiles.mark(this.viewedKey(), seen);
   }
 
-  /** Ticking a file puts it away; unticking brings it back to be read again. */
-  protected onViewedChange(event: Event, { file, seen }: FileEntry): void {
+  /** The tick only marks the file: opening and closing stay with its header. */
+  protected onViewedChange(event: Event, { seen }: FileEntry): void {
     if (!(event.target instanceof HTMLInputElement)) return;
-    if (event.target.checked) {
-      this.viewedFiles.mark(this.viewedKey(), seen);
-      this.collapse(file);
-    } else {
-      this.viewedFiles.unmark(this.viewedKey(), seen.path);
-      this.expand(file);
-    }
+    if (event.target.checked) this.viewedFiles.mark(this.viewedKey(), seen);
+    else this.viewedFiles.unmark(this.viewedKey(), seen.path);
   }
 
   private isExpanded(file: DiffFile): boolean {

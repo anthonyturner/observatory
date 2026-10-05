@@ -120,6 +120,17 @@ describe('PushToTalk', () => {
     expect(isTalking()).toBe(false);
   });
 
+  it('is still talking when it sends what it heard, so Jev’s hold has no gap', async () => {
+    const { talk, submit, wait, isTalking } = setup();
+    const talkingAtSend: boolean[] = [];
+    submit.mockImplementation(() => talkingAtSend.push(isTalking()));
+    await talk.press('hold');
+    wait(1200);
+    talk.release();
+    await settle();
+    expect(talkingAtSend).toEqual([true]);
+  });
+
   it('keeps listening after a short tap, until the next press', async () => {
     const { talk, submit, wait, narration } = setup();
     await talk.press('hold');

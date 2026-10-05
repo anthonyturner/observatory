@@ -8,13 +8,14 @@ import {
   LineDashedMaterial,
   LineSegments,
   Material,
+  Mesh,
   PerspectiveCamera,
+  PlaneGeometry,
   Points,
   ReinhardToneMapping,
   Scene,
   ShaderMaterial,
   Sprite,
-  Texture,
   Vector2,
   WebGLRenderer,
 } from 'three';
@@ -40,10 +41,26 @@ import {
 import { rnd } from './rnd';
 import { SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
 import { FieldStar, SkyStar } from './sky-model';
+import { STAR_FRAGMENT, STAR_QUAD_REACH, STAR_VERTEX } from './star-shader';
+import { STAR_TYPES, starLook } from './star-type';
 
 /* pr-starmap's WebGL sky: a perspective camera over the same world, bloom on
    the luminous cores only, a vignette and grain pass, a nebula of cloud
    sprites at depth. Words and marks are drawn over it by the 2D overlay. */
+
+/* A star's drawn disc, as a share of starRadius. Far off it is the old small
+   core; close up it grows into the gap the links leave, so the surface shows,
+   without changing starRadius itself, which the link gaps are measured from. */
+const FAR_DISC = 0.46;
+const NEAR_DISC = 0.75;
+/** The on-screen core radius, in pixels, over which surface detail fades in. */
+const FAR_CORE_PX = 2.5;
+const NEAR_CORE_PX = 8;
+
+const smoothstep = (from: number, to: number, x: number): number => {
+  const k = Math.min(Math.max((x - from) / (to - from), 0), 1);
+  return k * k * (3 - 2 * k);
+};
 
 /** A single GPU draw for hundreds of stars, spread through an actual volume. */
 function field3D(
@@ -124,56 +141,29 @@ function buildScene3D(
     clouds.push({ cloud, x, y, z, phase: nr() * 6.28 });
   }
 
-  const maps = new Map<string, Texture>();
-  const starMap = (colour: string): Texture => {
-    const known = maps.get(colour);
-    if (known) return known;
-    const map = kit.texture((c) => {
-      const r = 14;
-      const mid = 64;
-      const glow = r * 2.6;
-      const g = c.createRadialGradient(mid, mid, 0, mid, mid, glow);
-      g.addColorStop(0, colour);
-      g.addColorStop(0.3, colour + '80');
-      g.addColorStop(1, colour + '00');
-      c.globalAlpha = 0.3;
-      c.fillStyle = g;
-      c.fillRect(0, 0, 128, 128);
-      c.globalAlpha = 0.28;
-      c.lineWidth = r * 0.11;
-      for (const [dx, dy] of [
-        [1, 0],
-        [0, 1],
-      ]) {
-        const len = r * 2.4;
-        const lg = c.createLinearGradient(
-          mid - dx * len,
-          mid - dy * len,
-          mid + dx * len,
-          mid + dy * len,
-        );
-        lg.addColorStop(0, colour + '00');
-        lg.addColorStop(0.5, colour);
-        lg.addColorStop(1, colour + '00');
-        c.strokeStyle = lg;
-        c.beginPath();
-        c.moveTo(mid - dx * len, mid - dy * len);
-        c.lineTo(mid + dx * len, mid + dy * len);
-        c.stroke();
-      }
-      c.globalAlpha = 0.85;
-      c.fillStyle = colour;
-      c.beginPath();
-      c.arc(mid, mid, r * 0.46, 0, Math.PI * 2);
-      c.fill();
-      c.globalAlpha = 0.7;
-      c.fillStyle = '#ffffff';
-      c.beginPath();
-      c.arc(mid, mid, r * 0.21, 0, Math.PI * 2);
-      c.fill();
-    });
-    maps.set(colour, map);
-    return map;
+  const quad = owned.own(new PlaneGeometry(1, 1));
+  const starQuad = (star: SkyStar): Mesh<PlaneGeometry, ShaderMaterial> => {
+    const look = starLook(star);
+    const material = owned.own(
+      new ShaderMaterial({
+        uniforms: {
+          ink: { value: new Color(star.colour) },
+          type: { value: STAR_TYPES.indexOf(look.type) },
+          activity: { value: look.activity },
+          seed: { value: (star.spin * 97) % 61 },
+          time: { value: 0 },
+          detail: { value: 0 },
+          opacity: { value: 0 },
+          disc: { value: FAR_DISC },
+        },
+        vertexShader: STAR_VERTEX,
+        fragmentShader: STAR_FRAGMENT,
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
+      }),
+    );
+    return new Mesh(quad, material);
   };
 
   const circle = Array.from({ length: 65 }, (_, i) =>
@@ -182,7 +172,7 @@ function buildScene3D(
   const points = data.stars
     .filter((star) => !star.custom)
     .map((star) => {
-      const body = kit.sprite(starMap(star.colour));
+      const body = starQuad(star);
       scene.add(body);
       const pulse = kit.line(circle, star.colour, 0.3);
       scene.add(pulse);
@@ -274,8 +264,13 @@ function buildScene3D(
         // Magnitude is data: cancel perspective shrinkage at each sprite's depth.
         const unit = 1 / (cam.scale * camera.depth(star.az));
         body.position.copy(vec(star.ax, star.ay, star.az));
-        body.scale.setScalar(r * (128 / 14) * unit);
-        body.material.opacity = f.dim(star) * grow * (0.7 + tw * 0.3);
+        body.scale.setScalar(r * STAR_QUAD_REACH * 2 * unit);
+        const look = body.material.uniforms;
+        const detail = smoothstep(FAR_CORE_PX, NEAR_CORE_PX, r * FAR_DISC);
+        look['detail'].value = detail;
+        look['disc'].value = FAR_DISC + (NEAR_DISC - FAR_DISC) * detail;
+        look['time'].value = f.frozen ? 0 : t;
+        look['opacity'].value = f.dim(star) * grow * (0.7 + tw * 0.3);
         const phase = (t * 0.42 + star.spin) % 1;
         pulse.visible = star.urgent && !f.frozen;
         pulse.position.copy(body.position);

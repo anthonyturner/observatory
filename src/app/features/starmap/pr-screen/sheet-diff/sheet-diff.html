@@ -37,7 +37,7 @@
       @if (view.lines; as lines) {
         <pre
           [hidden]="!view.expanded"
-        >@for (line of lines; track $index) {<span [class]="line.kind">{{ line.text }}</span>}</pre>
+        >@for (line of lines; track $index) {<span [class]="line.kind"><span class="s">{{ line.sign }}</span>{{ line.text }}</span>}</pre>
       }
     </div>
   }

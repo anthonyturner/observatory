@@ -299,10 +299,12 @@
   --sheet-head-wash: rgba(142, 162, 255, 0.07);
   --sheet-file-wash: rgba(142, 162, 255, 0.06);
   --sheet-diff-well: rgba(3, 6, 14, 0.75);
-  --sheet-add-wash: rgba(95, 227, 161, 0.1);
-  --sheet-add-ink: #b4f3d2;
-  --sheet-del-wash: rgba(255, 111, 94, 0.1);
-  --sheet-del-ink: #ffc0b8;
+  --sheet-add-wash: rgba(95, 227, 161, 0.06);
+  --sheet-add-edge: rgba(95, 227, 161, 0.55);
+  --sheet-add-ink: #7fe0ae;
+  --sheet-del-wash: rgba(255, 111, 94, 0.07);
+  --sheet-del-edge: rgba(255, 111, 94, 0.55);
+  --sheet-del-ink: #ff9a8c;
   --sheet-hunk-wash: rgba(142, 162, 255, 0.08);
   --sheet-hunk-ink: #9fb3ff;
   --sheet-input-well: rgba(3, 6, 14, 0.6);

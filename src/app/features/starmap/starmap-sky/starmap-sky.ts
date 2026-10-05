@@ -22,6 +22,7 @@ import { SkyItem, SkyStar } from '../engine/sky-model';
 import { ThreadLayer } from '../engine/thread-layer';
 import { CometLayer, layoutComets } from '../engine/comet-layer';
 import { PlanLayer, PlanMark } from '../engine/plan-layer';
+import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
 import { News, NewsLayer } from '../memory/news-layer';
@@ -47,6 +48,8 @@ export interface SkyInsets {
 export const AGENT_FILTER = 'agent:';
 
 const DEFAULT_INSETS: SkyInsets = { top: 140, bottom: 70, side: 0 };
+/** The open window a line ties to its star: the PR screen or the issue window. */
+const TETHERED = '[data-tether]';
 const TYPING_OR_DIALOG = 'input, textarea, select, [contenteditable], [role="dialog"]';
 const PANS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [-1, 0],
@@ -70,7 +73,7 @@ const PANS: Readonly<Record<string, readonly [number, number]>> = {
   ></canvas>`,
   styleUrl: './starmap-sky.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown)': 'onKey($event)' },
+  host: { '(document:keydown)': 'onKey($event)', '(document:pointermove)': 'onDrag()' },
 })
 export class StarmapSky {
   /** Which sky: the review queue, the Log Sky, or the issues' nursery. */
@@ -102,6 +105,8 @@ export class StarmapSky {
   /** The merge plan's steps, drawn while it is on. */
   readonly plan = input<readonly PlanMark[]>([]);
   readonly planOn = input(false);
+  /** What the open window is tied to by a line: the ringed star or comet. */
+  readonly tether = input<TetherTarget | null>(null);
   /** The review queue's news: what changed, and whether it has been seen. */
   readonly news = input<News>({ events: [], acknowledged: false });
   /** 0 clear to 1 full. */
@@ -127,6 +132,10 @@ export class StarmapSky {
   private readonly nurserySky = new NurserySky(this.document);
   private readonly cometLayer = new CometLayer<Comet>();
   private readonly planLayer = new PlanLayer();
+  private readonly tetherLayer = new TetherLayer(
+    () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
+    () => this.cometLayer.selectedAt(),
+  );
   private engine: SkyEngine | null = null;
   private isFramed = false;
   /** The skies already framed once, so a data refresh keeps the viewer's camera. */
@@ -182,6 +191,10 @@ export class StarmapSky {
       this.planLayer.steps = this.plan();
       this.planLayer.on = this.planOn();
       this.cometLayer.selected = this.selectedComet();
+      this.engine?.kick();
+    });
+    effect(() => {
+      this.tetherLayer.target = this.tether();
       this.engine?.kick();
     });
     effect(() => {
@@ -265,6 +278,11 @@ export class StarmapSky {
     engine.kick();
   }
 
+  /** A dragged window takes its line with it, even on a still sky. */
+  protected onDrag(): void {
+    if (this.tetherLayer.target) this.engine?.kick();
+  }
+
   /** + and − zoom, the arrows pan; keys typed into a field or a dialog are theirs. */
   protected onKey(event: KeyboardEvent): void {
     const target = event.target;
@@ -319,6 +337,7 @@ export class StarmapSky {
       this.newsLayer,
       this.planLayer,
       this.nurserySky.layer,
+      this.tetherLayer,
     ];
     this.engine.filter = filterFor(this.filter(), this.agentPrs());
     this.engine.fog = this.fog();

@@ -43,6 +43,9 @@ kept the same for each project on every load. Each page's help card (press
 - **Glowing cracks** mean checks are failing.
 - **Moons** are blocked pull requests, a **ring** is branches that no longer
   merge, and **comets** are unclaimed issues.
+- The specks in the **Milky Way** are what you shipped: every pull request
+  merged in the last 60 days, in its project's colour, oldest at one end of the
+  band and newest at the other.
 - The kind of world (rocky, gas giant, ice or desert), its land and its clouds
   are scenery.
 
@@ -50,8 +53,8 @@ kept the same for each project on every load. Each page's help card (press
 it and spaced along a spiral per group. Zoom in for detail.
 
 <table><tr>
-<td><img src="docs/images/review-queue-overview.jpg" alt="A review queue: a large spiral of pull requests with no issue linked, a smaller group with failing checks, and two waiting on review, joined by lines"></td>
-<td><img src="docs/images/review-queue-close-up.jpg" alt="The review queue zoomed in: failing-check stars with discs of gas, and stars with no issue linked, each tagged with its pull request number"></td>
+<td><img src="docs/images/review-queue-overview.jpg" alt="A review queue: a large spiral of pull requests with no issue linked, a smaller group with failing checks and two waiting on review, with a spiral galaxy behind them"></td>
+<td><img src="docs/images/review-queue-close-up.jpg" alt="The Spiral of Done: finished pull requests and issues as lights along the galaxy's arms, the Done list open beside it with one row lit and its light labelled"></td>
 </tr></table>
 
 - **Colour** is why it's stuck, and **size** is how long it has waited.
@@ -63,6 +66,9 @@ it and spaced along a spiral per group. Zoom in for detail.
   change, green for a quick win, none under twenty lines.
 - **Planets** are the issues it closes, up to four. No planets, no linked
   issue.
+- **The spiral galaxy is the Spiral of Done:** everything merged, closed or
+  finished in the last 60 days, newest at the arm tips and older work winding in
+  to the core. **Done** lists it by day.
 
 These are screenshots of the app running on real data, with only the public
 repositories shown. Where WebGL can't start, both pages fall back to a

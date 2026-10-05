@@ -36,6 +36,15 @@ Code: `features/orrery/orrery-canvas/webgl/orrery-webgl.ts` builds the scene;
 the shaders are in `shared/planets/planet-shaders.ts` (shared with the
 Architecture page's star view) and `orrery-shaders.ts` (sun, rings, field).
 
+### Lanes
+
+`layoutWorlds` sets each orbit from urgency and neglect, then `clearLanes`
+pushes any orbit out until it clears the one inside it by both worlds' air
+(`AIR_SCALE`) plus 28 units, so worlds never sit on top of each other side by
+side. Behind the sun the slant and each orbit's small tilt bring lanes closer,
+so a nearer world can still pass in front of a farther one there, like a
+transit. A hard guarantee would need the system about twice as wide.
+
 ### Kind (scenery)
 
 `worldKind(repo)` in `core/orrery/world-kind.ts` picks **rocky**, **gas giant**,

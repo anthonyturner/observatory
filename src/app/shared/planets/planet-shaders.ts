@@ -8,8 +8,8 @@ import { SIMPLEX_GLSL } from '../gl/simplex-glsl';
 
 /** How far a world's own surface takes its severity colour; its air carries the rest. */
 export const WORLD_TINT = 0.14;
-/** The air shell's radius, in world radii. */
-export const AIR_SCALE = 1.12;
+/** The air shell's radius, in world radii; the layout spaces worlds by it too. */
+export { AIR_SCALE } from '../../core/orrery/world-layout';
 /** The cloud shell sits just above the ground. */
 export const CLOUD_SCALE = 1.015;
 

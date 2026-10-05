@@ -9,7 +9,7 @@ export const ORRERY_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Night side',
     meaning:
-      'City lights are work in motion: more open pull requests, more lights, dimming as the oldest goes stale. Glowing fissures mean checks are failing. The kind of world, its land and its clouds are only scenery.',
+      'City lights are work in motion: more open pull requests, more lights, dimming as the oldest goes stale. Glowing fissures mean checks are failing. The kind of world, its land, its clouds and the Milky Way behind are only scenery.',
   },
   {
     term: 'Orbits',

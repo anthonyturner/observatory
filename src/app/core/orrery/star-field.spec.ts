@@ -13,6 +13,24 @@ describe('starField', () => {
     }
   });
 
+  it('is mostly faint stars and a few bright ones, the brightest also the largest', () => {
+    const field = starField(2000);
+    const faint = field.filter((star) => star.alpha < 0.15).length;
+    const bright = field.filter((star) => star.alpha > 0.3).length;
+    const largest = field.reduce((a, b) => (b.radius > a.radius ? b : a));
+
+    expect(faint).toBeGreaterThan(bright * 3);
+    expect(largest.alpha).toBeGreaterThan(0.3);
+  });
+
+  it('spreads a wider sky without moving a star off its bearing', () => {
+    const [near] = starField(1);
+    const [wide] = starField(1, 2);
+
+    expect(wide.x).toBeCloseTo(near.x * 2);
+    expect(wide.y).toBeCloseTo(near.y * 2);
+  });
+
   it('twinkles between a fifth and all of its brightness', () => {
     const [star] = starField(1);
     const levels = Array.from({ length: 50 }, (_, index) => twinkle(star, index / 5));

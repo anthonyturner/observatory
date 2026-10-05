@@ -23,20 +23,31 @@ const FIELD_STARS = 620;
 const FIELD_WIDTH = 3600;
 const FIELD_HEIGHT = 2600;
 
-/** The same sky on every load. */
-export function starField(count = FIELD_STARS): FieldStar[] {
+/** Real skies are mostly faint stars and a few bright ones: brightness falls
+ *  off as a power of an even draw. */
+const MAGNITUDE_POWER = 3;
+
+/** The same sky on every load, `spread` times as wide and tall as the default.
+ *  Each star takes its draws in the same order, so a star keeps its place. */
+export function starField(count = FIELD_STARS, spread = 1): FieldStar[] {
   const random = seededRandom(FIELD_SEED);
-  return Array.from({ length: count }, () => ({
-    x: (random() - 0.5) * FIELD_WIDTH,
-    y: (random() - 0.5) * FIELD_HEIGHT,
-    radius: random() * 1.2 + 0.2,
-    alpha: random() * 0.4 + 0.06,
-    depth: 0.28 + random() * 0.38,
-    z: -12000 - random() * 30000,
-    phase: random() * Math.PI * 2,
-    rate: 0.3 + random() * 1.8,
-    tint: Math.floor(random() * FIELD_TINT_COUNT),
-  }));
+  return Array.from({ length: count }, () => {
+    const x = (random() - 0.5) * FIELD_WIDTH * spread;
+    const y = (random() - 0.5) * FIELD_HEIGHT * spread;
+    const magnitude = Math.pow(random(), MAGNITUDE_POWER);
+    const glint = random();
+    return {
+      x,
+      y,
+      radius: 0.2 + magnitude * 1.2,
+      alpha: 0.06 + 0.4 * (0.75 * magnitude + 0.25 * glint * glint),
+      depth: 0.28 + random() * 0.38,
+      z: -12000 - random() * 30000,
+      phase: random() * Math.PI * 2,
+      rate: 0.3 + random() * 1.8,
+      tint: Math.floor(random() * FIELD_TINT_COUNT),
+    };
+  });
 }
 
 /** Brightness now, between 0.2 and 1 of the star's own. */

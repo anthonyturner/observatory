@@ -6,6 +6,10 @@ Closes #
 
 One or two sentences: what changed and why.
 
+## Diagram
+
+<!-- The change's Mermaid block, reused from the issue (docs/diagrams.md). Delete this section for an XS change. -->
+
 ## Changes
 
 - [path/to/file:12-18](path/to/file#L12-L18) — a few words on what changed.

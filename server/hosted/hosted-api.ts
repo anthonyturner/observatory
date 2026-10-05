@@ -74,17 +74,22 @@ function pushedReads(live: ApiReads, store: Store): ApiReads {
   };
 }
 
-/** What a visitor reads: a private repository's pull requests without their code.
- *  One whose privacy is not known counts as private. */
+/** What a visitor reads: a private repository's pull requests and commits without
+ *  their code. One whose privacy is not known counts as private. */
 function visitorReads(reads: ApiReads, repos: () => Promise<RepoRef[]>): ApiReads {
+  const isPublic = async (repo: string): Promise<boolean> =>
+    (await repos()).some(
+      (each) => !each.isPrivate && each.nameWithOwner.toLowerCase() === repo.toLowerCase(),
+    );
   return {
     ...reads,
     pull: async (repo, number) => {
       const detail = await reads.pull(repo, number);
-      const isPublic = (await repos()).some(
-        (each) => !each.isPrivate && each.nameWithOwner.toLowerCase() === repo.toLowerCase(),
-      );
-      return isPublic ? detail : withoutCode(detail);
+      return (await isPublic(repo)) ? detail : withoutCode(detail);
+    },
+    commit: async (repo, sha) => {
+      const commit = await reads.commit(repo, sha);
+      return (await isPublic(repo)) ? commit : withoutCode(commit);
     },
   };
 }

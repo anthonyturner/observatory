@@ -91,6 +91,7 @@ describe('pullDetailOf', () => {
     assert.deepEqual(detail.commits, [
       {
         oid: '5f0d0cc',
+        sha: '5f0d0ccf681704ba3da2fa65bcda258add87f98d',
         headline: 'chore: start',
         date: '2026-07-30T05:00:00Z',
         authors: ['anthony', 'A Bot'],

@@ -45,6 +45,18 @@ describe('githubApiReader, the parts the PR screen adds', () => {
     });
   });
 
+  it('reads one commit’s changes as a diff', async () => {
+    const { github, sent } = recording(['diff --git a/y b/y\n']);
+
+    assert.equal(await github.commitDiff(REPO, 'abc1234'), 'diff --git a/y b/y\n');
+    assert.deepEqual(sent[0], {
+      url: `${API}/repos/me/app/commits/abc1234`,
+      method: 'GET',
+      body: null,
+      accept: 'application/vnd.github.diff',
+    });
+  });
+
   it('throws when GitHub will not produce the diff', async () => {
     const fetch = async () => new Response('too large', { status: 406 });
     const github = githubApiReader({ token: 't', fetch });

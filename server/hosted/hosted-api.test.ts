@@ -74,6 +74,7 @@ const github = {
     commits: [],
   }),
   pullDiff: async () => 'diff --git a/x b/x\n+secret code',
+  commitDiff: async () => 'diff --git a/y b/y\n+secret commit',
 } as unknown as GitHub;
 
 function memoryStore(): Store & { readonly data: Map<string, unknown> } {
@@ -307,6 +308,20 @@ describe('hostedApi', () => {
     assert.equal((await read('me/app')).diffHidden, false);
     assert.match((await read('me/app')).diff, /secret code/);
     assert.match((await read('me/secret', ownerCookie)).diff, /secret code/);
+  });
+
+  it('withholds a private repository’s commit code from a visitor, and only from a visitor', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+    const read = async (repo: string, cookie?: string) =>
+      (await (await get(handle, `/api/commit?repo=${repo}&sha=abc1234`, cookie)).json()) as {
+        diff: string;
+        diffHidden: boolean;
+      };
+
+    const secret = await read('me/secret');
+    assert.deepEqual([secret.diff, secret.diffHidden], ['', true]);
+    assert.match((await read('me/app')).diff, /secret commit/);
+    assert.match((await read('me/secret', ownerCookie)).diff, /secret commit/);
   });
 
   it('sends a run-out session to sign in even with the preview on', async () => {

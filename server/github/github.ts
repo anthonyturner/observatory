@@ -1,4 +1,5 @@
 import type { FilesReader } from '../collisions/collisions-report.ts';
+import type { CommitReader } from './commit-reader.ts';
 import type { FateReader } from './fate-reader.ts';
 import type { GitHubReader } from './github-reader.ts';
 import type { AgentReader } from '../agents/agents-report.ts';
@@ -12,6 +13,7 @@ import type { QueueReader } from './queue-reader.ts';
 export type GitHub = GitHubReader &
   QueueReader &
   PullReader &
+  CommitReader &
   PullWriter &
   IssueReader &
   IssueDetailReader &

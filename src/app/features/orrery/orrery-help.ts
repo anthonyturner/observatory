@@ -4,7 +4,7 @@ export const ORRERY_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Worlds',
     meaning:
-      'One world per project you own, in its most urgent colour. A bigger world has more open work.',
+      'One world per project you own. Its air glows in its most urgent colour; a bigger world has more open work.',
   },
   {
     term: 'Orbits',

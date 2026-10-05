@@ -17,6 +17,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['Colour', 'Why it is stuck. Click a colour at the top to show only that kind.'],
       ['Size', 'How long it has waited untouched.'],
       ['Ring', 'Blocked: it cannot merge, or its checks fail.'],
+      [
+        'Kind',
+        'Zoom in to see what each star is. Blocked ones are deep giants that throw flares, more often the longer they wait; one GitHub has not settled hides in a veil of gas; work waiting on you burns clear, with spikes; one you saw recently rests, small and calm.',
+      ],
       ['Lines', 'Silver lines join the pull requests in a group, in the order to work them.'],
       ['Thread', 'The dotted silver line runs through the groups in the order to work them.'],
       [

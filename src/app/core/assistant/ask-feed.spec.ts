@@ -225,6 +225,17 @@ describe('AskFeed', () => {
     expect(voice.speak).toHaveBeenCalledWith('Use `git rebase`.', 2);
   });
 
+  it('starts reading the answer before the request stops being busy, so Jev’s hold has no gap', async () => {
+    const { feed, voice } = setUp([answer(reply({ tier: 2, text: 'Yes.' }))]);
+    const busyAtSpeech: boolean[] = [];
+    voice.speak.mockImplementation(async () => void busyAtSpeech.push(feed.busy()));
+
+    feed.submit('is it merged');
+    await settle();
+
+    expect(busyAtSpeech).toEqual([true]);
+  });
+
   it('keeps the conversation, sending it with each typed or spoken request', async () => {
     const { feed, route } = setUp([
       answer(reply({ via: 'agent', tier: 2, text: 'A rebase replays commits.' })),

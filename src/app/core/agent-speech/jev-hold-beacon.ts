@@ -30,9 +30,10 @@ export const HOLD_RENEW_MS = 2_000;
 /**
  * Holds Agent Speak while Jev has the turn: while the mic is held, while a
  * question is on its way, and while any line of Jev's is under way, whichever
- * voice speaks it. The question is sent before the mic lets go, and the reply
- * starts before the question clears, so a question and its answer are one
- * hold. It is released as the turn ends; a tab that closes first lets it lapse.
+ * voice speaks it. The mic's turn lasts until its question is sent, and the
+ * reply starts before the question clears, so a question and its answer are
+ * one hold. It is released as the turn ends; a tab that closes first lets it
+ * lapse.
  * Made only on this machine: see provideJevHold.
  */
 @Injectable({ providedIn: 'root' })

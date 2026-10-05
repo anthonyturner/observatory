@@ -38,7 +38,7 @@ import {
   outermostOrbit,
   sunRadius,
 } from '../../../../core/orrery/world-layout';
-import { CLOUD_COVER, WORLD_KINDS, WorldKind, worldKind } from '../../../../core/orrery/world-kind';
+import { CLOUD_COVER, WorldKind, worldKind } from '../../../../core/orrery/world-kind';
 import { nightSide } from '../../../../core/orrery/world-night';
 import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { OrreryPalette } from '../orrery-palette';
@@ -60,6 +60,7 @@ import {
   SPHERE_VERTEX,
   SURFACE_FRAGMENT,
   WORLD_TINT,
+  kindDefines,
 } from '../../../../shared/planets/planet-shaders';
 
 const DEG = Math.PI / 180;
@@ -110,12 +111,16 @@ interface SceneModel {
 export class OrreryWebGL {
   private readonly canvas: HTMLCanvasElement;
   private readonly gl: WebGLRenderer;
-  private readonly scene = new Scene();
+  private scene = new Scene();
   private readonly camera = new PerspectiveCamera(30, 1, 1, 100000);
   private readonly composer: EffectComposer;
+  private readonly renderPass: RenderPass;
   private readonly passes: { dispose(): void }[];
   private readonly finish: ShaderPass;
-  private readonly owned = new Owned();
+  private owned = new Owned();
+  /** Counts builds, so a slow compile cannot swap in worlds a newer build replaced. */
+  private builds = 0;
+  private isDisposed = false;
   private readonly field: readonly FieldStar[] = starField();
   private model: SceneModel | null = null;
   private isLost = false;
@@ -144,6 +149,7 @@ export class OrreryWebGL {
     };
     this.composer = new EffectComposer(this.gl);
     const render = new RenderPass(this.scene, this.camera);
+    this.renderPass = render;
     const bloom = new UnrealBloomPass(
       new Vector2(1, 1),
       BLOOM_STRENGTH,
@@ -173,10 +179,28 @@ export class OrreryWebGL {
     this.composer.setSize(width, height);
   }
 
-  setWorlds(worlds: readonly OrreryWorld[]): void {
-    this.scene.clear();
-    this.owned.disposeAll();
-    this.model = this.build(worlds);
+  /**
+   * Builds the worlds into a new scene and compiles its shaders off the main
+   * thread, which a driver can take seconds over. The scene on screen stays
+   * until the new one can draw without stalling; resolves once it is shown.
+   */
+  async setWorlds(worlds: readonly OrreryWorld[]): Promise<void> {
+    const build = ++this.builds;
+    const scene = new Scene();
+    const owned = new Owned();
+    const model = this.build(worlds, scene, owned);
+    await this.compile(scene);
+    if (build !== this.builds || this.isDisposed) {
+      owned.disposeAll();
+      return;
+    }
+    // The old scene's programs stay held until here, so the new one reuses them.
+    const old = this.owned;
+    this.scene = scene;
+    this.owned = owned;
+    this.model = model;
+    this.renderPass.scene = scene;
+    old.disposeAll();
   }
 
   frame(frame: SceneFrame): void {
@@ -195,6 +219,7 @@ export class OrreryWebGL {
   }
 
   dispose(): void {
+    this.isDisposed = true;
     this.canvas.removeEventListener('webglcontextlost', this.lose);
     this.owned.disposeAll();
     for (const pass of this.passes) pass.dispose();
@@ -210,10 +235,18 @@ export class OrreryWebGL {
     this.onLost();
   };
 
-  private build(worlds: readonly OrreryWorld[]): SceneModel {
-    const own = <T extends { dispose(): void }>(resource: T): T => this.owned.own(resource);
-    const scene = this.scene;
-    const updateField = this.buildField();
+  /** A program is built for the target it draws into, so compile against the composer's. */
+  private compile(scene: Scene): Promise<unknown> {
+    const target = this.gl.getRenderTarget();
+    this.gl.setRenderTarget(this.composer.readBuffer);
+    const compiled = this.gl.compileAsync(scene, this.camera);
+    this.gl.setRenderTarget(target);
+    return compiled;
+  }
+
+  private build(worlds: readonly OrreryWorld[], scene: Scene, owned: Owned): SceneModel {
+    const own = <T extends { dispose(): void }>(resource: T): T => owned.own(resource);
+    const updateField = this.buildField(scene, owned);
     const light = new PointLight('#fff2dd', 1);
     scene.add(light);
     const surfaceGeometry = own(new SphereGeometry(1, 64, 40));
@@ -230,7 +263,6 @@ export class OrreryWebGL {
           uniforms: {
             ink: { value: colour },
             seed: { value: seed },
-            kind: { value: WORLD_KINDS.indexOf(kind) },
             sun: { value: light.position },
             centre: { value: new Vector3() },
             radius: { value: 1 },
@@ -246,6 +278,7 @@ export class OrreryWebGL {
             parentCentre: { value: new Vector3() },
             parentRadius: { value: 0 },
           },
+          defines: kindDefines(kind),
           vertexShader: SPHERE_VERTEX,
           fragmentShader: SURFACE_FRAGMENT,
         }),
@@ -256,9 +289,9 @@ export class OrreryWebGL {
           uniforms: {
             sun: { value: light.position },
             seed: ground.uniforms['seed'],
-            kind: ground.uniforms['kind'],
             cloudCover: ground.uniforms['cloudCover'],
           },
+          defines: ground.defines,
           vertexShader: SPHERE_VERTEX,
           fragmentShader: CLOUD_FRAGMENT,
           transparent: true,
@@ -454,7 +487,7 @@ export class OrreryWebGL {
   }
 
   /** The background stars as points far behind the system, twinkling. */
-  private buildField(): (time: number) => void {
+  private buildField(scene: Scene, owned: Owned): (time: number) => void {
     const positions: number[] = [];
     const colours: number[] = [];
     const sizes: number[] = [];
@@ -466,12 +499,12 @@ export class OrreryWebGL {
       sizes.push(star.radius);
       phases.push(star.phase, star.rate);
     }
-    const geometry = this.owned.own(new BufferGeometry());
+    const geometry = owned.own(new BufferGeometry());
     geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
     geometry.setAttribute('color', new Float32BufferAttribute(colours, 3));
     geometry.setAttribute('size', new Float32BufferAttribute(sizes, 1));
     geometry.setAttribute('phase', new Float32BufferAttribute(phases, 2));
-    const material = this.owned.own(
+    const material = owned.own(
       new ShaderMaterial({
         uniforms: { time: { value: 0 }, pixelRatio: { value: 1 } },
         vertexShader: FIELD_VERTEX,
@@ -481,7 +514,7 @@ export class OrreryWebGL {
         blending: AdditiveBlending,
       }),
     );
-    this.scene.add(new Points(geometry, material));
+    scene.add(new Points(geometry, material));
     return (time) => {
       material.uniforms['time'].value = time;
       material.uniforms['pixelRatio'].value = Math.min(this.gl.getPixelRatio(), BLOOM_MAX_RATIO);

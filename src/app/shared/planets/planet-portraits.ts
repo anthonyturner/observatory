@@ -17,9 +17,12 @@ export class PlanetPortraits {
     if (!this.isRequested) {
       this.isRequested = true;
       import('./webgl-portrait-painter')
-        .then(({ WebglPortraitPainter }) =>
-          this.loaded.set(new WebglPortraitPainter(this.document)),
-        )
+        .then(async ({ WebglPortraitPainter }) => {
+          const painter = new WebglPortraitPainter(this.document);
+          // Views keep their flat bodies until the shaders have compiled off the main thread.
+          await painter.compile();
+          this.loaded.set(painter);
+        })
         .catch((error: unknown) =>
           console.warn('Planet portraits are unavailable; drawing flat bodies.', error),
         );

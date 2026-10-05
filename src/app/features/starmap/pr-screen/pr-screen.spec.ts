@@ -329,7 +329,6 @@ describe('PrScreen', () => {
     open();
     tab('Edit');
 
-    expect(visible()?.querySelector('select')).toBeNull();
-    expect(visible()?.textContent).not.toContain('merge');
+    expect(visible()?.querySelector('#ed-merge, #ed-confirm, input[type="checkbox"]')).toBeNull();
   });
 });

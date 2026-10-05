@@ -75,6 +75,13 @@
     [filter]="chart() === 'logs' ? logs.filter() : legendFilter()"
     (toggled)="toggleFilter($event)"
   />
+  @if (chart() === 'prs') {
+    <app-starmap-search
+      [suggestions]="suggestions()"
+      [miss]="searchMiss()"
+      (find)="find($event)"
+    />
+  }
   @if (docked()) {
     <div class="issuedock"><app-issue-bar /></div>
   }

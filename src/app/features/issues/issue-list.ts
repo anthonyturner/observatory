@@ -13,7 +13,7 @@ const DAY_MS = 86_400_000;
 const NOT_PLANNED = 'NOT_PLANNED';
 /** GitHub label colours are six hex digits; anything else is not painted. */
 const LABEL_HEX = /^[0-9a-f]{6}$/i;
-const NUMBER_QUERY = /^#?(\d+)$/;
+export const NUMBER_QUERY = /^#?(\d+)$/;
 
 export interface IssueTabInfo {
   readonly id: IssueTab;

@@ -87,6 +87,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- On a phone, portrait or landscape, the Review Queue's chrome takes far less of the sky: the legend chips and the tools each keep to one row you swipe sideways, with Controls always at the right end, and the title and stamp shrink to fit; on its side, the way back shares the title's row and the timeline no longer covers the legend (PRLINK).
 - The Review Queue's stars are dimmer and calmer, and each group's pull requests are spaced evenly along a spiral, so a big group such as the blocked ones grows wider instead of piling stars on top of each other ([#345](https://github.com/anthonyturner/observatory/pull/345)).
 - On your own machine, Agent Speak now also waits while you talk to Jev: from the moment you hold the mic or send a typed question, through the wait for his answer, to the end of his reply, as one pause, so the agent does not jump back in between your question and his answer ([#346](https://github.com/anthonyturner/observatory/pull/346)).
 - The orrery is calmer and roomier: the sun is a crisp disc with a short, faint glow instead of a haze over the middle of the system, and the worlds sit in wider lanes further from the sun, so neighbours and their names no longer crowd each other ([#343](https://github.com/anthonyturner/observatory/pull/343)).

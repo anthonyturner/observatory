@@ -118,9 +118,44 @@
     cursor: pointer;
   }
 
+  /* The groups keep to one row that scrolls sideways, with Controls pinned at
+     its end, rather than wrapping into rows over the sky. */
+  .tools {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin: -4px 0 -4px -4px;
+    padding: 4px 0 4px 4px;
+  }
+
+  .tools::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolgroup {
+    flex: none;
+  }
+
+  .toolgroup button {
+    min-height: 44px;
+  }
+
+  /* Drag, scroll and hover mean little to a thumb. */
+  .hint {
+    display: none;
+  }
+
+  .fold {
+    position: sticky;
+    right: 0;
+    flex: none;
+  }
+
+  /* Inside, as the row's scroll edge would clip a ring drawn outside. */
   .fold:focus-visible {
     outline: 2px solid var(--flow);
-    outline-offset: 2px;
+    outline-offset: -4px;
   }
 
   .fold span {

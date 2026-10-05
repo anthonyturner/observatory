@@ -116,3 +116,9 @@ button:focus-visible {
   color: var(--muted);
   font-size: 11.5px;
 }
+
+@media (max-width: 720px), (max-height: 500px) {
+  :host {
+    margin-top: 4px;
+  }
+}

@@ -1,4 +1,6 @@
 import { Comet } from './comets';
+import { Chart } from './engine/sky-frame';
+import { TetherTarget } from './engine/tether-layer';
 
 /** What is open over the sky: a star's card, a PR screen, an issue window. */
 export interface OpenOverSky {
@@ -32,4 +34,23 @@ export function ringedComet(
   picked: Comet | null,
 ): Comet | null {
   return comets.find((comet) => comet.issue === issue) ?? picked;
+}
+
+/**
+ * What the open window is tied to on the sky: the ringed star or comet, or
+ * nothing when its own star is not the one ringed there.
+ */
+export function tetherOf(
+  chart: Chart,
+  open: OpenOverSky,
+  pulls: readonly RingedPull[],
+  comets: readonly Comet[],
+): TetherTarget | null {
+  const issue = open.issue;
+  if (chart === 'issues') return issue !== null && open.sheet === null ? 'star' : null;
+  if (chart !== 'prs') return null;
+  if (open.sheet !== null) return 'star';
+  if (issue === null) return null;
+  if (comets.some((comet) => comet.issue === issue)) return 'comet';
+  return pulls.some((pull) => pull.closes.includes(issue)) ? 'star' : null;
 }

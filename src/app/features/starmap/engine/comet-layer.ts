@@ -61,6 +61,12 @@ export class CometLayer<T extends CometIssue = CometIssue> implements SkyLayer {
   selected: T | null = null;
   private onScreen: { comet: SkyComet<T>; x: number; y: number }[] = [];
 
+  /** Where the selected comet was drawn this frame, if it was. */
+  selectedAt(): readonly [number, number] | null {
+    const drawn = this.onScreen.find(({ comet }) => comet.comet === this.selected);
+    return drawn ? [drawn.x, drawn.y] : null;
+  }
+
   private on(f: SkyFrame): boolean {
     return this.show && !this.paused && f.chart === 'prs' && this.comets.length > 0;
   }

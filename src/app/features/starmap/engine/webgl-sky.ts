@@ -11,6 +11,7 @@ import {
   Mesh,
   PerspectiveCamera,
   PlaneGeometry,
+  SphereGeometry,
   Points,
   ReinhardToneMapping,
   Scene,
@@ -33,7 +34,6 @@ import {
   drawClusterLabel,
   drawFog,
   drawGrid,
-  drawMass,
   drawReticle,
   drawStarLabel,
   starRadius,
@@ -48,6 +48,15 @@ import {
   STAR_VERTEX,
 } from '../../../shared/gl/star-shader';
 import { starLook } from './star-type';
+import { IssuePlanet, PLANET_TONE_COUNT, issuePlanets, massOf, systemTurn } from './star-system';
+import {
+  DISC_FRAGMENT,
+  DISC_QUAD_MARGIN,
+  PLANET_FRAGMENT,
+  PLANET_VERTEX,
+  QUAD_VERTEX,
+  SYSTEM_TILT,
+} from './star-system-shaders';
 
 /* pr-starmap's WebGL sky: a perspective camera over the same world, bloom on
    the luminous cores only, a vignette and grain pass, a nebula of cloud
@@ -61,6 +70,13 @@ const NEAR_DISC = 0.75;
 /** The on-screen core radius, in pixels, over which surface detail fades in. */
 const FAR_CORE_PX = 2.5;
 const NEAR_CORE_PX = 8;
+
+/** Planets' tones: bare rock, dust, and a world with water. */
+const PLANET_TONES = ['#9aa3ad', '#b59a78', '#7fa9a6'];
+/** A planet is never smaller than this many screen pixels across. */
+const MIN_PLANET_PX = 1.2;
+/** The disc of gas starts this far out from the star's drawn disc. */
+const DISC_CLEARANCE = 1.3;
 
 const smoothstep = (from: number, to: number, x: number): number => {
   const k = Math.min(Math.max((x - from) / (to - from), 0), 1);
@@ -171,6 +187,60 @@ function buildScene3D(
     return new Mesh(quad, material);
   };
 
+  const discFor = (star: SkyStar): Mesh<PlaneGeometry, ShaderMaterial> | null => {
+    const mass = massOf(star);
+    if (!mass) return null;
+    const disc = new Mesh(
+      quad,
+      owned.own(
+        new ShaderMaterial({
+          uniforms: {
+            ink: { value: new Color(mass.colour) },
+            weight: { value: mass.weight },
+            seed: { value: (star.spin * 53) % 41 },
+            time: { value: 0 },
+            turn: { value: 0 },
+            inner: { value: 0.2 },
+            star: { value: 0.1 },
+            detail: { value: 0 },
+            opacity: { value: 0 },
+          },
+          vertexShader: QUAD_VERTEX,
+          fragmentShader: DISC_FRAGMENT,
+          transparent: true,
+          depthWrite: false,
+          blending: AdditiveBlending,
+        }),
+      ),
+    );
+    scene.add(disc);
+    return disc;
+  };
+  const ball = owned.own(new SphereGeometry(1, 16, 12));
+  const tones = PLANET_TONES.slice(0, PLANET_TONE_COUNT).map((hex) => new Color(hex));
+  const planetsFor = (
+    star: SkyStar,
+  ): { planet: IssuePlanet; mesh: Mesh<SphereGeometry, ShaderMaterial> }[] =>
+    issuePlanets(star).map((planet) => {
+      const mesh = new Mesh(
+        ball,
+        owned.own(
+          new ShaderMaterial({
+            uniforms: {
+              tone: { value: tones[planet.tone] },
+              star: { value: vec(star.ax, star.ay, star.az) },
+              opacity: { value: 0 },
+            },
+            vertexShader: PLANET_VERTEX,
+            fragmentShader: PLANET_FRAGMENT,
+            transparent: true,
+          }),
+        ),
+      );
+      scene.add(mesh);
+      return { planet, mesh };
+    });
+
   const circle = Array.from({ length: 65 }, (_, i) =>
     vec(Math.cos((i / 64) * Math.PI * 2), Math.sin((i / 64) * Math.PI * 2)),
   );
@@ -181,7 +251,7 @@ function buildScene3D(
       scene.add(body);
       const pulse = kit.line(circle, star.colour, 0.3);
       scene.add(pulse);
-      return { star, body, pulse };
+      return { star, body, pulse, disc: discFor(star), planets: planetsFor(star) };
     });
   const connections = data.clusters
     .filter((c) => c.stars.length > 1 && !c.arm)
@@ -259,7 +329,7 @@ function buildScene3D(
       for (const { cloud, x, y, z, phase } of clouds) {
         cloud.position.copy(vec(x + Math.sin(t * 0.035 + phase) * 50, y, z));
       }
-      for (const { star, body, pulse } of points) {
+      for (const { star, body, pulse, disc, planets } of points) {
         const grow = f.born(star);
         const tw =
           0.78 +
@@ -276,6 +346,41 @@ function buildScene3D(
         look['disc'].value = FAR_DISC + (NEAR_DISC - FAR_DISC) * detail;
         look['time'].value = f.frozen ? 0 : t;
         look['opacity'].value = f.dim(star) * grow * (0.7 + tw * 0.3);
+        const turn = systemTurn(star.spin, t, f.frozen);
+        const drawn = look['disc'].value as number;
+        if (disc) {
+          const mass = massOf(star);
+          const reach = (mass?.reach ?? 1) * r;
+          const u = disc.material.uniforms;
+          disc.visible = f.chart === 'prs' && grow > 0;
+          disc.position.copy(body.position);
+          disc.scale.setScalar(reach * DISC_QUAD_MARGIN * 2 * unit);
+          u['turn'].value = turn;
+          u['inner'].value = (drawn * DISC_CLEARANCE * r) / Math.max(reach, 0.001);
+          u['star'].value = (drawn * r) / Math.max(reach, 0.001);
+          u['time'].value = f.frozen ? 0 : t;
+          u['detail'].value = detail;
+          u['opacity'].value = f.dim(star) * grow;
+        }
+        for (const { planet, mesh } of planets) {
+          // Each issue's world, in the disc's tilted plane, turned as the disc turns.
+          const angle = planet.phase + (f.frozen ? 0 : t * planet.speed);
+          const ox = Math.cos(angle) * planet.orbit * r;
+          const oy = Math.sin(angle) * planet.orbit * r * SYSTEM_TILT;
+          const sx = ox * Math.cos(turn) - oy * Math.sin(turn);
+          const sy = ox * Math.sin(turn) + oy * Math.cos(turn);
+          mesh.visible = detail > 0.02 && grow > 0;
+          mesh.position.copy(
+            vec(
+              star.ax + sx * unit,
+              star.ay + sy * unit,
+              star.az + Math.sin(angle) * planet.orbit * r * unit,
+            ),
+          );
+          mesh.scale.setScalar(Math.max(planet.size * r, MIN_PLANET_PX / 2) * unit);
+          mesh.material.uniforms['star'].value.copy(body.position);
+          mesh.material.uniforms['opacity'].value = f.dim(star) * grow * detail;
+        }
         const phase = (t * 0.42 + star.spin) % 1;
         pulse.visible = star.urgent && !f.frozen;
         pulse.position.copy(body.position);
@@ -315,14 +420,6 @@ function drawOverlay(f: SkyFrame): void {
   const { ctx } = f;
   for (const layer of f.layers) layer.beneath?.(ctx, f);
   for (const layer of f.layers) layer.flat?.(ctx, f);
-  if (f.chart === 'prs') {
-    for (const s of f.stars) {
-      const grow = f.born(s);
-      if (!s.cost || grow <= 0) continue;
-      const [x, y] = f.toScreen(s.ax, s.ay, s.az);
-      drawMass(f, s, x, y, starRadius(f, s, grow), f.dim(s) * grow, ctx);
-    }
-  }
   for (const c of f.clusters) drawClusterLabel(f, c);
   if (f.camera.current.scale > 0.5) for (const s of f.stars) drawStarLabel(f, s);
   const selected = f.selected;

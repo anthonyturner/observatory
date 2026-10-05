@@ -39,6 +39,14 @@ dropped.
 - **File and line references stay.** They are evidence, not prose — put them
   in parentheses after the plain-English claim so a reader can skip them.
 
+**Pull-request bodies are the exception to "keep the technical detail".** They
+stay short (about 200 words, brief bullets) because the diff and the review
+already hold the detail; see **Publish** in
+[agent-workflows/implementation.md](agent-workflows/implementation.md). The
+report back to the requester after a pull request is shorter still: it does
+not repeat what the pull request says, but links the issue and the pull
+request. Plain English and glossed terms still apply.
+
 [agent-workflows/refinement.md](agent-workflows/refinement.md) extends these
 rules for the refinement assessment, the one stage whose entire output is its
 reasoning.

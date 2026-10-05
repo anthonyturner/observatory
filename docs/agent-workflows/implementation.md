@@ -338,20 +338,18 @@ See **Defect lane** in [pipeline.md](pipeline.md).
    not, say so in the pull-request body.
 6. Review the complete diff and status for unrelated changes, secrets, and
    debug artifacts.
-7. Report every changed file as a repo-relative markdown link with the
-   changed line range(s), e.g. `[path/to/file:12-18](path/to/file#L12-L18)`
-   (whole-file link for new files). Group the list by logical change if the
-   work spanned multiple follow-ups in the same session. Note that
-   uncommitted line numbers will shift if the diff changes again before
-   commit. Also report verification evidence, risks, and manual testing.
-8. Report the SOLID note. This is the only stage that writes one, so the
-   format lives here; [rule 9](../rules.md) is the judgement about when SOLID
-   is worth applying at all, and it points at this step. Name each principle
-   you applied, say in a sentence how it is applied in this change, and why it
-   was worth applying. Also name any principle you deliberately did not apply
-   and why, so a reader can tell a considered omission from an oversight. An
-   abstraction you considered and rejected is worth as much to a reviewer as
-   one you built — say which, and what made it not worth it.
+7. List every changed file for the pull request as a repo-relative markdown
+   link with the changed line range(s), e.g.
+   `[path/to/file:12-18](path/to/file#L12-L18)` (whole-file link for new
+   files), each with a few words on what changed. Keep it tight: group small
+   related edits on one line rather than listing every hunk.
+8. Write the SOLID note for the pull request. This is the only stage that
+   writes one, so the format lives here; [rule 9](../rules.md) is the
+   judgement about when SOLID is worth applying at all, and it points at this
+   step. Keep it brief: one line per principle applied (how, and why it was
+   worth it), and one line for any principle or abstraction deliberately not
+   used and why, so a reader can tell a considered omission from an
+   oversight.
 
 ## Publish
 
@@ -364,10 +362,22 @@ reaches it.
    **Issue references in commits** below.
 2. Push without force.
 3. Update the pull request to the shape of `.github/PULL_REQUEST_TEMPLATE.md` —
-   Summary, Verification, Manual testing, Risks, Escalation signals — titled
-   with the Conventional Commit subject, with `Closes #<n>` in the body. Replace
-   the scaffold body; do not leave a stub.
-4. Report the GitHub issue and pull-request URLs and the branch.
+   Summary, Changes, SOLID, Verification, Not done — titled with the
+   Conventional Commit subject, with `Closes #<n>` in the body. Replace the
+   scaffold body; do not leave a stub.
+
+   Keep the body short (about 200 words): brief bullets, no long rationale,
+   nothing the diff already makes obvious.
+4. Report back to the requester briefly: a line or two on the outcome, then
+   a clickable link for everything produced — the issue, the pull request,
+   and any HTML page, artifact, screenshot or report — and anything that needs
+   their decision. Do not repeat what the pull request already says; the
+   links are how they reach it. Use short link text, with the issue and its
+   pull request on one line joined by an arrow:
+
+   ```markdown
+   - observatory: [#123](<issue-url>) → [#124](<pr-url>)
+   ```
 
 Then carry on to **Review and merge**.
 

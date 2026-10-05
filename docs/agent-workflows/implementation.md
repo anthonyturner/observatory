@@ -399,14 +399,16 @@ stand, so it is not optional and not shortened for small changes.
    commit on the branch. A non-blocking suggestion is fixed when you agree with
    it; when you do not, reply on the pull request saying why. Push without
    force, then re-review the new diff and post that review too.
-5. **Merge when it is clean**, with a merge commit:
+5. **Merge when it is clean**, with a squash merge
+   ([ADR-0007](../decisions/0007-squash-merge-pull-requests.md)):
 
    ```sh
-   gh pr merge <n> --merge
+   gh pr merge <n> --squash
    ```
 
-   A merge commit keeps the branch's commits intact, so the merge can be
-   reverted as one unit and the history shows exactly what was reviewed.
+   A squash merge lands the pull request as one commit on `main`, so it can be
+   reverted as one unit and the graph stays a straight line. The branch's own
+   commits stay on the pull request.
 
 Do **not** merge, and say why in the report and on the pull request, when:
 
@@ -422,7 +424,7 @@ Leave that pull request open and ready for review. Never close the issue by
 hand ([rule 12](../rules.md)) — the merge closes it through `Closes #n`.
 
 After merging, remove the worktree if the work used one, per **Remove the
-worktree once the pull request is merged** above, and report the merge commit.
+worktree once the pull request is merged** above, and report the squash commit.
 
 ## Issue references in commits
 

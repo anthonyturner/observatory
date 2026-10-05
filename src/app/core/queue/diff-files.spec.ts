@@ -37,13 +37,17 @@ describe('diffLinesOf', () => {
     const [app, readme] = diffFilesOf(DIFF);
 
     expect(diffLinesOf(app)).toEqual([
-      { kind: 'h', text: '@@ -1,2 +1,2 @@' },
-      { kind: '', text: ' same' },
-      { kind: 'd', text: '-old' },
-      { kind: 'a', text: '+new' },
-      { kind: '', text: ' ' },
-      { kind: '', text: ' ' },
+      { kind: 'h', sign: '', text: '@@ -1,2 +1,2 @@' },
+      { kind: '', sign: ' ', text: 'same' },
+      { kind: 'd', sign: '-', text: 'old' },
+      { kind: 'a', sign: '+', text: 'new' },
+      { kind: '', sign: ' ', text: '' },
+      { kind: '', sign: ' ', text: '' },
     ]);
-    expect(diffLinesOf(readme).at(-1)).toEqual({ kind: 'a', text: '+<script>alert(1)</script>' });
+    expect(diffLinesOf(readme).at(-1)).toEqual({
+      kind: 'a',
+      sign: '+',
+      text: '<script>alert(1)</script>',
+    });
   });
 });

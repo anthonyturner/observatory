@@ -38,7 +38,8 @@ import {
   outermostOrbit,
   sunRadius,
 } from '../../../../core/orrery/world-layout';
-import { WORLD_KINDS, WorldKind, worldKind } from '../../../../core/orrery/world-kind';
+import { CLOUD_COVER, WORLD_KINDS, WorldKind, worldKind } from '../../../../core/orrery/world-kind';
+import { nightSide } from '../../../../core/orrery/world-night';
 import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { OrreryPalette } from '../orrery-palette';
 import { DIAL_BEYOND_ORBIT, SceneFrame } from '../orrery-scene';
@@ -52,7 +53,7 @@ import {
   RING_VERTEX,
   SPHERE_VERTEX,
 } from './orrery-shaders';
-import { ATMOSPHERE_FRAGMENT, SURFACE_FRAGMENT } from './planet-shaders';
+import { ATMOSPHERE_FRAGMENT, CLOUD_FRAGMENT, SURFACE_FRAGMENT } from './planet-shaders';
 
 const DEG = Math.PI / 180;
 /** Bloom only on what is luminous: deep space stays black so stars have something to be brighter than. */
@@ -74,6 +75,11 @@ const WORLD_TINT = 0.14;
 const MOON_TINT = 0.7;
 /** The air shell's radius, in world radii. */
 const AIR_SCALE = 1.12;
+/** The cloud shell sits just above the ground. */
+const CLOUD_SCALE = 1.015;
+/** Clouds turn a little faster than the ground beneath them, in radians a second. */
+const GROUND_TURN = 0.035;
+const CLOUD_TURN = 0.05;
 /** A moon is never smaller than this many screen pixels. */
 const MIN_MOON_PX = 1.3;
 
@@ -84,6 +90,7 @@ interface WorldSystem {
   readonly group: Group;
   readonly body: Mesh;
   readonly surface: ShaderMaterial;
+  readonly clouds: Mesh | null;
   readonly moons: Mesh<SphereGeometry, ShaderMaterial>[];
   readonly orbit: Line<BufferGeometry, LineBasicMaterial>;
   readonly colour: Color;
@@ -230,11 +237,31 @@ export class OrreryWebGL {
             hasRing: { value: 0 },
             isMoon: { value: isMoon ? 1 : 0 },
             tint: { value: isMoon ? MOON_TINT : WORLD_TINT },
+            cloudCover: { value: isMoon ? 0 : CLOUD_COVER[kind] },
+            cloudTurn: { value: 0 },
+            lights: { value: 0 },
+            unrest: { value: 0 },
+            time: { value: 0 },
             parentCentre: { value: new Vector3() },
             parentRadius: { value: 0 },
           },
           vertexShader: SPHERE_VERTEX,
           fragmentShader: SURFACE_FRAGMENT,
+        }),
+      );
+    const cloudShell = (ground: ShaderMaterial) =>
+      own(
+        new ShaderMaterial({
+          uniforms: {
+            sun: { value: light.position },
+            seed: ground.uniforms['seed'],
+            kind: ground.uniforms['kind'],
+            cloudCover: ground.uniforms['cloudCover'],
+          },
+          vertexShader: SPHERE_VERTEX,
+          fragmentShader: CLOUD_FRAGMENT,
+          transparent: true,
+          depthWrite: false,
         }),
       );
     const atmosphere = (colour: Color) =>
@@ -323,26 +350,44 @@ export class OrreryWebGL {
       );
       const ringNormal = new Vector3(0, 0, 1).applyQuaternion(ringRotation);
       const seed = hashString(world.project.repo) % 997;
-      const material = surface(colour, seed, ringNormal, worldKind(world.project.repo));
+      const kind = worldKind(world.project.repo);
+      const material = surface(colour, seed, ringNormal, kind);
+      const night = nightSide(world.project);
+      material.uniforms['lights'].value = night.lights;
+      material.uniforms['unrest'].value = night.unrest;
       material.uniforms['hasRing'].value = world.hasRing ? 1 : 0;
       const body = new Mesh(surfaceGeometry, material);
       group.add(body);
       const air = new Mesh(surfaceGeometry, atmosphere(colour));
       air.scale.setScalar(AIR_SCALE);
+      air.renderOrder = 2;
       group.add(air);
+      const clouds = CLOUD_COVER[kind] > 0 ? new Mesh(surfaceGeometry, cloudShell(material)) : null;
+      if (clouds) {
+        clouds.scale.setScalar(CLOUD_SCALE);
+        clouds.renderOrder = 1;
+        group.add(clouds);
+      }
       if (world.hasRing) {
         const ring = new Mesh(
           own(new RingGeometry(1.76, 2.3, 96)),
           own(
             new ShaderMaterial({
-              uniforms: { ink: { value: colour } },
+              uniforms: {
+                ink: { value: colour },
+                sun: { value: light.position },
+                seed: { value: seed },
+              },
               vertexShader: RING_VERTEX,
               fragmentShader: RING_FRAGMENT,
               side: DoubleSide,
+              transparent: true,
+              depthWrite: false,
             }),
           ),
         );
         ring.quaternion.copy(ringRotation);
+        ring.renderOrder = 3;
         group.add(ring);
       }
       const moons = Array.from({ length: world.moons }, (_, i) => {
@@ -361,7 +406,7 @@ export class OrreryWebGL {
         0.3,
       );
       scene.add(orbit);
-      return { world, group, body, surface: material, moons, orbit, colour };
+      return { world, group, body, surface: material, clouds, moons, orbit, colour };
     });
 
     return {
@@ -377,7 +422,7 @@ export class OrreryWebGL {
   }
 
   private updateSystem(system: WorldSystem, frame: SceneFrame, scale: number): void {
-    const { world, group, body, surface, moons, orbit, colour } = system;
+    const { world, group, body, surface, clouds, moons, orbit, colour } = system;
     const grow = growth(world, frame.sinceShown);
     const radius = world.radius * grow;
     const at = worldPosition(world, frame.time);
@@ -385,7 +430,12 @@ export class OrreryWebGL {
     group.visible = grow > 0;
     group.position.copy(vec(at.x, at.y, at.z));
     group.scale.setScalar(Math.max(0.001, radius));
-    body.rotation.y = world.spin + frame.time * 0.035;
+    body.rotation.y = world.spin + frame.time * GROUND_TURN;
+    if (clouds) {
+      clouds.rotation.y = world.spin * 1.3 + frame.time * CLOUD_TURN;
+      surface.uniforms['cloudTurn'].value = body.rotation.y - clouds.rotation.y;
+    }
+    surface.uniforms['time'].value = frame.time;
     surface.uniforms['centre'].value.copy(group.position);
     surface.uniforms['radius'].value = radius;
     orbit.material.opacity = (isSelected ? 0.55 : 0.24) * grow;

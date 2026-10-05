@@ -106,14 +106,25 @@ const KINDS = `uniform float kind, seed;
     if (kind < 2.5) return iceColour(p);
     return desertColour(p); }`;
 
+/* Cloud cover, shared by the cloud shell and the ground it shades. Stretched
+   along latitude into belts, and warped so the belts break into weather. */
+const CLOUDS = `uniform float cloudCover;
+  float cloudAt(vec3 p) { vec3 s = offset() + 31.;
+    vec3 q = vec3(p.x, p.y * 1.8, p.z);
+    q += vec3(fbm(q * 1.6 + s), 0., fbm(q * 1.6 + s + 7.3)) * .4;
+    float v = fbm(q * 2.4 + s) * .5 + .5 + fbm(q * 9. + s) * .08;
+    return smoothstep(1. - cloudCover, 1.18 - cloudCover, v); }
+  vec3 turnY(vec3 v, float a) { float c = cos(a), s = sin(a);
+    return vec3(c * v.x + s * v.z, v.y, c * v.z - s * v.x); }`;
+
 /** A world or moon: a surface of its kind with its relief lit from the sun,
  *  shadowed by its own ring or, for a moon, by the world it circles. Severity
  *  tints the surface by `tint` and hazes the limb; the air shell carries the rest. */
-export const SURFACE_FRAGMENT = `${SIMPLEX} ${KINDS}
+export const SURFACE_FRAGMENT = `${SIMPLEX} ${KINDS} ${CLOUDS}
   uniform mat4 modelMatrix;
   varying vec3 wp; varying vec3 wn; varying vec3 local;
   uniform vec3 ink, sun, centre, ringNormal, parentCentre;
-  uniform float radius, hasRing, isMoon, parentRadius, tint;
+  uniform float radius, hasRing, isMoon, parentRadius, tint, cloudTurn, lights, unrest, time;
   void main() {
     // Relief: tilt the normal down the height's slope, measured a step either way.
     vec3 n = normalize(local);
@@ -146,6 +157,12 @@ export const SURFACE_FRAGMENT = `${SIMPLEX} ${KINDS}
       float miss = length(toParent - L * ahead);
       if (ahead > 0.) shadow *= smoothstep(parentRadius * .92, parentRadius * 1.08, miss);
     }
+    float overcast = 0.;
+    if (cloudCover > 0.) {
+      vec3 sunLocal = normalize(transpose(mat3(modelMatrix)) * L);
+      overcast = cloudAt(turnY(normalize(n + sunLocal * .03), cloudTurn));
+      shadow *= 1. - overcast * .55;
+    }
     // Sunlight reddens where it grazes the air, along the terminator.
     float dusk = smoothstep(-.05, .1, sunward) * (1. - smoothstep(.1, .45, sunward));
     vec3 light = mix(vec3(1., .97, .92), vec3(1., .58, .36), dusk * .7);
@@ -156,8 +173,36 @@ export const SURFACE_FRAGMENT = `${SIMPLEX} ${KINDS}
     colour += vec3(1., .95, .85) * pow(max(dot(reflect(-L, N), V), 0.), sharp) * gloss * day * shadow;
     float limb = pow(1. - max(dot(G, V), 0.), 4.) * smoothstep(-.2, .4, sunward);
     colour += ink * limb * .35 * (1. - isMoon);
+    float night = 1. - smoothstep(-.12, .08, sunward);
+    vec3 off = offset();
+    if (lights > 0. && (kind < .5 || kind > 1.5)) {
+      float region = smoothstep(.52, .7, fbm(n * 2.2 + off + 13.) * .5 + .5 - (1. - lights) * .2);
+      float towns = pow(max(snoise(n * 45. + off), 0.), 4.) * 3. + pow(max(snoise(n * 110. + off), 0.), 6.) * 2.;
+      float cover = cloudCover > 0. ? cloudAt(turnY(n, cloudTurn)) : 0.;
+      colour += vec3(1., .72, .38) * towns * region * (1. - wet) * lights * night * (1. - cover * .7) * 1.4;
+    }
+    if (unrest > 0.) {
+      float flicker = .8 + .2 * sin(time * 1.7 + n.x * 9. + n.z * 7.);
+      float glow;
+      if (kind > .5 && kind < 1.5) glow = smoothstep(.62, .85, fbm(vec3(n.x * 3., n.y * 10., n.z * 3.) + off) * .5 + .5) * .6;
+      else glow = 1. - smoothstep(0., .025, abs(snoise(n * 3. + off + 5.) + .25 * snoise(n * 9. + off)));
+      colour += vec3(1., .34, .08) * glow * unrest * flicker * (.15 + .85 * night) * 1.6;
+    }
     gl_FragColor = vec4(colour, 1.);
   }`;
+
+/** The cloud shell: white tops lit by the sun, reddening at the terminator,
+ *  turning at their own speed over the ground. */
+export const CLOUD_FRAGMENT = `${SIMPLEX} ${KINDS} ${CLOUDS}
+  varying vec3 wp; varying vec3 wn; varying vec3 local; uniform vec3 sun;
+  void main() {
+    float cover = cloudAt(normalize(local));
+    if (cover < .01) discard;
+    float sunward = dot(normalize(wn), normalize(sun - wp));
+    float day = smoothstep(-.1, .35, sunward);
+    float dusk = smoothstep(-.05, .1, sunward) * (1. - smoothstep(.1, .45, sunward));
+    vec3 colour = mix(vec3(1.), vec3(1., .6, .4), dusk * .6) * (.015 + day * 1.05);
+    gl_FragColor = vec4(colour, cover * .88); }`;
 
 /** A shell of air in the severity colour: densest just above the ground,
  *  thinning with altitude, lit on the day side and warming to sunset along

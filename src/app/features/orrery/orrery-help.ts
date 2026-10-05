@@ -7,6 +7,11 @@ export const ORRERY_HELP_ENTRIES: readonly HelpEntry[] = [
       'One world per project you own. Its air glows in its most urgent colour; a bigger world has more open work.',
   },
   {
+    term: 'Night side',
+    meaning:
+      'City lights are work in motion: more open pull requests, more lights, dimming as the oldest goes stale. Glowing fissures mean checks are failing. The kind of world, its land and its clouds are only scenery.',
+  },
+  {
     term: 'Orbits',
     meaning:
       'The most urgent sit innermost, and distance is neglect: a world moves out a step for each day its oldest pull request has sat untouched, up to ten weeks. Outer worlds come round more slowly.',

@@ -48,6 +48,8 @@ ADR when the project decides differently.
 | --- | --- | --- |
 | [0001](0001-record-refinement-on-the-issue.md) | Record engineering refinement on the issue | Accepted |
 | [0002](0002-track-work-in-github-only.md) | Track work in GitHub only | Accepted |
-| [0003](0003-agent-autonomy.md) | Agent autonomy | Accepted |
+| [0003](0003-agent-autonomy.md) | Agent autonomy | Accepted; merge method superseded by ADR-0007 |
+| [0004](0004-self-review-instead-of-a-qa-agent.md) | Self-review instead of a QA agent | Accepted |
 | [0005](0005-run-tier-3-tasks-on-the-local-site-only.md) | Run tier-3 tasks on the local site only, after a confirmed proposal | Accepted |
 | [0006](0006-keep-the-assistant-on-the-local-site-only.md) | Keep the assistant on the local site only | Accepted |
+| [0007](0007-squash-merge-pull-requests.md) | Squash-merge pull requests | Accepted |

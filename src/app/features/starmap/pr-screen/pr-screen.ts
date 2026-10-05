@@ -11,6 +11,7 @@ import {
 import { PullEdits } from '../../../core/edits/pull-edits';
 import { PullDetailFeed } from '../../../core/queue/pull-detail-feed';
 import { QueueBucket } from '../../../core/queue/queue-report';
+import { pullDiffKey } from '../../../core/queue/viewed-files';
 import { Draggable } from '../../../shared/draggable/draggable';
 import { BUCKET_LOOK } from '../../queue/queue-view';
 import { SheetDiff } from './sheet-diff/sheet-diff';
@@ -90,6 +91,7 @@ export class PrScreen {
   protected readonly url = computed(
     () => `https://github.com/${this.repo()}/pull/${this.number()}`,
   );
+  protected readonly viewedKey = computed(() => pullDiffKey(this.repo(), this.number()));
   protected readonly header = computed((): HeaderState => {
     const detail = this.detail();
     return {

@@ -111,6 +111,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- On the Review Queue, opening Done now moves the sky clear of the list, as Merge plan and Agents do, and a lit light's label opens toward the middle of the clear sky instead of under the list ([#415](https://github.com/anthonyturner/observatory/pull/415)).
 - The Review Queue's search says Nothing matches “query” with real quote marks again, instead of two garbled characters ([#412](https://github.com/anthonyturner/observatory/pull/412)).
 - Big neighbouring worlds on the Orrery no longer sit on top of each other: each orbit keeps clear of the one inside it by both worlds' size, so one world can't hide the next or its label. Behind the sun one can still pass in front of another for a while, like a planet in transit ([#396](https://github.com/anthonyturner/observatory/pull/396)).
 - Ice and grey desert worlds on the Orrery are no longer washed out to white: they show their surface, and every kind of world is lit a little more softly ([#395](https://github.com/anthonyturner/observatory/pull/395)).

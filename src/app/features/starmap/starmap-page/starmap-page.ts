@@ -527,7 +527,7 @@ export class StarmapPage {
       bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
       side: !wide
         ? 0
-        : this.showPlan() || this.showAgents()
+        : this.showPlan() || this.showAgents() || this.showDone()
           ? PLAN_PANEL_WIDTH
           : this.showChanges()
             ? SIDE_PANEL_WIDTH

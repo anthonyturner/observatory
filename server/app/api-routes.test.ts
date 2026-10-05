@@ -47,6 +47,7 @@ const reads = {
   forgetQueue: (repo: string) => forgotten.push(`queue ${repo}`),
   forgetIssues: (repo: string) => forgotten.push(`issues ${repo}`),
   pull: async (repo: string, number: number) => ({ repo, number }),
+  commit: async (repo: string, sha: string) => ({ repo, sha }),
   pullState: async (_repo: string, number: number) => ({
     state: PULL_STATES[number],
     title: `Change ${number}`,
@@ -132,6 +133,17 @@ describe('ownerRoutes', () => {
     ]);
     const bad = await handle(new Request('http://x/api/pull-state?repo=me/app&number=x'));
     assert.equal(bad.status, 400);
+  });
+
+  it('reads one commit’s diff by repository and hash, and refuses a hash that is not hex', async () => {
+    assert.deepEqual(await get('/api/commit?repo=me/app&sha=5645CDA'), {
+      repo: 'me/app',
+      sha: '5645cda',
+    });
+    for (const sha of ['', 'xyz1234', '--output=x', '5645cda/../x']) {
+      const bad = await handle(new Request(`http://x/api/commit?repo=me/app&sha=${sha}`));
+      assert.equal(bad.status, 400, sha);
+    }
   });
 
   it('reads a pull request afresh when asked to', async () => {

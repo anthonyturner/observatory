@@ -17,7 +17,8 @@ import { SheetDiff } from './sheet-diff/sheet-diff';
 import { SheetEditor } from './sheet-editor/sheet-editor';
 import { HeaderState, SheetHeader } from './sheet-header/sheet-header';
 import { SheetMarkdown } from './sheet-markdown/sheet-markdown';
-import { checkRows, commitRows, commitsNote, fileRows } from './sheet-rows/sheet-row';
+import { SheetCommits } from './sheet-commits/sheet-commits';
+import { checkRows, fileRows } from './sheet-rows/sheet-row';
 import { SheetRows } from './sheet-rows/sheet-rows';
 import { NO_COUNTS, SHEET_TABS, SheetTab, kickerOf, routeOf, tabCounts } from './sheet-view';
 import { AgentLanes } from '../../../shared/agent-lanes/agent-lanes';
@@ -33,7 +34,16 @@ const TYPING = 'input, textarea, select';
  */
 @Component({
   selector: 'app-pr-screen',
-  imports: [Draggable, SheetHeader, SheetMarkdown, SheetRows, SheetDiff, SheetEditor, AgentLanes],
+  imports: [
+    Draggable,
+    SheetHeader,
+    SheetMarkdown,
+    SheetRows,
+    SheetCommits,
+    SheetDiff,
+    SheetEditor,
+    AgentLanes,
+  ],
   providers: [PullDetailFeed, PullEdits],
   templateUrl: './pr-screen.html',
   styleUrl: './pr-screen.css',
@@ -94,14 +104,6 @@ export class PrScreen {
   protected readonly files = computed(() => {
     const detail = this.detail();
     return detail ? fileRows(detail) : [];
-  });
-  protected readonly commits = computed(() => {
-    const detail = this.detail();
-    return detail ? commitRows(detail) : [];
-  });
-  protected readonly commitsNote = computed(() => {
-    const detail = this.detail();
-    return detail ? commitsNote(detail) : null;
   });
   protected readonly checks = computed(() => {
     const detail = this.detail();

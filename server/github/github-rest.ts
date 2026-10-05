@@ -13,6 +13,8 @@ export interface RestRequest {
 }
 
 const API_ROOT = 'https://api.github.com';
+/** Asks GitHub for a pull request's or a commit's changes as a unified diff. */
+export const DIFF_MEDIA_TYPE = 'application/vnd.github.diff';
 
 /** GitHub's REST API with the same token as its GraphQL one: for what GraphQL
  *  cannot do, such as a pull request's diff or a merge pinned to a commit. */

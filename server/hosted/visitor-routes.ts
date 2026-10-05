@@ -10,6 +10,7 @@ import {
 import type { ProjectsReport } from '../projects/project-types.ts';
 import { NEWS_PATH } from '../news/news-routes.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
+import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { EMPTY_TRIAGE } from '../triage/triage.ts';
@@ -92,6 +93,8 @@ export function visitorRoutes(
         reads.pull(await visibleRepo(query), pullNumberFrom(query.get('number'))),
       '/api/pull-state': async (query) =>
         reads.pullState(await visibleRepo(query), pullNumberFrom(query.get('number'))),
+      '/api/commit': async (query) =>
+        reads.commit(await visibleRepo(query), commitShaFrom(query.get('sha'))),
       ...logs,
       ...news,
     },

@@ -19,6 +19,39 @@
   font-size: 12.5px;
 }
 
+.rows li.openable {
+  display: block;
+  padding: 0;
+}
+
+.line {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.line:hover,
+.line[aria-expanded='true'] {
+  background: var(--flow-soft);
+}
+
+.line:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+.detail {
+  padding: 4px 2px 14px;
+}
+
 .mono {
   font-family: var(--font-mono);
 }

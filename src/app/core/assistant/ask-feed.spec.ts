@@ -12,6 +12,8 @@ import { ASSISTANT_API, AssistantApi, AssistantAbsent } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { Conversation } from './conversation';
 import { RouteReply, RouteRequest } from './assistant.types';
+import { OpenItem } from './open-items';
+import { OpenQuestion } from './open-question';
 import { GRACE_MS, JUMP_WAIT_MS } from './page-jump';
 import { ProposalSlot } from './proposal';
 import { ReplyLog } from './reply-log';
@@ -337,6 +339,51 @@ describe('AskFeed', () => {
 
     feed.dismissProposal();
     expect(TestBed.inject(ProposalSlot).proposal()).toBeNull();
+  });
+
+  describe('the open question', () => {
+    const ITEM: OpenItem = {
+      kind: 'pull',
+      repo: 'me/app',
+      label: 'app',
+      number: 12,
+      title: 'Fix the bar',
+      href: '/p/me/app?pr=12',
+    };
+
+    it('opens an item at once through the router, closing the question', () => {
+      const { feed, navigate } = setUp();
+      const question = TestBed.inject(OpenQuestion);
+      question.ask('Would you like to open it?', [ITEM]);
+
+      feed.openAsked(ITEM.href);
+
+      expect(navigate).toHaveBeenCalledExactlyOnceWith('/p/me/app?pr=12');
+      expect(question.question()).toBeNull();
+      expect(feed.hasPendingJump()).toBe(false);
+    });
+
+    it('closes on No thanks without going anywhere', () => {
+      const { feed, navigate } = setUp();
+      const question = TestBed.inject(OpenQuestion);
+      question.ask('Would you like to open it?', [ITEM]);
+
+      feed.dismissQuestion();
+
+      expect(question.question()).toBeNull();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('closes when a request is sent', async () => {
+      const { feed } = setUp([answer(reply({ tier: 2, text: 'Hi' }))]);
+      const question = TestBed.inject(OpenQuestion);
+      question.ask('Would you like to open it?', [ITEM]);
+
+      feed.submit('hello');
+      await settle();
+
+      expect(question.question()).toBeNull();
+    });
   });
 
   describe('a task the local site can run', () => {

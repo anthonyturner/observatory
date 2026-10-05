@@ -15,6 +15,7 @@ import { TalkState } from '../voice/talk-state';
 import { VoiceChoice } from '../voice/voice-choice';
 import { ASK_CHANNEL } from './ask-channel';
 import { NoticeAnnouncer } from './notice-announcer';
+import { OpenQuestion, QUESTION_MS } from './open-question';
 import { ProposalSlot, commandProposalOf } from './proposal';
 
 const merged = (number: number): ActivityItem => ({
@@ -30,6 +31,14 @@ const issue = (number: number): ActivityItem => ({
   label: 'beta',
   number,
   title: `Issue ${number}`,
+});
+
+const opened = (number: number): ActivityItem => ({
+  kind: 'pull-opened',
+  repo: 'me/alpha',
+  label: 'alpha',
+  number,
+  title: `Pull ${number}`,
 });
 
 const message = (uid: number): MailMessage => ({
@@ -85,6 +94,7 @@ function setUp(options: { readonly speakOn?: boolean; readonly isKokoro?: boolea
   const settle = (): void => TestBed.tick();
   const talk = TestBed.inject(TalkState);
   const slot = TestBed.inject(ProposalSlot);
+  const question = TestBed.inject(OpenQuestion);
   return {
     check,
     read,
@@ -99,6 +109,7 @@ function setUp(options: { readonly speakOn?: boolean; readonly isKokoro?: boolea
     askedAgent,
     talk,
     slot,
+    question,
   };
 }
 
@@ -241,6 +252,116 @@ describe('NoticeAnnouncer', () => {
       'Pull request 1 in alpha merged: Pull 1.',
       'Pull request 2 in alpha merged: Pull 2. Pull request 3 in alpha merged: Pull 3.',
     ]);
+  });
+
+  describe('asking to open what was announced', () => {
+    const onHome = () => {
+      const set = setUp();
+      set.question.panelArrived();
+      return set;
+    };
+
+    it('ends the line with the question and puts up the card with the open items', () => {
+      const { check, announce, question } = onHome();
+
+      check(merged(1), opened(12), issue(7));
+
+      expect(announce).toHaveBeenCalledExactlyOnceWith(
+        'Pull request 1 in alpha merged: Pull 1. Pull request 12 in alpha opened: Pull 12. ' +
+          'New issue 7 in beta: Issue 7. Would you like to open any of them?',
+      );
+      expect(question.question()?.items.map((item) => item.href)).toEqual([
+        '/p/me/alpha?pr=12',
+        '/p/me/beta?issue=7',
+      ]);
+    });
+
+    it('asks about it alone for one open item', () => {
+      const { check, announce } = onHome();
+
+      check(opened(12));
+
+      expect(announce).toHaveBeenCalledExactlyOnceWith(
+        'Pull request 12 in alpha opened: Pull 12. Would you like to open it?',
+      );
+    });
+
+    it('names the kinds after mail, and asks last', () => {
+      const { check, read, settle, announce, isBusy } = onHome();
+
+      isBusy.set(true);
+      settle();
+      check(opened(12), issue(7));
+      read({ newMail: [{ account: 'icloud', messages: [message(7)] }], signInFailed: [] });
+      isBusy.set(false);
+      settle();
+
+      expect(announce).toHaveBeenCalledExactlyOnceWith(
+        'Pull request 12 in alpha opened: Pull 12. New issue 7 in beta: Issue 7. ' +
+          '1 new email in iCloud. Would you like to open any of the pull requests or issues?',
+      );
+    });
+
+    it('asks nothing when everything announced has merged or closed', () => {
+      const { check, announce, question } = onHome();
+
+      check(merged(1));
+
+      expect(announce).toHaveBeenCalledExactlyOnceWith('Pull request 1 in alpha merged: Pull 1.');
+      expect(question.question()).toBeNull();
+    });
+
+    it('asks nothing off Home', () => {
+      const { check, announce, question } = setUp();
+
+      check(opened(12));
+
+      expect(announce).toHaveBeenCalledExactlyOnceWith('Pull request 12 in alpha opened: Pull 12.');
+      expect(question.question()).toBeNull();
+    });
+
+    it('holds later news behind the question, never adding it to the card', () => {
+      const { check, settle, announce, question } = onHome();
+
+      check(opened(12));
+      check(issue(7));
+      expect(announce).toHaveBeenCalledTimes(1);
+      expect(question.question()?.items.map((item) => item.number)).toEqual([12]);
+
+      question.close();
+      settle();
+      expect(announce).toHaveBeenLastCalledWith(
+        'New issue 7 in beta: Issue 7. Would you like to open it?',
+      );
+    });
+
+    describe('while it waits', () => {
+      beforeEach(() => vi.useFakeTimers());
+      afterEach(() => vi.useRealTimers());
+
+      it('says held news once the question times out', () => {
+        const { check, settle, announce } = onHome();
+
+        check(opened(12));
+        check(merged(1));
+        vi.advanceTimersByTime(QUESTION_MS);
+        settle();
+
+        expect(announce).toHaveBeenLastCalledWith('Pull request 1 in alpha merged: Pull 1.');
+      });
+
+      it('does not wait on Agent Speak while the question does', () => {
+        const { check, settle, askedAgent } = onHome();
+
+        check(opened(12));
+        askedAgent.mockClear();
+        check(merged(1));
+        vi.advanceTimersByTime(AGENT_POLL_MS * 3);
+        settle();
+
+        expect(askedAgent).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('with Agent Speak', () => {

@@ -39,6 +39,13 @@
             }
           </p>
         }
+        @if (question.question(); as asked) {
+          <app-question-card
+            [question]="asked"
+            (opened)="feed.openAsked($event)"
+            (dismissed)="feed.dismissQuestion()"
+          />
+        }
         @for (proposal of proposals(); track proposal.id) {
           @switch (proposal.kind) {
             @case ('run') {

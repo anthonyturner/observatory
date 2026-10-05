@@ -13,6 +13,42 @@ export interface HoldMarker {
 export interface HoldMarkerOptions {
   readonly root?: string;
   readonly warn?: (message: string) => void;
+  /** Moves the staged file over the marker; tests give one that fails. */
+  readonly rename?: (from: string, to: string) => void;
+  /** Blocks for `ms`; tests give one that does not. */
+  readonly pause?: (ms: number) => void;
+}
+
+/** Agent Speak opens the marker for under 1 ms to read it, and Windows
+ *  refuses a rename over a file that is open, delete-sharing or not. A few
+ *  short tries ride that out. They block rather than wait, so a late retry
+ *  can never bring back a marker a release has just removed. */
+const RENAME_TRIES = 3;
+const RETRY_AFTER_MS = 5;
+const BRIEFLY_LOCKED: ReadonlySet<string> = new Set(['EPERM', 'EBUSY']);
+
+const isBrieflyLocked = (error: unknown): boolean =>
+  error instanceof Error && 'code' in error && BRIEFLY_LOCKED.has(String(error.code));
+
+const blockFor = (ms: number): void => {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+};
+
+function renameWithRetry(
+  rename: (from: string, to: string) => void,
+  pause: (ms: number) => void,
+  from: string,
+  to: string,
+): void {
+  for (let tried = 1; ; tried++) {
+    try {
+      rename(from, to);
+      return;
+    } catch (error) {
+      if (tried >= RENAME_TRIES || !isBrieflyLocked(error)) throw error;
+      pause(RETRY_AFTER_MS);
+    }
+  }
 }
 
 const reasonOf = (error: unknown): string =>
@@ -24,6 +60,8 @@ const reasonOf = (error: unknown): string =>
 export function holdMarker(options: HoldMarkerOptions = {}): HoldMarker {
   const root = options.root ?? AGENT_SPEAK_DIR;
   const warn = options.warn ?? ((message) => console.warn(message));
+  const rename = options.rename ?? renameSync;
+  const pause = options.pause ?? blockFor;
   const file = join(root, AGENT_SPEAK_FILES.jevSpeaking);
   const staged = `${file}.tmp`;
   return {
@@ -31,7 +69,7 @@ export function holdMarker(options: HoldMarkerOptions = {}): HoldMarker {
       if (!existsSync(root)) return;
       try {
         writeFileSync(staged, `${expiresAt}|${token}`, 'ascii');
-        renameSync(staged, file);
+        renameWithRetry(rename, pause, staged, file);
       } catch (error) {
         warn(`Could not renew Jev's hold on Agent Speak: ${reasonOf(error)}`);
       }

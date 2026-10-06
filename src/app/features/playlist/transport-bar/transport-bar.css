@@ -325,7 +325,11 @@ button:focus-visible {
     width: 100%;
   }
 
+  /* Unfolded on a short screen it scrolls within itself rather than run under the
+     browser's toolbar. */
   .deck {
+    max-height: var(--playlist-room);
+    overflow-y: auto;
     background: var(--panel-strong);
   }
 

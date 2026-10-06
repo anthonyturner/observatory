@@ -58,4 +58,20 @@ describe('crewPrompt', () => {
     assert.match(prompt, /--log-failed/);
     assert.doesNotMatch(prompt, /Merge `origin\/main`/);
   });
+
+  it('merges in where a merged base landed, then points the pull request there', () => {
+    const prompt = crewPrompt({
+      ...TARGET,
+      base: 'feat/41-base',
+      task: 'update-stack',
+      landed: { number: 41, branch: 'feat/41-base', into: 'main' },
+    });
+
+    assert.equal(prompt.split('\n')[0], `${CREW_TAG} me/app#42: update-stack`);
+    assert.match(prompt, /stacked on pull request #41/);
+    assert.match(prompt, /Merge `origin\/main` into this branch/);
+    assert.match(prompt, /Merge rather than rebase/);
+    assert.match(prompt, /gh pr edit 42 --repo me\/app --base main/);
+    assert.match(prompt, /Never force-push/);
+  });
 });

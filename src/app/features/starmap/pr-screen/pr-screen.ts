@@ -12,6 +12,7 @@ import {
 import { PullEdits } from '../../../core/edits/pull-edits';
 import { PullDetailFeed } from '../../../core/queue/pull-detail-feed';
 import { QueueBucket } from '../../../core/queue/queue-report';
+import { LandedBase } from '../../../core/queue/stacks';
 import { Draggable } from '../../../shared/draggable/draggable';
 import { BUCKET_LOOK } from '../../queue/queue-view';
 import { SheetDiffTab } from './sheet-diff-tab/sheet-diff-tab';
@@ -67,6 +68,8 @@ export class PrScreen {
   readonly title = input<string | null>(null);
   /** The head when it was last looked at, before this screen opened; null for never. */
   readonly lookedSha = input<string | null>(null);
+  /** The merge of the base it was stacked on, once that has merged: a crew updates it. */
+  readonly landed = input<LandedBase | null>(null);
   /** Its failing checks known to be flaky, as the queue knows them. */
   readonly flakyChecks = input<readonly string[]>([]);
   readonly closed = output<void>();

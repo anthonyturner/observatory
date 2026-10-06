@@ -40,6 +40,8 @@ import { CrewLayer } from '../engine/crew-layer';
 import { CrewMark } from '../../../core/crew/crew.types';
 import { BlackHoleLayer } from '../engine/black-hole-layer';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
+import { StackLayer } from '../engine/stack-layer';
+import { Stacks } from '../../../core/queue/stacks';
 
 /** What the pointer can rest on over the queue: a star's pull request, or a comet. */
 type QueueHover = number | Comet;
@@ -138,6 +140,8 @@ export class StarmapSky {
   readonly doneOnly = input<DoneKind | null>(null);
   /** Crews sent to fix pull requests, drawn as ships by their stars. */
   readonly crews = input<readonly CrewMark[]>([]);
+  /** Stacked pull requests, drawn as chains, and those whose base has merged. */
+  readonly stacks = input<Stacks>(new Map());
   /** A star was clicked open, or empty sky (null). */
   readonly picked = output<number | null>();
   /** A star was rested on, or tapped once: show its card. */
@@ -167,6 +171,7 @@ export class StarmapSky {
   private readonly planLayer = new PlanLayer();
   private readonly doneLayer = new DoneLayer();
   private readonly blackHoleLayer = new BlackHoleLayer();
+  private readonly stackLayer = new StackLayer();
   private readonly crewLayer = new CrewLayer(Date.now, () => this.engine?.kick());
   private readonly tetherLayer = new TetherLayer(
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
@@ -246,6 +251,11 @@ export class StarmapSky {
       this.engine?.kick();
     });
     effect(() => this.crewLayer.set(this.crews()));
+    effect(() => {
+      this.stackLayer.set(this.stacks());
+      this.stackLayer.paused = this.replaying();
+      this.engine?.kick();
+    });
     effect(() => {
       this.tetherLayer.target = this.tether();
       this.engine?.kick();
@@ -412,6 +422,7 @@ export class StarmapSky {
       this.cometLayer,
       this.collisions,
       this.binaries,
+      this.stackLayer,
       this.threads,
       this.newsLayer,
       this.planLayer,

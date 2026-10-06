@@ -44,6 +44,8 @@ export class StarCard {
   protected readonly shown = computed(() => shownBucket(this.item()));
   protected readonly bucket = computed(() => BY_ID.get(this.shown()));
   protected readonly facts = computed(() => cardFacts(this.item(), this.context()));
+  /** The merge of the base it was stacked on, which a crew can update it from. */
+  protected readonly landed = computed(() => this.context().stack?.landed ?? null);
   /** Failing only on flaky checks, where a rerun can be asked for. */
   protected readonly canRerun = computed(
     () => this.canWrite() && !this.context().replay && isFlakyOnly(this.item()),

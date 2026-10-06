@@ -34,6 +34,7 @@
   [doneLit]="doneLit()"
   [doneOnly]="doneOnly()"
   [crews]="crewMarks()"
+  [stacks]="stacks()"
   (pickedDone)="openDone($event)"
   (pickedIssue)="pickIssue($event)"
 />
@@ -45,7 +46,12 @@
     <div class="listwrap">
       @switch (chart()) {
         @case ('prs') {
-          <app-starmap-pr-list [items]="skyItems()" [filter]="filter()" (go)="goTo($event)" />
+          <app-starmap-pr-list
+            [items]="skyItems()"
+            [filter]="filter()"
+            [stacks]="stacks()"
+            (go)="goTo($event)"
+          />
         }
         @case ('issues') {
           <app-issues-panel
@@ -248,6 +254,7 @@
     [bucket]="sheetBucket()"
     [title]="sheetTitle()"
     [lookedSha]="sheetLookedSha()"
+    [landed]="sheetLanded()"
     [flakyChecks]="sheetFlaky()"
     (closed)="sheetPull.set(null)"
     (looked)="recordLook(number, $event)"

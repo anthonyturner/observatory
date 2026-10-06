@@ -5,6 +5,7 @@ const ledger = (rows: Ledger['rows'], titles: Record<string, string> = {}): Ledg
   generatedAt: '2026-10-05T12:00:00Z',
   rows,
   titles,
+  mergedBranches: [],
 });
 
 describe('shippedWork', () => {

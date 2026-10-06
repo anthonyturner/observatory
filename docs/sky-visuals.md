@@ -29,6 +29,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Size             | Idle days                  | `mag` in `layoutQueue`         |
 | Review Queue | Fall to the hole | Idle days past a threshold | `fallOf`, `placeByHole`        |
 | Review Queue | Crew ship        | A crew run on the PR       | `crewPose(mark, clock)`        |
+| Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 
 ## Orrery worlds
@@ -270,6 +271,24 @@ like the gas disc; with motion off it is parked up and to the right. When the
 run ends the ship flies off over 4 s and a green tick (done) or red cross (any
 other ending) stays by the star for 10 minutes. There is no 3D model: the ship
 stays a few pixels long at every zoom so it reads as a marker.
+
+### Chain (data: stacked pull requests)
+
+`stacksOf` (`core/queue/stacks.ts`) links a pull request to the open one whose
+head branch is its base. A head two open pull requests share, or one that merges
+into a branch of its own name (a fork's `main`), links nothing.
+`engine/stack-layer.ts` draws each link flat over both renderers as a chain of
+silver links in screen pixels, one every 11 px, alternately face on and edge on
+(`chainLinks`), trimmed by `starRadius` plus `LINK_GAP` like the constellation
+lines. A glint runs along it toward the base, still when motion is off. A chain
+to a star the filter passes over dims with it.
+
+A pull request whose base is the head of a merged one (the ledger's
+`mergedBranches`: no forks, and no branch that took a merge after its own)
+keeps a broken gold chain of four links up and to the left, labelled
+`BASE #n MERGED · UPDATE`. Its card and screen offer Send crew, whose
+`update-stack` task merges in the branch the base landed in and points the pull
+request there. Replay shows no chains: they are the queue as it is.
 
 ### Comet fade (data: open work past a limit)
 

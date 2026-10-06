@@ -105,13 +105,23 @@
   --sky-mid: #06120b;
   --sky-deep: #020604;
   --sky-vignette: rgba(0, 0, 0, 0.66);
-  /* The playlist's colours over the sky: trance cool and dreamy, techno hot and stark. */
+  /* The playlist's colours over the sky: trance cool and dreamy, techno hot and stark,
+     and one set for each tech station's talks. */
   --music-trance-primary: #5ee7ff;
   --music-trance-secondary: #a78bfa;
   --music-trance-accent: #f0abfc;
   --music-techno-primary: #ff4d5e;
   --music-techno-secondary: #ffb347;
   --music-techno-accent: #f4f4f5;
+  --music-ai-primary: #c084fc;
+  --music-ai-secondary: #22d3ee;
+  --music-ai-accent: #f5d0fe;
+  --music-git-primary: #f97316;
+  --music-git-secondary: #34d399;
+  --music-git-accent: #fde68a;
+  --music-learn-primary: #4ade80;
+  --music-learn-secondary: #60a5fa;
+  --music-learn-accent: #fef08a;
   /* The fog that thickens as the data ages. */
   --fog-veil: rgb(44, 52, 80);
   --fog-wisp: rgba(150, 162, 200, 0.16);

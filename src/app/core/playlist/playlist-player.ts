@@ -9,8 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { PlaybackState, Track } from './playlist.types';
-import { MUSIC_POOL } from './music-pool';
-import { nextIndex, pickShuffled, previousIndex } from './playlist-order';
+import { nextIndex, previousIndex } from './playlist-order';
+import { PLAYLIST_STATIONS } from './playlist-stations';
 import {
   VIDEO_PLAYER_FACTORY,
   VideoPlayer,
@@ -18,13 +18,10 @@ import {
   VideoPlayerOptions,
 } from './video-player';
 
-/** How many tracks one visit's mix holds. */
-const MIX_SIZE = 12;
-
-/** The tracks a page's playlist plays, in order: a fresh mix from the pool on each load. */
+/** The list a visit's playlist opens on: the first station's. */
 export const PLAYLIST_TRACKS = new InjectionToken<readonly Track[]>('PLAYLIST_TRACKS', {
   providedIn: 'root',
-  factory: () => pickShuffled(MUSIC_POOL, MIX_SIZE, Math.random),
+  factory: () => inject(PLAYLIST_STATIONS)[0].tracks,
 });
 
 const DEFAULT_VOLUME = 0.6;

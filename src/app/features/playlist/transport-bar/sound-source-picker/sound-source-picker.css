@@ -54,3 +54,16 @@ select:disabled {
 select:hover + .arrow {
   color: var(--ink);
 }
+
+/* Forced colours paint the select's text anyway, so it shows as a plain select. */
+@media (forced-colors: active) {
+  select {
+    width: auto;
+    padding: 0 6px;
+    appearance: auto;
+  }
+
+  .arrow {
+    display: none;
+  }
+}

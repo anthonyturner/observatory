@@ -14,7 +14,7 @@ const SYSTEM_AUDIO_PLATFORMS: ReadonlySet<string> = new Set([
 ]);
 
 /** The platform Chromium reports through `navigator.userAgentData`; null in a
- *  browser without it, which none of Firefox and Safari have. */
+ *  browser that lacks it, as Firefox and Safari do. */
 export const BROWSER_PLATFORM = new InjectionToken<string | null>('BROWSER_PLATFORM', {
   providedIn: 'root',
   factory: readBrowserPlatform,

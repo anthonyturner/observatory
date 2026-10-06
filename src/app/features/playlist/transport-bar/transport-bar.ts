@@ -35,10 +35,11 @@ const FORWARD_STEP_S = 30;
 
 /** The playlist along the foot of every page: the video, the seek bar, the transport,
  *  the heart, the Mix / Favourites switch, the favourites file, the sky's Sync and
- *  where it hears the music, the Video switch, Milkdrop's visual and opacity, the beat's strength, and the volume, with the track list
- *  above; folded, only the seek bar, the transport, the heart and the song's name
- *  stay. It plays instead of the page's score, never over it. The app shell shows
- *  it, so the music carries across pages. */
+ *  where it hears the music, the Video switch, Milkdrop's visual and opacity, the
+ *  beat's strength, and the volume, with the track list above; folded, only the
+ *  seek bar, the transport, the heart and the song's name stay. It plays instead of
+ *  the page's score, never over it. The app shell shows it, so the music carries
+ *  across pages. */
 @Component({
   selector: 'app-transport-bar',
   imports: [TrackList, SoundSourcePicker],

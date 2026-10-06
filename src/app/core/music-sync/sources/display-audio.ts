@@ -2,7 +2,7 @@ import { AudioTap, CaptureUnsupportedError, NoAudioError, tapOf } from './audio-
 import { canShareDisplay } from './media-devices';
 
 /** The sound as it is: the browser's call-tidying would cancel the very music measured. */
-export const UNPROCESSED_AUDIO: MediaTrackConstraints = {
+export const UNPROCESSED_AUDIO: Readonly<MediaTrackConstraints> = {
   echoCancellation: false,
   noiseSuppression: false,
   autoGainControl: false,

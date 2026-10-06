@@ -19,7 +19,7 @@
       (keydown)="onKey($event)"
     />
     <ul id="starmap-search-list" role="listbox" aria-label="Suggestions" [hidden]="!expanded()">
-      @for (suggestion of shown(); track suggestion; let index = $index) {
+      @for (suggestion of shown(); track $index; let index = $index) {
         <li
           role="option"
           [id]="'starmap-search-option-' + index"

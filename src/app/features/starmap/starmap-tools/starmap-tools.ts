@@ -10,6 +10,7 @@ import {
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { StarmapSound } from '../sound/starmap-sound';
 import { HelpState } from '../../../shared/help/help-state';
+import { NextStar } from '../next-star';
 import { Chart, SkyView, isListOnly } from '../starmap-view';
 
 const FOLDED_KEY = 'observatory.folded';
@@ -43,6 +44,8 @@ export class StarmapTools {
   readonly doneOn = input(false);
   readonly refreshing = input(false);
   readonly refreshFailed = input(false);
+  /** The pull request Next star would open, or null when nothing is workable. */
+  readonly next = input<NextStar | null>(null);
 
   readonly chartChange = output<Chart>();
   readonly viewChange = output<SkyView>();
@@ -53,6 +56,7 @@ export class StarmapTools {
   readonly plan = output<void>();
   readonly agents = output<void>();
   readonly done = output<void>();
+  readonly nextStar = output<void>();
   readonly refresh = output<void>();
 
   protected readonly charts = CHARTS;
@@ -70,6 +74,12 @@ export class StarmapTools {
   protected readonly skyHidden = computed(() => isListOnly(this.chart()));
   /** The queue's overlays mean nothing over the issues. */
   protected readonly queueHidden = computed(() => this.skyHidden() || this.chart() === 'issues');
+  protected readonly nextTitle = computed(() => {
+    const next = this.next();
+    return next
+      ? `Next star (n): #${next.pr} ${next.title} — ${next.why}`
+      : 'Nothing in the queue to work next';
+  });
   protected readonly motionTitle = computed(() =>
     this.motion.choice() === 'auto'
       ? 'Following your system setting — click to override'

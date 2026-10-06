@@ -31,6 +31,17 @@
   }
   @if (!queueHidden()) {
     <div class="toolgroup">
+      @if (chart() === 'prs') {
+        <button
+          type="button"
+          aria-keyshortcuts="n"
+          [title]="nextTitle()"
+          [disabled]="!next()"
+          (click)="nextStar.emit()"
+        >
+          Next star
+        </button>
+      }
       <button
         type="button"
         title="Threads between pull requests that would conflict with each other"

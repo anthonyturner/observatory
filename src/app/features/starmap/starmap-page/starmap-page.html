@@ -115,6 +115,7 @@
     [planOn]="planOn()"
     [agentsOn]="agentsOn()"
     [doneOn]="doneOn()"
+    [next]="next()"
     [refreshing]="refreshing() || usage.isRefreshing()"
     [(folded)]="folded"
     (chartChange)="setChart($event)"
@@ -126,6 +127,7 @@
     (plan)="togglePlan()"
     (agents)="toggleAgents()"
     (done)="toggleDone()"
+    (nextStar)="goToNext()"
     (refresh)="refresh()"
   />
 </div>

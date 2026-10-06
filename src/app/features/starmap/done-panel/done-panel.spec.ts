@@ -62,6 +62,30 @@ describe('DonePanel', () => {
     expect(row.textContent).toContain('#12');
   });
 
+  it('filters to one kind, counting each, and lets it go when pressed again', () => {
+    const asked: (string | null)[] = [];
+    fixture.componentInstance.filter.subscribe((kind) => asked.push(kind));
+    const chips = [...fixture.nativeElement.querySelectorAll('button.k')] as HTMLButtonElement[];
+    expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
+      'merged 1',
+      'closed 1',
+      'issue done 1',
+      'dropped 0',
+    ]);
+    expect(chips[3].disabled).toBe(true);
+
+    chips[2].click();
+    fixture.componentRef.setInput('only', 'issue');
+    fixture.detectChanges();
+    const rows = fixture.nativeElement.querySelectorAll('button.row');
+
+    expect(rows.length).toBe(1);
+    expect(rows[0].textContent).toContain('issue 9');
+    expect(chips[2].getAttribute('aria-pressed')).toBe('true');
+    chips[2].click();
+    expect(asked).toEqual(['issue', null]);
+  });
+
   it('marks the row the spiral has lit', () => {
     fixture.componentRef.setInput('lit', 'issue9');
     fixture.detectChanges();

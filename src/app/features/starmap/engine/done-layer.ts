@@ -44,6 +44,8 @@ const FRESH_MAX = 6;
 /** How near the pointer must be, in pixels, to be on a light. */
 const HIT_PX = 9;
 const TITLE_MAX = 54;
+/** How bright a light the Done list's filter leaves out stays. */
+const MUTED = 0.15;
 
 interface Drawn {
   readonly place: DonePlace;
@@ -54,6 +56,8 @@ interface Drawn {
 export class DoneLayer implements SkyLayer {
   /** The key the Done list has lit, if any. */
   lit: string | null = null;
+  /** The one kind the Done list shows; the rest dim and cannot be picked. */
+  only: DoneKind | null = null;
   /** How much of the right edge a panel covers, so labels stay clear of it. */
   clearRight = 0;
   private places: DonePlace[] = [];
@@ -109,8 +113,9 @@ export class DoneLayer implements SkyLayer {
       const r = ARRIVE_FROM + (place.r - ARRIVE_FROM) * eased;
       const [x, y] = galaxyToScreen(r, armAngle(r, place.arm, spin) + place.lean, view);
       if (x < -20 || y < -20 || x > f.width + 20 || y > f.height + 20) continue;
-      this.drawn.push({ place, x, y });
-      this.drawLight(ctx, place, x, y, eased, f);
+      const isMuted = this.only !== null && place.item.kind !== this.only;
+      if (!isMuted) this.drawn.push({ place, x, y });
+      this.drawLight(ctx, place, x, y, eased, f, isMuted ? MUTED : 1);
     }
     const shown = this.drawn.find((d) => d.place.item.key === (this.hovered ?? this.lit));
     if (shown) this.drawLabel(ctx, shown, f);
@@ -123,13 +128,14 @@ export class DoneLayer implements SkyLayer {
     y: number,
     arrived: number,
     f: SkyFrame,
+    brightness: number,
   ): void {
     const look = LOOK[place.item.kind];
     const key = place.item.key;
     const isOn = key === this.hovered || key === this.lit;
     const size = look.size * (isOn ? 1.6 : 1);
     ctx.save();
-    ctx.globalAlpha = look.alpha * (0.4 + 0.6 * arrived);
+    ctx.globalAlpha = look.alpha * (0.4 + 0.6 * arrived) * brightness;
     const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 4);
     glow.addColorStop(0, look.colour);
     glow.addColorStop(1, 'rgba(0,0,0,0)');
@@ -142,7 +148,7 @@ export class DoneLayer implements SkyLayer {
     ctx.arc(x, y, size, 0, Math.PI * 2);
     ctx.fill();
     // The last day's work breathes, so what just landed is easy to find.
-    if (!f.frozen && this.fresh.has(key)) {
+    if (!f.frozen && brightness === 1 && this.fresh.has(key)) {
       const phase = (f.t * 0.5 + place.lean) % 1;
       ctx.globalAlpha = look.alpha * (1 - phase) * 0.5;
       ctx.strokeStyle = look.colour;

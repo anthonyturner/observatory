@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- The Done list filters: press merged, closed, issue done or dropped, each with its count, to list only that kind and dim the rest of the Spiral of Done; press it again to see everything ([#422](https://github.com/anthonyturner/observatory/pull/422)).
 - The Review Queue's search finds finished work too: every pull request merged or closed and every issue closed on the Done list, listed after open work and tagged merged, closed, done or dropped. Picking one opens it and lights it on the Spiral of Done, with the Done list open ([#420](https://github.com/anthonyturner/observatory/pull/420)).
 - The Orrery's Milky Way is made of what you shipped: every pull request merged in the last 60 days across your projects is a speck in the band, in its project's colour, oldest at one end and newest at the other. Rest the pointer on one to see what it was; click it to open that project's review queue ([#410](https://github.com/anthonyturner/observatory/pull/410)).
 - The Review Queue's spiral galaxy is now the Spiral of Done: every pull request merged or closed and every issue closed in the last 60 days is a light on its arms, newest at the tips and older work winding in to the core, spiralling into place when the page opens. Rest the pointer on a light to see what it was, click it to open it, and press Done for the same work listed by day ([#407](https://github.com/anthonyturner/observatory/pull/407)).

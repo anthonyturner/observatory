@@ -2,9 +2,18 @@
   <div>
     <h2 id="donetitle">Done</h2>
     <div class="sub">{{ summary() }}</div>
-    <div class="key" aria-hidden="true">
-      <span class="k merged">merged</span><span class="k closed">closed</span
-      ><span class="k issue">issue done</span><span class="k dropped">dropped</span>
+    <div class="key" role="group" aria-label="Show only">
+      @for (each of filters(); track each.kind) {
+        <button
+          type="button"
+          [class]="'k ' + each.kind"
+          [attr.aria-pressed]="only() === each.kind"
+          [disabled]="!each.count"
+          (click)="press(each.kind)"
+        >
+          {{ each.label }} <span class="n">{{ each.count }}</span>
+        </button>
+      }
     </div>
   </div>
   <div class="days" (mouseleave)="light.emit(null)">

@@ -1,20 +1,21 @@
-import { StreamFetch } from '../../runs/runs-api';
-import { analyserTap } from '../analyser-tap';
-import { AudioTap } from '../tab-audio';
+import { StreamFetch } from '../../../runs/runs-api';
+import { AudioTap, NoAudioError, analyserTap } from '../audio-tap';
 import { splitFrames } from './pcm-frames';
 import { PCM_PLAYER, PcmPlayerOptions, pcmPlayerModuleUrl } from './pcm-player-worklet';
 
 /** The local API's stream of whatever this computer plays. */
 export const SOUND_CARD_STREAM_URL = '/api/sound-card/stream';
 
-/** The local API could not hear this computer's sound card, or is not there to ask. */
-export class SoundCardUnavailableError extends Error {
+/** The local API could not hear this computer's sound card, or is not there to ask:
+ *  Sync shows it as no audio, in the sound card's own words. */
+export class SoundCardUnavailableError extends NoAudioError {
   constructor(detail: string) {
-    super(`The sound card cannot be heard: ${detail}`);
+    super();
+    this.message = `The sound card cannot be heard: ${detail}`;
   }
 }
 
-/** About 21 ms at 48 kHz: rides out the gaps between chunks, which come every 10 to 20 ms. */
+/** About 21 ms at 48 kHz: chunks come every 10 ms, and this rides out one up to 20 ms late. */
 const START_FRAMES = 1024;
 /** About 100 ms: more than this queued means the page fell behind, so it skips ahead. */
 const MAX_FRAMES = 4800;

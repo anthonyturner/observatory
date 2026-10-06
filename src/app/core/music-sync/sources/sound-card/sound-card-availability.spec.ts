@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { SOUND_CARD_AVAILABLE } from './sound-card-source';
+import { SOUND_CARD_AVAILABLE } from './sound-card-availability';
 
 function setup() {
   TestBed.configureTestingModule({

@@ -18,4 +18,6 @@
     }
   }
 </select>
-<span class="arrow" aria-hidden="true">▾</span>
+<span class="arrow" [class.arrow--gone]="isPickGone()" aria-hidden="true">{{
+  isPickGone() ? '!' : '▾'
+}}</span>

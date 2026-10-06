@@ -1,5 +1,6 @@
 import { InjectionToken, inject } from '@angular/core';
 import { ComputerSoundSource } from './computer-sound-source';
+import { InputSoundSource } from './input-sound-source';
 import { SoundCardSource } from './sound-card/sound-card-source';
 import { SoundSource } from './sound-source.types';
 import { TabSoundSource } from './tab-sound-source';
@@ -8,5 +9,10 @@ import { TabSoundSource } from './tab-sound-source';
  *  can use is the default. A new source is one more entry here. */
 export const SOUND_SOURCES = new InjectionToken<readonly SoundSource[]>('SOUND_SOURCES', {
   providedIn: 'root',
-  factory: () => [inject(TabSoundSource), inject(ComputerSoundSource), inject(SoundCardSource)],
+  factory: () => [
+    inject(TabSoundSource),
+    inject(ComputerSoundSource),
+    inject(InputSoundSource),
+    inject(SoundCardSource),
+  ],
 });

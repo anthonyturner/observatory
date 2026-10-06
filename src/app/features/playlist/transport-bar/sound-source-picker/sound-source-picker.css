@@ -55,6 +55,12 @@ select:hover + .arrow {
   color: var(--ink);
 }
 
+.arrow--gone,
+select:hover + .arrow--gone {
+  color: var(--meh);
+  font-weight: 700;
+}
+
 /* Forced colours paint the select's text anyway, so it shows as a plain select. */
 @media (forced-colors: active) {
   select {

@@ -1,7 +1,7 @@
 import { Injectable, Signal, inject, signal } from '@angular/core';
 import { AudioTap } from './audio-tap';
 import { UNPROCESSED_AUDIO, captureDisplayAudio } from './display-audio';
-import { MEDIA_DEVICES, canShareDisplay } from './media-devices';
+import { MEDIA_DEVICES, canShareDisplayAudio } from './media-devices';
 import { SoundGuide, SoundOption, SoundSource } from './sound-source.types';
 
 const TAB: SoundOption = { id: 'tab', label: 'This tab' };
@@ -20,7 +20,7 @@ const TAB_CAPTURE: TabCaptureOptions = {
 };
 
 /** This tab's own sound, offering it first in Chrome's share prompt: the playlist,
- *  heard wherever the browser can share a screen. */
+ *  heard wherever a share can carry sound. */
 @Injectable({ providedIn: 'root' })
 export class TabSoundSource implements SoundSource {
   private readonly media = inject(MEDIA_DEVICES);
@@ -32,7 +32,7 @@ export class TabSoundSource implements SoundSource {
     silent: 'The tab was shared without its sound',
   };
   readonly options: Signal<readonly SoundOption[]> = signal(
-    canShareDisplay(this.media) ? [TAB] : [],
+    canShareDisplayAudio(this.media) ? [TAB] : [],
   );
 
   open(): Promise<AudioTap> {

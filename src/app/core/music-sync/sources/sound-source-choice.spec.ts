@@ -48,16 +48,29 @@ describe('SoundSourceChoice', () => {
     expect(idOf(choice)).toBe('computer');
   });
 
-  it('falls back to the first entry of its own source when the picked entry is gone', () => {
+  it('says so, and falls back to its source’s own entry, when the picked entry is gone', () => {
     const input = new FakeSoundSource('input', [
+      { id: 'input', label: 'Default input' },
       { id: 'input:mic', label: 'Microphone' },
       { id: 'input:mix', label: 'Stereo Mix' },
     ]);
     const choice = setup(new FakeSoundSource('tab'), input);
     choice.choose('input:mix');
-    expect(idOf(choice)).toBe('input:mix');
-    input.options.set([{ id: 'input:mic', label: 'Microphone' }]);
-    expect(idOf(choice)).toBe('input:mic');
+    expect(choice.selected()?.isPickGone).toBe(false);
+    input.options.set([
+      { id: 'input', label: 'Default input' },
+      { id: 'input:mic', label: 'Microphone' },
+    ]);
+    expect(idOf(choice)).toBe('input');
+    expect(choice.selected()?.isPickGone).toBe(true);
+  });
+
+  it('cannot tell a pick is gone while its source lists only its own entry', () => {
+    const input = new FakeSoundSource('input', [{ id: 'input', label: 'Choose input…' }]);
+    const choice = setup(new FakeSoundSource('tab'), input);
+    choice.choose('input:mix');
+    expect(idOf(choice)).toBe('input');
+    expect(choice.selected()?.isPickGone).toBe(false);
   });
 
   it('treats an id no source offers as no pick at all', () => {

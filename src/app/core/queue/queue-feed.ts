@@ -1,6 +1,15 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
-import { Subscription, catchError, interval, map, of, startWith, switchMap } from 'rxjs';
+import {
+  Observable,
+  Subscription,
+  catchError,
+  interval,
+  map,
+  of,
+  startWith,
+  switchMap,
+} from 'rxjs';
 import { QueueReport, parseQueueReport } from './queue-report';
 
 /** Where one repository's queue stands. Only `ready` carries it; a `ready`
@@ -24,6 +33,25 @@ const QUEUE_URL = '/api/queue';
 /** The API reads GitHub at most every two minutes for a queue. */
 const REFRESH_MS = 2 * 60_000;
 const HTTP_BAD_REQUEST = 400;
+
+/** One read of `repo`'s review queue, with this machine's triage merged in:
+ *  `fresh` reads GitHub rather than the API's cache. */
+export function readQueue(http: HttpClient, repo: string, fresh = false): Observable<QueueState> {
+  const params: Record<string, string> = fresh ? { repo, fresh: '1' } : { repo };
+  return http.get<unknown>(QUEUE_URL, { params }).pipe(
+    map((body): QueueState => {
+      const report = parseQueueReport(body);
+      return report ? { status: 'ready', report } : { status: 'unreachable' };
+    }),
+    catchError((error: unknown) =>
+      of<QueueState>(
+        error instanceof HttpErrorResponse && error.status === HTTP_BAD_REQUEST
+          ? { status: 'refused', reason: String(error.error?.error ?? 'bad request') }
+          : { status: 'unreachable' },
+      ),
+    ),
+  );
+}
 
 /** Reads one repository's review queue, now and every two minutes, for as
  *  long as the page that provides it is open. */
@@ -60,20 +88,7 @@ export class QueueFeed {
       .subscribe((state) => this.current.update((now) => nextQueueState(now, state)));
   }
 
-  private fetch(repo: string, fresh = false) {
-    const params: Record<string, string> = fresh ? { repo, fresh: '1' } : { repo };
-    return this.http.get<unknown>(QUEUE_URL, { params }).pipe(
-      map((body): QueueState => {
-        const report = parseQueueReport(body);
-        return report ? { status: 'ready', report } : { status: 'unreachable' };
-      }),
-      catchError((error: unknown) =>
-        of<QueueState>(
-          error instanceof HttpErrorResponse && error.status === HTTP_BAD_REQUEST
-            ? { status: 'refused', reason: String(error.error?.error ?? 'bad request') }
-            : { status: 'unreachable' },
-        ),
-      ),
-    );
+  private fetch(repo: string, fresh = false): Observable<QueueState> {
+    return readQueue(this.http, repo, fresh);
   }
 }

@@ -53,7 +53,8 @@ function doneKeysOf(items: readonly ActivityItem[]): ReadonlySet<string> {
   return done;
 }
 
-function hrefOf(kind: OpenKind, repo: string, number: number): string {
+/** Where `number` opens on its project's star map: the PR screen, or the issue's window. */
+export function hrefOf(kind: OpenKind, repo: string, number: number): string {
   const [owner = '', name = ''] = repo.split('/');
   const path = `/p/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
   return `${path}?${QUERY_KEYS[kind]}=${number}`;

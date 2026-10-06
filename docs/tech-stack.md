@@ -19,7 +19,8 @@ so a missing line costs more than a long one.
   The Sync sound card source hears the speakers through a small C# WASAPI
   loopback helper (`server/sound-card/wasapi-loopback.cs`) that the Windows
   PowerShell 5.1 shipped with Windows compiles at start: Windows only, local
-  only, no npm dependency. Tests: `node:test`.
+  only, no npm dependency. Tests: `node:test`, named `*.spec.ts` like the
+  app's, so every test in the repository has one suffix.
 - Data: Claude Code usage is live, read from this machine's session logs
   (`~/.claude/projects`) and the status line's limit readings
   (`~/.claude/observatory/usage/`). Projects, open issues and the directives are live from

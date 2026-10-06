@@ -10,7 +10,9 @@ import { MUSIC_CANVAS, MusicCanvas } from '../../../core/music-sync/music-painte
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
 import { MusicFrame } from '../../../core/music-sync/music-sync.types';
-import { AUDIO_TAP, AudioTap, TAB_AUDIO_SUPPORTED } from '../../../core/music-sync/tab-audio';
+import { AudioTap } from '../../../core/music-sync/sources/audio-tap';
+import { SOUND_SOURCES } from '../../../core/music-sync/sources/sound-sources';
+import { FakeSoundSource } from '../../../core/music-sync/sources/testing/fake-sound-source';
 import { SongName } from '../../../core/music-sync/title-card';
 import { VisualTheme, themeFor } from '../../../core/music-sync/visual-theme';
 import { PLAYLIST_TRACKS, PlaylistPlayer } from '../../../core/playlist/playlist-player';
@@ -71,12 +73,13 @@ const tap: AudioTap = {
 
 async function render(providers: Provider[] = []) {
   const canvas = new FakeCanvas();
+  const tabSource = new FakeSoundSource('tab');
+  tabSource.answer = () => Promise.resolve(tap);
   TestBed.configureTestingModule({
     providers: [
       PlaylistPlayer,
       MusicPulse,
-      { provide: AUDIO_TAP, useValue: () => Promise.resolve(tap) },
-      { provide: TAB_AUDIO_SUPPORTED, useValue: true },
+      { provide: SOUND_SOURCES, useValue: [tabSource] },
       { provide: MUSIC_CANVAS, useValue: () => canvas },
       ...providers,
     ],

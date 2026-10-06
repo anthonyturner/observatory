@@ -212,9 +212,9 @@
                 [disabled]="videoBackground.isOn()"
                 (input)="onMilkdropOpacity($event)"
             /></label>
-            <!-- No phone's browser can share a tab's audio, so there neither shows:
-                 with no sync there are no beats to soften. -->
-            @if (pulse.canListen) {
+            <!-- No phone's browser can capture sound for the page, so there none of
+                 these shows: with no sync there are no beats to soften. -->
+            @if (sync(); as syncLabel) {
               <label class="opacity" title="How hard each beat hits the sky round the core"
                 ><span aria-hidden="true">Beat</span
                 ><input
@@ -229,13 +229,21 @@
               <button
                 type="button"
                 class="sync"
-                [attr.aria-pressed]="sync().isOn"
-                [disabled]="sync().isUnavailable"
-                [title]="sync().hint"
+                [attr.aria-pressed]="syncLabel.isOn"
+                [disabled]="syncLabel.isUnavailable"
+                [title]="syncLabel.hint"
                 (click)="toggleSync()"
               >
-                {{ sync().text }}
+                {{ syncLabel.text }}
               </button>
+              @if (soundSources.hasChoice()) {
+                <app-sound-source-picker
+                  [menu]="soundSources.menu()"
+                  [selected]="soundSources.selected()"
+                  [isBusy]="pulse.isAsking()"
+                  (picked)="pulse.switchTo($event)"
+                />
+              }
             }
           </div>
         }

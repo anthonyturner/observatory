@@ -13,7 +13,7 @@ import { Nebula } from './motifs/nebula';
 import { Shockwave } from './motifs/shockwave';
 import { Warp } from './motifs/warp';
 import { MusicFrame } from './music-sync.types';
-import { TabSound } from './tab-audio';
+import { LiveSound } from './sources/audio-tap';
 import { SongName, TitleCard } from './title-card';
 import { Motif, VisualTheme } from './visual-theme';
 
@@ -23,8 +23,8 @@ export interface MusicCanvas {
   canDraw(): boolean;
   setScene(scene: MusicScene, pixelRatio: number): void;
   setTheme(theme: VisualTheme): void;
-  /** The tab's sound, for a look that hears it directly. */
-  setSound(sound: TabSound | null): void;
+  /** The heard sound, for a look that hears it directly. */
+  setSound(sound: LiveSound | null): void;
   /** The Milkdrop preset to keep on screen, or null for Auto. */
   setMilkdropPreset(preset: string | null): void;
   /** How strongly Milkdrop shows, from 0 (hidden) to 1 (full). */
@@ -145,7 +145,7 @@ export class MusicPainter implements MusicCanvas {
     this.inks = this.palettes[theme.palette];
   }
 
-  setSound(sound: TabSound | null): void {
+  setSound(sound: LiveSound | null): void {
     this.milkdrop.setSound(sound);
   }
 

@@ -15,6 +15,7 @@ import { BeatStrength } from '../../../core/music-sync/beat-strength';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
 import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
+import { SoundSourceChoice } from '../../../core/music-sync/sources/sound-source-choice';
 import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { PlaylistBarFold } from '../../../core/playlist/playlist-bar-fold';
@@ -24,7 +25,8 @@ import { VideoBackground } from '../../../core/playlist/video-background';
 import { PageScore } from '../../../core/sound/page-score';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { FavoritesTransfer, NOTHING_TO_EXPORT } from './favorites-transfer';
-import { syncLabelOf } from './sync-label';
+import { SoundSourcePicker } from './sound-source-picker/sound-source-picker';
+import { SyncLabel, syncLabelOf } from './sync-label';
 import { TrackList } from './track-list/track-list';
 
 /** Mixes run for an hour: a step back to hear a drop again, a longer one forward. */
@@ -32,14 +34,14 @@ const BACK_STEP_S = 15;
 const FORWARD_STEP_S = 30;
 
 /** The playlist along the foot of every page: the video, the seek bar, the transport,
- *  the heart, the Mix / Favourites switch, the favourites file, the sky's Sync, the
- *  Video switch, Milkdrop's visual and opacity, the beat's strength, and the volume, with the track list
+ *  the heart, the Mix / Favourites switch, the favourites file, the sky's Sync and
+ *  where it hears the music, the Video switch, Milkdrop's visual and opacity, the beat's strength, and the volume, with the track list
  *  above; folded, only the seek bar, the transport, the heart and the song's name
  *  stay. It plays instead of the page's score, never over it. The app shell shows
  *  it, so the music carries across pages. */
 @Component({
   selector: 'app-transport-bar',
-  imports: [TrackList],
+  imports: [TrackList, SoundSourcePicker],
   providers: [FavoritesTransfer],
   templateUrl: './transport-bar.html',
   styleUrl: './transport-bar.css',
@@ -57,6 +59,7 @@ export class TransportBar {
   protected readonly transfer = inject(FavoritesTransfer);
   private readonly score = inject(PageScore);
   protected readonly pulse = inject(MusicPulse);
+  protected readonly soundSources = inject(SoundSourceChoice);
   protected readonly motion = inject(MotionPreference);
   protected readonly milkdrop = inject(MilkdropChoice);
   protected readonly milkdropOpacity = inject(MilkdropOpacity);
@@ -65,7 +68,11 @@ export class TransportBar {
   /** Sync, Video, Visual and Sky only do something on a page with a music sky. */
   protected readonly sky = inject(MusicSkyPresence);
   protected readonly fold = inject(PlaylistBarFold);
-  protected readonly sync = computed(() => syncLabelOf(this.pulse.status()));
+  /** Null where no source can be heard, as on a phone, so Sync is left out. */
+  protected readonly sync = computed((): SyncLabel | null => {
+    const selected = this.soundSources.selected();
+    return selected && syncLabelOf(this.pulse.status(), selected.source.guide);
+  });
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
   protected readonly listOpen = signal(false);

@@ -1,4 +1,5 @@
 import { SyncStatus } from '../../../core/music-sync/music-sync.types';
+import { SoundGuide } from '../../../core/music-sync/sources/sound-source.types';
 
 /** What the Sync button says and explains for each state of listening. */
 export interface SyncLabel {
@@ -8,41 +9,42 @@ export interface SyncLabel {
   readonly isUnavailable: boolean;
 }
 
-const ASK =
-  'Chrome asks to share this tab: pick it and tick “Share tab audio”. Nothing is recorded or sent.';
+type LabelMaker = (guide: SoundGuide) => SyncLabel;
 
-const LABELS: Readonly<Record<SyncStatus, SyncLabel>> = {
-  off: {
+const LABELS: Readonly<Record<SyncStatus, LabelMaker>> = {
+  off: ({ ask }) => ({
     text: 'Sync',
-    hint: `Move the sky with the music. ${ASK}`,
+    hint: `Move the sky with the music. ${ask}`,
     isOn: false,
     isUnavailable: false,
-  },
-  asking: { text: 'Sync…', hint: ASK, isOn: false, isUnavailable: false },
-  listening: {
+  }),
+  asking: ({ ask }) => ({ text: 'Sync…', hint: ask, isOn: false, isUnavailable: false }),
+  listening: () => ({
     text: 'Synced',
     hint: 'The sky is moving with the music — click to stop listening',
     isOn: true,
     isUnavailable: false,
-  },
-  'no-audio': {
+  }),
+  'no-audio': ({ ask, silent }) => ({
     text: 'No audio',
-    hint: `The tab was shared without its sound, so the sky can’t hear it. ${ASK}`,
+    hint: `${silent}, so the sky can’t hear it. ${ask}`,
     isOn: false,
     isUnavailable: false,
-  },
-  denied: {
+  }),
+  denied: ({ ask }) => ({
     text: 'Sync',
-    hint: `Sharing was declined, so the sky is not synced. ${ASK}`,
+    hint: `The request was declined, so the sky is not synced. ${ask}`,
     isOn: false,
     isUnavailable: false,
-  },
-  unsupported: {
+  }),
+  unsupported: () => ({
     text: 'Sync',
-    hint: 'This browser can’t share a tab’s audio with the page; Chrome or Edge can',
+    hint: 'This browser can’t capture this sound; pick another source',
     isOn: false,
     isUnavailable: true,
-  },
+  }),
 };
 
-export const syncLabelOf = (status: SyncStatus): SyncLabel => LABELS[status];
+/** The label for `status`, in the words of the source being listened to. */
+export const syncLabelOf = (status: SyncStatus, guide: SoundGuide): SyncLabel =>
+  LABELS[status](guide);

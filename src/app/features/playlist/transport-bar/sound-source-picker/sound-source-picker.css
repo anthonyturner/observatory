@@ -1,0 +1,56 @@
+/* The arrow half of a split button beside Sync: the bar has no room for a select
+   that shows its text, so the chosen source is named in the tooltip and read out
+   by screen readers, and the open list shows them all. */
+:host {
+  position: relative;
+  display: flex;
+  border-left: var(--rule);
+}
+
+select {
+  width: 28px;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: transparent;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+optgroup,
+option {
+  background: var(--issue-option);
+  color: var(--ink);
+}
+
+select:hover {
+  background: var(--flow-tint);
+}
+
+select:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.arrow {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+select:hover + .arrow {
+  color: var(--ink);
+}

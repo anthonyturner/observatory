@@ -7,14 +7,14 @@ import {
   input,
   linkedSignal,
   output,
+  untracked,
 } from '@angular/core';
 import { PullEdits } from '../../../core/edits/pull-edits';
 import { PullDetailFeed } from '../../../core/queue/pull-detail-feed';
 import { QueueBucket } from '../../../core/queue/queue-report';
-import { pullDiffKey } from '../../../core/queue/viewed-files';
 import { Draggable } from '../../../shared/draggable/draggable';
 import { BUCKET_LOOK } from '../../queue/queue-view';
-import { SheetDiff } from './sheet-diff/sheet-diff';
+import { SheetDiffTab } from './sheet-diff-tab/sheet-diff-tab';
 import { SheetEditor } from './sheet-editor/sheet-editor';
 import { HeaderState, SheetHeader } from './sheet-header/sheet-header';
 import { MergeBox } from './merge-box/merge-box';
@@ -42,7 +42,7 @@ const TYPING = 'input, textarea, select';
     SheetMarkdown,
     SheetRows,
     SheetCommits,
-    SheetDiff,
+    SheetDiffTab,
     SheetEditor,
     AgentLanes,
     MergeBox,
@@ -63,7 +63,11 @@ export class PrScreen {
   readonly bucket = input<QueueBucket | null>(null);
   /** Its title as the queue knows it, shown before the details arrive. */
   readonly title = input<string | null>(null);
+  /** The head when it was last looked at, before this screen opened; null for never. */
+  readonly lookedSha = input<string | null>(null);
   readonly closed = output<void>();
+  /** The head of an open pull request as this screen shows it: it is being looked at. */
+  readonly looked = output<string>();
 
   private readonly feed = inject(PullDetailFeed);
   private readonly edits = inject(PullEdits);
@@ -93,7 +97,11 @@ export class PrScreen {
   protected readonly url = computed(
     () => `https://github.com/${this.repo()}/pull/${this.number()}`,
   );
-  protected readonly viewedKey = computed(() => pullDiffKey(this.repo(), this.number()));
+  /** A string, so the look is reported once per head rather than once per read. */
+  private readonly shownOpenHead = computed(() => {
+    const detail = this.detail();
+    return detail?.state === 'open' ? detail.headOid : '';
+  });
   protected readonly header = computed((): HeaderState => {
     const detail = this.detail();
     return {
@@ -118,6 +126,11 @@ export class PrScreen {
     effect(() => {
       this.feed.load(this.repo(), this.number());
       this.edits.load(this.repo(), this.number());
+    });
+    effect(() => {
+      const head = this.shownOpenHead();
+      // Whatever the listener reads must not make this effect report the look again.
+      if (head) untracked(() => this.looked.emit(head));
     });
   }
 

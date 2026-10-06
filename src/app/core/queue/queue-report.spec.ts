@@ -18,6 +18,8 @@ const item = {
   changedFiles: 4,
   isSeen: true,
   hidden: null,
+  lookedSha: null,
+  sinceLook: null,
 };
 
 describe('parseQueueReport', () => {
@@ -80,5 +82,20 @@ describe('parseQueueReport', () => {
 
   it('refuses something that is not a queue report', () => {
     expect(parseQueueReport({ error: 'repo must be a GitHub owner/name' })).toBeNull();
+  });
+  it('reads the head last looked at and what changed since, else none', () => {
+    const report = parseQueueReport({
+      generatedAt: 'x',
+      repo: 'me/a',
+      items: [
+        { ...item, lookedSha: 'a'.repeat(40), sinceLook: { newCommits: 2 } },
+        { ...item, lookedSha: 7, sinceLook: 'lots' },
+      ],
+    });
+
+    expect(report?.items.map((each) => [each.lookedSha, each.sinceLook])).toEqual([
+      ['a'.repeat(40), { newCommits: 2 }],
+      [null, null],
+    ]);
   });
 });

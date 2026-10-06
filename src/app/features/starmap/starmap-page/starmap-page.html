@@ -219,6 +219,8 @@
     [number]="number"
     [bucket]="sheetBucket()"
     [title]="sheetTitle()"
+    [lookedSha]="sheetLookedSha()"
     (closed)="sheetPull.set(null)"
+    (looked)="recordLook(number, $event)"
   />
 }

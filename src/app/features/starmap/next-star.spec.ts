@@ -19,6 +19,8 @@ const pull = (number: number, extra: Partial<QueueItem> = {}): QueueItem => ({
   changedFiles: 3,
   isSeen: false,
   hidden: null,
+  lookedSha: null,
+  sinceLook: null,
   ...extra,
 });
 

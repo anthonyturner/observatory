@@ -247,6 +247,9 @@ export class StarmapPage {
   protected readonly openPull = signal<number | null>(null);
   /** The pull request whose full screen is open. */
   readonly sheetPull = signal<number | null>(null);
+  /** The open screen's head as last looked at, kept from when it opened: the look
+   *  it records moves the queue's copy on to the head it shows. */
+  protected readonly sheetLookedSha = signal<string | null>(null);
   protected readonly SNOOZE_DAYS = SNOOZE_DAYS;
   protected readonly sky = viewChild<StarmapSky>('sky');
   /** The help that fits the screen and view on show, as pr-starmap keys it. */
@@ -836,6 +839,8 @@ export class StarmapPage {
       changedFiles: null,
       isSeen: false,
       hidden: null,
+      lookedSha: null,
+      sinceLook: null,
     };
     const bucket = item.bucket === 'fresh' ? 'unreviewed' : item.bucket;
     return {
@@ -946,7 +951,14 @@ export class StarmapPage {
   /** Opens a pull request's full screen, from its card or another screen. */
   openSheet(number: number): void {
     this.issues.windowIssue.set(null);
+    this.sheetLookedSha.set(this.items().find((each) => each.number === number)?.lookedSha ?? null);
     this.sheetPull.set(number);
+  }
+
+  /** The open screen shows `sha` as its head: the next look picks out what comes after it. */
+  protected recordLook(number: number, sha: string): void {
+    if (!this.session.canWrite() || this.memory.replay()) return;
+    this.recordTriage(number, { action: 'look', sha });
   }
 
   protected recordTriage(number: number, choice: TriageChoice): void {

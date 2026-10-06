@@ -19,6 +19,8 @@ const item: QueueItem = {
   changedFiles: 4,
   isSeen: false,
   hidden: null,
+  lookedSha: null,
+  sinceLook: null,
 };
 
 const words = (facts: ReturnType<typeof cardFacts>) => facts.map((f) => `${f.term}: ${f.value}`);

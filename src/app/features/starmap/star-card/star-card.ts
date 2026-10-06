@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
+import { sinceLookLabel } from '../../../core/queue/since-look';
 import { Draggable } from '../../../shared/draggable/draggable';
 import { isPlainClick } from '../../issues/issue-list';
 import { BY_ID } from '../engine/sky-model';
@@ -35,6 +36,11 @@ export class StarCard {
   protected readonly placeKey = CARD_PLACE_KEY;
   protected readonly bucket = computed(() => BY_ID.get(shownBucket(this.item())));
   protected readonly facts = computed(() => cardFacts(this.item(), this.context()));
+  /** What changed since it was last looked at; a past refresh on screen says nothing of now. */
+  protected readonly sinceLook = computed(() => {
+    const since = this.item().sinceLook;
+    return since && !this.context().replay ? sinceLookLabel(since) : null;
+  });
   /** The issue it closes first, linked on GitHub beside the pull request. */
   protected readonly issueUrl = computed(() => {
     const item = this.item();

@@ -79,6 +79,18 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.since {
+  align-self: flex-start;
+  margin: -6px 0 0;
+  padding: 3px 10px;
+  border: 1px solid var(--flow);
+  border-radius: 999px;
+  background: var(--flow-soft);
+  color: var(--card-title);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .facts {
   display: grid;
   grid-template-columns: auto 1fr;

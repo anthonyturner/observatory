@@ -162,6 +162,30 @@ describe('PrScreen', () => {
     expect(visible()!.querySelector<HTMLInputElement>('#ed-title')!.value).toBe('A better title');
   });
 
+  it('reports the head it shows as looked at, once per head, and only while open', () => {
+    const { fixture, http, open, settle } = render();
+    const looked: string[] = [];
+    fixture.componentInstance.looked.subscribe((sha) => looked.push(sha));
+    open();
+    fixture.componentInstance['refresh']();
+    http
+      .expectOne('/api/pull?repo=me/app&number=572&fresh=1')
+      .flush({ ...detail, fetchedAt: 'later' });
+    fixture.componentInstance['showNewer']();
+    settle();
+
+    expect(looked).toEqual([HEAD]);
+  });
+
+  it('reports no look at a pull request that is merged', () => {
+    const { fixture, open } = render();
+    const looked: string[] = [];
+    fixture.componentInstance.looked.subscribe((sha) => looked.push(sha));
+    open({ ...detail, state: 'merged' });
+
+    expect(looked).toEqual([]);
+  });
+
   it('closes on Esc, but Esc in a field only leaves the field', () => {
     const { fixture, element, open, tab, visible } = render();
     open();

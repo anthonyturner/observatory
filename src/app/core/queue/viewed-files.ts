@@ -27,6 +27,14 @@ export const pullDiffKey = (repo: string, number: number): string => `${repo}#${
 export const commitDiffKey = (repo: string, number: number, sha: string): string =>
   `${pullDiffKey(repo, number)}@${sha}`;
 
+/** Names the changes between two heads of a pull request: those since it was last looked at. */
+export const sinceLookDiffKey = (
+  repo: string,
+  number: number,
+  base: string,
+  head: string,
+): string => `${pullDiffKey(repo, number)}@${base}...${head}`;
+
 export function seenFileOf(file: DiffFile): SeenFile {
   const text = file.lines.join('\n');
   return { path: file.path, fingerprint: `${text.length}:${hashString(text)}` };

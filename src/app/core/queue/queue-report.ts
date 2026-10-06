@@ -1,4 +1,5 @@
 import { PULL_BUCKETS, PullBucket } from '../projects/projects-report';
+import { SinceLook, parseSinceLook } from './since-look';
 
 /** The queue's groups: GitHub's buckets, and Seen recently for a waiting
  *  pull request you have marked seen. */
@@ -32,6 +33,10 @@ export interface QueueItem {
   readonly isSeen: boolean;
   /** Dismissed or snoozed on this machine, or null when it is in the queue. */
   readonly hidden: Hidden | null;
+  /** The head commit when it was last looked at, or null when it never was. */
+  readonly lookedSha: string | null;
+  /** What changed since then, or null when its head has not moved. */
+  readonly sinceLook: SinceLook | null;
 }
 
 /** The group a pull request shows in: a seen, waiting one is Seen recently. */
@@ -91,6 +96,8 @@ function parseItem(value: unknown): QueueItem | null {
     changedFiles: countOrNull(value['changedFiles']),
     isSeen: value['isSeen'] === true,
     hidden: parseHidden(value['hidden']),
+    lookedSha: isString(value['lookedSha']) ? value['lookedSha'] : null,
+    sinceLook: parseSinceLook(value['sinceLook']),
   };
 }
 

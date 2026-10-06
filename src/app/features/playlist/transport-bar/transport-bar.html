@@ -112,21 +112,23 @@
             (input)="onVolume($event)"
         /></label>
         <div class="group" role="group" aria-label="List">
-          <div class="source" role="group" aria-label="Which list plays">
-            <button
-              type="button"
-              [attr.aria-pressed]="library.source() === 'mix'"
-              title="Play today's shuffled mix"
-              (click)="choose('mix')"
-            >
-              Mix
-            </button>
+          <label class="visual" title="Pick what plays: music, or talks on AI, Git and more"
+            ><span aria-hidden="true">Station</span
+            ><select aria-label="Station" (change)="onStation($event)">
+              @for (station of library.stations; track station.id) {
+                <option [value]="station.id" [selected]="library.station() === station.id">
+                  {{ station.label }}
+                </option>
+              }
+            </select></label
+          >
+          <div class="source">
             <button
               type="button"
               [attr.aria-pressed]="library.source() === 'favorites'"
               [disabled]="!library.hasFavorites()"
               [title]="favoritesHint()"
-              (click)="choose('favorites')"
+              (click)="toggleFavorites()"
             >
               <span aria-hidden="true">♥</span> {{ favorites.count() }}
               <span class="visually-hidden">favourites</span>

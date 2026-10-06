@@ -1,4 +1,7 @@
-export type Genre = 'trance' | 'techno';
+/** What a video is: a music genre, or the tech topic a talk or tutorial covers. */
+export type Genre = 'trance' | 'techno' | 'ai' | 'git' | 'learn';
+
+export const GENRES: readonly Genre[] = ['trance', 'techno', 'ai', 'git', 'learn'];
 
 /** One entry in a playlist: a YouTube video and the words the bar shows for it. */
 export interface Track {

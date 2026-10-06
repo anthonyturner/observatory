@@ -332,6 +332,25 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     expect(favoritesButton()?.getAttribute('aria-pressed')).toBe('true');
     expect(element.textContent).toContain('1 / 1');
+
+    favoritesButton()?.click();
+    fixture.detectChanges();
+    expect(favoritesButton()?.getAttribute('aria-pressed')).toBe('false');
+    expect(element.textContent).toContain(`1 / ${tracks.length}`);
+  });
+
+  it('tunes to the station picked, from the top of its list', () => {
+    const { fixture, element } = render();
+    const picker = element.querySelector<HTMLSelectElement>('select[aria-label="Station"]');
+    const labels = [...(picker?.options ?? [])].map((option) => option.textContent?.trim());
+    expect(labels).toEqual(['Music', 'AI', 'Git & GitHub', 'Learn']);
+
+    if (!picker) throw new Error('No station picker');
+    picker.value = 'git';
+    picker.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(TestBed.inject(PlaylistLibrary).source()).toBe('git');
+    expect(TestBed.inject(PlaylistPlayer).current().genre).toBe('git');
   });
 
   it('hearts a track from its row in the track list', () => {
@@ -449,7 +468,7 @@ describe('TransportBar', () => {
     const list = group('List');
     const sky = group('Sky');
 
-    expect(list?.textContent).toContain('Mix');
+    expect(list?.querySelector('select[aria-label="Station"]')).not.toBeNull();
     expect(list?.textContent).toContain('Tracks');
     expect(list?.querySelector('[aria-label="Export favourites"]')).not.toBeNull();
     expect(sky?.textContent).toContain('Video');
@@ -474,9 +493,10 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     expect(fold?.getAttribute('aria-expanded')).toBe('false');
     expect(element.classList).toContain('folded');
-    for (const hidden of ['Tracks', 'Mix', 'Export favourites', 'Video']) {
+    for (const hidden of ['Tracks', 'Export favourites', 'Video']) {
       expect(button(hidden)).toBeUndefined();
     }
+    expect(element.querySelector('select[aria-label="Station"]')).toBeNull();
     expect(element.querySelector('select[aria-label="Milkdrop visual"]')).toBeNull();
     expect(element.querySelector('input[aria-label="Playlist volume"]')).toBeNull();
     expect(element.querySelector('app-track-list')).toBeNull();

@@ -11,6 +11,7 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { StarmapSound } from '../sound/starmap-sound';
 import { HelpState } from '../../../shared/help/help-state';
 import { NextStar } from '../next-star';
+import { SprintPhase } from '../sprint/review-sprint';
 import { BlackHoleSetting, MAX_STALE_DAYS, MIN_STALE_DAYS } from '../black-hole/black-hole-setting';
 import { Chart, SkyView, isListOnly } from '../starmap-view';
 
@@ -48,6 +49,8 @@ export class StarmapTools {
   readonly refreshFailed = input(false);
   /** The pull request Next star would open, or null when nothing is workable. */
   readonly next = input<NextStar | null>(null);
+  /** Where the review sprint stands, or null when none is open. */
+  readonly sprintPhase = input<SprintPhase | null>(null);
 
   readonly chartChange = output<Chart>();
   readonly viewChange = output<SkyView>();
@@ -59,6 +62,7 @@ export class StarmapTools {
   readonly agents = output<void>();
   readonly done = output<void>();
   readonly nextStar = output<void>();
+  readonly sprint = output<void>();
   readonly refresh = output<void>();
 
   protected readonly charts = CHARTS;
@@ -94,6 +98,11 @@ export class StarmapTools {
     return next
       ? `Next star (n): #${next.pr} ${next.title} — ${next.why}`
       : 'Nothing in the queue to work next';
+  });
+  /** A sprint under way, or its summary, is run from its own panel. */
+  protected readonly sprintBusy = computed(() => {
+    const phase = this.sprintPhase();
+    return phase === 'running' || phase === 'summary';
   });
   protected readonly motionTitle = computed(() =>
     this.motion.choice() === 'auto'

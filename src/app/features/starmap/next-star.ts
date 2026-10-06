@@ -11,10 +11,11 @@ export interface NextStar {
 }
 
 const BUCKET_RANK: ReadonlyMap<BucketId, number> = new Map(BUCKETS.map((b, i) => [b.id, i]));
-const rankOf = (item: SkyItem): number => BUCKET_RANK.get(item.bucket) ?? BUCKETS.length;
+/** Where a pull request's bucket sits in the queue, blocked first. */
+export const rankOf = (item: SkyItem): number => BUCKET_RANK.get(item.bucket) ?? BUCKETS.length;
 
 /** In the queue and ready to work: not snoozed, dismissed or a draft. */
-const isWorkable = (item: QueueItem): boolean => item.hidden === null && !item.isDraft;
+export const isWorkable = (item: QueueItem): boolean => item.hidden === null && !item.isDraft;
 
 /** Longest idle first; a tie goes to a quick win, then the lower number. */
 const byNeglect = (a: SkyItem, b: SkyItem): number =>

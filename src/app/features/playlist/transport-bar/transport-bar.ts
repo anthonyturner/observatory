@@ -22,12 +22,14 @@ import { PlaylistBarFold } from '../../../core/playlist/playlist-bar-fold';
 import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { VideoBackground } from '../../../core/playlist/video-background';
+import { VideoCardSize } from '../../../core/playlist/video-card-size';
 import { PageScore } from '../../../core/sound/page-score';
 import { MilkdropOpacity } from '../../../core/music-sync/milkdrop/milkdrop-opacity';
 import { FavoritesTransfer, NOTHING_TO_EXPORT } from './favorites-transfer';
 import { SoundSourcePicker } from './sound-source-picker/sound-source-picker';
 import { SyncLabel, syncLabelOf } from './sync-label';
 import { TrackList } from './track-list/track-list';
+import { VideoSizeButtons } from './video-size-buttons/video-size-buttons';
 
 /** Mixes run for an hour: a step back to hear a drop again, a longer one forward. */
 const BACK_STEP_S = 15;
@@ -42,7 +44,7 @@ const FORWARD_STEP_S = 30;
  *  across pages. */
 @Component({
   selector: 'app-transport-bar',
-  imports: [TrackList, SoundSourcePicker],
+  imports: [TrackList, SoundSourcePicker, VideoSizeButtons],
   providers: [FavoritesTransfer],
   templateUrl: './transport-bar.html',
   styleUrl: './transport-bar.css',
@@ -66,6 +68,7 @@ export class TransportBar {
   protected readonly milkdropOpacity = inject(MilkdropOpacity);
   protected readonly beatStrength = inject(BeatStrength);
   protected readonly videoBackground = inject(VideoBackground);
+  protected readonly videoSize = inject(VideoCardSize);
   /** Sync, Video, Visual and Sky only do something on a page with a music sky. */
   protected readonly sky = inject(MusicSkyPresence);
   protected readonly fold = inject(PlaylistBarFold);
@@ -77,7 +80,6 @@ export class TransportBar {
   private readonly screen = viewChild.required<ElementRef<HTMLElement>>('screen');
 
   protected readonly listOpen = signal(false);
-  protected readonly isVideoLarge = signal(false);
   protected readonly backStep = BACK_STEP_S;
   protected readonly forwardStep = FORWARD_STEP_S;
   /** Where the pointer holds the seek bar mid-drag; the music's position otherwise. */

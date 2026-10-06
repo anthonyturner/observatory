@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -36,7 +38,12 @@ function render(hasRunner = false) {
     refusalFor: () => null,
   };
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: CrewDispatch, useValue: dispatch }],
+    providers: [
+      provideRouter([]),
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: CrewDispatch, useValue: dispatch },
+    ],
   });
   const fixture = TestBed.createComponent(StarCard);
   fixture.componentRef.setInput('repo', 'me/a');
@@ -74,6 +81,25 @@ describe('StarCard', () => {
     fixture.componentRef.setInput('item', { ...item, sinceLook: { newCommits: null } });
     fixture.detectChanges();
     expect(element.querySelector('.since')?.textContent).toBe('Changed since you looked');
+  });
+
+  it('tags its risk from the files it changes, with a one-line summary', () => {
+    const { fixture, element } = render();
+    const http = TestBed.inject(HttpTestingController);
+    const head = 'c'.repeat(40);
+
+    http
+      .expectOne('/api/risk?repo=me/a&number=58')
+      .flush({ number: 58, headSha: head, level: 'high', reasons: ['auth'], summarizes: true });
+    http
+      .expectOne('/api/risk/summary?repo=me/a&number=58')
+      .flush({ number: 58, headSha: head, summary: 'Moves sign-in behind one service.' });
+    fixture.detectChanges();
+
+    expect(element.querySelector('.risk')?.getAttribute('data-level')).toBe('high');
+    expect(element.querySelector('.risk .tag')?.textContent).toBe('High risk');
+    expect(element.querySelector('.risk .why')?.textContent).toBe('auth');
+    expect(element.querySelector('.gist')?.textContent).toBe('Moves sign-in behind one service.');
   });
 
   it('links to GitHub and the issue it closes', () => {

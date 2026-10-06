@@ -16,6 +16,11 @@
   --meh: #ffc24d;
   --warm: #ffd98a;
 
+  /* A pull request's risk tag on its star card. */
+  --risk-low: var(--ok);
+  --risk-medium: var(--meh);
+  --risk-high: var(--bad);
+
   /* A project's colour is its worst problem. */
   --sev-blocked: var(--bad);
   --sev-unsettled: #c08cff;

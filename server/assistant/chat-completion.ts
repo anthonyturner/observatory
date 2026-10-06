@@ -26,14 +26,20 @@ function wireMessage(message: ChatMessage): Readonly<Record<string, unknown>> {
   };
 }
 
-/** The OpenAI-style chat-completions body OpenRouter takes. */
+/** The OpenAI-style chat-completions body OpenRouter takes. With no tools it
+ *  sends no `tool_choice` either, which the OpenAI shape refuses on its own. */
 export function chatPayload(request: ChatRequest, chat: ChatModel): unknown {
+  const tools = request.tools.length
+    ? {
+        tools: request.tools.map((tool) => ({ type: 'function', function: tool })),
+        tool_choice: request.toolChoice,
+      }
+    : {};
   return {
     model: chat.model,
     max_tokens: chat.maxTokens,
     messages: request.messages.map(wireMessage),
-    tools: request.tools.map((tool) => ({ type: 'function', function: tool })),
-    tool_choice: request.toolChoice,
+    ...tools,
   };
 }
 

@@ -10,6 +10,8 @@ import { githubApiReader } from '../github/github-api-reader.ts';
 import { storeHistoryStore } from '../history/history-store.ts';
 import { type ApiHandler, createApiHandler, json } from '../http/api-handler.ts';
 import { withoutCode } from '../queue/pull-detail.ts';
+import { withRiskRoutes } from '../queue/risk-routes.ts';
+import { NO_SUMMARIES } from '../queue/risk-summary.ts';
 import type { Store } from '../store/store.ts';
 import { upstashStore } from '../store/upstash-store.ts';
 import { storeTriageStore } from '../triage/triage-store.ts';
@@ -127,7 +129,10 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
   // No assistant and no voice here, for anyone: Jev reads the owner's projects
   // and proposes work in them, so it answers only on the owner's own machine
   // (ADR-0006). Keys set on the hosted site are never read.
-  const owner = withNewsRoutes(ownerRoutes(reads, triage, editor), cachedNews());
+  const owner = withNewsRoutes(
+    withRiskRoutes(ownerRoutes(reads, triage, editor), reads.pull, NO_SUMMARIES),
+    cachedNews(),
+  );
   const machines = machineRoutes({
     reads,
     store,

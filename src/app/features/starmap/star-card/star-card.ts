@@ -6,17 +6,19 @@ import { CrewControl } from '../crew-control/crew-control';
 import { isPlainClick } from '../../issues/issue-list';
 import { BY_ID } from '../engine/sky-model';
 import { CardContext, cardFacts } from './card-facts';
+import { StarRisk } from './star-risk/star-risk';
 
 /** Where the card is left, per viewer. */
 const CARD_PLACE_KEY = 'observatory.cardPos';
 
 /**
  * pr-starmap's detail card for a pull request's star: its bucket and number,
- * its title, what the sky knows about it, and what can be done from here.
+ * its title, its risk at a glance, what the sky knows about it, and what can
+ * be done from here.
  */
 @Component({
   selector: 'app-star-card',
-  imports: [Draggable, CrewControl],
+  imports: [Draggable, CrewControl, StarRisk],
   templateUrl: './star-card.html',
   styleUrl: './star-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

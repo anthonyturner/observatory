@@ -28,8 +28,7 @@
   align-items: center;
 }
 
-/* Where the window is narrower than the whole bar, its groups wrap to a second
-   row rather than run off the screen's right edge. */
+/* On a narrow window the groups wrap to a second row, not off the screen. */
 .bar {
   flex-wrap: wrap;
 }
@@ -297,8 +296,7 @@ button:focus-visible {
   width: 72px;
 }
 
-/* The sky's strength sits on the bar's right end, so it is the first to give up
-   width: short, with tight padding, so the bar stays on the screen. */
+/* Short and tight, so the bar fits the screen. */
 .opacity {
   gap: 6px;
   padding: 0 8px;

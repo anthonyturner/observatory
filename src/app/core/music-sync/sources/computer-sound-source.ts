@@ -1,7 +1,7 @@
 import { Injectable, InjectionToken, Signal, inject, signal } from '@angular/core';
 import { AudioTap } from './audio-tap';
 import { UNPROCESSED_AUDIO, captureDisplayAudio } from './display-audio';
-import { MEDIA_DEVICES, canShareDisplay } from './media-devices';
+import { MEDIA_DEVICES, canShareDisplayAudio } from './media-devices';
 import { SoundGuide, SoundOption, SoundSource } from './sound-source.types';
 
 const COMPUTER: SoundOption = { id: 'computer', label: 'Whole computer' };
@@ -55,7 +55,7 @@ export class ComputerSoundSource implements SoundSource {
     silent: 'The screen was shared without the computer’s sound',
   };
   readonly options: Signal<readonly SoundOption[]> = signal(
-    canShareDisplay(this.media) && SYSTEM_AUDIO_PLATFORMS.has(this.platform ?? '')
+    canShareDisplayAudio(this.media) && SYSTEM_AUDIO_PLATFORMS.has(this.platform ?? '')
       ? [COMPUTER]
       : [],
   );

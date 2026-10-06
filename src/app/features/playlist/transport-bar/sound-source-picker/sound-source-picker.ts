@@ -13,13 +13,14 @@ interface OptionRow {
 interface GroupRow {
   readonly id: string;
   readonly name: string;
-  /** A source with several entries heads them with its name. */
+  /** Headed by the source's name, unless its one entry already says it. */
   readonly isGrouped: boolean;
   readonly options: readonly OptionRow[];
 }
 
 /** Where Sync hears the music, as the arrow beside it: each source the browser can
- *  use, the one in use selected; picking one reports its entry's id. */
+ *  use, the one in use selected, and a mark when the one picked before is gone;
+ *  picking one reports its entry's id. */
 @Component({
   selector: 'app-sound-source-picker',
   templateUrl: './sound-source-picker.html',
@@ -38,14 +39,19 @@ export class SoundSourcePicker {
     return this.menu().map(({ source, options }) => ({
       id: source.id,
       name: source.name,
-      isGrouped: options.length > 1,
+      isGrouped: options.length > 1 || options[0]?.label !== source.name,
       options: options.map(({ id, label }) => ({ id, label, isSelected: id === selectedId })),
     }));
   });
 
+  protected readonly isPickGone = computed(() => this.selected()?.isPickGone ?? false);
   protected readonly hint = computed(() => {
-    const label = this.selected()?.option.label;
-    return label ? `Sync hears: ${label}. Pick where it hears the music` : '';
+    const selected = this.selected();
+    if (!selected) return '';
+    const gone = selected.isPickGone
+      ? `The ${selected.source.name.toLowerCase()} picked before is not connected. `
+      : '';
+    return `${gone}Sync hears: ${selected.option.label}. Pick where it hears the music`;
   });
 
   protected onChange(event: Event): void {

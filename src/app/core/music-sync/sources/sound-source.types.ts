@@ -3,8 +3,8 @@ import { AudioTap } from './audio-tap';
 
 /** One entry in the Sync source chooser. */
 export interface SoundOption {
-  /** Kept in local storage as the choice: the source's id, or `<source id>:<detail>`
-   *  where one source offers several entries. Never change one once shipped. */
+  /** Kept in local storage as the choice, shaped as `option-id.ts` says. Never
+   *  change one once shipped. */
   readonly id: string;
   readonly label: string;
 }

@@ -19,6 +19,14 @@ const reads = {
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
   commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
+  pull: async (_repo: string, number: number) => ({
+    number,
+    headOid: 'c'.repeat(40),
+    changedFiles: 1,
+    additions: 3,
+    deletions: 1,
+    files: [{ path: 'package.json', additions: 3, deletions: 1 }],
+  }),
 } as unknown as ApiReads;
 const visible = async () => new Set(['me/app']);
 
@@ -110,5 +118,19 @@ describe('visitorRoutes', () => {
     assert.deepEqual(await response.json(), { sha: 'abc1234', diff: 'diff --git a/x b/x' });
     assert.equal((await get(handle, '/api/commit?repo=me/secret&sha=abc1234')).status, 404);
     assert.equal((await get(handle, '/api/commit?repo=me/app&sha=nothex')).status, 400);
+  });
+
+  it('rates a pull request’s risk in a visible repository, by the rules alone', async () => {
+    const handle = visitor(false);
+
+    const response = await get(handle, '/api/risk?repo=me/app&number=7');
+    assert.deepEqual(await response.json(), {
+      number: 7,
+      headSha: 'c'.repeat(40),
+      level: 'medium',
+      reasons: ['dependencies'],
+      summarizes: false,
+    });
+    assert.equal((await get(handle, '/api/risk?repo=me/secret&number=7')).status, 404);
   });
 });

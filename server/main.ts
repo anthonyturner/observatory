@@ -5,6 +5,7 @@ import { cachedReads } from './app/api-reads.ts';
 import { ownerRoutes, withAssistant } from './app/api-routes.ts';
 import { jevAssistant } from './assistant/jev-assistant.ts';
 import { localKey } from './assistant/open-router-key.ts';
+import { openRouter } from './assistant/open-router.ts';
 import { localShells } from './assistant/shell-commands.ts';
 import { fileSkills } from './assistant/skills-file.ts';
 import { fileCloneFinder } from './collisions/clone-finder.ts';
@@ -31,6 +32,8 @@ import { findClaude } from './runner/claude-command.ts';
 import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
 import { withRunsRoutes } from './runner/runs-routes.ts';
 import { withCrewRoutes } from './crew/crew-routes.ts';
+import { withRiskRoutes } from './queue/risk-routes.ts';
+import { riskSummaries } from './queue/risk-summary.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { fileHandoffStore } from './agents/handoff-store.ts';
@@ -96,8 +99,9 @@ shutDownWithProcess(runner);
 // `claude` to start; OpenRouter is left for a machine without one.
 const mcpSessions = new McpSessions();
 const killer = processTreeKiller();
+const openRouterKey = localKey();
 const assistant = jevAssistant({
-  key: localKey(),
+  key: openRouterKey,
   reads,
   skills: fileSkills(),
   where: 'local',
@@ -111,6 +115,9 @@ const assistant = jevAssistant({
     scratch: join(tmpdir(), 'observatory-jev'),
   },
 });
+
+// A star's one-line summary comes from the same OpenRouter key as Jev; with none, the risk rules stand alone.
+const summaries = riskSummaries(openRouter({ key: openRouterKey }));
 
 // Read once at start, so the first visit to Home finds the news and its summaries waiting.
 const news = cachedNews();
@@ -149,7 +156,14 @@ const server = createApiServer(
                       withRunsRoutes(
                         withNewsRoutes(
                           withArchitectureRoutes(
-                            withAgentSpeechRoutes(ownerRoutes(reads, triage, editor), agentSpeech),
+                            withAgentSpeechRoutes(
+                              withRiskRoutes(
+                                ownerRoutes(reads, triage, editor),
+                                reads.pull,
+                                summaries,
+                              ),
+                              agentSpeech,
+                            ),
                             fileArchitecture(),
                           ),
                           news,

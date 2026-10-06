@@ -28,6 +28,13 @@
   align-items: center;
 }
 
+/* On a narrow window the groups, and the sky's controls, wrap onto more rows
+   rather than run off the screen. */
+.bar,
+.group--sky {
+  flex-wrap: wrap;
+}
+
 /* Lays its controls out as the bar's own, so folding only takes them away. */
 .extras {
   display: contents;
@@ -282,13 +289,17 @@ button:focus-visible {
   cursor: pointer;
 }
 
-.volume input,
-.opacity input {
+.volume input {
   width: 72px;
 }
 
+/* Short, so the bar fits the screen. */
+.opacity input {
+  width: 48px;
+}
+
 .visual select {
-  width: 128px;
+  width: 112px;
   min-height: 26px;
   padding: 0 4px;
   border: var(--rule);
@@ -328,10 +339,6 @@ button:focus-visible {
     background: var(--panel-strong);
   }
 
-  .bar {
-    flex-wrap: wrap;
-  }
-
   /* The song's name takes what the transport, the heart and the fold leave, so
      they share one row. */
   .now {
@@ -363,10 +370,6 @@ button:focus-visible {
 
   /* Video and a Visual that fills the row, then the sky's strength, with Sync where
      the browser can sync; the pickers shrink, so none of it runs off the screen. */
-  .group--sky {
-    flex-wrap: wrap;
-  }
-
   .visual,
   .opacity {
     flex: 1 1 60%;

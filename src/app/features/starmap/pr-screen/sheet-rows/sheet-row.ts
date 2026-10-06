@@ -39,14 +39,19 @@ export function commitRows(detail: PullDetail, locale?: string): SheetRow[] {
     }));
 }
 
-export function checkRows(detail: PullDetail): SheetRow[] {
-  return detail.checks.map((check, index) => ({
-    key: `${index}:${check.run}`,
-    cells: [
-      { text: check.run, classes: 'grow' },
-      { text: check.result.toLowerCase(), classes: `mono ${resultClass(check.result)}` },
-    ],
-  }));
+const FLAKY_CELL: RowCell = { text: 'flaky', classes: 'flaky' };
+
+/** Each check and its result, a failure known to be flaky marked so. */
+export function checkRows(detail: PullDetail, flaky: readonly string[] = []): SheetRow[] {
+  return detail.checks.map((check, index) => {
+    const tone = resultClass(check.result);
+    const result = { text: check.result.toLowerCase(), classes: `mono ${tone}` };
+    const isFlaky = tone === 'bad' && flaky.includes(check.run);
+    return {
+      key: `${index}:${check.run}`,
+      cells: [{ text: check.run, classes: 'grow' }, ...(isFlaky ? [FLAKY_CELL] : []), result],
+    };
+  });
 }
 
 /** Said above the commits when only the latest are listed. */

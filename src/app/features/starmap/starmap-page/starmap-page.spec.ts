@@ -19,6 +19,7 @@ const pull = (number: number, bucket: string, extra: Record<string, unknown> = {
   bucket,
   closes: [number + 100],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 12,
   deletions: 1,
   idleDays: 2,

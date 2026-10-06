@@ -67,6 +67,8 @@ export class PrScreen {
   readonly title = input<string | null>(null);
   /** The head when it was last looked at, before this screen opened; null for never. */
   readonly lookedSha = input<string | null>(null);
+  /** Its failing checks known to be flaky, as the queue knows them. */
+  readonly flakyChecks = input<readonly string[]>([]);
   readonly closed = output<void>();
   /** The head of an open pull request as this screen shows it: it is being looked at. */
   readonly looked = output<string>();
@@ -121,7 +123,7 @@ export class PrScreen {
   });
   protected readonly checks = computed(() => {
     const detail = this.detail();
-    return detail ? checkRows(detail) : [];
+    return detail ? checkRows(detail, this.flakyChecks()) : [];
   });
 
   constructor() {

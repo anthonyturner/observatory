@@ -109,6 +109,18 @@ describe('the PR screen’s rows', () => {
     expect(commitsNote({ ...detail, commitsTotal: 60 })).toBe('Showing the latest 2 of 60.');
   });
 
+  it('marks a failing check known to be flaky, and only a failing one', () => {
+    const rows = checkRows(detail, ['lint', 'test']).map((row) =>
+      row.cells.map((cell) => cell.text),
+    );
+
+    expect(rows).toEqual([
+      ['lint', 'flaky', 'failure'],
+      ['deploy', 'in_progress'],
+      ['test', 'success'],
+    ]);
+  });
+
   it('lists checks with their result in lower case', () => {
     expect(checkRows(detail).map((row) => row.cells[1])).toEqual([
       { text: 'failure', classes: 'mono bad' },

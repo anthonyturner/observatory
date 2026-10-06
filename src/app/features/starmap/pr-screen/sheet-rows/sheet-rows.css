@@ -88,3 +88,14 @@
 .meh {
   color: var(--meh);
 }
+
+/* A failing check known to pass on a rerun: a warning, not a failure. */
+.flaky {
+  padding: 1px 7px;
+  border: 1px solid var(--meh);
+  border-radius: 999px;
+  color: var(--meh);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}

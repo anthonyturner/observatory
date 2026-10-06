@@ -9,6 +9,7 @@ const pull = (number: number, extra: Partial<QueueItem> = {}): QueueItem => ({
   bucket: 'unreviewed',
   closes: [number + 100],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 400,
   deletions: 0,
   idleDays: 2,

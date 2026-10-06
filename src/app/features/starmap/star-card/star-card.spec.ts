@@ -15,6 +15,7 @@ const item: QueueItem = {
   bucket: 'conflicted',
   closes: [57],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 96,
   deletions: 95,
   idleDays: 49,
@@ -151,5 +152,26 @@ describe('StarCard', () => {
 
   it('offers no crew where none can be sent', () => {
     expect(render().button('Send crew')).toBeUndefined();
+  });
+
+  it('offers Rerun on a pull request failing only on flaky checks, and says which', () => {
+    const { fixture, element, button } = render();
+    expect(button('Rerun')).toBeUndefined();
+
+    const flaky = { ...item, bucket: 'unreviewed', mergeable: 'MERGEABLE' } as const;
+    fixture.componentRef.setInput('item', { ...flaky, failingChecks: 1, flakyChecks: ['e2e'] });
+    fixture.detectChanges();
+
+    expect(button('Rerun')).toBeDefined();
+    expect(element.querySelector('.facts')?.textContent).toContain('e2e');
+
+    fixture.componentRef.setInput('item', { ...flaky, failingChecks: 2, flakyChecks: ['e2e'] });
+    fixture.detectChanges();
+    expect(button('Rerun')).toBeUndefined();
+
+    fixture.componentRef.setInput('item', { ...flaky, failingChecks: 1, flakyChecks: ['e2e'] });
+    fixture.componentRef.setInput('canWrite', false);
+    fixture.detectChanges();
+    expect(button('Rerun')).toBeUndefined();
   });
 });

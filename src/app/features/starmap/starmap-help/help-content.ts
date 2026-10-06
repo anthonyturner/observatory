@@ -85,7 +85,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Hover',
-        'Rest the pointer on a star for its card: the essentials, plus Snooze and Dismiss. It stays until you rest on another star or click empty sky. Issue #n reads its issue here. On a touch screen, tap once for the card.',
+        'Rest the pointer on a star for its card: the essentials, plus Snooze and Dismiss. A low, medium or high risk tag says how careful a review it needs, from the files it changes (auth, migrations, config, CI, dependencies, or a broad change); with an OpenRouter key on your own machine, a one-line summary says what it does. It stays until you rest on another star or click empty sky. Issue #n reads its issue here. On a touch screen, tap once for the card.',
       ],
       [
         'Click',

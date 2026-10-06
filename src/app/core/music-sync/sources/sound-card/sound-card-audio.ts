@@ -43,7 +43,7 @@ function formatOf(headers: Headers): StreamFormat {
 
 interface OpenStream {
   readonly body: ReadableStream<Uint8Array>;
-  readonly format: StreamFormat;
+  readonly headers: Headers;
 }
 
 async function openStream(fetchStream: StreamFetch, signal: AbortSignal): Promise<OpenStream> {
@@ -54,7 +54,7 @@ async function openStream(fetchStream: StreamFetch, signal: AbortSignal): Promis
   });
   if (!response.ok || !response.body)
     throw new SoundCardUnavailableError(`HTTP ${response.status}`);
-  return { body: response.body, format: formatOf(response.headers) };
+  return { body: response.body, headers: response.headers };
 }
 
 /** The PCM player in `context`, loaded from its own module. */
@@ -100,7 +100,22 @@ async function pump(
  */
 export async function openSoundCard(fetchStream: StreamFetch): Promise<AudioTap> {
   const abort = new AbortController();
-  const { body, format } = await openStream(fetchStream, abort.signal);
+  const stream = await openStream(fetchStream, abort.signal);
+  try {
+    return await playStream(stream, abort);
+  } catch (error) {
+    // Left open, the stream would keep the server capturing for nobody.
+    abort.abort();
+    throw error;
+  }
+}
+
+/** `stream` played through the worklet player into a context of its own. */
+async function playStream(
+  { body, headers }: OpenStream,
+  abort: AbortController,
+): Promise<AudioTap> {
+  const format = formatOf(headers);
   const context = new AudioContext({ sampleRate: format.sampleRate, latencyHint: 'interactive' });
   let isClosed = false;
   const close = (): void => {

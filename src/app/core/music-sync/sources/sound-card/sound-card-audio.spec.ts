@@ -154,11 +154,27 @@ describe('openSoundCard', () => {
     }
   });
 
-  it('refuses a stream whose format it cannot play', async () => {
+  it('refuses a stream whose format it cannot play, and lets go of it', async () => {
     const answer = streamedAnswer({ 'x-sample-rate': 'fast', 'x-channels': '2' });
 
     await expect(openSoundCard(answer.fetchStream)).rejects.toBeInstanceOf(
       SoundCardUnavailableError,
     );
+    expect(answer.asked[0]?.init.signal?.aborted).toBe(true);
+  });
+
+  it('lets go of the stream when the worklet player cannot load', async () => {
+    const answer = streamedAnswer();
+    vi.stubGlobal(
+      'AudioContext',
+      class extends FakeContext {
+        override readonly audioWorklet = {
+          addModule: vi.fn(async () => Promise.reject(new Error('no worklets here'))),
+        };
+      },
+    );
+
+    await expect(openSoundCard(answer.fetchStream)).rejects.toThrow('no worklets here');
+    expect(answer.asked[0]?.init.signal?.aborted).toBe(true);
   });
 });

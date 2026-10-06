@@ -1,0 +1,31 @@
+@if (view(); as crew) {
+  <div class="crew" role="group" aria-label="Crew ship">
+    @if (crew.send; as button) {
+      <button
+        type="button"
+        class="crew__send"
+        [attr.aria-describedby]="hintId"
+        [disabled]="button.isDisabled"
+        (click)="send()"
+      >
+        {{ button.label }}
+      </button>
+      <span class="crew__hint" [id]="hintId">{{ button.hint }}</span>
+    }
+    @if (crew.status; as status) {
+      <p
+        class="crew__status"
+        role="status"
+        [class.crew__status--live]="status.tone === 'live'"
+        [class.crew__status--ok]="status.tone === 'ok'"
+        [class.crew__status--bad]="status.tone === 'bad'"
+      >
+        <span>{{ status.text }}</span>
+        <a class="crew__log" routerLink="/" (click)="showLog()">Show log</a>
+      </p>
+    }
+    @if (crew.refusal; as refusal) {
+      <p class="crew__refusal" role="alert">{{ refusal }}</p>
+    }
+  </div>
+}

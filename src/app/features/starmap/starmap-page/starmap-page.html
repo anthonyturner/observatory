@@ -32,6 +32,7 @@
   [done]="done()"
   [doneLit]="doneLit()"
   [doneOnly]="doneOnly()"
+  [crews]="crewMarks()"
   (pickedDone)="openDone($event)"
   (pickedIssue)="pickIssue($event)"
 />
@@ -167,6 +168,7 @@
 
 @if (chart() === 'prs' && openItem(); as item) {
   <app-star-card
+    [repo]="repo()"
     [item]="item"
     [context]="cardContext()"
     [canWrite]="session.canWrite()"

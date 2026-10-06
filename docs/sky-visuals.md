@@ -27,6 +27,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Gas disc         | Lines changed, quick win   | `massOf(star)`                 |
 | Review Queue | Planets          | Issues the PR closes       | `issuePlanets(star)`           |
 | Review Queue | Size             | Idle days                  | `mag` in `layoutQueue`         |
+| Review Queue | Crew ship        | A crew run on the PR       | `crewPose(mark, clock)`        |
 
 ## Orrery worlds
 
@@ -229,6 +230,18 @@ plane, the outer ones slower. Each is a small sphere lit by its star, in one of
 three tones (rock, dust, water) picked by issue number. No planets means the PR
 closes no issue. Planets draw over the star's glow even on the far side,
 because the star doesn't write depth; at their size this reads fine.
+
+### Crew ship (data: a crew run)
+
+`engine/crew-layer.ts` draws a small astronaut ship by each star a crew was
+sent to, flat over both renderers. `CrewDispatch` (`core/crew/`) reads the
+local runner's run list and tags a run as a crew by its prompt's first line;
+`crewPose` places the ship. While the run is live the ship circles at 4.4 ×
+`starRadius` (18 to 80 px, clear of the outermost planet) on an orbit tilted
+like the gas disc; with motion off it is parked up and to the right. When the
+run ends the ship flies off over 4 s and a green tick (done) or red cross (any
+other ending) stays by the star for 10 minutes. There is no 3D model: the ship
+stays a few pixels long at every zoom so it reads as a marker.
 
 ## Changing a visual
 

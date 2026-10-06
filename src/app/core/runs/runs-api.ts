@@ -103,7 +103,7 @@ export class HttpRunsApi implements RunsApi {
 }
 
 /** The runner's own words for a refusal, else the status. */
-function refusalOf(error: HttpErrorResponse): string {
+export function refusalOf(error: HttpErrorResponse): string {
   const body: unknown = error.error;
   return isObject(body) && isText(body['error']) ? body['error'] : `HTTP ${error.status}`;
 }

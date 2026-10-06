@@ -1,0 +1,86 @@
+:host {
+  display: block;
+}
+
+.crew {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.crew__send {
+  align-self: flex-start;
+  min-width: 96px;
+  padding: 9px 13px;
+  border: 1px solid var(--sev, var(--flow));
+  border-radius: 9px;
+  background: var(--card-act);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.15s;
+}
+
+.crew__send:hover:not(:disabled) {
+  background: var(--card-act-hover);
+  transform: translateY(-1px);
+}
+
+.crew__send:focus-visible,
+.crew__log:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.crew__send:disabled {
+  border-color: var(--edge-soft);
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.crew__hint {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.crew__status,
+.crew__refusal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.crew__status--live {
+  color: var(--flow);
+}
+
+.crew__status--ok {
+  color: var(--ok);
+}
+
+.crew__status--bad,
+.crew__refusal {
+  color: var(--bad);
+}
+
+.crew__log {
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crew__send {
+    transition: none;
+  }
+
+  .crew__send:hover:not(:disabled) {
+    transform: none;
+  }
+}

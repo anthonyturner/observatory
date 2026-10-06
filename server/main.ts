@@ -49,6 +49,9 @@ import { withMailRoutes } from './mail/mail-routes.ts';
 import { localMailLogin } from './mail/mail-settings.ts';
 import { mailboxes } from './mail/mailboxes.ts';
 import { MAIL_ACCOUNTS } from './mail/mail-types.ts';
+import { LOOPBACK_FORMAT, wasapiLoopback } from './sound-card/loopback-helper.ts';
+import { SoundCardCapture } from './sound-card/sound-card-capture.ts';
+import { withSoundCardRoutes } from './sound-card/sound-card-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -122,6 +125,13 @@ const agentSpeech = { speech: agentSpeechReader(), hold: jevHold() };
 const mailLogins = { icloud: localMailLogin('icloud'), gmail: localMailLogin('gmail') };
 const mail = mailboxes({ logins: mailLogins, fetchInbox: imapInbox(imapflowClient) });
 
+// Windows loopback is the only capture written so far; macOS and Linux need their own.
+const soundCard = {
+  capture: new SoundCardCapture(wasapiLoopback()),
+  format: LOOPBACK_FORMAT,
+  isAvailable: process.platform === 'win32',
+};
+
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it
 // with no Origin, so it checks the Host and its own session token instead.
 const server = createApiServer(
@@ -129,27 +139,30 @@ const server = createApiServer(
     guardLoopback(
       createApiHandler(
         withLocalSession(
-          withMailRoutes(
-            withReaderRoutes(
-              withVoiceRoutes(
-                withAssistant(
-                  withRunsRoutes(
-                    withNewsRoutes(
-                      withArchitectureRoutes(
-                        withAgentSpeechRoutes(ownerRoutes(reads, triage, editor), agentSpeech),
-                        fileArchitecture(),
+          withSoundCardRoutes(
+            withMailRoutes(
+              withReaderRoutes(
+                withVoiceRoutes(
+                  withAssistant(
+                    withRunsRoutes(
+                      withNewsRoutes(
+                        withArchitectureRoutes(
+                          withAgentSpeechRoutes(ownerRoutes(reads, triage, editor), agentSpeech),
+                          fileArchitecture(),
+                        ),
+                        news,
                       ),
-                      news,
+                      runner,
                     ),
-                    runner,
+                    assistant,
                   ),
-                  assistant,
+                  voice,
                 ),
-                voice,
+                fetchPage,
               ),
-              fetchPage,
+              mail,
             ),
-            mail,
+            soundCard,
           ),
         ),
       ),

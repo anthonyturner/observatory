@@ -37,25 +37,41 @@ const FFT_SIZE = 2048;
 /** Barely any smoothing: more blurs a kick's attack across frames and lands it late. */
 const SMOOTHING = 0.2;
 
+/** A live sound, and how to let go of it. */
+export interface TappedSound extends LiveSound {
+  /** Registers a callback for the sound stopping from outside, once. */
+  readonly onEnded: (callback: () => void) => void;
+  /** Stops the sound and closes its context. */
+  readonly close: () => void;
+}
+
+/** `sound` read as a spectrum. It goes into an analyser only, never to the
+ *  speakers: the sound is already playing. */
+export function analyserTap(sound: TappedSound): AudioTap {
+  const analyser = sound.context.createAnalyser();
+  analyser.fftSize = FFT_SIZE;
+  analyser.smoothingTimeConstant = SMOOTHING;
+  sound.source.connect(analyser);
+  return {
+    binHz: sound.context.sampleRate / FFT_SIZE,
+    binCount: analyser.frequencyBinCount,
+    read: (into) => analyser.getByteFrequencyData(into),
+    onEnded: sound.onEnded,
+    close: sound.close,
+    sound: { context: sound.context, source: sound.source },
+  };
+}
+
 /** Reads `audio`, a track of `stream`, as a spectrum; closing the tap stops the stream. */
 export function tapOf(stream: MediaStream, audio: MediaStreamTrack): AudioTap {
   const context = new AudioContext();
-  const analyser = context.createAnalyser();
-  analyser.fftSize = FFT_SIZE;
-  analyser.smoothingTimeConstant = SMOOTHING;
-  // Into the analyser only, never to the speakers: the sound is already playing.
-  const source = context.createMediaStreamSource(stream);
-  source.connect(analyser);
-  const close = (): void => {
-    stream.getTracks().forEach((track) => track.stop());
-    void context.close();
-  };
-  return {
-    binHz: context.sampleRate / FFT_SIZE,
-    binCount: analyser.frequencyBinCount,
-    read: (into) => analyser.getByteFrequencyData(into),
+  return analyserTap({
+    context,
+    source: context.createMediaStreamSource(stream),
     onEnded: (callback) => audio.addEventListener('ended', callback, { once: true }),
-    close,
-    sound: { context, source },
-  };
+    close: () => {
+      stream.getTracks().forEach((track) => track.stop());
+      void context.close();
+    },
+  });
 }

@@ -284,6 +284,22 @@ describe('hostedApi', () => {
     }
   });
 
+  it('has no sound card, for anyone: only this machine’s server hears its speakers', async () => {
+    const listen = (handle: ReturnType<typeof site>['handle'], path: string, cookie?: string) =>
+      handle(
+        new Request(`${SITE}${path}`, {
+          headers: { 'x-observatory': '1', ...(cookie ? { cookie } : {}) },
+        }),
+      );
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+
+    for (const path of ['/api/sound-card', '/api/sound-card/stream']) {
+      for (const cookie of [ownerCookie, undefined]) {
+        assert.equal((await listen(handle, path, cookie)).status, 404);
+      }
+    }
+  });
+
   it('shows a visitor private repositories too with PUBLIC_PREVIEW=all, still read-only', async () => {
     const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
 

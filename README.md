@@ -93,6 +93,10 @@ picks where it hears the music:
     [VB-Audio Virtual Cable](https://vb-audio.com/Cable/).
   - macOS: install [BlackHole](https://existential.audio/blackhole/), and add a
     Multi-Output Device in Audio MIDI Setup so you still hear the music.
+- **Sound card** (any browser, on the Windows PC running Observatory with
+  `npm start`): everything the computer plays, read by Observatory’s own server
+  from the speakers’ output. No prompt and nothing to set up. It is offered
+  only when that server can capture, so never on the hosted site.
 
 Phones can't capture sound for a web page, so Sync is hidden there.
 

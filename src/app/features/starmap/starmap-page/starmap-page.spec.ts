@@ -9,6 +9,7 @@ import { anIssue } from '../../../core/issues/testing/issues-fixture';
 import { PrScreen } from '../pr-screen/pr-screen';
 import { StarmapSound } from '../sound/starmap-sound';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
+import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
 import { StarmapPage } from './starmap-page';
 
 const pull = (number: number, bucket: string, extra: Record<string, unknown> = {}) => ({
@@ -155,6 +156,26 @@ describe('StarmapPage', () => {
     chip?.click();
     fixture.detectChanges();
     expect(chip?.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('nudges past the work-in-progress limit, drafts aside, and lets go under a raised one', () => {
+    localStorage.setItem('observatory.wip-limit', '2');
+    const { fixture, element } = render(null, {}, [
+      ...items,
+      pull(13, 'unreviewed', { isDraft: true }),
+    ]);
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    expect(element.querySelector('app-wip-notice')?.textContent).toContain(
+      '3 open, past your limit of 2',
+    );
+    expect(sky.cometsFaded()).toBe(true);
+    TestBed.inject(WipLimitSetting).set(3);
+    fixture.detectChanges();
+
+    expect(element.querySelector('app-wip-notice')).toBeNull();
+    expect(sky.cometsFaded()).toBe(false);
   });
 
   it('leaves dismissed pull requests out, and lists the rest by bucket', () => {

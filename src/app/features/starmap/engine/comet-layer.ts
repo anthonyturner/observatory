@@ -25,6 +25,8 @@ export interface SkyComet<T extends CometIssue = CometIssue> {
 
 const COLOUR = '#9fe8ff';
 const PICK_REACH = 16;
+/** Past the work-in-progress limit the comets fade, still there to see and pick. */
+const FADED_ALPHA = 0.3;
 
 /**
  * pr-starmap's comets: open issues no pull request closes pass through the sky
@@ -59,12 +61,18 @@ export class CometLayer<T extends CometIssue = CometIssue> implements SkyLayer {
   /** Replay shows the queue as it was; comets are the present. */
   paused = false;
   selected: T | null = null;
+  /** Past the viewer's work-in-progress limit: a nudge to finish before starting more. */
+  faded = false;
   private onScreen: { comet: SkyComet<T>; x: number; y: number }[] = [];
 
   /** Where the selected comet was drawn this frame, if it was. */
   selectedAt(): readonly [number, number] | null {
     const drawn = this.onScreen.find(({ comet }) => comet.comet === this.selected);
     return drawn ? [drawn.x, drawn.y] : null;
+  }
+
+  private alpha(): number {
+    return this.faded ? FADED_ALPHA : 1;
   }
 
   private on(f: SkyFrame): boolean {
@@ -95,7 +103,7 @@ export class CometLayer<T extends CometIssue = CometIssue> implements SkyLayer {
       const uy = (y - cy) / d;
       const len = k.tail * Math.max(scale, 0.35);
       const r = k.mag * Math.max(scale, 0.45);
-      const flicker = f.frozen ? 1 : 0.85 + Math.sin(f.t * 2.3 + k.i) * 0.15;
+      const glow = (f.frozen ? 1 : 0.85 + Math.sin(f.t * 2.3 + k.i) * 0.15) * this.alpha();
       // Two tails, as real comets have: a straight ion tail and a curved dust tail.
       for (const [bend, alpha, width] of [
         [0, 0.55, 1.6],
@@ -106,7 +114,7 @@ export class CometLayer<T extends CometIssue = CometIssue> implements SkyLayer {
         const g = c.createLinearGradient(x, y, tx, ty);
         g.addColorStop(0, COLOUR);
         g.addColorStop(1, 'rgba(159, 232, 255, 0)');
-        c.globalAlpha = alpha * flicker;
+        c.globalAlpha = alpha * glow;
         c.strokeStyle = g;
         c.lineWidth = width;
         c.lineCap = 'round';
@@ -119,7 +127,7 @@ export class CometLayer<T extends CometIssue = CometIssue> implements SkyLayer {
       head.addColorStop(0, '#ffffff');
       head.addColorStop(0.35, COLOUR);
       head.addColorStop(1, 'rgba(159, 232, 255, 0)');
-      c.globalAlpha = flicker;
+      c.globalAlpha = glow;
       c.fillStyle = head;
       c.beginPath();
       c.arc(x, y, r * 2.6, 0, Math.PI * 2);
@@ -144,7 +152,7 @@ export class CometLayer<T extends CometIssue = CometIssue> implements SkyLayer {
     ctx.textAlign = 'left';
     ctx.font = '500 10px "IBM Plex Mono", monospace';
     ctx.fillStyle = COLOUR;
-    ctx.globalAlpha = 0.75;
+    ctx.globalAlpha = 0.75 * this.alpha();
     for (const { comet, x, y } of this.onScreen)
       ctx.fillText(`#${comet.comet.issue}`, x + 8, y - 6);
     ctx.restore();

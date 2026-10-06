@@ -55,6 +55,19 @@
       >
         Sprint
       </button>
+      <label
+        class="field wip"
+        title="Past this many open pull requests, drafts aside, the comets fade and a note suggests finishing one first"
+        ><span aria-hidden="true">wip</span
+        ><input
+          type="number"
+          step="1"
+          aria-label="Work-in-progress limit: open pull requests before the queue nudges"
+          [min]="minWipLimit"
+          [max]="maxWipLimit"
+          [value]="wipLimit.limit()"
+          (change)="onNumberField($event, wipLimit)"
+      /></label>
     </div>
   }
   @if (!queueHidden() && onMap()) {
@@ -69,7 +82,7 @@
       </button>
       @if (chart() === 'prs') {
         <label
-          class="hole"
+          class="field hole"
           title="Pull requests idle longer than this many days fall toward the black hole"
           ><span aria-hidden="true">hole</span
           ><input
@@ -79,7 +92,7 @@
             [min]="minHoleDays"
             [max]="maxHoleDays"
             [value]="blackHole.staleAfterDays()"
-            (change)="onHoleDays($event)"
+            (change)="onNumberField($event, blackHole)"
           /><span aria-hidden="true">d</span></label
         >
       }

@@ -84,6 +84,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Sprint time-boxes a review: pick 15, 25 or 45 minutes and the queue fills it, in queue order with Next star’s pick first, with pull requests whose size fits. Each is budgeted 2 minutes plus 500 changed lines an hour; one too big for the time left is passed over, and drafts and ones of unknown size are left out. Its stars stay lit and the rest dim, a timer runs, and Next star works through it. Opening a pull request counts it as reviewed. End it early or let the time run out for a summary of what merged, what you reviewed and what was skipped.',
       ],
       [
+        'WIP limit',
+        'More than 8 open pull requests, drafts aside, is more work in progress than finishes well: past that the comets fade and a note under the search suggests finishing one before starting another. Nothing is blocked; the comets still open. Set the number with wip in the tools; get back within it and the comets brighten again.',
+      ],
+      [
         'Fog',
         'Fog means what you see may be out of date. The sky fogs over as its data ages: clear for six hours, full by three days. If refreshing fails, it fogs at once, thinly, and thickens to full an hour after the last good read, so a broken feed never passes for a quiet one. Issues, Usage and Logs each fog by the age of their own data. The badge by the title says how old it is; Refresh clears it.',
       ],
@@ -136,6 +140,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       [
         'Stack',
         'A row built on another pull request says which, and which are built on it. Base merged · update it means the one it was built on has merged: open it to send a crew.',
+      ],
+      [
+        'WIP limit',
+        'Past the limit set with wip in the tools (8 open pull requests, drafts aside, unless you change it), a note under the search suggests finishing one before starting another.',
       ],
     ],
   },

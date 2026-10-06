@@ -30,6 +30,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Fall to the hole | Idle days past a threshold | `fallOf`, `placeByHole`        |
 | Review Queue | Crew ship        | A crew run on the PR       | `crewPose(mark, clock)`        |
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
+| Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 
 ## Orrery worlds
 
@@ -288,6 +289,16 @@ keeps a broken gold chain of four links up and to the left, labelled
 `BASE #n MERGED · UPDATE`. Its card and screen offer Send crew, whose
 `update-stack` task merges in the branch the base landed in and points the pull
 request there. Replay shows no chains: they are the queue as it is.
+
+### Comet fade (data: open work past a limit)
+
+`wipCheck(items, limit)` in `wip-limit/wip-check.ts` counts the live queue's
+open pull requests that are not drafts; snoozed and dismissed ones still count.
+Past the limit (8, set per browser with **wip** in the tools, `WipLimitSetting`,
+1 to 50), `CometLayer` draws the comets, their tails and labels at 30% opacity
+(`FADED_ALPHA`) and the page shows a note under the search. It is a nudge only:
+a faded comet still takes hover and clicks, and getting back within the limit,
+by a refresh or a raised limit, brightens them again.
 
 ## Changing a visual
 

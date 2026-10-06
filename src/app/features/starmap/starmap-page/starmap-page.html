@@ -19,6 +19,7 @@
   [tether]="tether()"
   [comets]="comets()"
   [showComets]="showComets()"
+  [cometsFaded]="wip().isOver"
   [selectedComet]="ringedComet()"
   [replaying]="!!memory.replay()"
   (picked)="pick($event)"
@@ -88,6 +89,9 @@
   />
   @if (chart() === 'prs') {
     <app-starmap-search [suggestions]="suggestions()" [miss]="searchMiss()" (find)="find($event)" />
+    @if (showWipNotice()) {
+      <app-wip-notice [check]="wip()" />
+    }
   }
   @if (docked()) {
     <div class="issuedock"><app-issue-bar /></div>

@@ -28,7 +28,8 @@
   align-items: center;
 }
 
-/* On a narrow window the groups wrap to a second row, not off the screen. */
+/* On a narrow window the groups, and the sky's controls, wrap onto more rows
+   rather than run off the screen. */
 .bar,
 .group--sky {
   flex-wrap: wrap;

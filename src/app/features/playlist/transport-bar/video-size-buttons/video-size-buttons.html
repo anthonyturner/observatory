@@ -1,0 +1,18 @@
+<button
+  type="button"
+  aria-label="Smaller video"
+  [attr.aria-pressed]="size.isSmaller()"
+  [title]="size.isSmaller() ? 'Back to the usual size' : 'Make the video smaller'"
+  (click)="size.toggleSmaller()"
+>
+  <span aria-hidden="true">{{ size.isSmaller() ? '⊞' : '⊟' }}</span>
+</button>
+<button
+  type="button"
+  aria-label="Bigger video"
+  [attr.aria-pressed]="size.isLarger()"
+  [title]="size.isLarger() ? 'Back to the usual size' : 'Make the video bigger'"
+  (click)="size.toggleLarger()"
+>
+  <span aria-hidden="true">{{ size.isLarger() ? '⤡' : '⤢' }}</span>
+</button>

@@ -531,4 +531,62 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     expect(element.querySelector('.card')?.classList).not.toContain('card--large');
   });
+
+  it('offers a smaller video once the card shows, and back again, still playing', async () => {
+    const { fixture, element, button, make, pauses } = render();
+    expect(button('Smaller video')).toBeUndefined();
+    button('Play')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const shrink = button('Smaller video');
+    expect(shrink?.getAttribute('aria-pressed')).toBe('false');
+    expect(shrink?.title).toBe('Make the video smaller');
+    shrink?.click();
+    fixture.detectChanges();
+    expect(shrink?.getAttribute('aria-pressed')).toBe('true');
+    expect(shrink?.title).toBe('Back to the usual size');
+    expect(element.querySelector('.card')?.classList).toContain('card--small');
+
+    shrink?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('.card')?.classList).not.toContain('card--small');
+    expect(pauses).not.toHaveBeenCalled();
+    expect(make).toHaveBeenCalledTimes(1);
+  });
+
+  it('turns Bigger off when Smaller is chosen, and Smaller off when Bigger is', async () => {
+    const { fixture, element, button } = render();
+    button('Play')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const card = element.querySelector('.card');
+
+    button('Bigger video')?.click();
+    button('Smaller video')?.click();
+    fixture.detectChanges();
+    expect(button('Bigger video')?.getAttribute('aria-pressed')).toBe('false');
+    expect(card?.classList).toContain('card--small');
+    expect(card?.classList).not.toContain('card--large');
+
+    button('Bigger video')?.click();
+    fixture.detectChanges();
+    expect(button('Smaller video')?.getAttribute('aria-pressed')).toBe('false');
+    expect(card?.classList).toContain('card--large');
+    expect(card?.classList).not.toContain('card--small');
+  });
+
+  it('keeps the smaller video at the 200 by 200 pixels YouTube needs at the least', async () => {
+    const { fixture, element, button } = render();
+    button('Play')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    button('Smaller video')?.click();
+    fixture.detectChanges();
+
+    const card = getComputedStyle(element.querySelector('.card') as Element);
+    expect(card.boxSizing).toBe('content-box');
+    expect([card.width, card.height]).toEqual(['200px', '200px']);
+    expect(card.minWidth).toBe('200px');
+  });
 });

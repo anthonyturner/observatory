@@ -88,7 +88,11 @@
   }
 </div>
 
-<div class="hud bottom" [attr.data-folded]="folded() ? '' : null">
+<div
+  class="hud bottom"
+  [attr.data-folded]="folded() ? '' : null"
+  [style.--panel-clear.px]="insets().side"
+>
   @if (showTimeline() && memory.ledger(); as ledger) {
     <app-timeline
       [rows]="ledger.rows"

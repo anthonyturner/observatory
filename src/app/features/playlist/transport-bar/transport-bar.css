@@ -28,6 +28,13 @@
   align-items: center;
 }
 
+/* On a narrow window the groups, and the sky's controls, wrap onto more rows
+   rather than run off the screen. */
+.bar,
+.group--sky {
+  flex-wrap: wrap;
+}
+
 /* Lays its controls out as the bar's own, so folding only takes them away. */
 .extras {
   display: contents;
@@ -102,7 +109,9 @@
 }
 
 /* Empty until the first play; then the video stays in view while it sounds, at
-   no less than the 200px YouTube's API policies require of an embedded player. */
+   no less than the 200px YouTube's API policies require of an embedded player.
+   Content-box, so every size below is the player's own and the border sits
+   outside it rather than eating into that minimum. */
 .card {
   display: none;
 }
@@ -110,11 +119,18 @@
 .card--live {
   position: relative;
   display: block;
+  box-sizing: content-box;
   width: var(--card);
+  min-width: 200px;
   height: 200px;
   transition:
     width 0.25s ease,
     height 0.25s ease;
+}
+
+/* The smallest square YouTube allows; the video letterboxes inside it. */
+.card--live.card--small {
+  width: 200px;
 }
 
 /* About a third of a wide window: 1.3 times the usual card at the least, never
@@ -127,23 +143,6 @@
 .screen {
   width: 100%;
   height: 100%;
-}
-
-.enlarge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  min-width: 30px;
-  min-height: 30px;
-  padding: 0;
-  font-size: 15px;
-}
-
-.enlarge,
-.notice {
-  border-radius: 8px;
-  background: var(--panel-strong);
-  color: var(--ink);
 }
 
 /* Under a larger card the list gives up height, so both stay on the screen. */
@@ -240,6 +239,9 @@ button:focus-visible {
   margin: 0;
   padding: 6px 10px;
   border: var(--rule);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  color: var(--ink);
   font-size: 12px;
 }
 
@@ -287,13 +289,17 @@ button:focus-visible {
   cursor: pointer;
 }
 
-.volume input,
-.opacity input {
+.volume input {
   width: 72px;
 }
 
+/* Short, so the bar fits the screen. */
+.opacity input {
+  width: 48px;
+}
+
 .visual select {
-  width: 128px;
+  width: 112px;
   min-height: 26px;
   padding: 0 4px;
   border: var(--rule);
@@ -333,10 +339,6 @@ button:focus-visible {
     background: var(--panel-strong);
   }
 
-  .bar {
-    flex-wrap: wrap;
-  }
-
   /* The song's name takes what the transport, the heart and the fold leave, so
      they share one row. */
   .now {
@@ -368,10 +370,6 @@ button:focus-visible {
 
   /* Video and a Visual that fills the row, then the sky's strength, with Sync where
      the browser can sync; the pickers shrink, so none of it runs off the screen. */
-  .group--sky {
-    flex-wrap: wrap;
-  }
-
   .visual,
   .opacity {
     flex: 1 1 60%;

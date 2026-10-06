@@ -74,6 +74,22 @@
       >
         Done
       </button>
+      @if (chart() === 'prs') {
+        <label
+          class="hole"
+          title="Pull requests idle longer than this many days fall toward the black hole"
+          ><span aria-hidden="true">hole</span
+          ><input
+            type="number"
+            step="1"
+            aria-label="Black hole: idle days before a pull request falls in"
+            [min]="minHoleDays"
+            [max]="maxHoleDays"
+            [value]="blackHole.staleAfterDays()"
+            (change)="onHoleDays($event)"
+          /><span aria-hidden="true">d</span></label
+        >
+      }
     </div>
   }
   <div class="toolgroup">

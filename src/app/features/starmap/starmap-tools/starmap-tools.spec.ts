@@ -3,6 +3,7 @@ import { STARMAP_SCORE } from '../sound/starmap-sound';
 import { HelpState } from '../../../shared/help/help-state';
 import { Chart } from '../starmap-view';
 import { StarmapTools } from './starmap-tools';
+import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 
 function render(chart: Chart = 'prs') {
   TestBed.configureTestingModule({
@@ -104,6 +105,25 @@ describe('StarmapTools', () => {
 
     expect(button('Sound on')).toBeDefined();
     expect(element.querySelector<HTMLInputElement>('.vol input')?.value).toBe('70');
+  });
+
+  it('sets the black hole’s threshold on the queue, keeping it in range', () => {
+    const { fixture, element } = render();
+    const field = element.querySelector<HTMLInputElement>('.hole input');
+    expect(field?.value).toBe('14');
+
+    if (field) field.value = '30';
+    field?.dispatchEvent(new Event('change'));
+    expect(TestBed.inject(BlackHoleSetting).staleAfterDays()).toBe(30);
+    if (field) field.value = '500';
+    field?.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(field?.value).toBe('90');
+  });
+
+  it('offers the threshold only over the queue', () => {
+    expect(render('logs').element.querySelector('.hole')).toBeNull();
   });
 
   it('opens help, and folds away, remembering the fold', () => {

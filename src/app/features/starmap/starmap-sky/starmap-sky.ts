@@ -38,6 +38,8 @@ import { DoneItem, DoneKind } from '../../../core/queue/done-work';
 import { DoneLayer, isDoneHit } from '../engine/done-layer';
 import { CrewLayer } from '../engine/crew-layer';
 import { CrewMark } from '../../../core/crew/crew.types';
+import { BlackHoleLayer } from '../engine/black-hole-layer';
+import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 
 /** What the pointer can rest on over the queue: a star's pull request, or a comet. */
 type QueueHover = number | Comet;
@@ -150,6 +152,7 @@ export class StarmapSky {
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('sky');
   private readonly document = inject(DOCUMENT);
   private readonly motion = inject(MotionPreference);
+  private readonly blackHole = inject(BlackHoleSetting);
   private readonly errors = inject(ErrorHandler);
   private readonly collisions = new CollisionLayer();
   private readonly binaries = new BinaryLayer((star) => star.item?.issues ?? []);
@@ -159,6 +162,7 @@ export class StarmapSky {
   private readonly cometLayer = new CometLayer<Comet>();
   private readonly planLayer = new PlanLayer();
   private readonly doneLayer = new DoneLayer();
+  private readonly blackHoleLayer = new BlackHoleLayer();
   private readonly crewLayer = new CrewLayer(Date.now, () => this.engine?.kick());
   private readonly tetherLayer = new TetherLayer(
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
@@ -184,6 +188,7 @@ export class StarmapSky {
       const items = this.items();
       const logs = this.logLayout();
       const nursery = this.nursery();
+      this.blackHole.staleAfterDays();
       untracked(() => this.layOut(chart, items, logs, nursery));
     });
     effect(() => {
@@ -398,6 +403,7 @@ export class StarmapSky {
       return;
     }
     this.engine.layers = [
+      this.blackHoleLayer,
       this.cometLayer,
       this.collisions,
       this.binaries,
@@ -455,7 +461,9 @@ export class StarmapSky {
       if (chart === 'logs') {
         engine.setSky((sky: SkyLayout) => logs && feedLogs(logs, sky));
       } else {
-        engine.setSky((sky: SkyLayout) => layoutQueue(items, sky), {
+        const staleAfterDays = this.blackHole.staleAfterDays();
+        this.blackHoleLayer.staleAfterDays = staleAfterDays;
+        engine.setSky((sky: SkyLayout) => layoutQueue(items, sky, staleAfterDays), {
           carry: this.isFramed && !switched,
         });
       }

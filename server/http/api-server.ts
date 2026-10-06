@@ -37,8 +37,11 @@ async function sendBody(
 ): Promise<void> {
   if (!body) return void outgoing.end();
   const reader = body.getReader();
-  // A caller that goes away ends the stream, which tells its source to stop.
-  outgoing.on('close', () => reader.cancel().catch((error: unknown) => console.error(error)));
+  const cancel = (): void => void reader.cancel().catch((error: unknown) => console.error(error));
+  // A caller that goes away ends the stream, which tells its source to stop. One
+  // that left while the route was still answering closed before anyone listened.
+  if (outgoing.closed) return cancel();
+  outgoing.on('close', cancel);
   for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
     outgoing.write(chunk.value);
   }

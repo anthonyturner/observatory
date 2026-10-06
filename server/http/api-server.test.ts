@@ -16,6 +16,13 @@ const streaming = (): Response =>
     }),
   );
 
+/** Holds a response back until the test lets it go, as a slow route does. */
+const lateRelease = Promise.withResolvers<void>();
+const lateCancelled = Promise.withResolvers<void>();
+const lateStreaming = (): Response =>
+  new Response(new ReadableStream<Uint8Array>({ cancel: () => lateCancelled.resolve() }));
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 describe('createApiServer', () => {
   const seen: { method: string; path: string; header: string | null; body: string }[] = [];
   const server = createApiServer(async (request) => {
@@ -28,6 +35,10 @@ describe('createApiServer', () => {
     });
     if (url.pathname === '/throws') throw new Error('boom');
     if (url.pathname === '/stream') return streaming();
+    if (url.pathname === '/late-stream') {
+      await lateRelease.promise;
+      return lateStreaming();
+    }
     const headers = new Headers({ 'x-reply': 'yes' });
     headers.append('set-cookie', 'a=1; Path=/');
     headers.append('set-cookie', 'b=2; Path=/');
@@ -66,6 +77,19 @@ describe('createApiServer', () => {
 
     assert.equal(new TextDecoder().decode(first?.value), FIRST_LINE);
     await streamCancelled.promise;
+  });
+
+  it('stops a stream whose caller left before the response was ready', async () => {
+    const leave = new AbortController();
+    const asked = fetch(`${base}/late-stream`, { signal: leave.signal }).catch(() => undefined);
+    await pause(50);
+    leave.abort();
+    await asked;
+    await pause(50);
+
+    lateRelease.resolve();
+
+    await lateCancelled.promise;
   });
 
   it('answers 500 when the handler throws, and keeps serving', async () => {

@@ -1,16 +1,32 @@
 import type { PullBucket } from '../projects/pull-counts.ts';
+import type { LandedBase } from './landed-base.ts';
 
-/** What a crew does: bring a conflicted branch up to date, or fix failing checks. */
-export type CrewTask = 'update-branch' | 'fix-checks';
+/**
+ * What a crew does: bring a conflicted branch up to date, fix failing checks,
+ * or update a branch whose base has merged.
+ */
+export type CrewTask = 'update-branch' | 'fix-checks' | 'update-stack';
 
 /** The pull request a crew is sent to, as the queue reads it. */
-export interface CrewTarget {
+interface CrewBranches {
   readonly repo: string;
   readonly number: number;
   readonly branch: string;
   readonly base: string;
-  readonly task: CrewTask;
 }
+
+/** A crew that clears a stuck pull request. */
+interface ClearTarget extends CrewBranches {
+  readonly task: 'update-branch' | 'fix-checks';
+}
+
+/** A crew that updates a pull request stacked on one that has merged. */
+interface StackTarget extends CrewBranches {
+  readonly task: 'update-stack';
+  readonly landed: LandedBase;
+}
+
+export type CrewTarget = ClearTarget | StackTarget;
 
 /**
  * Every crew prompt's first line starts with this, then `owner/name#number`.
@@ -23,13 +39,14 @@ export const CREW_TAG = 'Observatory crew ship for';
  *  line of the prompt. */
 const SAFE_BRANCH = /^[A-Za-z0-9._][A-Za-z0-9._/-]{0,199}$/;
 
-const TASKS: Readonly<Partial<Record<PullBucket, CrewTask>>> = {
+const TASKS: Readonly<Partial<Record<PullBucket, ClearTarget['task']>>> = {
   conflicted: 'update-branch',
   failing: 'fix-checks',
 };
 
 /** The crew's task for a pull request in `bucket`, or null when it needs none. */
-export const crewTaskOf = (bucket: PullBucket): CrewTask | null => TASKS[bucket] ?? null;
+export const crewTaskOf = (bucket: PullBucket): ClearTarget['task'] | null =>
+  TASKS[bucket] ?? null;
 
 /** Whether `name` is safe to write into a crew's instructions. */
 export const isSafeBranch = (name: string): boolean =>
@@ -47,10 +64,12 @@ const scopeOf = (target: CrewTarget): string[] => [
   '- When you are done, remove the temporary worktree with `git worktree remove`.',
 ];
 
-const STEPS: Readonly<Record<CrewTask, (target: CrewTarget) => string[]>> = {
+const MERGE_NOT_REBASE = 'Merge rather than rebase: a rebase would need a force-push.';
+
+const CLEAR_STEPS: Readonly<Record<ClearTarget['task'], (target: ClearTarget) => string[]>> = {
   'update-branch': (target) => [
     `The task: the branch conflicts with \`${target.base}\`. Merge \`origin/${target.base}\` into it and resolve every conflict, keeping what both sides meant.`,
-    'Merge rather than rebase: a rebase would need a force-push.',
+    MERGE_NOT_REBASE,
     'Build and test as the project documents, commit the merge, and push.',
   ],
   'fix-checks': (target) => [
@@ -58,6 +77,17 @@ const STEPS: Readonly<Record<CrewTask, (target: CrewTarget) => string[]>> = {
     'Find the cause and fix it with the smallest change that does, run the failing check locally where you can, then commit with a Conventional Commit message and push.',
   ],
 };
+
+const stackSteps = ({ repo, number, landed }: StackTarget): string[] => [
+  `The task: it was stacked on pull request #${landed.number}, whose branch \`${landed.branch}\` has merged into \`${landed.into}\`. Merge \`origin/${landed.into}\` into this branch and resolve every conflict, keeping what this branch meant.`,
+  MERGE_NOT_REBASE,
+  'Build and test as the project documents, commit the merge, and push.',
+  `Then point the pull request at \`${landed.into}\` with \`gh pr edit ${number} --repo ${repo} --base ${landed.into}\`, so it no longer merges into a finished branch.`,
+  `If \`${landed.branch}\` is still in use, taking work that is not in \`${landed.into}\`, change nothing and say so.`,
+];
+
+const stepsOf = (target: CrewTarget): string[] =>
+  target.task === 'update-stack' ? stackSteps(target) : CLEAR_STEPS[target.task](target);
 
 const CLOSING = [
   '',
@@ -71,7 +101,7 @@ export function crewPrompt(target: CrewTarget): string {
     '',
     ...scopeOf(target),
     '',
-    ...STEPS[target.task](target),
+    ...stepsOf(target),
     ...CLOSING,
   ].join('\n');
 }

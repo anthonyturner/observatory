@@ -14,7 +14,10 @@
               "createdAt": "2026-09-26T09:04:34Z",
               "closedAt": null,
               "mergedAt": null,
-              "state": "OPEN"
+              "state": "OPEN",
+              "headRefName": "feat/15-prepare-top-matches-button",
+              "baseRefName": "fix/14-recover-stuck-drafts",
+              "isCrossRepository": false
             },
             {
               "number": 16,
@@ -22,7 +25,10 @@
               "createdAt": "2026-09-26T08:56:34Z",
               "closedAt": null,
               "mergedAt": null,
-              "state": "OPEN"
+              "state": "OPEN",
+              "headRefName": "fix/14-recover-stuck-drafts",
+              "baseRefName": "main",
+              "isCrossRepository": false
             },
             {
               "number": 13,
@@ -30,7 +36,10 @@
               "createdAt": "2026-09-25T09:53:38Z",
               "closedAt": "2026-09-26T08:31:21Z",
               "mergedAt": "2026-09-26T08:31:21Z",
-              "state": "MERGED"
+              "state": "MERGED",
+              "headRefName": "feat/10-approve-and-fill",
+              "baseRefName": "main",
+              "isCrossRepository": false
             },
             {
               "number": 12,
@@ -38,7 +47,10 @@
               "createdAt": "2026-09-24T12:32:47Z",
               "closedAt": "2026-09-24T13:04:17Z",
               "mergedAt": "2026-09-24T13:04:17Z",
-              "state": "MERGED"
+              "state": "MERGED",
+              "headRefName": "feat/9-auto-prepare",
+              "baseRefName": "main",
+              "isCrossRepository": false
             },
             {
               "number": 7,
@@ -46,7 +58,10 @@
               "createdAt": "2026-09-24T09:54:14Z",
               "closedAt": null,
               "mergedAt": null,
-              "state": "OPEN"
+              "state": "OPEN",
+              "headRefName": "dependabot/npm_and_yarn/fastify/static-10.1.4",
+              "baseRefName": "main",
+              "isCrossRepository": false
             },
             {
               "number": 6,
@@ -54,7 +69,10 @@
               "createdAt": "2026-09-24T09:54:10Z",
               "closedAt": null,
               "mergedAt": null,
-              "state": "OPEN"
+              "state": "OPEN",
+              "headRefName": "dependabot/npm_and_yarn/angular/forms-22.1.7",
+              "baseRefName": "main",
+              "isCrossRepository": false
             },
             {
               "number": 5,
@@ -62,7 +80,10 @@
               "createdAt": "2026-09-24T09:54:09Z",
               "closedAt": null,
               "mergedAt": null,
-              "state": "OPEN"
+              "state": "OPEN",
+              "headRefName": "dependabot/npm_and_yarn/angular/platform-browser-22.1.7",
+              "baseRefName": "main",
+              "isCrossRepository": false
             },
             {
               "number": 4,
@@ -70,7 +91,10 @@
               "createdAt": "2026-09-24T09:53:59Z",
               "closedAt": null,
               "mergedAt": null,
-              "state": "OPEN"
+              "state": "OPEN",
+              "headRefName": "dependabot/npm_and_yarn/angular/core-22.1.7",
+              "baseRefName": "main",
+              "isCrossRepository": false
             },
             {
               "number": 3,
@@ -78,7 +102,10 @@
               "createdAt": "2026-09-24T09:53:52Z",
               "closedAt": null,
               "mergedAt": null,
-              "state": "OPEN"
+              "state": "OPEN",
+              "headRefName": "dependabot/npm_and_yarn/development-tooling-67ccecc05a",
+              "baseRefName": "main",
+              "isCrossRepository": false
             },
             {
               "number": 2,
@@ -86,7 +113,10 @@
               "createdAt": "2026-09-24T09:42:17Z",
               "closedAt": "2026-09-24T09:51:44Z",
               "mergedAt": "2026-09-24T09:51:44Z",
-              "state": "MERGED"
+              "state": "MERGED",
+              "headRefName": "docs/1-agent-playbook",
+              "baseRefName": "main",
+              "isCrossRepository": false
             }
           ]
         }
@@ -100,7 +130,10 @@
       "mergedAt": null,
       "number": 17,
       "state": "OPEN",
-      "title": "feat(apply): add a button to prepare top matches on demand"
+      "title": "feat(apply): add a button to prepare top matches on demand",
+      "headRefName": "feat/15-prepare-top-matches-button",
+      "baseRefName": "fix/14-recover-stuck-drafts",
+      "isCrossRepository": false
     },
     {
       "closedAt": null,
@@ -108,7 +141,10 @@
       "mergedAt": null,
       "number": 16,
       "state": "OPEN",
-      "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies"
+      "title": "fix(apply): recover stuck preparing drafts and skip open-draft companies",
+      "headRefName": "fix/14-recover-stuck-drafts",
+      "baseRefName": "main",
+      "isCrossRepository": false
     },
     {
       "closedAt": "2026-09-26T08:31:21Z",
@@ -116,7 +152,10 @@
       "mergedAt": "2026-09-26T08:31:21Z",
       "number": 13,
       "state": "MERGED",
-      "title": "feat(apply): add an Approve-and-fill one-click action"
+      "title": "feat(apply): add an Approve-and-fill one-click action",
+      "headRefName": "feat/10-approve-and-fill",
+      "baseRefName": "main",
+      "isCrossRepository": false
     },
     {
       "closedAt": "2026-09-24T13:04:17Z",
@@ -124,7 +163,10 @@
       "mergedAt": "2026-09-24T13:04:17Z",
       "number": 12,
       "state": "MERGED",
-      "title": "feat(apply): prepare applications unattended, up to review"
+      "title": "feat(apply): prepare applications unattended, up to review",
+      "headRefName": "feat/9-auto-prepare",
+      "baseRefName": "main",
+      "isCrossRepository": false
     },
     {
       "closedAt": null,
@@ -132,7 +174,10 @@
       "mergedAt": null,
       "number": 7,
       "state": "OPEN",
-      "title": "chore(deps): Bump @fastify/static from 8.3.0 to 10.1.4"
+      "title": "chore(deps): Bump @fastify/static from 8.3.0 to 10.1.4",
+      "headRefName": "dependabot/npm_and_yarn/fastify/static-10.1.4",
+      "baseRefName": "main",
+      "isCrossRepository": false
     },
     {
       "closedAt": null,
@@ -140,7 +185,10 @@
       "mergedAt": null,
       "number": 6,
       "state": "OPEN",
-      "title": "chore(deps): Bump @angular/forms from 21.2.24 to 22.1.7"
+      "title": "chore(deps): Bump @angular/forms from 21.2.24 to 22.1.7",
+      "headRefName": "dependabot/npm_and_yarn/angular/forms-22.1.7",
+      "baseRefName": "main",
+      "isCrossRepository": false
     },
     {
       "closedAt": null,
@@ -148,7 +196,10 @@
       "mergedAt": null,
       "number": 5,
       "state": "OPEN",
-      "title": "chore(deps): Bump @angular/platform-browser from 21.2.24 to 22.1.7"
+      "title": "chore(deps): Bump @angular/platform-browser from 21.2.24 to 22.1.7",
+      "headRefName": "dependabot/npm_and_yarn/angular/platform-browser-22.1.7",
+      "baseRefName": "main",
+      "isCrossRepository": false
     },
     {
       "closedAt": null,
@@ -156,7 +207,10 @@
       "mergedAt": null,
       "number": 4,
       "state": "OPEN",
-      "title": "chore(deps): Bump @angular/core from 21.2.24 to 22.1.7"
+      "title": "chore(deps): Bump @angular/core from 21.2.24 to 22.1.7",
+      "headRefName": "dependabot/npm_and_yarn/angular/core-22.1.7",
+      "baseRefName": "main",
+      "isCrossRepository": false
     },
     {
       "closedAt": null,
@@ -164,7 +218,10 @@
       "mergedAt": null,
       "number": 3,
       "state": "OPEN",
-      "title": "chore(deps-dev): Bump the development-tooling group with 8 updates"
+      "title": "chore(deps-dev): Bump the development-tooling group with 8 updates",
+      "headRefName": "dependabot/npm_and_yarn/development-tooling-67ccecc05a",
+      "baseRefName": "main",
+      "isCrossRepository": false
     },
     {
       "closedAt": "2026-09-24T09:51:44Z",
@@ -172,7 +229,10 @@
       "mergedAt": "2026-09-24T09:51:44Z",
       "number": 2,
       "state": "MERGED",
-      "title": "Install the agent playbook and merge AGENTS.md into it"
+      "title": "Install the agent playbook and merge AGENTS.md into it",
+      "headRefName": "docs/1-agent-playbook",
+      "baseRefName": "main",
+      "isCrossRepository": false
     }
   ]
 }

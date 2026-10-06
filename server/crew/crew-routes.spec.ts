@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { RunOffer } from '../assistant/route-contract.ts';
 import { createApiHandler } from '../http/api-handler.ts';
+import type { MergedBranch } from '../history/ledger.ts';
 import type { QueueItem, QueueReport } from '../queue/queue-report.ts';
 import { CREW_TAG } from './crew-prompt.ts';
 import type { CrewQueue, CrewRunner } from './crew-proposal.ts';
@@ -39,12 +40,20 @@ const item = (number: number, overrides: Partial<QueueItem> = {}): QueueItem => 
   ...overrides,
 });
 
-function setUp(items: readonly QueueItem[], offer: RunOffer = { run: TICKET }, isAvailable = true) {
+interface Setting {
+  readonly offer?: RunOffer;
+  readonly isAvailable?: boolean;
+  readonly merged?: readonly MergedBranch[];
+}
+
+function setUp(items: readonly QueueItem[], setting: Setting = {}) {
+  const { offer = { run: TICKET }, isAvailable = true, merged = [] } = setting;
   const forgotten: string[] = [];
   const offers: { prompt: string; repo: string | null }[] = [];
   const queue: CrewQueue = {
     queue: async (repo): Promise<QueueReport> => ({ generatedAt: '', repo, items }),
     forgetQueue: (repo) => forgotten.push(repo),
+    ledger: async () => ({ mergedBranches: merged }),
   };
   const runner: CrewRunner = {
     isAvailable,
@@ -62,7 +71,7 @@ function setUp(items: readonly QueueItem[], offer: RunOffer = { run: TICKET }, i
 describe('crew routes', () => {
   it('says whether this machine can send a crew', async () => {
     const on = await setUp([]).handle(new Request(BASE));
-    const off = await setUp([], {}, false).handle(new Request(BASE));
+    const off = await setUp([], { isAvailable: false }).handle(new Request(BASE));
 
     assert.deepEqual(await on.json(), { isAvailable: true });
     assert.deepEqual(await off.json(), { isAvailable: false });
@@ -89,6 +98,28 @@ describe('crew routes', () => {
     assert.match(body.prompt, /: fix-checks$/m);
   });
 
+  it('updates a pull request whose base has merged, whatever its bucket', async () => {
+    const stacked = item(13, { bucket: 'unreviewed', base: 'feat/12', mergeable: 'MERGEABLE' });
+    const { send } = setUp([stacked], { merged: [{ number: 12, head: 'feat/12', base: 'main' }] });
+
+    const response = await send({ repo: 'me/app', number: 13 });
+    const body = (await response.json()) as { prompt: string };
+
+    assert.equal(response.status, 201);
+    assert.match(body.prompt, /: update-stack$/m);
+    assert.match(body.prompt, /--base main/);
+  });
+
+  it('leaves a pull request stacked on an open one to its bucket', async () => {
+    const parent = item(12, { bucket: 'unreviewed', mergeable: 'MERGEABLE' });
+    const child = item(13, { bucket: 'unreviewed', base: 'feat/12', mergeable: 'MERGEABLE' });
+    const merged = [{ number: 5, head: 'feat/12', base: 'main' }];
+
+    const response = await setUp([parent, child], { merged }).send({ repo: 'me/app', number: 13 });
+
+    assert.equal(response.status, 403);
+  });
+
   it('refuses a pull request that is neither conflicted nor failing, before asking the runner', async () => {
     const { send, offers } = setUp([item(9, { bucket: 'unreviewed', mergeable: 'MERGEABLE' })]);
 
@@ -113,7 +144,7 @@ describe('crew routes', () => {
 
   it('passes on why the runner cannot start one', async () => {
     const why = 'That project has no local checkout on this machine.';
-    const response = await setUp([item(7)], { why }).send({ repo: 'me/app', number: 7 });
+    const response = await setUp([item(7)], { offer: { why } }).send({ repo: 'me/app', number: 7 });
 
     assert.equal(response.status, 403);
     assert.deepEqual(await response.json(), { error: why });

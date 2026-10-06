@@ -74,6 +74,28 @@ These are screenshots of the app running on real data, with only the public
 repositories shown. Where WebGL can't start, both pages fall back to a
 simpler flat drawing.
 
+## Syncing the sky to music
+
+On Home, **Sync** in the playlist bar makes the sky move with real sound.
+Nothing is simulated, and nothing is recorded or sent. The arrow beside Sync
+picks where it hears the music:
+
+- **This tab** (Chrome and Edge): the playlist playing in Observatory. Tick
+  "Share tab audio" when Chrome asks.
+- **Whole computer** (Chrome and Edge on Windows and ChromeOS): everything the
+  computer plays. Pick Entire screen and tick "Also share system audio".
+- **Input device** (any desktop browser, Firefox and Safari included): an audio
+  input, listed by name once you allow access. A microphone hears the room; for
+  the computer's own sound use a loopback input:
+  - Windows: **Stereo Mix**. In Sound settings, open More sound settings ›
+    Recording, right-click the list, tick Show Disabled Devices, then enable
+    Stereo Mix. If your sound card has none, install
+    [VB-Audio Virtual Cable](https://vb-audio.com/Cable/).
+  - macOS: install [BlackHole](https://existential.audio/blackhole/), and add a
+    Multi-Output Device in Audio MIDI Setup so you still hear the music.
+
+Phones can't capture sound for a web page, so Sync is hidden there.
+
 ## Stack
 
 - **Angular 22**: standalone components, signals, `OnPush` change detection

@@ -1,9 +1,9 @@
 import { Injectable, Signal, computed, inject, signal } from '@angular/core';
+import { sourceIdOf } from './option-id';
 import { SOUND_SOURCES } from './sound-sources';
 import { SoundOption, SoundSource } from './sound-source.types';
 
 const STORAGE_KEY = 'observatory.music.sound-source';
-const DETAIL_SEPARATOR = ':';
 
 /** A source this browser can use, with its entries for the chooser. */
 export interface SoundMenuGroup {
@@ -15,6 +15,9 @@ export interface SoundMenuGroup {
 export interface SoundSelection {
   readonly source: SoundSource;
   readonly option: SoundOption;
+  /** The entry picked is gone from a list its source could read in full, as when
+   *  a device is unplugged, so this is its source's own entry instead. */
+  readonly isPickGone: boolean;
 }
 
 /** Where Sync hears the music: the entry last picked in this browser, kept in
@@ -46,22 +49,30 @@ export class SoundSourceChoice {
   }
 }
 
-/** The picked entry if it is on offer; else the first entry of its own source,
- *  as when a device it named is gone; else the first entry of all. */
+/** The picked entry if it is on offer; else its own source's entry, as when a
+ *  device it named is gone; else the first entry of all. */
 function selectionOf(
   menu: readonly SoundMenuGroup[],
   picked: string | null,
 ): SoundSelection | null {
   for (const { source, options } of menu) {
     const option = options.find(({ id }) => id === picked);
-    if (option) return { source, option };
+    if (option) return { source, option, isPickGone: false };
   }
-  const owner = menu.find(({ source }) => source.id === sourceIdOf(picked)) ?? menu[0];
-  return owner ? { source: owner.source, option: owner.options[0] } : null;
+  const owner =
+    picked === null ? undefined : menu.find(({ source }) => source.id === sourceIdOf(picked));
+  if (owner) return fallbackWithin(owner);
+  const first = menu[0];
+  return first ? { source: first.source, option: first.options[0], isPickGone: false } : null;
 }
 
-function sourceIdOf(optionId: string | null): string | null {
-  return optionId?.split(DETAIL_SEPARATOR)[0] ?? null;
+/** A source that lists only its own entry has not been let read its list (the
+ *  browser hides device names until access is granted), so it cannot tell a pick
+ *  is gone. */
+function fallbackWithin({ source, options }: SoundMenuGroup): SoundSelection {
+  const own = options.find(({ id }) => id === source.id);
+  const isListed = options.some(({ id }) => id !== source.id);
+  return { source, option: own ?? options[0], isPickGone: isListed };
 }
 
 /** Storage is outside the program; an id no source offers falls back as above. */

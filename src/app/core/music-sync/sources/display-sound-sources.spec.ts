@@ -13,7 +13,9 @@ function silentShare() {
     getTracks: () => [video],
   };
   const getDisplayMedia = vi.fn(() => Promise.resolve(stream as unknown as MediaStream));
-  return { media: { getDisplayMedia } as unknown as MediaDevices, getDisplayMedia, video };
+  const getSupportedConstraints = () => ({ suppressLocalAudioPlayback: true });
+  const media = { getDisplayMedia, getSupportedConstraints } as unknown as MediaDevices;
+  return { media, getDisplayMedia, video };
 }
 
 function setup(media: MediaDevices | null, platform: string | null = 'Windows') {
@@ -40,6 +42,13 @@ describe('the screen-sharing sound sources', () => {
       expect(tab.options().length).toBe(1);
       expect(computer.options()).toEqual([]);
     }
+  });
+
+  it('offer nothing where a share cannot carry sound, as in Firefox and Safari', () => {
+    const pictureOnly = { getDisplayMedia: vi.fn(), getSupportedConstraints: () => ({}) };
+    const { tab, computer } = setup(pictureOnly as unknown as MediaDevices, null);
+    expect(tab.options()).toEqual([]);
+    expect(computer.options()).toEqual([]);
   });
 
   it('offer nothing where no screen can be shared, as on a phone', () => {

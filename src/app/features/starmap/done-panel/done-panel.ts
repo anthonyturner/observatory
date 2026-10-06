@@ -15,6 +15,14 @@ const KIND_LABEL: Readonly<Record<DoneKind, string>> = {
   dropped: 'dropped',
 };
 
+/** The filter buttons, in the legend's order. */
+const FILTERS: readonly { kind: DoneKind; label: string }[] = [
+  { kind: 'merged', label: 'merged' },
+  { kind: 'closed', label: 'closed' },
+  { kind: 'issue', label: 'issue done' },
+  { kind: 'dropped', label: 'dropped' },
+];
+
 /** "Today", "Yesterday", or "Mon, Sep 29". */
 export function dayLabel(day: string, now: Date, locale?: string): string {
   const at = new Date(`${day}T12:00:00`);
@@ -58,12 +66,30 @@ export function doneSummary(items: readonly DoneItem[]): string {
 export class DonePanel {
   readonly items = input<readonly DoneItem[]>([]);
   readonly lit = input<string | null>(null);
+  /** The one kind the list shows, or null for all of them. */
+  readonly only = input<DoneKind | null>(null);
   /** The row under the pointer or focus, by key, or null when it leaves. */
   readonly light = output<string | null>();
   readonly open = output<DoneItem>();
+  /** A filter button was pressed: its kind, or null when it was already on. */
+  readonly filter = output<DoneKind | null>();
 
-  protected readonly days = computed(() => doneDays(this.items(), new Date()));
+  protected readonly filters = computed(() =>
+    FILTERS.map((each) => ({
+      ...each,
+      count: this.items().filter((item) => item.kind === each.kind).length,
+    })),
+  );
+  protected readonly days = computed(() => {
+    const only = this.only();
+    const shown = only ? this.items().filter((item) => item.kind === only) : this.items();
+    return doneDays(shown, new Date());
+  });
   protected readonly summary = computed(() => doneSummary(this.items()));
   protected readonly kindLabel = KIND_LABEL;
   protected readonly isPull = isPull;
+
+  protected press(kind: DoneKind): void {
+    this.filter.emit(this.only() === kind ? null : kind);
+  }
 }

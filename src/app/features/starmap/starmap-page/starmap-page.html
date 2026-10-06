@@ -31,6 +31,7 @@
   [selectedIssue]="ringedIssue()"
   [done]="done()"
   [doneLit]="doneLit()"
+  [doneOnly]="doneOnly()"
   (pickedDone)="openDone($event)"
   (pickedIssue)="pickIssue($event)"
 />
@@ -136,7 +137,9 @@
   <app-done-panel
     [items]="done()"
     [lit]="doneLit()"
+    [only]="doneOnly()"
     (light)="doneLit.set($event)"
+    (filter)="doneOnly.set($event)"
     (open)="openDone($event)"
   />
 }

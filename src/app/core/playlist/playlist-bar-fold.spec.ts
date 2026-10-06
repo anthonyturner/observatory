@@ -28,7 +28,7 @@ describe('PlaylistBarFold', () => {
     const phone = vi.fn(() => ({ matches: true }));
     vi.stubGlobal('matchMedia', phone);
     expect(TestBed.inject(PlaylistBarFold).isFolded()).toBe(true);
-    expect(phone).toHaveBeenCalledWith('(max-width: 720px)');
+    expect(phone).toHaveBeenCalledWith('(max-width: 720px), (max-height: 500px)');
     TestBed.inject(PlaylistBarFold).toggle();
     TestBed.resetTestingModule();
     expect(TestBed.inject(PlaylistBarFold).isFolded()).toBe(false);

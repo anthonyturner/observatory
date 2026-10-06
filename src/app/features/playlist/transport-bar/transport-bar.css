@@ -28,6 +28,12 @@
   align-items: center;
 }
 
+/* Where the window is narrower than the whole bar, its groups wrap to a second
+   row rather than run off the screen's right edge. */
+.bar {
+  flex-wrap: wrap;
+}
+
 /* Lays its controls out as the bar's own, so folding only takes them away. */
 .extras {
   display: contents;
@@ -287,13 +293,23 @@ button:focus-visible {
   cursor: pointer;
 }
 
-.volume input,
-.opacity input {
+.volume input {
   width: 72px;
 }
 
+/* The sky's strength sits on the bar's right end, so it is the first to give up
+   width: short, with tight padding, so the bar stays on the screen. */
+.opacity {
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.opacity input {
+  width: 48px;
+}
+
 .visual select {
-  width: 128px;
+  width: 112px;
   min-height: 26px;
   padding: 0 4px;
   border: var(--rule);
@@ -331,10 +347,6 @@ button:focus-visible {
     max-height: var(--playlist-room);
     overflow-y: auto;
     background: var(--panel-strong);
-  }
-
-  .bar {
-    flex-wrap: wrap;
   }
 
   /* The song's name takes what the transport, the heart and the fold leave, so

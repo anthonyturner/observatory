@@ -31,6 +31,7 @@ export class FakeSoundSource implements SoundSource {
   readonly guide: SoundGuide;
   readonly options: WritableSignal<readonly SoundOption[]>;
   readonly opened: string[] = [];
+  opensWithPlay = true;
   answer: (optionId: string) => Promise<AudioTap> = () => Promise.resolve(new FakeTap());
 
   constructor(

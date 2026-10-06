@@ -20,6 +20,7 @@ export class SoundCardSource implements SoundSource {
     ask: 'Observatory’s server on this computer hears whatever it plays: nothing to share or tick, and the sound stays on this computer.',
     silent: 'The local server could not hear the sound card',
   };
+  readonly opensWithPlay = true;
   readonly options: Signal<readonly SoundOption[]> = computed(() =>
     this.isAvailable() ? [SOUND_CARD] : [],
   );

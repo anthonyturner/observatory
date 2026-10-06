@@ -27,8 +27,6 @@ export class MusicPulse {
   private hasAsked = false;
 
   readonly status: Signal<SyncStatus> = this.currentStatus.asReadonly();
-  /** False where the browser can use no source, as on a phone, so listening never can. */
-  readonly canListen = computed(() => this.choice.selected() !== null);
   readonly isListening = computed(() => this.currentStatus() === 'listening');
   readonly isAsking = computed(() => this.currentStatus() === 'asking');
   /** The sound while listening, for a visualizer that hears it directly. */
@@ -38,9 +36,10 @@ export class MusicPulse {
     inject(DestroyRef).onDestroy(() => this.release());
   }
 
-  /** Asks to hear the chosen source, unless this visit already asked or never could. */
+  /** Asks to hear the chosen source as Play starts, unless this visit already asked,
+   *  none can be heard, or the source waits for Sync. */
   listenOnce(): void {
-    if (!this.hasAsked && this.canListen()) this.listen();
+    if (!this.hasAsked && this.choice.selected()?.source.opensWithPlay) this.listen();
   }
 
   /** Asks to hear the chosen source; call it from a click, as the browser requires. */

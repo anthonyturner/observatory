@@ -29,8 +29,9 @@ const silentScore: AmbientPlayer = {
 };
 
 /** On Home by default: a page with a music sky, which the sky's controls need, in a
- *  browser that can share a tab's audio and the whole computer's. */
-function render({ hasSky = true, canShare = true, hasComputer = true } = {}) {
+ *  browser that can share a tab's audio and the whole computer's; `onPhone`, it
+ *  can share neither and hears its microphone instead. */
+function render({ hasSky = true, canShare = true, hasComputer = true, onPhone = false } = {}) {
   const pauses = vi.fn();
   const player: VideoPlayer = {
     load: vi.fn(),
@@ -53,11 +54,17 @@ function render({ hasSky = true, canShare = true, hasComputer = true } = {}) {
     close: vi.fn(),
   };
   const openTap = vi.fn(() => Promise.resolve(tap));
-  const tabSource = new FakeSoundSource('tab', canShare ? [{ id: 'tab', label: 'This tab' }] : []);
+  const isSharing = canShare && !onPhone;
+  const tabSource = new FakeSoundSource('tab', isSharing ? [{ id: 'tab', label: 'This tab' }] : []);
   const computerSource = new FakeSoundSource(
     'computer',
-    canShare && hasComputer ? [{ id: 'computer', label: 'Whole computer' }] : [],
+    isSharing && hasComputer ? [{ id: 'computer', label: 'Whole computer' }] : [],
   );
+  const microphoneSource = new FakeSoundSource(
+    'microphone',
+    onPhone ? [{ id: 'microphone', label: 'Microphone' }] : [],
+  );
+  microphoneSource.opensWithPlay = false;
   tabSource.answer = openTap;
   const saver: FileSaver = { save: vi.fn() };
   TestBed.configureTestingModule({
@@ -65,7 +72,7 @@ function render({ hasSky = true, canShare = true, hasComputer = true } = {}) {
       PlaylistPlayer,
       PlaylistLibrary,
       MusicPulse,
-      { provide: SOUND_SOURCES, useValue: [tabSource, computerSource] },
+      { provide: SOUND_SOURCES, useValue: [tabSource, computerSource, microphoneSource] },
       { provide: VIDEO_PLAYER_FACTORY, useValue: make },
       { provide: AMBIENT_PLAYER, useValue: () => silentScore },
       { provide: FILE_SAVER, useValue: saver },
@@ -99,6 +106,7 @@ function render({ hasSky = true, canShare = true, hasComputer = true } = {}) {
     sound,
     openTap,
     computerSource,
+    microphoneSource,
     sourcePicker,
     pickSource,
     saver,
@@ -232,7 +240,7 @@ describe('TransportBar', () => {
     expect(openTap).toHaveBeenCalledTimes(1);
   });
 
-  it('shows no Sync or Beat and never asks where the browser cannot share a tab’s audio', async () => {
+  it('shows no Sync or Beat and never asks where the browser can hear no source', async () => {
     const { fixture, element, button, openTap } = render({ canShare: false });
     expect(element.querySelector('.sync')).toBeNull();
     expect(element.querySelector('input[aria-label="Beat strength"]')).toBeNull();
@@ -240,6 +248,23 @@ describe('TransportBar', () => {
     button('Play')?.click();
     await fixture.whenStable();
     expect(openTap).not.toHaveBeenCalled();
+  });
+
+  it('shows Sync and Beat on a phone, hearing its microphone from Sync and never from Play', async () => {
+    const { fixture, element, button, microphoneSource, sourcePicker } = render({ onPhone: true });
+    expect(element.querySelector('input[aria-label="Beat strength"]')).not.toBeNull();
+    expect(sourcePicker()).toBeNull();
+    expect(button('Sync')?.title).toContain(microphoneSource.guide.ask);
+
+    button('Play')?.click();
+    await fixture.whenStable();
+    expect(microphoneSource.opened).toEqual([]);
+
+    button('Sync')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(microphoneSource.opened).toEqual(['microphone']);
+    expect(button('Synced')).toBeDefined();
   });
 
   it('offers This tab first and Whole computer beside Sync, and opens the one picked', async () => {

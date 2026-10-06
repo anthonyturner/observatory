@@ -212,8 +212,8 @@
                 [disabled]="videoBackground.isOn()"
                 (input)="onMilkdropOpacity($event)"
             /></label>
-            <!-- No phone's browser can capture sound for the page, so there none of
-                 these shows: with no sync there are no beats to soften. -->
+            <!-- Where the browser can hear no source none of these shows: with no
+                 sync there are no beats to soften. -->
             @if (sync(); as syncLabel) {
               <label class="opacity" title="How hard each beat hits the sky round the core"
                 ><span aria-hidden="true">Beat</span

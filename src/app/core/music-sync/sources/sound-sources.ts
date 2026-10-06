@@ -1,6 +1,7 @@
 import { InjectionToken, inject } from '@angular/core';
 import { ComputerSoundSource } from './computer-sound-source';
 import { InputSoundSource } from './input-sound-source';
+import { MicrophoneSoundSource } from './microphone-sound-source';
 import { SoundCardSource } from './sound-card/sound-card-source';
 import { SoundSource } from './sound-source.types';
 import { TabSoundSource } from './tab-sound-source';
@@ -13,6 +14,7 @@ export const SOUND_SOURCES = new InjectionToken<readonly SoundSource[]>('SOUND_S
     inject(TabSoundSource),
     inject(ComputerSoundSource),
     inject(InputSoundSource),
+    inject(MicrophoneSoundSource),
     inject(SoundCardSource),
   ],
 });

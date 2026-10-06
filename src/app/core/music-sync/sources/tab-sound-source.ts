@@ -31,6 +31,7 @@ export class TabSoundSource implements SoundSource {
     ask: 'Chrome asks to share this tab: pick it and tick “Share tab audio”. Nothing is recorded or sent.',
     silent: 'The tab was shared without its sound',
   };
+  readonly opensWithPlay = true;
   readonly options: Signal<readonly SoundOption[]> = signal(
     canShareDisplayAudio(this.media) ? [TAB] : [],
   );

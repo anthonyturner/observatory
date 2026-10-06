@@ -71,14 +71,31 @@ ul[hidden] {
 }
 
 li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
   padding: 6px 10px;
   border-radius: 9px;
   color: var(--muted);
   font-size: 12px;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: pointer;
+}
+
+/* How finished work finished, kept clear of the title's ellipsis. */
+.tag {
+  flex: none;
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 li:hover,

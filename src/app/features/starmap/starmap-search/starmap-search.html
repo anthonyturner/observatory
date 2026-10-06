@@ -3,7 +3,7 @@
     <input
       type="search"
       role="combobox"
-      placeholder="Find a PR or issue: title or #n"
+      placeholder="Find any PR or issue, open or done: title or #n"
       aria-label="Find a pull request or issue by title or number"
       aria-autocomplete="list"
       aria-controls="starmap-search-list"
@@ -19,17 +19,20 @@
       (keydown)="onKey($event)"
     />
     <ul id="starmap-search-list" role="listbox" aria-label="Suggestions" [hidden]="!expanded()">
-      @for (suggestion of shown(); track $index; let index = $index) {
+      @for (row of rows(); track $index; let index = $index) {
         <li
           role="option"
           [id]="'starmap-search-option-' + index"
           [attr.aria-selected]="index === active()"
           (mousedown)="$event.preventDefault()"
           tabindex="-1"
-          (click)="pick(suggestion)"
-          (keydown.enter)="pick(suggestion)"
+          (click)="pick(row.suggestion)"
+          (keydown.enter)="pick(row.suggestion)"
         >
-          {{ suggestion }}
+          <span class="text">{{ row.text }}</span>
+          @if (row.tag; as tag) {
+            <span class="tag">{{ tag }}</span>
+          }
         </li>
       }
     </ul>

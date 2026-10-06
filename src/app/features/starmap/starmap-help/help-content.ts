@@ -41,7 +41,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Done',
-        'The spiral galaxy is what you finished in the last 60 days, newest at its arm tips, older winding in to the core: blue-white for a merged pull request, an ember for one closed unmerged, gold for a closed issue, grey for one dropped. Rest the pointer on a light for what it was; click it to open it. Done lists them by day.',
+        'The spiral galaxy is what you finished in the last 60 days, newest at its arm tips, older winding in to the core: blue-white for a merged pull request, an ember for one closed unmerged, gold for a closed issue, grey for one dropped. Rest the pointer on a light for what it was; click it to open it. Done lists them by day, and the search box finds them too.',
       ],
       [
         'Quick',

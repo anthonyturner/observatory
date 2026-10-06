@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { suggestionsFor } from '../sky-search';
+import { suggestionParts, suggestionsFor } from '../sky-search';
 
 /** How many suggestions the list shows at once. */
 const SHOWN = 8;
@@ -27,6 +27,10 @@ export class StarmapSearch {
   protected readonly active = signal(-1);
   protected readonly shown = computed(() =>
     suggestionsFor(this.suggestions(), this.query(), SHOWN),
+  );
+  /** Each shown suggestion with its finished-work tag set apart, so a long title cannot hide it. */
+  protected readonly rows = computed(() =>
+    this.shown().map((suggestion) => ({ suggestion, ...suggestionParts(suggestion) })),
   );
   protected readonly expanded = computed(() => this.isOpen() && this.shown().length > 0);
 

@@ -1,4 +1,5 @@
-import { findOnSky, searchSuggestions, suggestionsFor } from './sky-search';
+import { DoneItem } from '../../core/queue/done-work';
+import { findOnSky, searchSuggestions, suggestionParts, suggestionsFor } from './sky-search';
 
 describe('findOnSky', () => {
   const pulls = [
@@ -42,9 +43,56 @@ describe('findOnSky', () => {
     expect(findOnSky('nebula', pulls, issues)).toBeNull();
   });
 
+  describe('finished work', () => {
+    const merged: DoneItem = {
+      key: 'pr30',
+      kind: 'merged',
+      number: 30,
+      title: 'Ship the search',
+      at: 0,
+      day: '2026-10-01',
+    };
+    const dropped: DoneItem = {
+      key: 'issue31',
+      kind: 'dropped',
+      number: 31,
+      title: 'Old idea, again',
+      at: 0,
+      day: '2026-10-01',
+    };
+    const done = [merged, dropped];
+
+    it('finds a merged pull request by number or title', () => {
+      expect(findOnSky('#30', pulls, issues, done)).toEqual({ kind: 'done', item: merged });
+      expect(findOnSky('ship', pulls, issues, done)).toEqual({ kind: 'done', item: merged });
+    });
+
+    it('finds it from its picked suggestion', () => {
+      expect(findOnSky('#31 Old idea, again · dropped', pulls, issues, done)).toEqual({
+        kind: 'done',
+        item: dropped,
+      });
+    });
+
+    it('ranks open work first', () => {
+      expect(findOnSky('old idea', pulls, issues, done)).toEqual({ kind: 'issue', issue: 9 });
+    });
+  });
+
   it('reads a title that starts with a number as a title', () => {
     const titled = [{ number: 20, title: '404 page is blank', closes: [] }];
     expect(findOnSky('404 page', titled, [])).toEqual({ kind: 'pull', number: 20 });
+  });
+});
+
+describe('suggestionParts', () => {
+  it('sets apart how finished work finished', () => {
+    expect(suggestionParts('#5 Shipped · merged')).toEqual({ text: '#5 Shipped', tag: 'merged' });
+  });
+
+  it('leaves open work, and a title with its own dot, whole', () => {
+    expect(suggestionParts('#3 A pull')).toEqual({ text: '#3 A pull', tag: null });
+    expect(suggestionParts('#4 Docs · help')).toEqual({ text: '#4 Docs · help', tag: null });
   });
 });
 
@@ -56,6 +104,19 @@ describe('searchSuggestions', () => {
         [{ number: 4, title: 'An issue', comet: true }],
       ),
     ).toEqual(['#3 A pull', '#4 An issue']);
+  });
+
+  it('lists finished work last, saying how it finished', () => {
+    expect(
+      searchSuggestions(
+        [{ number: 3, title: 'A pull', closes: [] }],
+        [],
+        [
+          { key: 'pr5', kind: 'merged', number: 5, title: 'Shipped', at: 0, day: '2026-10-01' },
+          { key: 'issue6', kind: 'issue', number: 6, title: 'Fixed', at: 0, day: '2026-10-01' },
+        ],
+      ),
+    ).toEqual(['#3 A pull', '#5 Shipped · merged', '#6 Fixed · done']);
   });
 });
 

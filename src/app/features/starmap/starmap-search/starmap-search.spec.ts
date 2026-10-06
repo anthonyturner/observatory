@@ -60,6 +60,16 @@ describe('StarmapSearch', () => {
     expect(searched).toEqual(['#4 An issue']);
   });
 
+  it('sets finished work’s tag apart, and searches the whole suggestion', () => {
+    const { fixture, element, searched, typeIn, options } = render();
+    fixture.componentRef.setInput('suggestions', ['#5 Shipped · merged']);
+    typeIn('ship');
+
+    expect(element.querySelector('[role="option"] .tag')?.textContent).toBe('merged');
+    (options()[0] as HTMLElement).click();
+    expect(searched).toEqual(['#5 Shipped · merged']);
+  });
+
   it('closes when the pointer leaves, the box loses focus, or on Escape', () => {
     const { fixture, element, box, list, key } = render();
     const reopen = () => {

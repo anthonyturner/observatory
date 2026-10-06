@@ -467,13 +467,12 @@ export class StarmapPage {
       this.comets(),
     ),
   );
-  /** Every issue the page knows, open or recently closed, for the search. */
-  private readonly searchIssues = computed((): readonly SearchedIssue[] => {
-    const report = this.issues.report();
-    return report ? [...report.open, ...report.closed] : [];
-  });
+  /** The open issues, for the search; it finds closed ones on the Done list. */
+  private readonly searchIssues = computed(
+    (): readonly SearchedIssue[] => this.issues.report()?.open ?? [],
+  );
   protected readonly suggestions = computed(() =>
-    searchSuggestions(this.shownItems(), this.searchIssues()),
+    searchSuggestions(this.shownItems(), this.searchIssues(), this.done()),
   );
   /** What the last search said when it found nothing. */
   protected readonly searchMiss = signal<string | null>(null);
@@ -715,9 +714,10 @@ export class StarmapPage {
 
   /** A search lands on its star or comet, with its card, or opens an issue with neither. */
   protected find(query: string): void {
-    const found = findOnSky(query, this.shownItems(), this.searchIssues());
+    const found = findOnSky(query, this.shownItems(), this.searchIssues(), this.done());
     this.searchMiss.set(found ? null : `Nothing matches “${query.trim()}”.`);
     if (!found) return;
+    if (found.kind === 'done') return this.findDone(found.item);
     if (found.kind === 'pull') {
       this.selectedComet.set(null);
       if (this.filter() === null) return this.goTo(found.number);
@@ -843,9 +843,23 @@ export class StarmapPage {
   /** Done: on, the list of finished work takes the right edge beside the spiral it lights. */
   protected toggleDone(): void {
     if (this.doneOn()) return this.closeDone();
+    this.openDoneList();
+  }
+
+  private openDoneList(): void {
     this.doneOn.set(true);
     this.planOn.set(false);
     this.closeAgents();
+  }
+
+  /** Finished work a search found opens, with the Done list up and it lit on the spiral. */
+  private findDone(item: DoneItem): void {
+    this.skyView.set('map');
+    this.openPull.set(null);
+    this.selectedComet.set(null);
+    this.openDoneList();
+    this.doneLit.set(item.key);
+    this.openDone(item);
   }
 
   /** A finished pull request opens in the PR screen, a finished issue in the issue window. */

@@ -349,6 +349,7 @@ button:focus-visible {
   /* Unfolded, the extras open as their own rows under that one, a group a row. */
   .extras {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     flex-basis: 100%;
     order: 1;
   }
@@ -373,12 +374,16 @@ button:focus-visible {
   .visual,
   .opacity {
     flex: 1 1 60%;
+    min-width: 0;
   }
 
+  /* WebKit, which every iPhone browser runs on, keeps a picker or slider as wide
+     as its content, the longest preset's name, which stretched the rows and the
+     extras' column off the screen; a zero minimum lets both shrink. */
   .visual select,
   .opacity input {
     flex: 1;
-    width: 0;
+    min-width: 0;
   }
 
   /* The phone's own buttons set the volume. */

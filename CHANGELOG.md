@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- Sync can hear the whole computer, not just this tab: the arrow beside Sync picks This tab (the default) or Whole computer, which asks to share a screen with its system audio, so the sky moves with Spotify, another tab or a game. Whole computer is offered in Chrome and Edge on Windows and ChromeOS only, where the browser can share system audio; the pick is remembered, and a share without sound says which box to tick ([#426](https://github.com/anthonyturner/observatory/pull/426)).
 - The Done list filters: press merged, closed, issue done or dropped, each with its count, to list only that kind and dim the rest of the Spiral of Done; press it again to see everything ([#425](https://github.com/anthonyturner/observatory/pull/425)).
 - The Review Queue's search finds finished work too: every pull request merged or closed and every issue closed on the Done list, listed after open work and tagged merged, closed, done or dropped. Picking one opens it and lights it on the Spiral of Done, with the Done list open ([#420](https://github.com/anthonyturner/observatory/pull/420)).
 - The Orrery's Milky Way is made of what you shipped: every pull request merged in the last 60 days across your projects is a speck in the band, in its project's colour, oldest at one end and newest at the other. Rest the pointer on one to see what it was; click it to open that project's review queue ([#410](https://github.com/anthonyturner/observatory/pull/410)).

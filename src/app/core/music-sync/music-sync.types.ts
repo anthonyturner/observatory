@@ -30,5 +30,5 @@ export const SILENCE: MusicFrame = {
   drop: false,
 };
 
-/** Whether the sky is listening to the tab, and if not, why not. */
+/** Whether the sky is listening to the chosen source, and if not, why not. */
 export type SyncStatus = 'off' | 'asking' | 'listening' | 'no-audio' | 'denied' | 'unsupported';

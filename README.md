@@ -97,8 +97,10 @@ picks where it hears the music:
   `npm start`): everything the computer plays, read by Observatory’s own server
   from the speakers’ output. No prompt and nothing to set up. It is offered
   only when that server can capture, so never on the hosted site.
-
-Phones can't capture sound for a web page, so Sync is hidden there.
+- **Microphone** (phones): no phone browser lets a page hear its sound
+  directly, so Sync listens through the phone's microphone. It hears the room,
+  the phone's own speaker included, so play the music out loud; with
+  headphones on it hears none of it. It opens only when you press Sync.
 
 ## Stack
 

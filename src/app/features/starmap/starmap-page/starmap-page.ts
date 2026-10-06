@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DOCUMENT,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -9,9 +10,9 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
+import { Subscription, map, timer } from 'rxjs';
 import { ageWords, fogLevel } from '../../../core/projects/data-age';
 import { CollisionsFeed } from '../../../core/queue/collisions-feed';
 import { HistoryFeed } from '../../../core/queue/history-feed';
@@ -43,6 +44,7 @@ import { StarCard } from '../star-card/star-card';
 import { CometCard } from '../comet-card/comet-card';
 import { StarmapSound } from '../sound/starmap-sound';
 import { mergePlan } from '../merge-plan';
+import { nextStar } from '../next-star';
 import { ringedComet, ringedPull, tetherOf } from '../open-star';
 import { PlanPanel } from '../plan-panel/plan-panel';
 import { AgentsPanel } from '../agents-panel/agents-panel';
@@ -100,6 +102,8 @@ const SIDE_PANEL_WIDTH = 380;
 const PLAN_PANEL_WIDTH = 400;
 /** The card's Snooze, as pr-starmap's: a week. */
 const SNOOZE_DAYS = 7;
+/** How long Next star leaves its star lit, card open, before opening its PR screen. */
+const NEXT_STAR_HOLD_MS = 900;
 
 /** Blocked buckets: the tension voice counts them. */
 const BLOCKED: ReadonlySet<string> = new Set(['conflicted', 'failing']);
@@ -194,6 +198,9 @@ export class StarmapPage {
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
   private readonly window = inject(DOCUMENT).defaultView;
+  private readonly destroyRef = inject(DestroyRef);
+  /** Next star's wait between lighting its star and opening the PR screen. */
+  private nextHold: Subscription | null = null;
 
   protected readonly repo = toSignal(
     this.route.paramMap.pipe(
@@ -395,6 +402,12 @@ export class StarmapPage {
   protected readonly planMarks = computed(() =>
     this.planSteps().map((step) => ({ pr: step.pr, needsRebase: step.reason === 'needs-rebase' })),
   );
+  /** The pull request Next star opens, from the live queue whatever is on show. Until the
+   *  collisions are read the plan is only a size order, so it is left out. */
+  protected readonly next = computed(() => {
+    const planOrder = this.collisions.report() ? this.plan().map((step) => step.pr) : [];
+    return nextStar(this.items(), planOrder);
+  });
   protected readonly conflicting = computed(
     () =>
       (this.collisions.report()?.pairs ?? []).filter((p) => (p.conflicts ?? []).length > 0).length,
@@ -722,11 +735,7 @@ export class StarmapPage {
     if (found.kind === 'done') return this.findDone(found.item);
     if (found.kind === 'pull') {
       this.selectedComet.set(null);
-      if (this.filter() === null) return this.goTo(found.number);
-      // Clearing the legend's filter refits the sky; the flight waits for that.
-      this.filter.set(null);
-      setTimeout(() => this.goTo(found.number));
-      return;
+      return this.flyTo(found.number);
     }
     const comet = this.comets().find((each) => each.issue === found.issue);
     if (found.kind === 'issue' || !comet) return this.openIssue(found.issue);
@@ -734,6 +743,37 @@ export class StarmapPage {
     this.showComets.set(true);
     this.openPull.set(null);
     this.selectedComet.set(comet);
+  }
+
+  /** Flies to a star with its card, showing every star first. */
+  private flyTo(number: number): void {
+    if (this.filter() === null) return this.goTo(number);
+    // Clearing the legend's filter refits the sky; the flight waits for that.
+    this.filter.set(null);
+    setTimeout(() => this.goTo(number));
+  }
+
+  /** Next star: flies to the pick, lights it with its card, then opens its PR screen. */
+  protected goToNext(): void {
+    const next = this.next();
+    if (!next) return;
+    this.selectedComet.set(null);
+    if (this.memory.replay()) {
+      // The live sky is laid out again first; the flight waits for that.
+      this.memory.endReplay();
+      setTimeout(() => this.flyTo(next.pr));
+    } else this.flyTo(next.pr);
+    this.openSheetAfterHold(next.pr);
+  }
+
+  private openSheetAfterHold(number: number): void {
+    this.nextHold?.unsubscribe();
+    this.nextHold = timer(NEXT_STAR_HOLD_MS)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        // Picking another star or closing the card in the meantime cancels the screen.
+        if (this.openPull() === number) this.openSheet(number);
+      });
   }
 
   protected refresh(): void {
@@ -759,12 +799,13 @@ export class StarmapPage {
     this.memory.togglePlayer(this.motion.isStill());
   }
 
-  /** `[` and `]` step through the recorded refreshes, on the queue's sky. */
+  /** On the queue's sky, `n` goes to the next star and `[` and `]` step through the recorded refreshes. */
   protected onKey(event: KeyboardEvent): void {
-    if (event.key !== '[' && event.key !== ']') return;
     const target = event.target;
     if (target instanceof Element && target.closest(TYPING)) return;
     if (this.chart() !== 'prs' || this.sheetPull() !== null) return;
+    if (event.key === 'n' && !hasModifier(event)) return this.goToNext();
+    if (event.key !== '[' && event.key !== ']') return;
     this.openPull.set(null);
     this.memory.step(event.key === '[' ? -1 : 1);
   }
@@ -913,3 +954,6 @@ export class StarmapPage {
     this.triage.record(repo, number, choice).subscribe(() => this.feed.refresh(repo));
   }
 }
+
+const hasModifier = (event: KeyboardEvent): boolean =>
+  event.ctrlKey || event.metaKey || event.altKey;

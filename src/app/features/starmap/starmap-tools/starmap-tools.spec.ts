@@ -45,7 +45,7 @@ describe('StarmapTools', () => {
       ['Pull requests', 'Logs', 'Issues', 'Usage'],
       ['−', '+', 'Fit'],
       ['Starmap', 'List'],
-      ['Collisions', 'Merge plan', 'Agents', 'Done'],
+      ['Next star', 'Collisions', 'Merge plan', 'Agents', 'Done'],
       ['Refresh', 'Motion on', 'Sound off', '?'],
     ]);
     expect(element.querySelector('.hint')?.textContent).toBe(
@@ -71,6 +71,28 @@ describe('StarmapTools', () => {
     const { button } = render('issues');
     expect(button('Merge plan')).toBeUndefined();
     expect(button('Fit')).toBeDefined();
+  });
+
+  it('offers Next star only on the queue, naming the pick and why', () => {
+    const { fixture, button } = render();
+    let asked = 0;
+    fixture.componentInstance.nextStar.subscribe(() => asked++);
+    expect(button('Next star')?.disabled).toBe(true);
+    expect(button('Next star')?.title).toBe('Nothing in the queue to work next');
+
+    fixture.componentRef.setInput('next', {
+      pr: 7,
+      title: 'Fix it',
+      why: 'Cannot merge, idle 6 days',
+    });
+    fixture.detectChanges();
+    button('Next star')?.click();
+
+    expect(asked).toBe(1);
+    expect(button('Next star')?.title).toBe('Next star (n): #7 Fix it — Cannot merge, idle 6 days');
+    fixture.componentRef.setInput('chart', 'logs');
+    fixture.detectChanges();
+    expect(button('Next star')).toBeUndefined();
   });
 
   it('shows the volume slider only while the sound is on', () => {

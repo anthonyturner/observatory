@@ -1,0 +1,71 @@
+:host {
+  display: block;
+}
+
+.rerun {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rerun__send {
+  align-self: flex-start;
+  min-width: 96px;
+  padding: 9px 13px;
+  border: 1px solid var(--meh);
+  border-radius: 9px;
+  background: var(--card-act);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.15s;
+}
+
+.rerun__send:hover:not(:disabled) {
+  background: var(--card-act-hover);
+  transform: translateY(-1px);
+}
+
+.rerun__send:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.rerun__send:disabled {
+  border-color: var(--edge-soft);
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.rerun__hint {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.rerun__status {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.rerun__status--ok {
+  color: var(--ok);
+}
+
+.rerun__status--bad {
+  color: var(--bad);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rerun__send {
+    transition: none;
+  }
+
+  .rerun__send:hover:not(:disabled) {
+    transform: none;
+  }
+}

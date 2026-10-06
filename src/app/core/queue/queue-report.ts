@@ -18,6 +18,8 @@ export interface QueueItem {
   readonly bucket: PullBucket;
   readonly closes: readonly number[];
   readonly failingChecks: number;
+  /** The failing checks known to be flaky, one per failing run. */
+  readonly flakyChecks: readonly string[];
   readonly additions: number | null;
   readonly deletions: number | null;
   readonly idleDays: number;
@@ -42,6 +44,10 @@ export interface QueueItem {
 /** The group a pull request shows in: a seen, waiting one is Seen recently. */
 export const shownBucket = (item: QueueItem): QueueBucket =>
   item.bucket === 'unreviewed' && item.isSeen ? 'fresh' : item.bucket;
+
+/** Failing, and only on checks known to be flaky: a rerun is the fix. */
+export const isFlakyOnly = (item: QueueItem): boolean =>
+  item.failingChecks > 0 && item.flakyChecks.length === item.failingChecks;
 
 /** What `GET /api/queue` returns. */
 export interface QueueReport {
@@ -86,6 +92,7 @@ function parseItem(value: unknown): QueueItem | null {
     bucket,
     closes,
     failingChecks: isCount(failingChecks) ? failingChecks : 0,
+    flakyChecks: Array.isArray(value['flakyChecks']) ? value['flakyChecks'].filter(isString) : [],
     additions: countOrNull(value['additions']),
     deletions: countOrNull(value['deletions']),
     idleDays: isCount(idleDays) ? idleDays : 0,

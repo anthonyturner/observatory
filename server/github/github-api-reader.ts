@@ -2,7 +2,8 @@ import { comparePath, comparisonFrom } from './compare-reader.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
-import { githubApiWriter } from './github-api-writer.ts';
+import { readCheckHistory } from './check-history.ts';
+import { githubApiRerunner, githubApiWriter } from './github-api-writer.ts';
 import { type GraphQl, type GraphQlConfig, githubGraphQl } from './github-graphql.ts';
 import { DIFF_MEDIA_TYPE, githubRest } from './github-rest.ts';
 import { ISSUE_GRAPHQL, PULL_GRAPHQL, nodesOf, selectionOf } from './graphql-fields.ts';
@@ -211,6 +212,12 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
 
   return {
     ...githubApiWriter(graphql, rest),
+    ...githubApiRerunner(rest),
+    checkHistory: (repo) =>
+      readCheckHistory(
+        async (path) => JSON.parse(await rest({ method: 'GET', path: `/${path}` })) as unknown,
+        repo,
+      ),
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),

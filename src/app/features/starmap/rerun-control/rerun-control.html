@@ -1,0 +1,22 @@
+<div class="rerun" role="group" aria-label="Rerun flaky checks">
+  <button
+    type="button"
+    class="rerun__send"
+    [attr.aria-describedby]="hintId"
+    [disabled]="view().isDisabled"
+    (click)="rerun()"
+  >
+    {{ view().label }}
+  </button>
+  <span class="rerun__hint" [id]="hintId">{{ view().hint }}</span>
+  @if (view().status; as status) {
+    <p
+      class="rerun__status"
+      role="status"
+      [class.rerun__status--ok]="status.tone === 'ok'"
+      [class.rerun__status--bad]="status.tone === 'bad'"
+    >
+      {{ status.text }}
+    </p>
+  }
+</div>

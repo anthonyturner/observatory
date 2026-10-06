@@ -200,6 +200,7 @@
     (snooze)="recordTriage($event, { action: 'snooze', days: SNOOZE_DAYS })"
     (dismiss)="recordTriage($event, { action: 'dismiss' })"
     (issue)="openIssue($event)"
+    (rerun)="refreshQueue()"
   />
 }
 
@@ -243,6 +244,7 @@
     [bucket]="sheetBucket()"
     [title]="sheetTitle()"
     [lookedSha]="sheetLookedSha()"
+    [flakyChecks]="sheetFlaky()"
     (closed)="sheetPull.set(null)"
     (looked)="recordLook(number, $event)"
   />

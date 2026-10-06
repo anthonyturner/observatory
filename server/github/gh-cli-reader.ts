@@ -1,7 +1,8 @@
 import { comparePath, comparisonFrom } from './compare-reader.ts';
 import { gh, ghJson } from './gh-cli.ts';
 import { DIFF_MEDIA_TYPE } from './github-rest.ts';
-import { ghCliWriter } from './gh-cli-writer.ts';
+import { readCheckHistory } from './check-history.ts';
+import { ghCliRerunner, ghCliWriter } from './gh-cli-writer.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import type { GitHub } from './github.ts';
@@ -40,6 +41,8 @@ const ISSUES_DISABLED = /has disabled issues/i;
 export function ghCliReader(): GitHub {
   return {
     ...ghCliWriter(),
+    ...ghCliRerunner(),
+    checkHistory: (repo) => readCheckHistory((path) => ghJson<unknown>(['api', path]), repo),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([

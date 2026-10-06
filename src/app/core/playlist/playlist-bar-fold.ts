@@ -3,10 +3,10 @@ import { Injectable, signal } from '@angular/core';
 const STORAGE_KEY = 'observatory.playlistBar';
 const FOLDED = 'folded';
 const OPEN = 'open';
-const PHONE = '(max-width: 720px)';
+const PHONE = '(max-width: 720px), (max-height: 500px)';
 
 /** Whether Home's playlist bar is folded down to its essentials: open until
- *  folded, folded on a phone, and remembered in this browser where storage works. */
+ *  folded, folded on a phone, upright or on its side, and remembered in this browser where storage works. */
 @Injectable({ providedIn: 'root' })
 export class PlaylistBarFold {
   private readonly folded = signal(readStoredFolded());

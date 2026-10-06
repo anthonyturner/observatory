@@ -41,3 +41,12 @@
       max(16px, env(safe-area-inset-right, 0px));
   }
 }
+
+/* On its side a phone keeps the playlist in the bottom-right corner, beside the
+   page's tools, as a wide screen does. */
+@media (max-height: 500px) {
+  .playlist {
+    left: auto;
+    padding-inline: max(20px, env(safe-area-inset-right, 0px));
+  }
+}

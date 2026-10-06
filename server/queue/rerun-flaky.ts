@@ -63,9 +63,13 @@ export async function rerunFlaky(
   if (!runs.length) {
     throw new Forbidden(`#${number}'s flaky checks are not GitHub Actions runs to rerun`);
   }
-  for (const runId of runs) await rerunOne(rerunner, repo, runId);
-  sources.forgetQueue(repo);
-  sources.forgetPull(repo, number);
+  try {
+    for (const runId of runs) await rerunOne(rerunner, repo, runId);
+  } finally {
+    // Even a partial rerun changed GitHub, so neither cached copy holds.
+    sources.forgetQueue(repo);
+    sources.forgetPull(repo, number);
+  }
   return { number, runs };
 }
 
@@ -74,6 +78,8 @@ async function rerunOne(rerunner: CheckRerunner, repo: string, runId: number): P
     await rerunner.rerunFailedJobs(repo, runId);
   } catch (error: unknown) {
     console.error(`GitHub would not rerun ${repo}'s workflow run ${runId}:`, error);
-    throw new Forbidden(`GitHub would not rerun workflow run ${runId}; it may still be running`);
+    throw new Forbidden(
+      `GitHub would not rerun workflow run ${runId}: it may still be running, or be too old to rerun`,
+    );
   }
 }

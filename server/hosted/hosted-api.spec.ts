@@ -42,6 +42,8 @@ const pull = (number: number): QueuePull => ({
 
 /** Each pull request whose state GitHub was asked for. */
 const stateAsked: string[] = [];
+/** Each workflow run GitHub was asked to rerun. */
+const reruns: number[] = [];
 
 /** Two repositories, one private; each with one open pull request. */
 const github = {
@@ -77,6 +79,7 @@ const github = {
   }),
   pullDiff: async () => 'diff --git a/x b/x\n+secret code',
   commitDiff: async () => 'diff --git a/y b/y\n+secret commit',
+  rerunFailedJobs: async (_repo: string, runId: number) => void reruns.push(runId),
 } as unknown as GitHub;
 
 function memoryStore(): Store & { readonly data: Map<string, unknown> } {
@@ -302,6 +305,21 @@ describe('hostedApi', () => {
         assert.equal((await listen(handle, path, cookie)).status, 404);
       }
     }
+  });
+
+  it('refuses a visitor’s rerun before GitHub is asked', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+
+    const response = await handle(
+      new Request(`${SITE}/api/rerun`, {
+        method: 'POST',
+        headers: { 'x-observatory': '1', 'content-type': 'application/json' },
+        body: JSON.stringify({ repo: 'me/app', number: 7 }),
+      }),
+    );
+
+    assert.equal(response.status, 403);
+    assert.deepEqual(reruns, []);
   });
 
   it('shows a visitor private repositories too with PUBLIC_PREVIEW=all, still read-only', async () => {

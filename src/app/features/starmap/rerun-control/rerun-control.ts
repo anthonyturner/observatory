@@ -13,7 +13,7 @@ import { RERUN_API } from '../../../core/queue/rerun-api';
 import { messageOf } from '../../../core/runs/runs-api';
 import { RERUN_IDLE, RerunState, rerunViewOf } from './rerun-view';
 
-/** The card and the PR screen can both be open, so each hint needs its own id. */
+/** A card closed and opened again makes a second control, so each hint needs its own id. */
 let nextHint = 0;
 
 /**

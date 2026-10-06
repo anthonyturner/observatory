@@ -117,12 +117,15 @@ describe('rerun route', () => {
     assert.deepEqual(reruns, []);
   });
 
-  it('says so when GitHub will not rerun', async (context) => {
+  it('says so when GitHub will not rerun, and still forgets the cached copies', async (context) => {
     context.mock.method(console, 'error', () => undefined);
-    const response = await setUp([item(7)], DEFAULT_CHECKS, true).send({ repo: REPO, number: 7 });
+    const { send, forgotten } = setUp([item(7)], DEFAULT_CHECKS, true);
+
+    const response = await send({ repo: REPO, number: 7 });
 
     assert.equal(response.status, 403);
     assert.match(((await response.json()) as { error: string }).error, /workflow run 101/);
+    assert.deepEqual(forgotten, [`pull ${REPO}#7`, `queue ${REPO}`, `pull ${REPO}#7`]);
   });
 
   it('accepts a write only with the header no other site can add', async () => {

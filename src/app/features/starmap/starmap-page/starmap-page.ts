@@ -47,7 +47,7 @@ import { ringedComet, ringedPull, tetherOf } from '../open-star';
 import { PlanPanel } from '../plan-panel/plan-panel';
 import { AgentsPanel } from '../agents-panel/agents-panel';
 import { DonePanel } from '../done-panel/done-panel';
-import { DoneItem, doneWork, isPull } from '../../../core/queue/done-work';
+import { DoneItem, DoneKind, doneWork, isPull } from '../../../core/queue/done-work';
 import { AgentsFeed } from '../../../core/agents/agents-report';
 import { AGENT_FILTER } from '../starmap-sky/starmap-sky';
 import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
@@ -226,6 +226,8 @@ export class StarmapPage {
   protected readonly doneOn = signal(false);
   /** The finished work the Done list has lit on the spiral. */
   protected readonly doneLit = signal<string | null>(null);
+  /** The one kind of finished work the Done list shows, or null for all. */
+  protected readonly doneOnly = signal<DoneKind | null>(null);
   /** Everything finished in the last 60 days: the ledger's pull requests and the closed issues. */
   protected readonly done = computed(() => doneWork(this.ledger.ledger(), this.issues.report()));
   /** The unclaimed issues passing through, and whether they are shown. */
@@ -858,6 +860,7 @@ export class StarmapPage {
     this.openPull.set(null);
     this.selectedComet.set(null);
     this.openDoneList();
+    if (this.doneOnly() !== item.kind) this.doneOnly.set(null);
     this.doneLit.set(item.key);
     this.openDone(item);
   }
@@ -871,6 +874,7 @@ export class StarmapPage {
   private closeDone(): void {
     this.doneOn.set(false);
     this.doneLit.set(null);
+    this.doneOnly.set(null);
   }
 
   private closeAgents(): void {

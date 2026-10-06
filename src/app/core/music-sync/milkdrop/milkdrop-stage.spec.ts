@@ -1,5 +1,5 @@
 import type { Butterchurn, ButterchurnVisualizer } from 'butterchurn';
-import { TabSound } from '../tab-audio';
+import { LiveSound } from '../sources/audio-tap';
 import { CURATED_PRESETS, presetFor } from './milkdrop-presets';
 import { MilkdropEngine, MilkdropStage, unwrapButterchurn } from './milkdrop-stage';
 
@@ -28,7 +28,7 @@ const PRESETS: Record<string, object> = Object.fromEntries(
   CURATED_PRESETS.map((name) => [name, { name }]),
 );
 
-function soundOf(): TabSound {
+function soundOf(): LiveSound {
   return { context: {} as AudioContext, source: {} as AudioNode };
 }
 

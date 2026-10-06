@@ -1,5 +1,5 @@
 import type { Butterchurn, ButterchurnOptions, ButterchurnVisualizer } from 'butterchurn';
-import { TabSound } from '../tab-audio';
+import { LiveSound } from '../sources/audio-tap';
 import { presetFor } from './milkdrop-presets';
 
 /** Butterchurn and its presets, once loaded. */
@@ -41,12 +41,12 @@ const BLEND_S = 2.5;
 
 /** Milkdrop's visualizer, shared by every Milkdrop turn of the music layer so
  *  the page holds one WebGL context however often the look changes. It hears
- *  the tab's sound directly and renders off screen, for the layer to draw. */
+ *  the sound directly and renders off screen, for the layer to draw. */
 export class MilkdropStage {
   private engine: MilkdropEngine | null = null;
   private loading = false;
   private failed = false;
-  private sound: TabSound | null = null;
+  private sound: LiveSound | null = null;
   private visualizer: ButterchurnVisualizer | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private variant = 0;
@@ -62,7 +62,7 @@ export class MilkdropStage {
   ) {}
 
   /** The sound to hear; a new one (listening again) needs a new visualizer. */
-  setSound(sound: TabSound | null): void {
+  setSound(sound: LiveSound | null): void {
     if (sound?.context !== this.sound?.context) this.release();
     this.sound = sound;
   }

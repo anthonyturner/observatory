@@ -1,0 +1,21 @@
+<select
+  aria-label="Sync sound source"
+  [title]="hint()"
+  [disabled]="isBusy()"
+  (change)="onChange($event)"
+>
+  @for (group of groups(); track group.id) {
+    @if (group.isGrouped) {
+      <optgroup [label]="group.name">
+        @for (option of group.options; track option.id) {
+          <option [value]="option.id" [selected]="option.isSelected">{{ option.label }}</option>
+        }
+      </optgroup>
+    } @else {
+      @for (option of group.options; track option.id) {
+        <option [value]="option.id" [selected]="option.isSelected">{{ option.label }}</option>
+      }
+    }
+  }
+</select>
+<span class="arrow" aria-hidden="true">▾</span>

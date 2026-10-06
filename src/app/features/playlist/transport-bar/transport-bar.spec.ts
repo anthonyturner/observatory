@@ -15,7 +15,9 @@ import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { MilkdropChoice } from '../../../core/music-sync/milkdrop/milkdrop-choice';
 import { CURATED_PRESETS } from '../../../core/music-sync/milkdrop/milkdrop-presets';
 import { MusicPulse } from '../../../core/music-sync/music-pulse';
-import { AUDIO_TAP, AudioTap, TAB_AUDIO_SUPPORTED } from '../../../core/music-sync/tab-audio';
+import { AudioTap, NoAudioError } from '../../../core/music-sync/sources/audio-tap';
+import { SOUND_SOURCES } from '../../../core/music-sync/sources/sound-sources';
+import { FakeSoundSource } from '../../../core/music-sync/sources/testing/fake-sound-source';
 import { FILE_SAVER, FileSaver } from '../../../core/files/file-saver';
 import { VideoBackground } from '../../../core/playlist/video-background';
 import { TransportBar } from './transport-bar';
@@ -27,8 +29,8 @@ const silentScore: AmbientPlayer = {
 };
 
 /** On Home by default: a page with a music sky, which the sky's controls need, in a
- *  browser that can share a tab's audio. */
-function render({ hasSky = true, canShare = true } = {}) {
+ *  browser that can share a tab's audio and the whole computer's. */
+function render({ hasSky = true, canShare = true, hasComputer = true } = {}) {
   const pauses = vi.fn();
   const player: VideoPlayer = {
     load: vi.fn(),
@@ -51,14 +53,19 @@ function render({ hasSky = true, canShare = true } = {}) {
     close: vi.fn(),
   };
   const openTap = vi.fn(() => Promise.resolve(tap));
+  const tabSource = new FakeSoundSource('tab', canShare ? [{ id: 'tab', label: 'This tab' }] : []);
+  const computerSource = new FakeSoundSource(
+    'computer',
+    canShare && hasComputer ? [{ id: 'computer', label: 'Whole computer' }] : [],
+  );
+  tabSource.answer = openTap;
   const saver: FileSaver = { save: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
       PlaylistPlayer,
       PlaylistLibrary,
       MusicPulse,
-      { provide: AUDIO_TAP, useValue: openTap },
-      { provide: TAB_AUDIO_SUPPORTED, useValue: canShare },
+      { provide: SOUND_SOURCES, useValue: [tabSource, computerSource] },
       { provide: VIDEO_PLAYER_FACTORY, useValue: make },
       { provide: AMBIENT_PLAYER, useValue: () => silentScore },
       { provide: FILE_SAVER, useValue: saver },
@@ -73,6 +80,15 @@ function render({ hasSky = true, canShare = true } = {}) {
       (b) => b.getAttribute('aria-label') === label || b.textContent?.trim() === label,
     );
   const sound = TestBed.inject(SoundPreference);
+  const sourcePicker = () =>
+    element.querySelector<HTMLSelectElement>('select[aria-label="Sync sound source"]');
+  const pickSource = (id: string): void => {
+    const picker = sourcePicker();
+    if (!picker) throw new Error('No sound source picker');
+    picker.value = id;
+    picker.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  };
   return {
     fixture,
     element,
@@ -82,6 +98,9 @@ function render({ hasSky = true, canShare = true } = {}) {
     pauses,
     sound,
     openTap,
+    computerSource,
+    sourcePicker,
+    pickSource,
     saver,
     pulse: TestBed.inject(MusicPulse),
     favorites: TestBed.inject(FavoritesStore),
@@ -221,6 +240,39 @@ describe('TransportBar', () => {
     button('Play')?.click();
     await fixture.whenStable();
     expect(openTap).not.toHaveBeenCalled();
+  });
+
+  it('offers This tab first and Whole computer beside Sync, and opens the one picked', async () => {
+    const { fixture, button, openTap, computerSource, sourcePicker, pickSource } = render();
+    const picker = sourcePicker();
+    expect([...(picker?.options ?? [])].map((option) => option.textContent?.trim())).toEqual([
+      'This tab',
+      'Whole computer',
+    ]);
+    expect(picker?.value).toBe('tab');
+
+    pickSource('computer');
+    expect(button('Sync')?.title).toContain(computerSource.guide.ask);
+    button('Sync')?.click();
+    await fixture.whenStable();
+    expect(computerSource.opened).toEqual(['computer']);
+    expect(openTap).not.toHaveBeenCalled();
+  });
+
+  it('leaves the source picker out where only this tab can be heard', () => {
+    const { element, sourcePicker } = render({ hasComputer: false });
+    expect(sourcePicker()).toBeNull();
+    expect(element.querySelector('.sync')).not.toBeNull();
+  });
+
+  it('names the chosen source’s audio box when the share came without sound', async () => {
+    const { fixture, button, computerSource, pickSource } = render();
+    computerSource.answer = () => Promise.reject(new NoAudioError());
+    pickSource('computer');
+    button('Sync')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(button('No audio')?.title).toContain(computerSource.guide.silent);
   });
 
   it('asks again from Sync after sharing was declined', async () => {

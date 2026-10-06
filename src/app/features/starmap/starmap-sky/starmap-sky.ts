@@ -34,7 +34,7 @@ import { IssueNarrowing } from '../../issues/issue-list';
 import { NurseryInput, issueStarOf } from '../nursery/nursery-layout';
 import { NurserySky } from '../nursery/nursery-sky';
 import { HoverDwell } from './hover-dwell';
-import { DoneItem } from '../../../core/queue/done-work';
+import { DoneItem, DoneKind } from '../../../core/queue/done-work';
 import { DoneLayer, isDoneHit } from '../engine/done-layer';
 
 /** What the pointer can rest on over the queue: a star's pull request, or a comet. */
@@ -126,6 +126,8 @@ export class StarmapSky {
   readonly done = input<readonly DoneItem[]>([]);
   /** The finished work the Done list has lit, by key. */
   readonly doneLit = input<string | null>(null);
+  /** The one kind of finished work the Done list shows, or null for all. */
+  readonly doneOnly = input<DoneKind | null>(null);
   /** A star was clicked open, or empty sky (null). */
   readonly picked = output<number | null>();
   /** A star was rested on, or tapped once: show its card. */
@@ -203,6 +205,7 @@ export class StarmapSky {
     effect(() => {
       this.doneLayer.set(this.done(), Date.now());
       this.doneLayer.lit = this.doneLit();
+      this.doneLayer.only = this.doneOnly();
       this.doneLayer.clearRight = this.insets().side;
       this.engine?.kick();
     });

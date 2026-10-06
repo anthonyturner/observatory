@@ -1,0 +1,54 @@
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  SoundMenuGroup,
+  SoundSelection,
+} from '../../../../core/music-sync/sources/sound-source-choice';
+
+interface OptionRow {
+  readonly id: string;
+  readonly label: string;
+  readonly isSelected: boolean;
+}
+
+interface GroupRow {
+  readonly id: string;
+  readonly name: string;
+  /** A source with several entries heads them with its name. */
+  readonly isGrouped: boolean;
+  readonly options: readonly OptionRow[];
+}
+
+/** Where Sync hears the music, as the arrow beside it: each source the browser can
+ *  use, the one in use selected; picking one reports its entry's id. */
+@Component({
+  selector: 'app-sound-source-picker',
+  templateUrl: './sound-source-picker.html',
+  styleUrl: './sound-source-picker.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class SoundSourcePicker {
+  readonly menu = input.required<readonly SoundMenuGroup[]>();
+  readonly selected = input.required<SoundSelection | null>();
+  /** Held while the browser is asking, so the answer lands on the source it asked for. */
+  readonly isBusy = input.required<boolean>();
+  readonly picked = output<string>();
+
+  protected readonly groups = computed((): GroupRow[] => {
+    const selectedId = this.selected()?.option.id;
+    return this.menu().map(({ source, options }) => ({
+      id: source.id,
+      name: source.name,
+      isGrouped: options.length > 1,
+      options: options.map(({ id, label }) => ({ id, label, isSelected: id === selectedId })),
+    }));
+  });
+
+  protected readonly hint = computed(() => {
+    const label = this.selected()?.option.label;
+    return label ? `Sync hears: ${label}. Pick where it hears the music` : '';
+  });
+
+  protected onChange(event: Event): void {
+    this.picked.emit((event.target as HTMLSelectElement).value);
+  }
+}

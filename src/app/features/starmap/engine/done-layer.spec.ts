@@ -59,6 +59,28 @@ describe('DoneLayer', () => {
     expect(layer.pick(x + 40, y + 40)).toBeNull();
   });
 
+  it('leaves a light the filter leaves out unpickable, still drawn but dim', () => {
+    const layer = new DoneLayer();
+    layer.set([item], NOW);
+    layer.only = 'issue';
+    const f = frame('prs');
+    const drawn: [number, number][] = [];
+    const ctx = new Proxy(f.ctx, {
+      get: (target, name) =>
+        name === 'arc'
+          ? (x: number, y: number) => drawn.push([x, y])
+          : (target as unknown as Record<string | symbol, unknown>)[name],
+    });
+
+    layer.flat(ctx, f);
+    const [x, y] = drawn[0];
+
+    expect(layer.pick(x, y)).toBeNull();
+    layer.only = 'merged';
+    layer.flat(ctx, f);
+    expect(layer.pick(x, y)?.done.key).toBe('pr12');
+  });
+
   it('draws nothing, and so finds nothing, off the pull request sky', () => {
     const layer = new DoneLayer();
     layer.set([item], NOW);

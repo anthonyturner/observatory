@@ -307,6 +307,10 @@ With neither, Jev is off and says so: only keyword matches work, and a request
 can still be proposed as a command. An OpenRouter key is sent to OpenRouter
 only, and scrubbed from every error and log line.
 
+The same key writes the one-line summary on a Review Queue star's card, once
+for each pushed commit, from the pull request's title, description and file
+list. Without a key the card shows the risk tag alone.
+
 **Skills** are fixed requests, one tile each on Home, each proposed as tier-3
 work. The starters (triage the review queue, what's blocked, stale pull
 requests, today's failures) only read, through named read-only `gh` commands.

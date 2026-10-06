@@ -29,7 +29,8 @@
 }
 
 /* On a narrow window the groups wrap to a second row, not off the screen. */
-.bar {
+.bar,
+.group--sky {
   flex-wrap: wrap;
 }
 
@@ -373,10 +374,6 @@ button:focus-visible {
 
   /* Video and a Visual that fills the row, then the sky's strength, with Sync where
      the browser can sync; the pickers shrink, so none of it runs off the screen. */
-  .group--sky {
-    flex-wrap: wrap;
-  }
-
   .visual,
   .opacity {
     flex: 1 1 60%;

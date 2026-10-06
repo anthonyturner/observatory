@@ -1,7 +1,7 @@
 /* The review queue in a terminal, as pr-starmap's /queue had it: the same
-   blocked-first queue the star map shows, and seen, dismiss, snooze,
-   restore and look on one pull request. It reads GitHub through gh and keeps triage in
-   the same store the local site uses, so either one sees what the other did.
+   blocked-first queue the star map shows, and seen, dismiss, snooze, restore
+   and look on one pull request. It reads GitHub through gh and keeps triage
+   in the same store the local site uses, so either one sees what the other did.
 
      npm run queue -- [owner/repo] [all | seen <pr> | unseen <pr> | dismiss <pr> | snooze <pr> <days> | restore <pr> | look <pr>] [--json]
 

@@ -60,7 +60,7 @@ export interface SinceLookDiff {
   readonly fetchedAt: string;
 }
 
-export interface Heads {
+interface Heads {
   readonly base: string;
   readonly head: string;
   readonly since: SinceLook;

@@ -154,16 +154,20 @@ export function cachedReads(sources: ReadSources): ApiReads {
     const [repo, base, head] = headsOf(key);
     return sinceLookOf(await github.compare(repo, base, head));
   }, COMMIT_TTL_MS);
-  const sinceLookDiffOfHeads = keyedCache(async (key) => {
-    const [repo, base, head] = headsOf(key);
-    const since = await sinceLookOfHeads.read(key);
-    const diff =
-      since.newCommits === null
-        ? ''
-        : // Too large for GitHub to give is shown as such, like a pull request's own diff.
-          await github.compareDiff(repo, base, head).catch(() => '');
-    return sinceLookDiffOf({ base, head, since }, { diff, fetchedAt: new Date().toISOString() });
-  }, COMMIT_TTL_MS);
+  const sinceLookDiffOfHeads = keyedCache(
+    async (key) => {
+      const [repo, base, head] = headsOf(key);
+      const since = await sinceLookOfHeads.read(key);
+      const diff =
+        since.newCommits === null
+          ? ''
+          : // Too large for GitHub to give is shown as such, like a pull request's own diff.
+            await github.compareDiff(repo, base, head).catch(() => '');
+      return sinceLookDiffOf({ base, head, since }, { diff, fetchedAt: new Date().toISOString() });
+    },
+    // An empty diff may be a failure that passes, so it is asked for again soon.
+    (answer) => (answer.diff ? COMMIT_TTL_MS : PULL_TTL_MS),
+  );
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
     return github.pullState(repo, Number(number));

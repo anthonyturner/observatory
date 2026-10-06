@@ -176,11 +176,11 @@ describe('hostedApi', () => {
     assert.deepEqual(stateAsked, ['me/app#12']);
   });
 
-  it('has no runs routes, even for the owner: tier 3 runs on the local server only', async () => {
+  it('has no runs or crew routes, even for the owner: tier 3 runs on the local server only', async () => {
     const { handle } = site();
-    const asOwner = (method: string) =>
+    const asOwner = (method: string, path: string) =>
       handle(
-        new Request(`${SITE}/api/runs?id=x`, {
+        new Request(`${SITE}${path}`, {
           method,
           headers: {
             cookie: ownerCookie,
@@ -192,7 +192,10 @@ describe('hostedApi', () => {
       );
 
     for (const method of ['GET', 'POST', 'DELETE']) {
-      assert.equal((await asOwner(method)).status, 404, method);
+      assert.equal((await asOwner(method, '/api/runs?id=x')).status, 404, method);
+    }
+    for (const method of ['GET', 'POST']) {
+      assert.equal((await asOwner(method, '/api/crew')).status, 404, `crew ${method}`);
     }
   });
 

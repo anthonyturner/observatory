@@ -46,6 +46,13 @@
   padding: 20px 22px 26px;
 }
 
+/* Holds only comments when no crew can be sent from here, and takes no room then. */
+.crew:not(:empty) {
+  flex: none;
+  padding: 12px 22px;
+  border-top: 1px solid var(--edge-soft);
+}
+
 .note {
   font-size: 12.5px;
   color: var(--muted);

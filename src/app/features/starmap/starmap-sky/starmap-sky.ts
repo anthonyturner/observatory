@@ -36,6 +36,8 @@ import { NurserySky } from '../nursery/nursery-sky';
 import { HoverDwell } from './hover-dwell';
 import { DoneItem, DoneKind } from '../../../core/queue/done-work';
 import { DoneLayer, isDoneHit } from '../engine/done-layer';
+import { CrewLayer } from '../engine/crew-layer';
+import { CrewMark } from '../../../core/crew/crew.types';
 
 /** What the pointer can rest on over the queue: a star's pull request, or a comet. */
 type QueueHover = number | Comet;
@@ -128,6 +130,8 @@ export class StarmapSky {
   readonly doneLit = input<string | null>(null);
   /** The one kind of finished work the Done list shows, or null for all. */
   readonly doneOnly = input<DoneKind | null>(null);
+  /** Crews sent to fix pull requests, drawn as ships by their stars. */
+  readonly crews = input<readonly CrewMark[]>([]);
   /** A star was clicked open, or empty sky (null). */
   readonly picked = output<number | null>();
   /** A star was rested on, or tapped once: show its card. */
@@ -155,6 +159,7 @@ export class StarmapSky {
   private readonly cometLayer = new CometLayer<Comet>();
   private readonly planLayer = new PlanLayer();
   private readonly doneLayer = new DoneLayer();
+  private readonly crewLayer = new CrewLayer(Date.now, () => this.engine?.kick());
   private readonly tetherLayer = new TetherLayer(
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
     () => this.cometLayer.selectedAt(),
@@ -171,6 +176,7 @@ export class StarmapSky {
     afterNextRender(() => this.start());
     inject(DestroyRef).onDestroy(() => {
       this.hover.cancel();
+      this.crewLayer.dispose();
       this.engine?.dispose();
     });
     effect(() => {
@@ -229,6 +235,7 @@ export class StarmapSky {
       this.cometLayer.selected = this.selectedComet();
       this.engine?.kick();
     });
+    effect(() => this.crewLayer.set(this.crews()));
     effect(() => {
       this.tetherLayer.target = this.tether();
       this.engine?.kick();
@@ -400,6 +407,7 @@ export class StarmapSky {
       this.nurserySky.layer,
       this.tetherLayer,
       this.doneLayer,
+      this.crewLayer,
     ];
     this.engine.filter = filterFor(this.filter(), this.agentPrs());
     this.engine.fog = this.fog();

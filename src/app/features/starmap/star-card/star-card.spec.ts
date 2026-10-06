@@ -1,4 +1,7 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { CrewDispatch } from '../../../core/crew/crew-dispatch';
 import { QueueItem } from '../../../core/queue/queue-report';
 import { StarCard } from './star-card';
 
@@ -22,8 +25,19 @@ const item: QueueItem = {
   hidden: null,
 };
 
-function render() {
+function render(hasRunner = false) {
+  const dispatch = {
+    isAvailable: signal(hasRunner),
+    crews: signal([]),
+    isRunnerBusy: signal(false),
+    isSending: () => false,
+    refusalFor: () => null,
+  };
+  TestBed.configureTestingModule({
+    providers: [provideRouter([]), { provide: CrewDispatch, useValue: dispatch }],
+  });
   const fixture = TestBed.createComponent(StarCard);
+  fixture.componentRef.setInput('repo', 'me/a');
   fixture.componentRef.setInput('item', item);
   fixture.componentRef.setInput('context', { pairs: [], binaries: [] });
   fixture.detectChanges();
@@ -78,5 +92,23 @@ describe('StarCard', () => {
     element.querySelector<HTMLButtonElement>('.close')?.click();
 
     expect(asked).toEqual(['open 58', 'snooze 58', 'dismiss 58', 'closed']);
+  });
+
+  it('offers Send crew on a conflicted pull request where a crew can be sent, and not in a replay', () => {
+    const { fixture, button } = render(true);
+
+    expect(button('Send crew')).toBeDefined();
+    fixture.componentRef.setInput('context', {
+      pairs: [],
+      binaries: [],
+      replay: { at: '2026-10-01T00:00:00Z', now: 'still open', live: true },
+    });
+    fixture.detectChanges();
+
+    expect(button('Send crew')).toBeUndefined();
+  });
+
+  it('offers no crew where none can be sent', () => {
+    expect(render().button('Send crew')).toBeUndefined();
   });
 });

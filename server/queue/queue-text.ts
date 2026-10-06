@@ -18,7 +18,7 @@ export interface QueueArgs {
   readonly json: boolean;
 }
 
-export const QUEUE_USAGE = `Usage: npm run queue -- [owner/repo] [all | seen <pr> | unseen <pr> | dismiss <pr> | snooze <pr> <days> | restore <pr>] [--json]`;
+export const QUEUE_USAGE = `Usage: npm run queue -- [owner/repo] [all | seen <pr> | unseen <pr> | dismiss <pr> | snooze <pr> <days> | restore <pr> | look <pr>] [--json]`;
 
 const REPO = /^[\w.-]+\/[\w.-]+$/;
 
@@ -115,5 +115,6 @@ export function actedLine(
   if (result.hidden?.reason === 'dismissed')
     return `#${number} dismissed; a new push brings it back.`;
   if (action === 'restore') return `#${number} is back in the queue.`;
+  if (action === 'look') return `#${number} looked at: commits pushed after now show as new.`;
   return result.isSeen ? `#${number} marked seen.` : `#${number} marked unseen.`;
 }

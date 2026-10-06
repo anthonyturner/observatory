@@ -14,6 +14,7 @@ describe('storeTriageStore', () => {
       seen: { '7': '2026-09-26T12:00:00Z' },
       dismissed: {},
       snoozed: {},
+      looked: { '7': 'a'.repeat(40) },
       changed: { '7': '2026-09-26T12:00:00Z' },
     };
 
@@ -34,6 +35,7 @@ describe('storeTriageStore', () => {
       seen: { '3': '2026-09-01T00:00:00Z' },
       dismissed: {},
       snoozed: {},
+      looked: {},
       changed: {},
     });
     assert.deepEqual(await store.read('me/b'), EMPTY_TRIAGE);
@@ -46,6 +48,7 @@ describe('triageStateFrom', () => {
       seen: { '1': 'a' },
       dismissed: {},
       snoozed: {},
+      looked: {},
       changed: {},
     });
     assert.deepEqual(triageStateFrom(null), EMPTY_TRIAGE);

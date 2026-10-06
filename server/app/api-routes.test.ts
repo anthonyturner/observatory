@@ -29,6 +29,7 @@ const queue: QueueReport = {
       idleDays: 1,
       ageDays: 1,
       branch: 'feat/x',
+      headSha: 'a'.repeat(40),
       base: 'main',
       mergeable: 'MERGEABLE',
       changedFiles: 1,
@@ -48,6 +49,8 @@ const reads = {
   forgetIssues: (repo: string) => forgotten.push(`issues ${repo}`),
   pull: async (repo: string, number: number) => ({ repo, number }),
   commit: async (repo: string, sha: string) => ({ repo, sha }),
+  sinceLook: async () => ({ newCommits: 2 }),
+  sinceLookDiff: async (repo: string, base: string, head: string) => ({ repo, base, head }),
   pullState: async (_repo: string, number: number) => ({
     state: PULL_STATES[number],
     title: `Change ${number}`,
@@ -144,6 +147,42 @@ describe('ownerRoutes', () => {
       const bad = await handle(new Request(`http://x/api/commit?repo=me/app&sha=${sha}`));
       assert.equal(bad.status, 400, sha);
     }
+  });
+
+  it('reads what changed between two heads, and refuses a head that is not hex', async () => {
+    assert.deepEqual(await get('/api/since-look?repo=me/app&base=AAAAAAA&head=bbbbbbb'), {
+      repo: 'me/app',
+      base: 'aaaaaaa',
+      head: 'bbbbbbb',
+    });
+    for (const heads of ['base=aaaaaaa', 'head=bbbbbbb', 'base=--x&head=bbbbbbb']) {
+      const bad = await handle(new Request(`http://x/api/since-look?repo=me/app&${heads}`));
+      assert.equal(bad.status, 400, heads);
+    }
+  });
+
+  it('counts the new commits on a pull request once its head moves past the one looked at', async () => {
+    const looks = createApiHandler(ownerRoutes(reads, memoryTriage(), editor));
+    const lookAt = (sha: string) =>
+      looks(
+        new Request('http://x/api/triage', {
+          method: 'POST',
+          headers: { 'x-observatory': '1', 'content-type': 'application/json' },
+          body: JSON.stringify({ repo: 'me/app', number: 7, action: 'look', sha }),
+        }),
+      );
+    const queued = async () =>
+      (
+        (await (await looks(new Request('http://x/api/queue?repo=me/app'))).json()) as {
+          items: { lookedSha: string | null; sinceLook: unknown }[];
+        }
+      ).items[0];
+
+    assert.deepEqual(await queued(), { ...(await queued()), lookedSha: null, sinceLook: null });
+    await lookAt('c'.repeat(40));
+    assert.deepEqual((await queued()).sinceLook, { newCommits: 2 });
+    await lookAt('a'.repeat(40));
+    assert.equal((await queued()).sinceLook, null);
   });
 
   it('reads a pull request afresh when asked to', async () => {

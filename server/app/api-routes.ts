@@ -7,6 +7,7 @@ import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
+import { withSinceLook } from '../queue/since-look.ts';
 import { triageRequestFrom } from '../triage/triage.ts';
 import type { TriageStore } from '../triage/triage-store.ts';
 import { recordTriage, withTriage } from '../triage/triaged-queue.ts';
@@ -34,7 +35,8 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       '/api/queue': async (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetQueue(repo);
-        return withTriage(await reads.queue(repo), triage, Date.now());
+        const triaged = await withTriage(await reads.queue(repo), triage, Date.now());
+        return withSinceLook(triaged, (base, head) => reads.sinceLook(repo, base, head));
       },
       '/api/collisions': (query) => reads.collisions(repoOf(query)),
       '/api/history': (query) => reads.history(repoOf(query)),
@@ -60,6 +62,12 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       },
       '/api/pull-state': (query) => reads.pullState(repoOf(query), numberOf(query)),
       '/api/commit': (query) => reads.commit(repoOf(query), commitShaFrom(query.get('sha'))),
+      '/api/since-look': (query) =>
+        reads.sinceLookDiff(
+          repoOf(query),
+          commitShaFrom(query.get('base')),
+          commitShaFrom(query.get('head')),
+        ),
       '/api/labels': (query) => reads.labels(repoOf(query)),
       '/api/edit': (query) => editor.read({ repo: repoOf(query), number: numberOf(query) }),
     },

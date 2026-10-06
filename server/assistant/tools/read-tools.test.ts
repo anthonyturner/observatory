@@ -44,6 +44,7 @@ const item = (number: number): QueueItem => ({
   deletions: 1,
   updatedAt: '',
   branch: '',
+  headSha: 'a'.repeat(40),
   base: 'main',
   mergeable: 'MERGEABLE',
   changedFiles: 1,

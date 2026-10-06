@@ -41,6 +41,22 @@ describe('ledgerRows', () => {
     assert.equal(day(0)?.open, 1);
   });
 
+  it('times each merge and unmerged close in the window, oldest first', () => {
+    const { finished } = ledgerRows(
+      [
+        ...pulls,
+        pull(8, { createdAt: at(90), mergedAt: at(70), closedAt: at(70), state: 'MERGED' }),
+      ],
+      NOW,
+      60,
+    );
+
+    assert.deepEqual(finished, [
+      { number: 2, openedAt: at(10), finishedAt: at(2), fate: 'merged' },
+      { number: 3, openedAt: at(5), finishedAt: at(1), fate: 'closed' },
+    ]);
+  });
+
   it('names only the pull requests the rows mention', () => {
     const { titles } = ledgerRows([...pulls, pull(9, { createdAt: at(200) })], NOW, 60);
     assert.deepEqual(Object.keys(titles).sort(), ['1', '2', '3']);

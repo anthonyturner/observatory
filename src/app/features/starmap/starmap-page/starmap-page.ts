@@ -78,6 +78,8 @@ import { StarmapSearch } from '../starmap-search/starmap-search';
 import { SkyChart, SkyInsets, StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapTools } from '../starmap-tools/starmap-tools';
 import { StarmapUsage } from '../starmap-usage/starmap-usage';
+import { StarmapRetro } from '../starmap-retro/starmap-retro';
+import { retroStamp } from '../starmap-retro/retro-charts';
 import { wipCheck } from '../wip-limit/wip-check';
 import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
 import { WipNotice } from '../wip-limit/wip-notice/wip-notice';
@@ -160,6 +162,7 @@ export interface SkyState {
     ChangesPanel,
     Timeline,
     StarmapUsage,
+    StarmapRetro,
     PrScreen,
     StarCard,
     CometCard,
@@ -274,7 +277,9 @@ export class StarmapPage {
   protected readonly sky = viewChild<StarmapSky>('sky');
   /** The help that fits the screen and view on show, as pr-starmap keys it. */
   protected readonly helpScreen = computed((): HelpKey =>
-    isListOnly(this.chart()) ? 'usage-list' : (`${this.chart()}-${this.view()}` as HelpKey),
+    isListOnly(this.chart())
+      ? (`${this.chart()}-list` as HelpKey)
+      : (`${this.chart()}-${this.view()}` as HelpKey),
   );
 
   protected readonly state = this.feed.state;
@@ -347,6 +352,7 @@ export class StarmapPage {
   protected readonly stamp = computed(() => {
     const report = this.report();
     if (this.chart() === 'usage') return usageStamp(this.usageDocument());
+    if (this.chart() === 'retro') return retroStamp(this.repo(), this.ledger.ledger());
     if (this.chart() === 'issues') return this.issues.stamp();
     if (this.chart() !== 'prs') return '';
     const replay = this.memory.replay();

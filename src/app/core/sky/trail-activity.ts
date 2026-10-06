@@ -1,4 +1,5 @@
 import { Injectable, Signal, computed, inject } from '@angular/core';
+import { median } from '../stats/median';
 import { Clock } from '../time/clock';
 import { TokenDay, workTokensOf } from '../usage/usage-document';
 import { UsageFeed } from '../usage/usage-feed';
@@ -50,12 +51,8 @@ function dayShareAt(nowMs: number): number {
   return Math.min((nowMs - midnight.getTime()) / DAY_MS, 1);
 }
 
-function medianOf(values: readonly number[]): number | null {
-  if (values.length < MIN_WORKING_DAYS) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-}
+const medianOf = (values: readonly number[]): number | null =>
+  values.length < MIN_WORKING_DAYS ? null : median(values);
 
 /** Today's activity pace for Home's star trails. */
 @Injectable({ providedIn: 'root' })

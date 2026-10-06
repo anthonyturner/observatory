@@ -17,14 +17,14 @@ import { ELEMENT_WIDTH } from '../../../shared/element-width/element-width';
 import { mergesSince, projectBars, projectFor, projectNote, toolBars } from './bar-items';
 import { UsageBarsSection } from './usage-bars/usage-bars';
 import { UsageLimitsSection } from './usage-limits/usage-limits';
-import { TipAt, UsageTip } from '../../../shared/charts/usage-tip/usage-tip';
+import { TipAt, UsageTip, tipAt } from '../../../shared/charts/usage-tip/usage-tip';
 import { UsageTokensSection } from './usage-tokens/usage-tokens';
 
 /** Charts are drawn at the list's width, within these bounds. */
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 920;
 /** Until the list has been measured. */
-const DEFAULT_WIDTH = 880;
+export const DEFAULT_WIDTH = 880;
 const MINUTE_MS = 60_000;
 
 export const chartWidth = (measured: number): number =>
@@ -99,8 +99,6 @@ export class StarmapUsage {
 
   /** Any chart mark with a `data-tip` shows its text beside the pointer. */
   protected pointAt(event: PointerEvent): void {
-    const target = event.target instanceof Element ? event.target : null;
-    const text = target?.closest('[data-tip]')?.getAttribute('data-tip');
-    this.tip.set(text ? { text, pointer: { x: event.clientX, y: event.clientY } } : null);
+    this.tip.set(tipAt(event));
   }
 }

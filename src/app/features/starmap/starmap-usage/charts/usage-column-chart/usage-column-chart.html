@@ -4,7 +4,7 @@
   [attr.height]="c.height"
   [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height"
   role="img"
-  aria-label="Weekly limit used in earlier weeks"
+  [attr.aria-label]="label()"
 >
   @for (line of c.grid; track $index) {
     <line

@@ -1,4 +1,5 @@
 import type { QueueReader } from '../github/queue-reader.ts';
+import type { Fate } from './frames.ts';
 
 /** A pull request touched in the ledger's window, as `gh pr list --json` gives it. */
 export interface LedgerPull {
@@ -41,6 +42,14 @@ export interface LedgerRow {
   readonly closed: readonly number[];
 }
 
+/** A pull request that merged or closed in the window, timed to the second rather than the day. */
+export interface FinishedPull {
+  readonly number: number;
+  readonly openedAt: string;
+  readonly finishedAt: string;
+  readonly fate: Fate;
+}
+
 /** What `GET /api/ledger` returns. */
 export interface Ledger {
   readonly generatedAt: string;
@@ -48,6 +57,7 @@ export interface Ledger {
   readonly rows: readonly LedgerRow[];
   /** Titles of the pull requests the rows mention, for the timeline's tip. */
   readonly titles: Readonly<Record<string, string>>;
+  readonly finished: readonly FinishedPull[];
 }
 
 export const LEDGER_DAYS = 60;
@@ -80,12 +90,31 @@ const placed = (pull: LedgerPull): Placed => ({
   closedAt: pull.state === 'OPEN' ? null : pull.mergedAt || pull.closedAt || null,
 });
 
+/** The merges and unmerged closes the rows list, oldest first. */
+const finishedIn = (prs: readonly Placed[], rows: readonly LedgerRow[]): FinishedPull[] => {
+  const listed = new Set(rows.flatMap((row) => [...row.merged, ...row.closed]));
+  return prs
+    .flatMap((p): FinishedPull[] =>
+      listed.has(p.pr) && p.closedAt
+        ? [
+            {
+              number: p.pr,
+              openedAt: p.openedAt,
+              finishedAt: p.closedAt,
+              fate: p.mergedAt ? 'merged' : 'closed',
+            },
+          ]
+        : [],
+    )
+    .sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
+};
+
 /** The last `days` days, one row each: pr-starmap's `ledgerFrom`, pure. */
 export function ledgerRows(
   pulls: readonly LedgerPull[],
   now: number,
   days = LEDGER_DAYS,
-): { rows: LedgerRow[]; titles: Record<string, string> } {
+): { rows: LedgerRow[]; titles: Record<string, string>; finished: FinishedPull[] } {
   const prs = pulls.map(placed);
   const since = now - days * DAY_MS;
   const rows: LedgerRow[] = [];
@@ -110,7 +139,7 @@ export function ledgerRows(
   const titles = Object.fromEntries(
     prs.filter((p) => named.has(p.pr)).map((p) => [String(p.pr), p.title]),
   );
-  return { rows, titles };
+  return { rows, titles, finished: finishedIn(prs, rows) };
 }
 
 /**
@@ -137,6 +166,6 @@ export async function ledgerReport(
     state: 'OPEN',
   }));
   const byNumber = new Map([...openNow, ...touched].map((p) => [p.number, p]));
-  const { rows, titles } = ledgerRows([...byNumber.values()], now, days);
-  return { generatedAt: new Date(now).toISOString(), days, rows, titles };
+  const { rows, titles, finished } = ledgerRows([...byNumber.values()], now, days);
+  return { generatedAt: new Date(now).toISOString(), days, rows, titles, finished };
 }

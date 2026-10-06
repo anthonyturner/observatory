@@ -7,7 +7,14 @@ export interface HelpScreen {
 }
 
 export type HelpKey =
-  'prs-map' | 'prs-list' | 'issues-map' | 'issues-list' | 'usage-list' | 'logs-map' | 'logs-list';
+  | 'prs-map'
+  | 'prs-list'
+  | 'issues-map'
+  | 'issues-list'
+  | 'usage-list'
+  | 'retro-list'
+  | 'logs-map'
+  | 'logs-list';
 
 export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   'prs-map': {
@@ -236,6 +243,25 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Tokens per project; this page’s project is lit, with pull requests merged over the same days.',
       ],
       ['Hover', 'Any bar or point shows its numbers.'],
+    ],
+  },
+  'retro-list': {
+    title: 'Weekly retro',
+    rows: [
+      ['Week', 'The seven days up to when the queue was last read from GitHub.'],
+      [
+        'Waited',
+        'How long the pull requests merged or closed this week spent in each state: cannot merge, checks failing, mergeability unknown, no issue linked, or waiting on you. GitHub keeps no history of these, so it comes from the queue’s own refreshes: a state counts from the refresh that saw it to the next one, or until the pull request finished. The note says how many it saw.',
+      ],
+      [
+        'Cycle',
+        'The median time from opened to merged, for each of the last eight weeks. A dash is a week where nothing merged.',
+      ],
+      [
+        'Agents',
+        'Merges this week by the agent that opened each pull request, as the Agents report cards attribute them; work with no recorded handoff has its own row.',
+      ],
+      ['Hover', 'Any bar shows its numbers.'],
     ],
   },
   'logs-map': {

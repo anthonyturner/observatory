@@ -44,7 +44,7 @@ describe('StarmapTools', () => {
         Array.from(g.querySelectorAll('button')).map((b) => b.textContent?.trim()),
       ),
     ).toEqual([
-      ['Pull requests', 'Logs', 'Issues', 'Usage'],
+      ['Pull requests', 'Logs', 'Issues', 'Usage', 'Retro'],
       ['Starmap', 'List'],
       ['−', '+', 'Fit'],
       ['Next star', 'Sprint'],
@@ -89,7 +89,7 @@ describe('StarmapTools', () => {
         Array.from(g.querySelectorAll('button')).map((b) => b.textContent?.trim()),
       ),
     ).toEqual([
-      ['Pull requests', 'Logs', 'Issues', 'Usage'],
+      ['Pull requests', 'Logs', 'Issues', 'Usage', 'Retro'],
       ['Starmap', 'List'],
       ['Next star', 'Sprint'],
       ['Refresh'],

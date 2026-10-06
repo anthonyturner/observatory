@@ -35,7 +35,7 @@ function render(chart: Chart = 'prs') {
 describe('StarmapTools', () => {
   beforeEach(() => localStorage.clear());
 
-  it('has pr-starmap’s groups, in its order', () => {
+  it('groups its controls by purpose, in order', () => {
     const { element } = render();
 
     expect(
@@ -44,10 +44,14 @@ describe('StarmapTools', () => {
       ),
     ).toEqual([
       ['Pull requests', 'Logs', 'Issues', 'Usage'],
-      ['−', '+', 'Fit'],
       ['Starmap', 'List'],
-      ['Next star', 'Collisions', 'Merge plan', 'Agents', 'Done'],
-      ['Refresh', 'Motion on', 'Sound off', '?'],
+      ['−', '+', 'Fit'],
+      ['Next star'],
+      ['Collisions'],
+      ['Merge plan', 'Agents', 'Done'],
+      ['Refresh'],
+      ['Motion on', 'Sound off'],
+      ['?'],
     ]);
     expect(element.querySelector('.hint')?.textContent).toBe(
       'drag · scroll · hover or click a star',
@@ -72,6 +76,27 @@ describe('StarmapTools', () => {
     const { button } = render('issues');
     expect(button('Merge plan')).toBeUndefined();
     expect(button('Fit')).toBeDefined();
+  });
+
+  it('keeps only what a list uses over the list', () => {
+    const { fixture, element } = render();
+    fixture.componentRef.setInput('view', 'list');
+    fixture.detectChanges();
+
+    expect(
+      Array.from(element.querySelectorAll('.toolgroup')).map((g) =>
+        Array.from(g.querySelectorAll('button')).map((b) => b.textContent?.trim()),
+      ),
+    ).toEqual([
+      ['Pull requests', 'Logs', 'Issues', 'Usage'],
+      ['Starmap', 'List'],
+      ['Next star'],
+      ['Refresh'],
+      ['Motion on', 'Sound off'],
+      ['?'],
+    ]);
+    expect(element.querySelector('.hole')).toBeNull();
+    expect(element.querySelector('.hint')).toBeNull();
   });
 
   it('offers Next star only on the queue, naming the pick and why', () => {

@@ -8,7 +8,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:server": "node --test \"server/**/*.test.ts\"",
+    "test:server": "node --test \"server/**/*.spec.ts\"",
     "typecheck:server": "tsc -p server",
     "lint": "ng lint",
     "usage:import-history": "node server/usage/import-history.ts",

@@ -80,10 +80,10 @@ ADR-0005's point becomes: nothing on the page starts a run except **Run** or
 ## Compliance
 
 - `grep -rn "withCrewRoutes" server api --include=*.ts` finds it only in
-  `server/main.ts` and tests. `hosted-api.test.ts` asserts `/api/crew`
+  `server/main.ts` and tests. `hosted-api.spec.ts` asserts `/api/crew`
   answers 404.
-- `crew-routes.test.ts` covers the refusals: a pull request not stuck, an
-  unsafe branch, a bad body, a missing write header. `crew-prompt.test.ts`
+- `crew-routes.spec.ts` covers the refusals: a pull request not stuck, an
+  unsafe branch, a bad body, a missing write header. `crew-prompt.spec.ts`
   checks the prompt's rules.
 - In review: `propose` in `crew-routes.ts` reads only `repo` and `number`
   from the body.

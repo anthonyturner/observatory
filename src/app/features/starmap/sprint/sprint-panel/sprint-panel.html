@@ -29,9 +29,9 @@
       </div>
     }
     @case ('running') {
-      <div class="clock">
-        <span class="left" role="timer" aria-label="Time left">{{ countdown() }}</span>
-        <span class="word">left</span>
+      <div class="clock" role="timer">
+        <span class="left">{{ countdown() }}</span>
+        <span class="word">&nbsp;left</span>
       </div>
       <div class="track" aria-hidden="true">
         <div class="bar" [style.width.%]="elapsedPercent()"></div>

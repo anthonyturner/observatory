@@ -434,7 +434,7 @@ describe('StarmapPage', () => {
     fixture.detectChanges();
     expect(sky.filter()).toBe('sprint');
     expect(sky.litPrs()).toEqual([7, 9]);
-    expect(element.querySelector('[role="timer"]')?.textContent).toBe('15:00');
+    expect(element.querySelector('[role="timer"] .left')?.textContent).toBe('15:00');
     expect(button('Sprint')?.disabled).toBe(true);
 
     starting('#9')?.click();

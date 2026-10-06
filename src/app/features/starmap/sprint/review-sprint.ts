@@ -4,6 +4,9 @@ import { SprintOption, SprintPick } from './sprint-plan';
 
 const MINUTE_MS = 60_000;
 
+const sameNumbers = (a: readonly number[], b: readonly number[]): boolean =>
+  a.length === b.length && a.every((n, i) => n === b[i]);
+
 /** Choosing a length, the timer running, or the summary of what it cleared. */
 export type SprintPhase = 'setup' | 'running' | 'summary';
 
@@ -46,7 +49,10 @@ export class ReviewSprint {
     if (!sprint || !this.isRunning()) return 0;
     return Math.max(0, sprint.endsAt - this.now().getTime());
   });
-  readonly prs = computed(() => this.current()?.picks.map((pick) => pick.pr) ?? []);
+  /** Kept the same while its numbers are, so ending a sprint does not reframe the sky. */
+  readonly prs = computed(() => this.current()?.picks.map((pick) => pick.pr) ?? [], {
+    equal: sameNumbers,
+  });
 
   /** Opens the lengths to choose from, or closes them; a sprint on show stays. */
   toggleSetup(): void {

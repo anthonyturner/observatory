@@ -64,7 +64,9 @@ describe('SprintPanel', () => {
     fixture.componentInstance.go.subscribe((pr) => went.push(pr));
     fixture.componentInstance.end.subscribe(() => ended++);
 
-    expect(element.querySelector('[role="timer"]')?.textContent).toBe('10:00');
+    const timer = element.querySelector('[role="timer"]');
+    expect(timer?.textContent?.replace(/\s+/g, ' ').trim()).toBe('10:00 left');
+    expect(timer?.hasAttribute('aria-label')).toBe(false);
     expect((element.querySelector('.bar') as HTMLElement).style.width).toBe('60%');
     expect(Array.from(element.querySelectorAll('.mark')).map((m) => m.textContent)).toEqual([
       'merged',

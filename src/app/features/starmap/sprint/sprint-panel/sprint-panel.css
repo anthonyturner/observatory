@@ -114,12 +114,6 @@ button:focus-visible {
   color: var(--faint);
 }
 
-.clock {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
 .left {
   font-family: var(--font-mono);
   font-size: 28px;

@@ -61,6 +61,16 @@ describe('ReviewSprint', () => {
     expect(sprint.sprint()?.endedAt).toBe(START.getTime() + 4 * 60_000);
   });
 
+  it('keeps the same pull request list when it ends, so the sky is not reframed', () => {
+    const { sprint } = setUp();
+    sprint.start(option);
+    const prs = sprint.prs();
+
+    sprint.end();
+
+    expect(sprint.prs()).toBe(prs);
+  });
+
   it('counts only its own pull requests as reviewed, and only while it runs', () => {
     const { sprint } = setUp();
     sprint.start(option);

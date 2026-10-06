@@ -1,0 +1,51 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -6px;
+}
+
+/* Takes no gap in the card until there is something to show. */
+:host(:empty) {
+  display: none;
+}
+
+.risk {
+  --risk: var(--risk-low);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.risk[data-level='medium'] {
+  --risk: var(--risk-medium);
+}
+
+.risk[data-level='high'] {
+  --risk: var(--risk-high);
+}
+
+.tag {
+  padding: 2px 9px;
+  border: 1px solid var(--risk);
+  border-radius: 999px;
+  color: var(--risk);
+  font-weight: 600;
+}
+
+.why {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+}
+
+.gist {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

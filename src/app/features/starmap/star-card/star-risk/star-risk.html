@@ -1,0 +1,11 @@
+@if (view(); as risk) {
+  <p class="risk" [attr.data-level]="risk.level" title="Rated from the files it changes">
+    <span class="tag">{{ risk.label }}</span>
+    @if (risk.reasons) {
+      <span class="why">{{ risk.reasons }}</span>
+    }
+  </p>
+  @if (risk.summary) {
+    <p class="gist">{{ risk.summary }}</p>
+  }
+}

@@ -45,7 +45,7 @@ const said = (content: string) => () =>
 const hasReason = (reason: string) => (error: OpenRouterError) => error.reason === reason;
 
 describe('openRouter', () => {
-  it('asks the chat model with the key, the model and the length cap, as Observatory', async () => {
+  it('asks the chat model with the key, the model and the length cap, as Observatory, and no tool fields with no tools', async () => {
     const { sent, fetch } = fakeFetch(said('Hello.'));
 
     const turn = await chatWith(fetch);
@@ -58,7 +58,8 @@ describe('openRouter', () => {
     const body = JSON.parse(String(sent[0].init.body));
     assert.equal(body.model, 'anthropic/claude-haiku-4.5');
     assert.equal(body.max_tokens, 800);
-    assert.equal(body.tool_choice, 'auto');
+    assert.equal('tools' in body, false);
+    assert.equal('tool_choice' in body, false);
   });
 
   it('sends tools and tool turns in the OpenAI shape, and reads tool calls back', async () => {

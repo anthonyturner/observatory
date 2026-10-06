@@ -41,6 +41,19 @@
         >
           Next star
         </button>
+        <button
+          type="button"
+          [title]="
+            sprintBusy()
+              ? 'A review sprint is on: its panel ends it'
+              : 'A time-boxed review sprint: 15, 25 or 45 minutes of pull requests that fit'
+          "
+          [attr.aria-pressed]="sprintPhase() !== null"
+          [disabled]="sprintBusy()"
+          (click)="sprint.emit()"
+        >
+          Sprint
+        </button>
       }
       <button
         type="button"

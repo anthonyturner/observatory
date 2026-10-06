@@ -56,6 +56,8 @@ export interface SkyInsets {
 
 /** A filter that lights one agent's pull requests: `agent:<name>`. */
 export const AGENT_FILTER = 'agent:';
+/** The filter that lights a review sprint's pull requests. */
+export const SPRINT_FILTER = 'sprint';
 
 const DEFAULT_INSETS: SkyInsets = { top: 140, bottom: 70, side: 0 };
 /** The open window a line ties to its star: the PR screen or the issue window. */
@@ -102,8 +104,8 @@ export class StarmapSky {
   readonly selectedIssue = input<number | null>(null);
   /** The legend's filter: a bucket, `quick`, or none. */
   readonly filter = input<string | null>(null);
-  /** The lit agent's pull requests, for an `agent:` filter. */
-  readonly agentPrs = input<readonly number[]>([]);
+  /** The pull requests an `agent:` or sprint filter lights. */
+  readonly litPrs = input<readonly number[]>([]);
   readonly selected = input<number | null>(null);
   readonly pairs = input<readonly SkyPair[]>([]);
   readonly showCollisions = input(true);
@@ -188,7 +190,7 @@ export class StarmapSky {
     });
     effect(() => {
       const filter = this.filter();
-      const prs = this.agentPrs();
+      const prs = this.litPrs();
       const engine = this.engine;
       if (!engine || untracked(this.chart) === 'issues') return;
       engine.filter = filterFor(filter, prs);
@@ -409,7 +411,7 @@ export class StarmapSky {
       this.doneLayer,
       this.crewLayer,
     ];
-    this.engine.filter = filterFor(this.filter(), this.agentPrs());
+    this.engine.filter = filterFor(this.filter(), this.litPrs());
     this.engine.fog = this.fog();
     this.engine.setHidden(this.hidden());
     this.layOut(this.chart(), this.items(), this.logLayout(), this.nursery());
@@ -450,7 +452,7 @@ export class StarmapSky {
       newDisk = this.nurserySky.layOut(engine, nursery, this.isFramed && !switched);
     } else {
       this.nurserySky.clear();
-      engine.filter = filterFor(untracked(this.filter));
+      engine.filter = filterFor(untracked(this.filter), untracked(this.litPrs));
       engine.fitsFiltered = true;
       if (chart === 'logs') {
         engine.setSky((sky: SkyLayout) => logs && feedLogs(logs, sky));
@@ -493,15 +495,16 @@ export class StarmapSky {
   }
 }
 
-/** A legend filter as a test on a star: a bucket, or the quick wins across them. */
+/** A legend filter as a test on a star: a bucket, the quick wins across them,
+ *  or the pull requests an agent or the sprint lights. */
 export function filterFor(
   filter: string | null,
-  agentPrs: readonly number[] = [],
+  litPrs: readonly number[] = [],
 ): ((star: SkyStar) => boolean) | null {
   if (!filter) return null;
   if (filter === 'quick') return (star) => !!star.quick;
-  if (filter.startsWith(AGENT_FILTER)) {
-    const prs = new Set(agentPrs);
+  if (filter === SPRINT_FILTER || filter.startsWith(AGENT_FILTER)) {
+    const prs = new Set(litPrs);
     return (star) => prs.has(star.item?.pr ?? -1);
   }
   return (star) => star.key === filter;

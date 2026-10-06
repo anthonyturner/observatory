@@ -53,7 +53,10 @@ import { AgentsPanel } from '../agents-panel/agents-panel';
 import { DonePanel } from '../done-panel/done-panel';
 import { DoneItem, DoneKind, doneWork, isPull } from '../../../core/queue/done-work';
 import { AgentsFeed } from '../../../core/agents/agents-report';
-import { AGENT_FILTER } from '../starmap-sky/starmap-sky';
+import { AGENT_FILTER, SPRINT_FILTER } from '../starmap-sky/starmap-sky';
+import { ReviewSprint } from '../sprint/review-sprint';
+import { SprintPanel } from '../sprint/sprint-panel/sprint-panel';
+import { SprintOption, mergedOf, sprintOptions, sprintRows } from '../sprint/sprint-plan';
 import { COMET_CAP, COMET_COLOUR, Comet, cometsOf } from '../comets';
 import { IssuesFeed } from '../../../core/issues/issues-feed';
 import { LogsFeed } from '../../../core/logs/logs-feed';
@@ -159,6 +162,7 @@ export interface SkyState {
     LogList,
     MeteorRecord,
     StarmapHelp,
+    SprintPanel,
   ],
   hostDirectives: [HelpShortcuts],
   host: {
@@ -177,6 +181,7 @@ export interface SkyState {
     UsageWatch,
     IssuesFeed,
     IssuesScreen,
+    ReviewSprint,
   ],
   templateUrl: './starmap-page.html',
   styleUrl: './starmap-page.css',
@@ -193,11 +198,12 @@ export class StarmapPage {
   protected readonly usage = inject(UsageWatch);
   private readonly triage = inject(TriageClient);
   protected readonly session = inject(ViewerSession);
-  private readonly motion = inject(MotionPreference);
   protected readonly logs = inject(LogSkyView);
   protected readonly issues = inject(IssuesScreen);
   private readonly router = inject(Router);
   private readonly crew = inject(CrewDispatch);
+  protected readonly sprint = inject(ReviewSprint);
+  protected readonly motion = inject(MotionPreference);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
   private readonly window = inject(DOCUMENT).defaultView;
@@ -408,12 +414,38 @@ export class StarmapPage {
   protected readonly planMarks = computed(() =>
     this.planSteps().map((step) => ({ pr: step.pr, needsRebase: step.reason === 'needs-rebase' })),
   );
-  /** The pull request Next star opens, from the live queue whatever is on show. Until the
-   *  collisions are read the plan is only a size order, so it is left out. */
+  /** Until the collisions are read the plan is only a size order, so it is left out. */
+  private readonly planOrder = computed(() =>
+    this.collisions.report() ? this.plan().map((step) => step.pr) : [],
+  );
+  /** The pull request to work next in the live queue, whatever is on show. */
+  private readonly queueNext = computed(() => nextStar(this.items(), this.planOrder()));
+  /** What Next star opens: during a sprint, the sprint's next pull request not yet opened. */
   protected readonly next = computed(() => {
-    const planOrder = this.collisions.report() ? this.plan().map((step) => step.pr) : [];
-    return nextStar(this.items(), planOrder);
+    if (!this.sprint.isRunning()) return this.queueNext();
+    const prs = new Set(this.sprint.prs());
+    const reviewed = this.sprint.reviewed();
+    const left = this.items().filter((item) => prs.has(item.number) && !reviewed.has(item.number));
+    return nextStar(left, this.planOrder());
   });
+  /** Each sprint length, filled from the queue with Next star's pick leading. */
+  protected readonly sprintOptions = computed(() =>
+    sprintOptions(this.items(), this.queueNext()?.pr ?? null),
+  );
+  protected readonly sprintRows = computed(() =>
+    sprintRows(this.sprint.sprint()?.picks ?? [], this.sprint.reviewed(), mergedOf(this.done())),
+  );
+  protected readonly sprintTotalMs = computed(() => {
+    const sprint = this.sprint.sprint();
+    return sprint ? sprint.endsAt - sprint.startedAt : 0;
+  });
+  /** A legend chip or an agent narrows the sky; otherwise a sprint lights its own stars. */
+  protected readonly skyFilter = computed(
+    () => this.filter() ?? (this.sprint.sprint() ? SPRINT_FILTER : null),
+  );
+  protected readonly litPrs = computed(() =>
+    this.skyFilter() === SPRINT_FILTER ? this.sprint.prs() : this.agentPrs(),
+  );
   protected readonly conflicting = computed(
     () =>
       (this.collisions.report()?.pairs ?? []).filter((p) => (p.conflicts ?? []).length > 0).length,
@@ -564,6 +596,7 @@ export class StarmapPage {
         this.filter.set(null);
         this.openPull.set(null);
         this.sheetPull.set(null);
+        this.sprint.close();
       });
       if (repo === '/') return;
       untracked(() => {
@@ -953,8 +986,16 @@ export class StarmapPage {
     if (Number.isInteger(pull) && pull > 0) this.openSheet(pull);
   }
 
+  /** Starts a review sprint: its stars light, the rest dim. */
+  protected startSprint(option: SprintOption): void {
+    this.sprint.start(option);
+    this.filter.set(null);
+    this.openPull.set(null);
+  }
+
   /** Opens a pull request's full screen, from its card or another screen. */
   openSheet(number: number): void {
+    this.sprint.markReviewed(number);
     this.issues.windowIssue.set(null);
     this.sheetLookedSha.set(this.items().find((each) => each.number === number)?.lookedSha ?? null);
     this.sheetPull.set(number);

@@ -3,8 +3,8 @@
   [chart]="skyChart()"
   [items]="skyItems()"
   [logLayout]="logs.layout()"
-  [filter]="chart() === 'logs' ? logs.filter() : filter()"
-  [agentPrs]="agentPrs()"
+  [filter]="chart() === 'logs' ? logs.filter() : skyFilter()"
+  [litPrs]="litPrs()"
   [selected]="ringedPull()"
   [selectedLog]="logs.selected()"
   [traced]="logs.traced()"
@@ -116,6 +116,7 @@
     [agentsOn]="agentsOn()"
     [doneOn]="doneOn()"
     [next]="next()"
+    [sprintPhase]="sprint.phase()"
     [refreshing]="refreshing() || usage.isRefreshing()"
     [(folded)]="folded"
     (chartChange)="setChart($event)"
@@ -128,6 +129,7 @@
     (agents)="toggleAgents()"
     (done)="toggleDone()"
     (nextStar)="goToNext()"
+    (sprint)="sprint.toggleSetup()"
     (refresh)="refresh()"
   />
 </div>
@@ -163,6 +165,21 @@
     (go)="goTo($event)"
     (playAgain)="memory.playAgain()"
     (acknowledged)="memory.acknowledge()"
+  />
+}
+
+@if (chart() === 'prs' && sprint.phase(); as phase) {
+  <app-sprint-panel
+    [phase]="phase"
+    [options]="sprintOptions()"
+    [rows]="sprintRows()"
+    [remainingMs]="sprint.remainingMs()"
+    [totalMs]="sprintTotalMs()"
+    [still]="motion.isStill()"
+    (start)="startSprint($event)"
+    (go)="openSheet($event)"
+    (end)="sprint.end()"
+    (closed)="sprint.close()"
   />
 }
 

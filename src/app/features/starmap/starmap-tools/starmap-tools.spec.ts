@@ -45,7 +45,7 @@ describe('StarmapTools', () => {
       ['Pull requests', 'Logs', 'Issues', 'Usage'],
       ['−', '+', 'Fit'],
       ['Starmap', 'List'],
-      ['Next star', 'Collisions', 'Merge plan', 'Agents', 'Done'],
+      ['Next star', 'Sprint', 'Collisions', 'Merge plan', 'Agents', 'Done'],
       ['Refresh', 'Motion on', 'Sound off', '?'],
     ]);
     expect(element.querySelector('.hint')?.textContent).toBe(
@@ -93,6 +93,24 @@ describe('StarmapTools', () => {
     fixture.componentRef.setInput('chart', 'logs');
     fixture.detectChanges();
     expect(button('Next star')).toBeUndefined();
+  });
+
+  it('asks for the review sprint, and leaves a running one to its panel', () => {
+    const { fixture, button } = render();
+    let asked = 0;
+    fixture.componentInstance.sprint.subscribe(() => asked++);
+    expect(button('Sprint')?.getAttribute('aria-pressed')).toBe('false');
+
+    button('Sprint')?.click();
+    fixture.componentRef.setInput('sprintPhase', 'setup');
+    fixture.detectChanges();
+    expect(asked).toBe(1);
+    expect(button('Sprint')?.getAttribute('aria-pressed')).toBe('true');
+
+    fixture.componentRef.setInput('sprintPhase', 'running');
+    fixture.detectChanges();
+    expect(button('Sprint')?.disabled).toBe(true);
+    expect(button('Sprint')?.title).toBe('A review sprint is on: its panel ends it');
   });
 
   it('shows the volume slider only while the sound is on', () => {

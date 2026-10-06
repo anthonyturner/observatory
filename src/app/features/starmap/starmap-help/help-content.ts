@@ -72,6 +72,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Next star, or the n key, flies to the one pull request to work next and opens it: from the most blocked group, the merge plan’s first step when it is there, else the one idle longest, with a quick win breaking a tie. Drafts, snoozed and dismissed ones are skipped. Rest the pointer on the button to see which it will open, and why.',
       ],
       [
+        'Sprint',
+        'Sprint time-boxes a review: pick 15, 25 or 45 minutes and the queue fills it, in queue order with Next star’s pick first, with pull requests whose size fits. Each is budgeted 2 minutes plus 500 changed lines an hour; one too big for the time left is passed over, and drafts and ones of unknown size are left out. Its stars stay lit and the rest dim, a timer runs, and Next star works through it. Opening a pull request counts it as reviewed. End it early or let the time run out for a summary of what merged, what you reviewed and what was skipped.',
+      ],
+      [
         'Fog',
         'Fog means what you see may be out of date. The sky fogs over as its data ages: clear for six hours, full by three days. If refreshing fails, it fogs at once, thinly, and thickens to full an hour after the last good read, so a broken feed never passes for a quiet one. Issues, Usage and Logs each fog by the age of their own data. The badge by the title says how old it is; Refresh clears it.',
       ],

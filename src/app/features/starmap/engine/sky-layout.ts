@@ -78,7 +78,12 @@ export function spiralArm(n: number, turn: number): { dx: number; dy: number }[]
 
 /** Moves each laid-out star where the black hole's pull puts it, then off any star it landed on. */
 function settleByHole(pulls: ReadonlyMap<SkyStar, number>): void {
-  for (const [star, pull] of pulls) Object.assign(star, placeByHole(star, pull));
+  for (const [star, pull] of pulls) {
+    const at = placeByHole(star, pull);
+    star.x = at.x;
+    star.y = at.y;
+    star.z = at.z;
+  }
   const stars = [...pulls.keys()];
   keepApart(stars, (star) => pulls.get(star) ?? 0);
   for (const star of stars) {

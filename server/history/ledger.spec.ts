@@ -1,12 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import {
-  type LedgerPull,
-  ledgerReport,
-  ledgerRows,
-  localDay,
-  mergedBranchesOf,
-} from './ledger.ts';
+import { type LedgerPull, ledgerReport, ledgerRows, localDay, mergedBranchesOf } from './ledger.ts';
 
 const NOW = new Date(2026, 8, 26, 15, 0).getTime();
 const DAY = 86_400_000;

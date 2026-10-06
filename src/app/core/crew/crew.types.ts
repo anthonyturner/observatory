@@ -1,7 +1,8 @@
 import { RunShownState } from '../runs/run-words';
 
-/** What a crew does: bring a conflicted branch up to date, or fix failing checks. */
-export type CrewTask = 'update-branch' | 'fix-checks';
+/** What a crew does: bring a conflicted branch up to date, fix failing checks, or update a
+ *  branch whose stacked base has merged. */
+export type CrewTask = 'update-branch' | 'fix-checks' | 'update-stack';
 
 /** Where a crew is: still at work, or back with its run done or failed. */
 export type CrewPhase = 'working' | 'succeeded' | 'failed';

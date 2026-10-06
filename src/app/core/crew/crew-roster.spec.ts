@@ -46,11 +46,18 @@ const context = (fields: Partial<CrewContext> = {}): CrewContext => ({
 
 describe('crewTaskOf', () => {
   it('sends a crew to a conflicted or failing pull request only', () => {
-    expect(crewTaskOf('conflicted')).toBe('update-branch');
-    expect(crewTaskOf('failing')).toBe('fix-checks');
+    expect(crewTaskOf('conflicted', null)).toBe('update-branch');
+    expect(crewTaskOf('failing', null)).toBe('fix-checks');
     for (const bucket of ['unknown', 'unlinked', 'unreviewed', 'fresh', null] as const) {
-      expect(crewTaskOf(bucket)).toBeNull();
+      expect(crewTaskOf(bucket, null)).toBeNull();
     }
+  });
+
+  it('updates a branch whose stacked base has merged, whatever its bucket', () => {
+    const landed = { number: 12, branch: 'feat/12', into: 'main' };
+
+    expect(crewTaskOf('unreviewed', landed)).toBe('update-stack');
+    expect(crewTaskOf('conflicted', landed)).toBe('update-stack');
   });
 });
 

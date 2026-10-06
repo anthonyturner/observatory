@@ -60,12 +60,16 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Two stars joined by a twisted pair of strands close the same issue — usually the same work done twice. Merge one; the other will close nothing.',
       ],
       [
+        'Chain',
+        'A silver chain joins a stacked pull request to the one it is built on, the pull request whose branch it merges into; a glint runs along it toward that base. When the base merges, its children are left holding a broken gold chain marked BASE MERGED · UPDATE: open one and Send crew to update it, merging in the work where the base landed and pointing the pull request there.',
+      ],
+      [
         'Agents',
         'Agents opens a report card per agent: how many of its pull requests merged, are still open, conflict, or close no issue, and how long a merge takes. Each says whether its attribution is named, inferred or missing. Click a card to light only that agent’s stars.',
       ],
       [
         'Crew',
-        'On your own machine, a conflicted or failing pull request’s card and screen offer Send crew: a Claude Code task merges the base into a conflicted branch, or fixes failing checks, and pushes to the pull request’s branch. It never merges the pull request. A small ship circles the star while the crew works (parked beside it when motion is off), then flies off, leaving a green tick or a red cross. One task runs at a time; the card shows how the crew stands and links to its log on Home.',
+        'On your own machine, the card and screen of a conflicted or failing pull request, or of one whose stacked base has merged, offer Send crew: a Claude Code task merges the base into a conflicted branch, fixes failing checks, or updates a branch whose base merged, and pushes to the pull request’s branch. It never merges the pull request. A small ship circles the star while the crew works (parked beside it when motion is off), then flies off, leaving a green tick or a red cross. One task runs at a time; the card shows how the crew stands and links to its log on Home.',
       ],
       [
         'Plan',
@@ -129,6 +133,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['Order', 'Within a group, the one waiting longest comes first.'],
       ['Filter', 'Click a colour at the top to show only that kind.'],
       ['Click', 'Jumps to that pull request on the star map.'],
+      [
+        'Stack',
+        'A row built on another pull request says which, and which are built on it. Base merged · update it means the one it was built on has merged: open it to send a crew.',
+      ],
     ],
   },
   'issues-map': {

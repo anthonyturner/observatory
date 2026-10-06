@@ -1,4 +1,5 @@
 import { QueueItem } from '../../../core/queue/queue-report';
+import { StackNote } from '../../../core/queue/stacks';
 import { SkyPair } from '../engine/collision-layer';
 import { QUICK_COLOUR, costOf, isQuick } from '../engine/sky-model';
 import { isFalling } from '../engine/black-hole';
@@ -27,6 +28,8 @@ export interface CardContext {
   readonly change?: { readonly noun: string; readonly label: string; readonly colour: string };
   /** Idle days past which the black hole pulls a pull request in. */
   readonly staleAfterDays?: number;
+  /** Where it sits in a stack of pull requests, if it is in one. */
+  readonly stack?: StackNote;
 }
 
 /** How long it has sat idle, said as a fall once the black hole has it. */
@@ -58,6 +61,23 @@ function collisionFacts(pr: number, pairs: readonly SkyPair[]): CardFact[] {
   ];
 }
 
+/** What it is stacked on, what is stacked on it, and a base that has merged. */
+function stackFacts(stack: StackNote | undefined): CardFact[] {
+  if (!stack) return [];
+  const { landed, parent, children } = stack;
+  const facts: CardFact[] = [];
+  if (landed) {
+    facts.push({
+      term: 'base',
+      value: `#${landed.number} merged into ${landed.into} · update it`,
+      tone: 'hot',
+    });
+  }
+  if (parent !== null) facts.push({ term: 'stacked on', value: `#${parent}` });
+  if (children.length) facts.push({ term: 'stacked on it', value: list(children) });
+  return facts;
+}
+
 /** The card's facts, in pr-starmap's order and words. */
 export function cardFacts(item: QueueItem, context: CardContext): CardFact[] {
   const sky = skyItemOf(item);
@@ -78,6 +98,7 @@ export function cardFacts(item: QueueItem, context: CardContext): CardFact[] {
     });
   }
   if (!replay) facts.push(...collisionFacts(item.number, context.pairs));
+  if (!replay) facts.push(...stackFacts(context.stack));
   if (!replay && context.planStep) {
     facts.push({
       term: 'merge order',

@@ -1,4 +1,5 @@
 import { QueueBucket } from '../queue/queue-report';
+import { LandedBase } from '../queue/stacks';
 import { RUN_WORDS, RunShownState } from '../runs/run-words';
 import { RunSummary } from '../runs/runs.types';
 import { crewKey, crewTargetOf } from './crew-tag';
@@ -51,6 +52,8 @@ const TASK_HINTS: Readonly<Record<CrewTask, string>> = {
     'A crew merges the base into this branch, resolves the conflicts and pushes. It never merges the pull request.',
   'fix-checks':
     'A crew reads the failed checks, fixes them and pushes to this branch. It never merges the pull request.',
+  'update-stack':
+    'The pull request this one was stacked on has merged. A crew merges that work into this branch, points the pull request where it landed and pushes. It never merges the pull request.',
 };
 
 const LIVE_STATES: ReadonlySet<RunShownState> = new Set<RunShownState>([
@@ -73,9 +76,14 @@ const RUNNER_BUSY: CrewSend = {
   hint: 'Another task is running on this machine. A crew can launch once it ends.',
 };
 
-/** The crew's task for a pull request in `bucket`, or null when it needs none. */
-export const crewTaskOf = (bucket: QueueBucket | null): CrewTask | null =>
-  bucket ? (TASKS[bucket] ?? null) : null;
+/**
+ * The crew's task for a pull request in `bucket`, or null when it needs none.
+ * A base that has merged comes first, as the API decides it.
+ */
+export function crewTaskOf(bucket: QueueBucket | null, landed: LandedBase | null): CrewTask | null {
+  if (landed) return 'update-stack';
+  return bucket ? (TASKS[bucket] ?? null) : null;
+}
 
 /** A run still going is at work; one that ended cleanly is back, done; any other ending failed. */
 export function crewPhaseOf(state: RunShownState): CrewPhase {

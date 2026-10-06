@@ -41,6 +41,8 @@ export class StarCard {
   protected readonly shown = computed(() => shownBucket(this.item()));
   protected readonly bucket = computed(() => BY_ID.get(this.shown()));
   protected readonly facts = computed(() => cardFacts(this.item(), this.context()));
+  /** The merge of the base it was stacked on, which a crew can update it from. */
+  protected readonly landed = computed(() => this.context().stack?.landed ?? null);
   /** What changed since it was last looked at; a past refresh on screen says nothing of now. */
   protected readonly sinceLook = computed(() => {
     const since = this.item().sinceLook;

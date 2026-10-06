@@ -45,8 +45,7 @@ const TASKS: Readonly<Partial<Record<PullBucket, ClearTarget['task']>>> = {
 };
 
 /** The crew's task for a pull request in `bucket`, or null when it needs none. */
-export const crewTaskOf = (bucket: PullBucket): ClearTarget['task'] | null =>
-  TASKS[bucket] ?? null;
+export const crewTaskOf = (bucket: PullBucket): ClearTarget['task'] | null => TASKS[bucket] ?? null;
 
 /** Whether `name` is safe to write into a crew's instructions. */
 export const isSafeBranch = (name: string): boolean =>

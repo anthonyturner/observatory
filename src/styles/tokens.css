@@ -136,6 +136,9 @@
   --starmap-stale-wash: rgba(120, 130, 170, 0.14);
   --starmap-stale-ink: #c9d1ea;
   --starmap-row-title: #d3dcf5;
+  /* A stacked pull request's chain, and the broken one left when its base merges, as the sky draws them. */
+  --starmap-stack: #c9d3ea;
+  --starmap-stack-landed: #ffcf7a;
 
   /* pr-starmap's detail card. */
   --card-glass: linear-gradient(165deg, rgba(18, 26, 52, 0.84), rgba(7, 11, 24, 0.9));

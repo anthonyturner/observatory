@@ -19,6 +19,7 @@ import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LedgerFeed } from '../../../core/queue/ledger-feed';
 import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
 import { QueueFeed } from '../../../core/queue/queue-feed';
+import { Stacks, stacksOf } from '../../../core/queue/stacks';
 import { queueFog } from '../../../core/queue/queue-fog';
 import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { ViewerSession } from '../../../core/session/viewer-session';
@@ -113,6 +114,9 @@ const NEXT_STAR_HOLD_MS = 900;
 
 /** Blocked buckets: the tension voice counts them. */
 const BLOCKED: ReadonlySet<string> = new Set(['conflicted', 'failing']);
+
+/** A past refresh on screen shows no stacks: they are the queue as it is. */
+const NO_STACKS: Stacks = new Map();
 
 /** The comets' legend chip, which shows and hides them rather than filtering. */
 const COMETS = 'comets';
@@ -283,6 +287,11 @@ export class StarmapPage {
     return replay ? replay.items.map((i) => this.replayed(i)) : this.items();
   });
   protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
+  /** Stacked pull requests: what each is stacked on, what is stacked on it, and a merged base. */
+  protected readonly stacks = computed((): Stacks => {
+    if (this.memory.replay()) return NO_STACKS;
+    return stacksOf(this.items(), this.ledger.ledger()?.mergedBranches ?? []);
+  });
   /** The sky's news, as its layer reads it. */
   protected readonly skyNews = computed(() => {
     const news = this.memory.news();
@@ -554,6 +563,7 @@ export class StarmapPage {
         : undefined,
       planStep: this.planStepOf(number),
       staleAfterDays: this.blackHole.staleAfterDays(),
+      stack: number === null ? undefined : this.stacks().get(number),
       pairs: this.skyPairs(),
       binaries: groups
         .filter((g) => g.members.some((item) => item.pr === number))
@@ -571,6 +581,10 @@ export class StarmapPage {
     return item ? shownBucket(item) : null;
   });
   protected readonly sheetTitle = computed(() => this.sheetItem()?.title ?? null);
+  protected readonly sheetLanded = computed(() => {
+    const number = this.sheetPull();
+    return number === null ? null : (this.stacks().get(number)?.landed ?? null);
+  });
   /** The meteor record shows under the Log Sky's map, when it has days. */
   protected readonly showMeteors = computed(
     () => this.chart() === 'logs' && this.view() === 'map' && this.logs.hasDays(),

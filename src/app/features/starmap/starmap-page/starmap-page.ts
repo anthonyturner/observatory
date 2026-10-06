@@ -78,6 +78,9 @@ import { StarmapSearch } from '../starmap-search/starmap-search';
 import { SkyChart, SkyInsets, StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapTools } from '../starmap-tools/starmap-tools';
 import { StarmapUsage } from '../starmap-usage/starmap-usage';
+import { wipCheck } from '../wip-limit/wip-check';
+import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
+import { WipNotice } from '../wip-limit/wip-notice/wip-notice';
 import { usageStamp } from '../starmap-usage/usage-text';
 import {
   Chart,
@@ -97,6 +100,8 @@ const TOP_INSET = 140;
 const TOP_INSET_WITH_DOCK = 205;
 /** The review queue's search box, under its legend. */
 const SEARCH_HEIGHT = 44;
+/** The work-in-progress notice, under the search. */
+const WIP_NOTICE_HEIGHT = 56;
 const BOTTOM_INSET = 70;
 /** With a chart along the bottom, as the Log Sky's meteor record. */
 const BOTTOM_INSET_WITH_STRIP = 200;
@@ -166,6 +171,7 @@ export interface SkyState {
     MeteorRecord,
     StarmapHelp,
     SprintPanel,
+    WipNotice,
   ],
   hostDirectives: [HelpShortcuts],
   host: {
@@ -208,6 +214,7 @@ export class StarmapPage {
   protected readonly sprint = inject(ReviewSprint);
   protected readonly motion = inject(MotionPreference);
   private readonly blackHole = inject(BlackHoleSetting);
+  private readonly wipLimit = inject(WipLimitSetting);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
   private readonly window = inject(DOCUMENT).defaultView;
@@ -285,6 +292,14 @@ export class StarmapPage {
     return replay ? replay.items.map((i) => this.replayed(i)) : this.items();
   });
   protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
+  /** Open work against the viewer's limit, from the live queue even while replaying. */
+  protected readonly wip = computed(() =>
+    wipCheck(this.report()?.items ?? [], this.wipLimit.limit()),
+  );
+  /** The notice speaks for the live queue, so a replay hides it. */
+  protected readonly showWipNotice = computed(
+    () => this.chart() === 'prs' && this.wip().isOver && !this.memory.replay(),
+  );
   /** The sky's news, as its layer reads it. */
   protected readonly skyNews = computed(() => {
     const news = this.memory.news();
@@ -583,7 +598,9 @@ export class StarmapPage {
     return {
       top: this.docked()
         ? TOP_INSET_WITH_DOCK
-        : TOP_INSET + (this.chart() === 'prs' ? SEARCH_HEIGHT : 0),
+        : TOP_INSET +
+          (this.chart() === 'prs' ? SEARCH_HEIGHT : 0) +
+          (this.showWipNotice() ? WIP_NOTICE_HEIGHT : 0),
       bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
       side: !wide
         ? 0

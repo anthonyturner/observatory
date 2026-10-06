@@ -1,4 +1,5 @@
-import { Injectable, Signal, signal } from '@angular/core';
+import { Injectable, Signal } from '@angular/core';
+import { StoredWholeNumber } from '../../../core/settings/stored-whole-number';
 
 /** Idle days before a pull request starts to fall, unless the viewer chose otherwise. */
 export const DEFAULT_STALE_DAYS = 14;
@@ -10,38 +11,14 @@ const STORAGE_KEY = 'observatory.black-hole-days';
 /** How long a pull request may sit idle before the black hole pulls it in,
  *  remembered in this browser. */
 @Injectable({ providedIn: 'root' })
-export class BlackHoleSetting {
-  private readonly chosen = signal(readStoredDays());
+export class BlackHoleSetting extends StoredWholeNumber {
+  readonly staleAfterDays: Signal<number> = this.value;
 
-  readonly staleAfterDays: Signal<number> = this.chosen.asReadonly();
-
-  set(days: number): void {
-    const next = clampDays(days);
-    this.chosen.set(next);
-    storeDays(next);
-  }
-}
-
-function clampDays(days: number): number {
-  if (!Number.isFinite(days)) return DEFAULT_STALE_DAYS;
-  return Math.min(Math.max(Math.round(days), MIN_STALE_DAYS), MAX_STALE_DAYS);
-}
-
-/** Private windows and blocked site data throw here; the default then holds. */
-function readStoredDays(): number {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === null ? DEFAULT_STALE_DAYS : clampDays(Number(stored));
-  } catch {
-    return DEFAULT_STALE_DAYS;
-  }
-}
-
-/** Where storage is blocked the choice lasts for this visit only. */
-function storeDays(days: number): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, String(days));
-  } catch {
-    return;
+  constructor() {
+    super(STORAGE_KEY, {
+      min: MIN_STALE_DAYS,
+      max: MAX_STALE_DAYS,
+      fallback: DEFAULT_STALE_DAYS,
+    });
   }
 }

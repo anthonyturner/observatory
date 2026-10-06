@@ -114,6 +114,8 @@ export class StarmapSky {
   /** Unclaimed issues passing through, and whether they are shown. */
   readonly comets = input<readonly Comet[]>([]);
   readonly showComets = input(true);
+  /** Past the viewer's work-in-progress limit the comets fade. */
+  readonly cometsFaded = input(false);
   readonly selectedComet = input<Comet | null>(null);
   /** Whether a past refresh is on screen: comets are the present, so they step aside. */
   readonly replaying = input(false);
@@ -235,6 +237,7 @@ export class StarmapSky {
     });
     effect(() => {
       this.cometLayer.show = this.showComets();
+      this.cometLayer.faded = this.cometsFaded();
       this.cometLayer.paused = this.replaying();
       this.planLayer.paused = this.replaying();
       this.planLayer.steps = this.plan();

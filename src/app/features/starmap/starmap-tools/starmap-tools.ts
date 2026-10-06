@@ -13,6 +13,8 @@ import { HelpState } from '../../../shared/help/help-state';
 import { NextStar } from '../next-star';
 import { SprintPhase } from '../sprint/review-sprint';
 import { BlackHoleSetting, MAX_STALE_DAYS, MIN_STALE_DAYS } from '../black-hole/black-hole-setting';
+import { MAX_WIP_LIMIT, MIN_WIP_LIMIT, WipLimitSetting } from '../wip-limit/wip-limit-setting';
+import { StoredWholeNumber } from '../../../core/settings/stored-whole-number';
 import { Chart, SkyView, isListOnly } from '../starmap-view';
 
 const FOLDED_KEY = 'observatory.folded';
@@ -73,12 +75,15 @@ export class StarmapTools {
   protected readonly blackHole = inject(BlackHoleSetting);
   protected readonly minHoleDays = MIN_STALE_DAYS;
   protected readonly maxHoleDays = MAX_STALE_DAYS;
+  protected readonly wipLimit = inject(WipLimitSetting);
+  protected readonly minWipLimit = MIN_WIP_LIMIT;
+  protected readonly maxWipLimit = MAX_WIP_LIMIT;
 
-  /** A cleared or out-of-range field shows the threshold actually kept. */
-  protected onHoleDays(event: Event): void {
+  /** A cleared or out-of-range field shows the number actually kept. */
+  protected onNumberField(event: Event, setting: StoredWholeNumber): void {
     const field = event.target as HTMLInputElement;
-    this.blackHole.set(field.valueAsNumber);
-    field.value = String(this.blackHole.staleAfterDays());
+    setting.set(field.valueAsNumber);
+    field.value = String(setting.value());
   }
 
   protected onVolume(event: Event): void {

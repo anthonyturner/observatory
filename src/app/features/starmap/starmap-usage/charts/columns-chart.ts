@@ -16,6 +16,8 @@ const MAX_BAR_WIDTH = 46;
 const BAND_GAP = 8;
 const VALUE_LIFT = 4;
 const MIN_BAR_HEIGHT = 1;
+/** Roughly how wide a label or value runs, such as "2.5 days". */
+const LABEL_ROOM = 52;
 
 /** One column: its value, what it reads above it and under it, and its tooltip. */
 export interface Column {
@@ -41,7 +43,8 @@ export interface ColumnsChart {
   readonly values: readonly ChartText[];
 }
 
-/** Columns side by side between a gridline at zero and one at the scale's top. */
+/** Columns side by side between a gridline at zero and one at the scale's top;
+ *  where they are too narrow for their words, every few are worded, the newest always. */
 export function columnsChart(
   columns: readonly Column[],
   width: number,
@@ -49,6 +52,8 @@ export function columnsChart(
 ): ColumnsChart {
   const band = (width - MARGINS.left - MARGINS.right) / Math.max(columns.length, MIN_BANDS);
   const barWidth = Math.min(MAX_BAR_WIDTH, band - BAND_GAP);
+  const every = Math.ceil(LABEL_ROOM / band);
+  const isWorded = (index: number): boolean => (columns.length - 1 - index) % every === 0;
   const top = Math.max(scale.top, Number.MIN_VALUE);
   const y = (value: number): number =>
     MARGINS.top + (1 - Math.min(value, top) / top) * (HEIGHT - MARGINS.top - MARGINS.bottom);
@@ -76,12 +81,13 @@ export function columnsChart(
       },
     };
   });
+  const worded = placed.filter((_, index) => isWorded(index));
   return {
     width,
     height: HEIGHT,
     grid: rows.map((row) => row.line),
-    axis: [...rows.map((row) => row.label), ...placed.map((each) => each.label)],
+    axis: [...rows.map((row) => row.label), ...worded.map((each) => each.label)],
     bars: placed.map((each) => each.bar),
-    values: placed.map((each) => each.value),
+    values: worded.map((each) => each.value),
   };
 }

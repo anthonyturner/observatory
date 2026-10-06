@@ -21,6 +21,8 @@ const item: QueueItem = {
   changedFiles: 2,
   isSeen: true,
   hidden: null,
+  lookedSha: null,
+  sinceLook: null,
 };
 
 describe('skyItemOf', () => {

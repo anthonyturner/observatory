@@ -1,3 +1,4 @@
+import { comparePath, comparisonFrom } from './compare-reader.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
@@ -228,6 +229,14 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
       rest({ method: 'GET', path: `/repos/${repo}/pulls/${number}`, accept: DIFF_MEDIA_TYPE }),
     commitDiff: (repo, sha) =>
       rest({ method: 'GET', path: `/repos/${repo}/commits/${sha}`, accept: DIFF_MEDIA_TYPE }),
+    compare: async (repo, base, head) =>
+      comparisonFrom(
+        JSON.parse(
+          await rest({ method: 'GET', path: `/${comparePath(repo, base, head)}?per_page=1` }),
+        ),
+      ),
+    compareDiff: (repo, base, head) =>
+      rest({ method: 'GET', path: `/${comparePath(repo, base, head)}`, accept: DIFF_MEDIA_TYPE }),
     repoLabels: async (repo) => {
       const repository = await repositoryOf(
         `query($owner: String!, $name: String!, $first: Int!) {

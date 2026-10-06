@@ -1,0 +1,28 @@
+@if (hasMoved()) {
+  <label class="since">
+    <input
+      type="checkbox"
+      role="switch"
+      [checked]="wantsSince()"
+      (change)="onSinceChange($event)"
+    />
+    Since last look
+    @if (countText()) {
+      <span class="count">· {{ countText() }}</span>
+    }
+  </label>
+}
+@if (view().note; as note) {
+  <p class="note warn">{{ note }}</p>
+}
+@if (view().reading) {
+  <p class="note">Reading the changes since your last look…</p>
+} @else {
+  <app-sheet-diff
+    [diff]="view().diff"
+    [diffBytes]="view().diffBytes"
+    [truncated]="view().truncated"
+    [viewedKey]="view().viewedKey"
+    [codeHidden]="view().codeHidden"
+  />
+}

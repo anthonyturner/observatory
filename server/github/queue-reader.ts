@@ -7,6 +7,7 @@ export interface QueuePull extends PullRequest {
   readonly deletions: number | null;
   readonly createdAt: string;
   readonly headRefName: string;
+  readonly headRefOid: string;
   readonly baseRefName: string;
   readonly changedFiles: number;
 }
@@ -19,6 +20,7 @@ export const QUEUE_PULL_FIELDS: readonly string[] = [
   'deletions',
   'createdAt',
   'headRefName',
+  'headRefOid',
   'baseRefName',
   'changedFiles',
 ];

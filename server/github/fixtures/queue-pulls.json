@@ -49,6 +49,7 @@
                 "deletions": 61,
                 "createdAt": "2026-09-26T09:04:34Z",
                 "headRefName": "feat/15-prepare-top-matches-button",
+                "headRefOid": "4e60888c9a791799abf72e4697679f5fdddb1154",
                 "baseRefName": "fix/14-recover-stuck-drafts",
                 "changedFiles": 10
               },
@@ -110,6 +111,7 @@
                 "deletions": 1,
                 "createdAt": "2026-09-26T08:56:34Z",
                 "headRefName": "fix/14-recover-stuck-drafts",
+                "headRefOid": "b2b767f94b7a8acb0e88d0cc7ec9c3023b0329be",
                 "baseRefName": "main",
                 "changedFiles": 4
               },
@@ -157,6 +159,7 @@
                 "deletions": 183,
                 "createdAt": "2026-09-24T09:54:14Z",
                 "headRefName": "dependabot/npm_and_yarn/fastify/static-10.1.4",
+                "headRefOid": "c85eda241cd268d9bb10274f206bbe2542d8273d",
                 "baseRefName": "main",
                 "changedFiles": 2
               },
@@ -204,6 +207,7 @@
                 "deletions": 57,
                 "createdAt": "2026-09-24T09:54:10Z",
                 "headRefName": "dependabot/npm_and_yarn/angular/forms-22.1.7",
+                "headRefOid": "a0700e476dd449a86ae5d1683976e82de9e50c04",
                 "baseRefName": "main",
                 "changedFiles": 2
               },
@@ -251,6 +255,7 @@
                 "deletions": 37,
                 "createdAt": "2026-09-24T09:54:09Z",
                 "headRefName": "dependabot/npm_and_yarn/angular/platform-browser-22.1.7",
+                "headRefOid": "38292889a897a520b042833c52a4cfef2fdf1f1a",
                 "baseRefName": "main",
                 "changedFiles": 2
               },
@@ -298,6 +303,7 @@
                 "deletions": 37,
                 "createdAt": "2026-09-24T09:53:59Z",
                 "headRefName": "dependabot/npm_and_yarn/angular/core-22.1.7",
+                "headRefOid": "4af1476090c4967b4eefd50351e3dfaebfb5a960",
                 "baseRefName": "main",
                 "changedFiles": 2
               },
@@ -345,6 +351,7 @@
                 "deletions": 7548,
                 "createdAt": "2026-09-24T09:53:52Z",
                 "headRefName": "dependabot/npm_and_yarn/development-tooling-67ccecc05a",
+                "headRefOid": "542ffb532be2acf447d836c12a8eafd4fec4973e",
                 "baseRefName": "main",
                 "changedFiles": 4
               }
@@ -363,6 +370,7 @@
       "createdAt": "2026-09-26T09:04:34Z",
       "deletions": 61,
       "headRefName": "feat/15-prepare-top-matches-button",
+      "headRefOid": "4e60888c9a791799abf72e4697679f5fdddb1154",
       "isDraft": true,
       "mergeable": "MERGEABLE",
       "number": 17,
@@ -404,6 +412,7 @@
       "createdAt": "2026-09-26T08:56:34Z",
       "deletions": 1,
       "headRefName": "fix/14-recover-stuck-drafts",
+      "headRefOid": "b2b767f94b7a8acb0e88d0cc7ec9c3023b0329be",
       "isDraft": true,
       "mergeable": "MERGEABLE",
       "number": 16,
@@ -431,6 +440,7 @@
       "createdAt": "2026-09-24T09:54:14Z",
       "deletions": 183,
       "headRefName": "dependabot/npm_and_yarn/fastify/static-10.1.4",
+      "headRefOid": "c85eda241cd268d9bb10274f206bbe2542d8273d",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 7,
@@ -458,6 +468,7 @@
       "createdAt": "2026-09-24T09:54:10Z",
       "deletions": 57,
       "headRefName": "dependabot/npm_and_yarn/angular/forms-22.1.7",
+      "headRefOid": "a0700e476dd449a86ae5d1683976e82de9e50c04",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 6,
@@ -485,6 +496,7 @@
       "createdAt": "2026-09-24T09:54:09Z",
       "deletions": 37,
       "headRefName": "dependabot/npm_and_yarn/angular/platform-browser-22.1.7",
+      "headRefOid": "38292889a897a520b042833c52a4cfef2fdf1f1a",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 5,
@@ -512,6 +524,7 @@
       "createdAt": "2026-09-24T09:53:59Z",
       "deletions": 37,
       "headRefName": "dependabot/npm_and_yarn/angular/core-22.1.7",
+      "headRefOid": "4af1476090c4967b4eefd50351e3dfaebfb5a960",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 4,
@@ -539,6 +552,7 @@
       "createdAt": "2026-09-24T09:53:52Z",
       "deletions": 7548,
       "headRefName": "dependabot/npm_and_yarn/development-tooling-67ccecc05a",
+      "headRefOid": "542ffb532be2acf447d836c12a8eafd4fec4973e",
       "isDraft": false,
       "mergeable": "MERGEABLE",
       "number": 3,

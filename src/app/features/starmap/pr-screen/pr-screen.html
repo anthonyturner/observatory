@@ -40,13 +40,7 @@
             <app-sheet-rows [rows]="checks()" empty="No checks ran on this pull request." />
           }
           @case ('diff') {
-            <app-sheet-diff
-              [diff]="pull.diff"
-              [diffBytes]="pull.diffBytes"
-              [truncated]="pull.diffTruncated"
-              [viewedKey]="viewedKey()"
-              [codeHidden]="pull.diffHidden"
-            />
+            <app-sheet-diff-tab [repo]="repo()" [detail]="pull" [lookedSha]="lookedSha()" />
           }
           @case ('edit') {
             <app-sheet-editor [detail]="pull" (saved)="refresh()" />

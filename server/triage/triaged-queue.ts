@@ -52,6 +52,7 @@ export async function recordTriage(
     now,
     updatedAt: item.updatedAt,
     days: request.days,
+    headSha: request.sha ?? item.headSha,
   });
   await store.write(request.repo, state);
   return { number: request.number, ...triageOf(state, item.number, item.updatedAt, now) };

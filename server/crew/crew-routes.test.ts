@@ -30,6 +30,7 @@ const item = (number: number, overrides: Partial<QueueItem> = {}): QueueItem => 
   deletions: 1,
   updatedAt: '2026-10-01T00:00:00Z',
   branch: `feat/${number}`,
+  headSha: 'a'.repeat(40),
   base: 'main',
   mergeable: 'CONFLICTING',
   changedFiles: 1,

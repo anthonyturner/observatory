@@ -2,12 +2,13 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-export type TriageAction = 'seen' | 'unseen' | 'dismiss' | 'snooze' | 'restore';
+export type TriageAction = 'seen' | 'unseen' | 'dismiss' | 'snooze' | 'restore' | 'look';
 
-/** A triage action, and for a snooze how many days. */
+/** A triage action, for a snooze how many days, and for a look the head that was shown. */
 export interface TriageChoice {
   readonly action: TriageAction;
   readonly days?: number;
+  readonly sha?: string;
 }
 
 const TRIAGE_URL = '/api/triage';

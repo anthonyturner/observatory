@@ -15,6 +15,7 @@ const item = (number: number, extra: Partial<TriagedItem> = {}): TriagedItem => 
   deletions: 0,
   updatedAt: '2026-09-20T00:00:00Z',
   branch: 'b',
+  headSha: 'a'.repeat(40),
   base: 'main',
   mergeable: 'MERGEABLE',
   changedFiles: 1,
@@ -22,6 +23,7 @@ const item = (number: number, extra: Partial<TriagedItem> = {}): TriagedItem => 
   ageDays: 4,
   isSeen: false,
   hidden: null,
+  lookedSha: null,
   ...extra,
 });
 const queue = (items: TriagedItem[]): TriagedQueue => ({
@@ -122,5 +124,6 @@ describe('actedLine', () => {
       actedLine('restore', 5, { isSeen: false, hidden: null }),
       '#5 is back in the queue.',
     );
+    assert.match(actedLine('look', 5, { isSeen: false, hidden: null }), /show as new/);
   });
 });

@@ -296,12 +296,7 @@ button:focus-visible {
   width: 72px;
 }
 
-/* Short and tight, so the bar fits the screen. */
-.opacity {
-  gap: 6px;
-  padding: 0 8px;
-}
-
+/* Short, so the bar fits the screen. */
 .opacity input {
   width: 48px;
 }

@@ -5,6 +5,7 @@ import {
   type TriageRequest,
   type TriageState,
   applyTriage,
+  idleDaysOf,
   triageOf,
 } from './triage.ts';
 import type { TriageStore } from './triage-store.ts';
@@ -22,6 +23,7 @@ export function triagedQueue(report: QueueReport, state: TriageState, now: numbe
     ...report,
     items: report.items.map((item) => ({
       ...item,
+      idleDays: idleDaysOf(state, item.number, item.idleDays, now),
       ...triageOf(state, item.number, item.updatedAt, now),
     })),
   };

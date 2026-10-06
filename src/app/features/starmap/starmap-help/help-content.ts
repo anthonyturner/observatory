@@ -16,6 +16,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['Star', 'One open pull request.'],
       ['Colour', 'Why it is stuck. Click a colour at the top to show only that kind.'],
       ['Size', 'How long it has waited untouched.'],
+      [
+        'Black hole',
+        'The black hole at the centre pulls in pull requests left idle too long: 14 days, unless you change hole in the tools. The longer past that, the further a star spirals in, its light reddening and stretching toward the hole, though its colour still shows its group. None falls all the way in. Its card says Falling in. A commit or review, the end of a snooze, or a merge resets the count, and the star moves back out on the next refresh.',
+      ],
       ['Ring', 'Blocked: it cannot merge, or its checks fail.'],
       [
         'Kind',

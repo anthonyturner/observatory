@@ -1,6 +1,7 @@
 import { QueueItem } from '../../../core/queue/queue-report';
 import { SkyPair } from '../engine/collision-layer';
 import { QUICK_COLOUR, costOf, isQuick } from '../engine/sky-model';
+import { isFalling } from '../engine/black-hole';
 import { skyItemOf } from '../sky-items';
 
 /** One line of the card's facts: a term, what it says, and how it reads. */
@@ -24,6 +25,15 @@ export interface CardContext {
   readonly planStep?: { readonly step: number; readonly of: number };
   /** The news the sky carries about it, if any. */
   readonly change?: { readonly noun: string; readonly label: string; readonly colour: string };
+  /** Idle days past which the black hole pulls a pull request in. */
+  readonly staleAfterDays?: number;
+}
+
+/** How long it has sat idle, said as a fall once the black hole has it. */
+function idleFact(idleDays: number, staleAfterDays: number | undefined): CardFact {
+  return staleAfterDays !== undefined && isFalling(idleDays, staleAfterDays)
+    ? { term: 'falling in', value: `idle ${idleDays} days`, tone: 'hot' }
+    : { term: 'idle', value: `${idleDays} days` };
 }
 
 /** "Sep 26, 04:16 AM". */
@@ -95,7 +105,7 @@ export function cardFacts(item: QueueItem, context: CardContext): CardFact[] {
         ? { term: 'closes', value: '—' }
         : { term: 'closes', value: 'nothing', tone: 'bad' },
   );
-  facts.push({ term: 'idle', value: `${item.idleDays} days` });
+  facts.push(idleFact(item.idleDays, context.staleAfterDays));
   facts.push({ term: 'age', value: `${item.ageDays} days` });
   if (item.branch) facts.push({ term: 'branch', value: item.branch });
   if (replay) return facts;

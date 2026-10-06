@@ -40,6 +40,7 @@ import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
 import { Timeline } from '../memory/timeline/timeline';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
+import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StarCard } from '../star-card/star-card';
 import { CrewDispatch } from '../../../core/crew/crew-dispatch';
 import { crewMarksOf } from '../../../core/crew/crew-roster';
@@ -204,6 +205,7 @@ export class StarmapPage {
   private readonly crew = inject(CrewDispatch);
   protected readonly sprint = inject(ReviewSprint);
   protected readonly motion = inject(MotionPreference);
+  private readonly blackHole = inject(BlackHoleSetting);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
   private readonly window = inject(DOCUMENT).defaultView;
@@ -551,6 +553,7 @@ export class StarmapPage {
         ? { noun: EFFECTS[event.kind].noun, label: news.label, colour: EFFECTS[event.kind].colour }
         : undefined,
       planStep: this.planStepOf(number),
+      staleAfterDays: this.blackHole.staleAfterDays(),
       pairs: this.skyPairs(),
       binaries: groups
         .filter((g) => g.members.some((item) => item.pr === number))

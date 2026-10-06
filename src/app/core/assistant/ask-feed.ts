@@ -4,6 +4,7 @@ import { ASK_CHANNEL, AskChannel } from './ask-channel';
 import { AskBoxFocus } from './ask-box-focus';
 import { AskDraft } from './ask-draft';
 import { AskOutcome, FAILED, outcomeOf } from './ask-outcome';
+import { ASK_SHORTCUTS, ShortcutAct } from './ask-shortcut';
 import { ASSISTANT_API, AssistantAbsent } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { Conversation } from './conversation';
@@ -50,6 +51,7 @@ export class AskFeed implements AskChannel {
   private readonly draft = inject(AskDraft);
   private readonly clock = inject(Clock);
   private readonly conversation = inject(Conversation);
+  private readonly shortcuts = inject(ASK_SHORTCUTS, { optional: true }) ?? [];
   private readonly asking = signal(false);
   private readonly skillAsking = signal<string | null>(null);
   private readonly ended = new Subject<AskOutcome>();
@@ -73,6 +75,8 @@ export class AskFeed implements AskChannel {
     if (answer) return this.answers.carryOut(asked, answer);
     if (asked && spoken && this.holdsSpeech()) return this.hold(asked);
     if (!asked || this.asking()) return;
+    const act = this.shortcutActOf(asked);
+    if (act) return act(spoken ? 'spoken' : 'typed');
     this.carriedCut = spoken && this.cutSpeech;
     void this.converse(asked, this.open(asked, spoken ? 'spoken' : 'typed'));
   }
@@ -101,6 +105,7 @@ export class AskFeed implements AskChannel {
   press(entryId: number, action: EntryAction): void {
     if (action.kind === 'send') void this.send(action.request, entryId);
     else if (action.kind === 'stay') this.stayHere();
+    else if (action.kind === 'say') this.submit(action.words);
     else this.leave(entryId);
   }
 
@@ -156,6 +161,14 @@ export class AskFeed implements AskChannel {
     return this.asking() || !this.draft.isEmpty() || this.proposals.proposal() !== null;
   }
 
+  private shortcutActOf(words: string): ShortcutAct | null {
+    for (const shortcut of this.shortcuts) {
+      const act = shortcut.actOf(words);
+      if (act) return act;
+    }
+    return null;
+  }
+
   private hold(heard: string): void {
     this.draft.add(heard);
     this.proposals.hear(heard);
@@ -194,10 +207,12 @@ export class AskFeed implements AskChannel {
     }
   }
 
-  /** A new request cancels a jump, closes the open question and cuts off a reply being read. */
+  /** A new request cancels a jump, closes the open question, drops a shortcut's
+   *  question and cuts off a reply being read. */
   private startWaiting(entryId: number): void {
     this.actions.cancelJump();
     this.question.close();
+    for (const shortcut of this.shortcuts) shortcut.passOver();
     this.cutSpeech = this.speech.stop() || this.carriedCut;
     this.carriedCut = false;
     this.log.setActions(entryId, []);

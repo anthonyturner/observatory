@@ -47,6 +47,11 @@
           {{ action.label }}
         </button>
       }
+      @case ('say') {
+        <button type="button" class="abtn" (click)="pressed.emit(action)">
+          {{ action.label }}
+        </button>
+      }
       @case ('neither') {
         <button type="button" class="abtn quiet" (click)="pressed.emit(action)">Neither</button>
       }

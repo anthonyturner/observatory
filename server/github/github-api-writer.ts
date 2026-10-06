@@ -1,3 +1,4 @@
+import { type CheckRerunner, rerunFailedJobsPath } from './check-rerunner.ts';
 import type { GraphQl } from './github-graphql.ts';
 import type { Rest } from './github-rest.ts';
 import type { LivePull, PullChanges, PullWriter } from './pull-writer.ts';
@@ -97,6 +98,15 @@ export function githubApiWriter(graphql: GraphQl, rest: Rest): PullWriter {
         path: `/repos/${repo}/pulls/${number}/merge`,
         body: { merge_method: method, sha: headOid },
       });
+    },
+  };
+}
+
+/** Reruns failed GitHub Actions jobs through GitHub's REST API with the server's token. */
+export function githubApiRerunner(rest: Rest): CheckRerunner {
+  return {
+    rerunFailedJobs: async (repo, runId) => {
+      await rest({ method: 'POST', path: `/${rerunFailedJobsPath(repo, runId)}` });
     },
   };
 }

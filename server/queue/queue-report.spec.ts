@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import type { CheckAttempt, CheckHistoryReader } from '../github/check-history.ts';
 import type { QueuePull, QueueReader } from '../github/queue-reader.ts';
 import { queueItemOf, queueReport } from './queue-report.ts';
 
@@ -26,9 +27,24 @@ const pull = (number: number, overrides: Partial<QueuePull> = {}): QueuePull => 
   ...overrides,
 });
 
-function reader(pulls: QueuePull[], settlesTo = 'MERGEABLE'): QueueReader {
-  return { queuePulls: async () => pulls, mergeableOf: async () => settlesTo };
+function reader(
+  pulls: QueuePull[],
+  settlesTo = 'MERGEABLE',
+  history: () => Promise<CheckAttempt[]> = async () => [],
+): QueueReader & CheckHistoryReader {
+  return {
+    queuePulls: async () => pulls,
+    mergeableOf: async () => settlesTo,
+    checkHistory: history,
+  };
 }
+
+const SHA = 'c'.repeat(40);
+/** e2e failed and then passed on a rerun at one commit: flaky. */
+const FLAKY_E2E: CheckAttempt[] = [
+  { name: 'e2e', sha: SHA, conclusion: 'FAILURE', completedAt: '2026-09-25T10:00:00Z' },
+  { name: 'e2e', sha: SHA, conclusion: 'SUCCESS', completedAt: '2026-09-25T10:20:00Z' },
+];
 
 describe('queueItemOf', () => {
   it('says what the review queue shows about a pull request', () => {
@@ -40,6 +56,7 @@ describe('queueItemOf', () => {
       bucket: 'unreviewed',
       closes: [103],
       failingChecks: 0,
+      flakyChecks: [],
       additions: 10,
       deletions: 2,
       branch: 'feat/3',
@@ -80,6 +97,69 @@ describe('queueReport', () => {
         [1, 'unreviewed'],
       ],
     );
+  });
+
+  it('does not count a pull request failing only on flaky checks as failing', async () => {
+    const report = await queueReport(
+      reader(
+        [
+          pull(1, { statusCheckRollup: [{ name: 'e2e', conclusion: 'FAILURE' }] }),
+          pull(2, {
+            statusCheckRollup: [
+              { name: 'e2e', conclusion: 'FAILURE' },
+              { name: 'build', conclusion: 'FAILURE' },
+            ],
+          }),
+        ],
+        'MERGEABLE',
+        async () => FLAKY_E2E,
+      ),
+      'me/a',
+      NOW,
+      noWait,
+    );
+
+    assert.deepEqual(
+      report.items.map((item) => [item.number, item.bucket, item.failingChecks, item.flakyChecks]),
+      [
+        [2, 'failing', 2, ['e2e']],
+        [1, 'unreviewed', 1, ['e2e']],
+      ],
+    );
+  });
+
+  it('reads no check history when nothing is failing', async () => {
+    let reads = 0;
+    await queueReport(
+      reader([pull(1)], 'MERGEABLE', async () => {
+        reads++;
+        return FLAKY_E2E;
+      }),
+      'me/a',
+      NOW,
+      noWait,
+    );
+
+    assert.equal(reads, 0);
+  });
+
+  it('counts every failure when the check history cannot be read', async (context) => {
+    context.mock.method(console, 'error', () => undefined);
+    const report = await queueReport(
+      reader(
+        [pull(1, { statusCheckRollup: [{ name: 'e2e', conclusion: 'FAILURE' }] })],
+        'MERGEABLE',
+        async () => {
+          throw new Error('Actions is switched off');
+        },
+      ),
+      'me/a',
+      NOW,
+      noWait,
+    );
+
+    assert.equal(report.items[0].bucket, 'failing');
+    assert.deepEqual(report.items[0].flakyChecks, []);
   });
 
   it('keeps mergeability unknown when GitHub never settles it', async () => {

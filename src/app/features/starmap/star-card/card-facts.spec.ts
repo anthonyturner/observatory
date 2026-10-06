@@ -9,6 +9,7 @@ const item: QueueItem = {
   bucket: 'conflicted',
   closes: [57],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 96,
   deletions: 95,
   idleDays: 49,
@@ -93,5 +94,15 @@ describe('cardFacts', () => {
   it('leaves the size out when GitHub did not give one', () => {
     const facts = cardFacts({ ...item, additions: null }, { pairs: [], binaries: [] });
     expect(facts.some((f) => f.term === 'size')).toBe(false);
+  });
+
+  it('names the flaky checks a pull request is failing on, each once', () => {
+    const flaky = { ...item, failingChecks: 3, flakyChecks: ['e2e', 'e2e', 'lint'] };
+
+    expect(cardFacts(flaky, { pairs: [], binaries: [] })[0]).toEqual({
+      term: 'flaky',
+      value: 'e2e, lint',
+      tone: 'hot',
+    });
   });
 });

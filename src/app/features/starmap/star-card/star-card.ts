@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
+import { QueueItem, isFlakyOnly, shownBucket } from '../../../core/queue/queue-report';
 import { sinceLookLabel } from '../../../core/queue/since-look';
 import { Draggable } from '../../../shared/draggable/draggable';
 import { CrewControl } from '../crew-control/crew-control';
+import { RerunControl } from '../rerun-control/rerun-control';
 import { isPlainClick } from '../../issues/issue-list';
 import { BY_ID } from '../engine/sky-model';
 import { CardContext, cardFacts } from './card-facts';
@@ -18,7 +19,7 @@ const CARD_PLACE_KEY = 'observatory.cardPos';
  */
 @Component({
   selector: 'app-star-card',
-  imports: [Draggable, CrewControl, StarRisk],
+  imports: [Draggable, CrewControl, RerunControl, StarRisk],
   templateUrl: './star-card.html',
   styleUrl: './star-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +37,8 @@ export class StarCard {
   readonly dismiss = output<number>();
   /** Asks to read the issue it closes in the issue window. */
   readonly issue = output<number>();
+  /** GitHub took a rerun of its flaky checks. */
+  readonly rerun = output<number>();
 
   protected readonly placeKey = CARD_PLACE_KEY;
   protected readonly shown = computed(() => shownBucket(this.item()));
@@ -43,6 +46,10 @@ export class StarCard {
   protected readonly facts = computed(() => cardFacts(this.item(), this.context()));
   /** The merge of the base it was stacked on, which a crew can update it from. */
   protected readonly landed = computed(() => this.context().stack?.landed ?? null);
+  /** Failing only on flaky checks, where a rerun can be asked for. */
+  protected readonly canRerun = computed(
+    () => this.canWrite() && !this.context().replay && isFlakyOnly(this.item()),
+  );
   /** What changed since it was last looked at; a past refresh on screen says nothing of now. */
   protected readonly sinceLook = computed(() => {
     const since = this.item().sinceLook;

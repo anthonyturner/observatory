@@ -99,6 +99,9 @@ export function cardFacts(item: QueueItem, context: CardContext): CardFact[] {
   }
   if (!replay) facts.push(...collisionFacts(item.number, context.pairs));
   if (!replay) facts.push(...stackFacts(context.stack));
+  if (!replay && item.flakyChecks.length) {
+    facts.push({ term: 'flaky', value: [...new Set(item.flakyChecks)].join(', '), tone: 'hot' });
+  }
   if (!replay && context.planStep) {
     facts.push({
       term: 'merge order',

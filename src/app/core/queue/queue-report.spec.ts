@@ -1,4 +1,4 @@
-import { parseQueueReport } from './queue-report';
+import { QueueItem, isFlakyOnly, parseQueueReport } from './queue-report';
 
 const item = {
   number: 12,
@@ -8,6 +8,7 @@ const item = {
   bucket: 'conflicted',
   closes: [3],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 40,
   deletions: 2,
   idleDays: 4,
@@ -97,5 +98,29 @@ describe('parseQueueReport', () => {
       ['a'.repeat(40), { newCommits: 2 }],
       [null, null],
     ]);
+  });
+});
+
+describe('flaky checks', () => {
+  it('reads the flaky failures, keeping only names', () => {
+    const report = parseQueueReport({
+      generatedAt: 'x',
+      repo: 'me/a',
+      items: [
+        { ...item, failingChecks: 2, flakyChecks: ['e2e', 3, 'lint'] },
+        { ...item, flakyChecks: 'e2e' },
+      ],
+    });
+
+    expect(report?.items.map((each) => each.flakyChecks)).toEqual([['e2e', 'lint'], []]);
+  });
+
+  it('is flaky-only when every failing check is flaky', () => {
+    const parsed = parseQueueReport({ generatedAt: 'x', repo: 'me/a', items: [item] });
+    const base = parsed?.items[0] as QueueItem;
+
+    expect(isFlakyOnly({ ...base, failingChecks: 2, flakyChecks: ['e2e', 'lint'] })).toBe(true);
+    expect(isFlakyOnly({ ...base, failingChecks: 2, flakyChecks: ['e2e'] })).toBe(false);
+    expect(isFlakyOnly({ ...base, failingChecks: 0, flakyChecks: [] })).toBe(false);
   });
 });

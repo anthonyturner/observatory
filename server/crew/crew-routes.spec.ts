@@ -27,6 +27,7 @@ const item = (number: number, overrides: Partial<QueueItem> = {}): QueueItem => 
   bucket: 'conflicted',
   closes: [],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 1,
   deletions: 1,
   updatedAt: '2026-10-01T00:00:00Z',

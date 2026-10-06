@@ -10,6 +10,9 @@ export const REPO_FIELDS: readonly string[] = ['name', 'nameWithOwner', 'isPriva
 
 /** One check or status on a pull request's head commit. */
 export interface CheckRun {
+  /** A check run's name; a commit status has a context instead. */
+  readonly name?: string | null;
+  readonly context?: string | null;
   readonly conclusion?: string | null;
   readonly state?: string | null;
 }

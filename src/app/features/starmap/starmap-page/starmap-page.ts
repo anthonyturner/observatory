@@ -109,6 +109,8 @@ const SIDE_PANEL_WIDTH = 380;
 const PLAN_PANEL_WIDTH = 400;
 /** The card's Snooze, as pr-starmap's: a week. */
 const SNOOZE_DAYS = 7;
+/** No failing check is known to be flaky: one list, so the PR screen's input keeps its reference. */
+const NO_FLAKY_CHECKS: readonly string[] = [];
 /** How long Next star leaves its star lit, card open, before opening its PR screen. */
 const NEXT_STAR_HOLD_MS = 900;
 
@@ -585,6 +587,7 @@ export class StarmapPage {
     const number = this.sheetPull();
     return number === null ? null : (this.stacks().get(number)?.landed ?? null);
   });
+  protected readonly sheetFlaky = computed(() => this.sheetItem()?.flakyChecks ?? NO_FLAKY_CHECKS);
   /** The meteor record shows under the Log Sky's map, when it has days. */
   protected readonly showMeteors = computed(
     () => this.chart() === 'logs' && this.view() === 'map' && this.logs.hasDays(),
@@ -884,6 +887,7 @@ export class StarmapPage {
       bucket: 'unreviewed',
       closes: [],
       failingChecks: 0,
+      flakyChecks: [],
       additions: null,
       deletions: null,
       idleDays: item.idleDays,
@@ -1022,6 +1026,11 @@ export class StarmapPage {
   protected recordLook(number: number, sha: string): void {
     if (!this.session.canWrite() || this.memory.replay()) return;
     this.recordTriage(number, { action: 'look', sha });
+  }
+
+  /** Reads the queue again now, after GitHub took a rerun. */
+  protected refreshQueue(): void {
+    this.feed.refresh(this.repo());
   }
 
   protected recordTriage(number: number, choice: TriageChoice): void {

@@ -1,6 +1,6 @@
 import { ErrorHandler, InjectionToken, inject } from '@angular/core';
 import { resolveColour } from '../instrument/palette';
-import { Genre } from '../playlist/playlist.types';
+import { GENRES, Genre } from '../playlist/playlist.types';
 import { BeatHit, zoomAnchor } from './beat-hit';
 import { DEFAULT_BEAT_STRENGTH } from './beat-strength';
 import { Bloom } from './bloom';
@@ -112,7 +112,9 @@ export class MusicPainter implements MusicCanvas {
     this.context = this.canvas.getContext('2d');
     this.bloom = new Bloom(host.ownerDocument);
     this.milkdrop = new MilkdropStage(host.ownerDocument, loadMilkdrop, onError);
-    this.palettes = { trance: inksOf(host, 'trance'), techno: inksOf(host, 'techno') };
+    this.palettes = Object.fromEntries(
+      GENRES.map((genre) => [genre, inksOf(host, genre)]),
+    ) as Record<Genre, MusicInks>;
     this.inks = this.palettes.trance;
     this.titleCard = new TitleCard(fontOf(host));
   }

@@ -40,6 +40,7 @@ const item = (number: number): QueueItem => ({
   bucket: 'failing',
   closes: number % 2 ? [3] : [],
   failingChecks: 1,
+  flakyChecks: [],
   additions: 1,
   deletions: 1,
   updatedAt: '',

@@ -11,6 +11,7 @@ const item: QueueItem = {
   bucket: 'unreviewed',
   closes: [3, 4],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 10,
   deletions: 2,
   idleDays: 5,

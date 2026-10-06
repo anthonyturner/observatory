@@ -20,6 +20,7 @@ const report: QueueReport = {
       bucket: 'unreviewed',
       closes: [1],
       failingChecks: 0,
+      flakyChecks: [],
       additions: 1,
       deletions: 1,
       updatedAt: '2026-09-20T00:00:00Z',

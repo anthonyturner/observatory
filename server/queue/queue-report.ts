@@ -1,6 +1,14 @@
+import type { CheckHistoryReader } from '../github/check-history.ts';
 import type { QueuePull, QueueReader } from '../github/queue-reader.ts';
-import { type PullBucket, bucketOf, bucketRank, failingChecks } from '../projects/pull-counts.ts';
+import {
+  NO_FLAKY_CHECKS,
+  type PullBucket,
+  bucketOf,
+  bucketRank,
+  failingChecks,
+} from '../projects/pull-counts.ts';
 import { settleMergeable, type Sleep } from '../projects/settle-mergeable.ts';
+import { flakyCheckNames, flakyFailures } from './flaky-checks.ts';
 
 const DAY_MS = 86_400_000;
 
@@ -14,6 +22,9 @@ export interface QueueItem {
   /** Issues it says it closes. */
   readonly closes: readonly number[];
   readonly failingChecks: number;
+  /** The failing checks known to be flaky, one per failing run. When these are
+   *  all of them, the pull request is not counted as failing. */
+  readonly flakyChecks: readonly string[];
   readonly additions: number | null;
   readonly deletions: number | null;
   readonly updatedAt: string;
@@ -39,15 +50,16 @@ export interface QueueReport {
 const daysSince = (iso: string, now: number): number =>
   Math.max(0, Math.floor((now - Date.parse(iso)) / DAY_MS));
 
-export function queueItemOf(pull: QueuePull, now: number): QueueItem {
+export function queueItemOf(pull: QueuePull, now: number, flaky = NO_FLAKY_CHECKS): QueueItem {
   return {
     number: pull.number,
     title: pull.title,
     url: pull.url,
     isDraft: pull.isDraft,
-    bucket: bucketOf(pull),
+    bucket: bucketOf(pull, flaky),
     closes: (pull.closingIssuesReferences ?? []).map((issue) => issue.number),
     failingChecks: failingChecks(pull),
+    flakyChecks: flakyFailures(pull, flaky),
     additions: pull.additions ?? null,
     deletions: pull.deletions ?? null,
     updatedAt: pull.updatedAt,
@@ -71,17 +83,34 @@ export function rankQueue(items: readonly QueueItem[]): QueueItem[] {
   );
 }
 
+/** The repository's flaky checks, read only when a pull request has a failing
+ *  check. Without a history, every failure counts, as it did before. */
+async function flakyChecksOf(
+  github: CheckHistoryReader,
+  repo: string,
+  pulls: readonly QueuePull[],
+): Promise<ReadonlySet<string>> {
+  if (!pulls.some((pull) => failingChecks(pull) > 0)) return NO_FLAKY_CHECKS;
+  try {
+    return flakyCheckNames(await github.checkHistory(repo));
+  } catch (error: unknown) {
+    console.error(`Could not read ${repo}'s check history:`, error);
+    return NO_FLAKY_CHECKS;
+  }
+}
+
 /** A repository's open pull requests, ranked blocked first. */
 export async function queueReport(
-  github: QueueReader,
+  github: QueueReader & CheckHistoryReader,
   repo: string,
   now = Date.now(),
   wait?: Sleep,
 ): Promise<QueueReport> {
   const pulls = await settleMergeable(github, repo, await github.queuePulls(repo), wait);
+  const flaky = await flakyChecksOf(github, repo, pulls);
   return {
     generatedAt: new Date(now).toISOString(),
     repo,
-    items: rankQueue(pulls.map((pull) => queueItemOf(pull, now))),
+    items: rankQueue(pulls.map((pull) => queueItemOf(pull, now, flaky))),
   };
 }

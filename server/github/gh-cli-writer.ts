@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { type CheckRerunner, rerunFailedJobsPath } from './check-rerunner.ts';
 import { gh, ghJson } from './gh-cli.ts';
 import type { LivePull, PullChanges, PullWriter } from './pull-writer.ts';
 
@@ -73,6 +74,15 @@ export function ghCliWriter(): PullWriter {
         '--match-head-commit',
         headOid,
       ]);
+    },
+  };
+}
+
+/** Reruns failed GitHub Actions jobs through the `gh` CLI, as this machine's account. */
+export function ghCliRerunner(): CheckRerunner {
+  return {
+    rerunFailedJobs: async (repo, runId) => {
+      await gh(['api', '--method', 'POST', rerunFailedJobsPath(repo, runId)]);
     },
   };
 }

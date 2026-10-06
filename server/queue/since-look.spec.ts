@@ -14,6 +14,7 @@ const item = (number: number, headSha: string, lookedSha: string | null): Triage
   bucket: 'unreviewed',
   closes: [],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 1,
   deletions: 0,
   updatedAt: '2026-09-20T00:00:00Z',

@@ -1,8 +1,8 @@
 import type { QueueReader } from '../github/queue-reader.ts';
 import type { Fate } from './frames.ts';
 
-/** A pull request touched in the ledger's window, as `gh pr list --json` gives it. */
-export interface LedgerPull {
+/** When a pull request opened and closed: all the ledger's rows count. */
+export interface TimedPull {
   readonly number: number;
   readonly title: string;
   readonly createdAt: string;
@@ -10,6 +10,15 @@ export interface LedgerPull {
   readonly mergedAt: string | null;
   /** `OPEN`, `CLOSED` or `MERGED`. */
   readonly state: string;
+}
+
+/** A pull request touched in the ledger's window, as `gh pr list --json` gives it. */
+export interface LedgerPull extends TimedPull {
+  /** Its head branch, and the branch it merges into. */
+  readonly headRefName: string;
+  readonly baseRefName: string;
+  /** Whether its head branch lives in a fork, where nothing here can be stacked on it. */
+  readonly isCrossRepository: boolean;
 }
 
 /** The `gh --json` fields a LedgerPull holds. */
@@ -20,6 +29,9 @@ export const LEDGER_PULL_FIELDS: readonly string[] = [
   'closedAt',
   'mergedAt',
   'state',
+  'headRefName',
+  'baseRefName',
+  'isCrossRepository',
 ];
 
 /** Newest number first, so every reader lists the same pull requests the same way. */
@@ -50,6 +62,13 @@ export interface FinishedPull {
   readonly fate: Fate;
 }
 
+/** A merged pull request's branches: one still stacked on its head needs updating. */
+export interface MergedBranch {
+  readonly number: number;
+  readonly head: string;
+  readonly base: string;
+}
+
 /** What `GET /api/ledger` returns. */
 export interface Ledger {
   readonly generatedAt: string;
@@ -58,6 +77,8 @@ export interface Ledger {
   /** Titles of the pull requests the rows mention, for the timeline's tip. */
   readonly titles: Readonly<Record<string, string>>;
   readonly finished: readonly FinishedPull[];
+  /** The window's merges from this repository's own branches, newest first. */
+  readonly mergedBranches: readonly MergedBranch[];
 }
 
 export const LEDGER_DAYS = 60;
@@ -82,7 +103,7 @@ interface Placed {
 }
 
 /** When each pull request opened, merged and closed; a merge is also its close. */
-const placed = (pull: LedgerPull): Placed => ({
+const placed = (pull: TimedPull): Placed => ({
   pr: pull.number,
   title: clip(pull.title),
   openedAt: pull.createdAt,
@@ -109,9 +130,34 @@ const finishedIn = (prs: readonly Placed[], rows: readonly LedgerRow[]): Finishe
     .sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
 };
 
+/**
+ * The merges whose branch is finished, so a pull request still stacked on it
+ * needs updating. A fork's branch is not this repository's, and a branch that
+ * took another merge after its own is a living one, such as `main` released
+ * into `production`.
+ */
+export function mergedBranchesOf(pulls: readonly LedgerPull[]): MergedBranch[] {
+  const merges = pulls.filter((p) => p.state === 'MERGED' && p.mergedAt);
+  const tookMergeAfter = (p: LedgerPull): boolean =>
+    merges.some(
+      (later) =>
+        later.baseRefName === p.headRefName &&
+        Date.parse(later.mergedAt ?? '') > Date.parse(p.mergedAt ?? ''),
+    );
+  return byNumberDescending(
+    merges.filter(
+      (p) =>
+        !p.isCrossRepository &&
+        p.headRefName !== '' &&
+        p.headRefName !== p.baseRefName &&
+        !tookMergeAfter(p),
+    ),
+  ).map((p) => ({ number: p.number, head: p.headRefName, base: p.baseRefName }));
+}
+
 /** The last `days` days, one row each: pr-starmap's `ledgerFrom`, pure. */
 export function ledgerRows(
-  pulls: readonly LedgerPull[],
+  pulls: readonly TimedPull[],
   now: number,
   days = LEDGER_DAYS,
 ): { rows: LedgerRow[]; titles: Record<string, string>; finished: FinishedPull[] } {
@@ -157,7 +203,7 @@ export async function ledgerReport(
     github.touchedPulls(repo, localDay(now - days * DAY_MS)),
     github.queuePulls(repo),
   ]);
-  const openNow: LedgerPull[] = open.map((p) => ({
+  const openNow: TimedPull[] = open.map((p) => ({
     number: p.number,
     title: p.title,
     createdAt: p.createdAt,
@@ -165,7 +211,14 @@ export async function ledgerReport(
     mergedAt: null,
     state: 'OPEN',
   }));
-  const byNumber = new Map([...openNow, ...touched].map((p) => [p.number, p]));
+  const byNumber = new Map<number, TimedPull>([...openNow, ...touched].map((p) => [p.number, p]));
   const { rows, titles, finished } = ledgerRows([...byNumber.values()], now, days);
-  return { generatedAt: new Date(now).toISOString(), days, rows, titles, finished };
+  return {
+    generatedAt: new Date(now).toISOString(),
+    days,
+    rows,
+    titles,
+    finished,
+    mergedBranches: mergedBranchesOf(touched),
+  };
 }

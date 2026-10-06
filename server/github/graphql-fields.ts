@@ -125,6 +125,7 @@ export const PULL_GRAPHQL: Readonly<Record<string, Field>> = {
     'headRefName',
     'baseRefName',
     'headRefOid',
+    'isCrossRepository',
     'additions',
     'deletions',
     'changedFiles',

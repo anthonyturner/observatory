@@ -96,7 +96,13 @@ describe('agentRows', () => {
 
 describe('retroStamp', () => {
   it('names the repository and the week the ledger was read for', () => {
-    const ledger = { generatedAt: '2026-10-06T09:00:00', rows: [], titles: {}, finished: [] };
+    const ledger = {
+      generatedAt: '2026-10-06T09:00:00',
+      rows: [],
+      titles: {},
+      finished: [],
+      mergedBranches: [],
+    };
 
     expect(retroStamp('me/app', ledger, 'en-US')).toMatch(/^me\/app · week to Oct 6 · read /);
     expect(retroStamp('me/app', null)).toBe('no history read yet');

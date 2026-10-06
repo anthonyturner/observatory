@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { type LedgerPull, ledgerReport, ledgerRows, localDay } from './ledger.ts';
+import { type LedgerPull, ledgerReport, ledgerRows, localDay, mergedBranchesOf } from './ledger.ts';
 
 const NOW = new Date(2026, 8, 26, 15, 0).getTime();
 const DAY = 86_400_000;
@@ -13,7 +13,47 @@ const pull = (number: number, extra: Partial<LedgerPull>): LedgerPull => ({
   closedAt: null,
   mergedAt: null,
   state: 'OPEN',
+  headRefName: `feat/${number}`,
+  baseRefName: 'main',
+  isCrossRepository: false,
   ...extra,
+});
+
+describe('mergedBranchesOf', () => {
+  const merged = (number: number, extra: Partial<LedgerPull> = {}): LedgerPull =>
+    pull(number, { state: 'MERGED', mergedAt: at(1), closedAt: at(1), ...extra });
+
+  it('lists each merge with its branches, newest first', () => {
+    const branches = mergedBranchesOf([
+      merged(3),
+      merged(8, { baseRefName: 'feat/3', mergedAt: at(2), closedAt: at(2) }),
+    ]);
+
+    assert.deepEqual(branches, [
+      { number: 8, head: 'feat/8', base: 'feat/3' },
+      { number: 3, head: 'feat/3', base: 'main' },
+    ]);
+  });
+
+  it('leaves out a branch that took another merge after its own, as main does after a release', () => {
+    const release = merged(10, { headRefName: 'main', baseRefName: 'production', mergedAt: at(3) });
+
+    assert.deepEqual(mergedBranchesOf([release, merged(11, { mergedAt: at(2) })]), [
+      { number: 11, head: 'feat/11', base: 'main' },
+    ]);
+  });
+
+  it('leaves out what is open or closed unmerged, a fork, and a merge into its own name', () => {
+    const branches = mergedBranchesOf([
+      pull(1, {}),
+      pull(2, { state: 'CLOSED', closedAt: at(1) }),
+      merged(4, { isCrossRepository: true }),
+      merged(5, { headRefName: 'main' }),
+      merged(6, { headRefName: '' }),
+    ]);
+
+    assert.deepEqual(branches, []);
+  });
 });
 
 describe('ledgerRows', () => {
@@ -93,5 +133,6 @@ describe('ledgerReport', () => {
 
     assert.ok(ledger.rows.every((row) => row.open === 1));
     assert.equal(ledger.days, 60);
+    assert.deepEqual(ledger.mergedBranches, []);
   });
 });

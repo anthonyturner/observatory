@@ -173,3 +173,11 @@ li[data-go]:hover {
     max-height: 38vh;
   }
 }
+
+/* On a phone on its side the room above the playlist is shorter than the heading,
+   tallies and buttons, so the panel scrolls rather than run behind the playlist. */
+@media (max-height: 500px) {
+  .changes {
+    overflow-y: auto;
+  }
+}

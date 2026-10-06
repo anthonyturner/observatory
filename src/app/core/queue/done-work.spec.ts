@@ -10,6 +10,7 @@ const ledger: Ledger = {
   ],
   titles: { '4': 'Add the dial', '5': 'Fix the sun', '6': 'Abandoned idea' },
   finished: [],
+  mergedBranches: [],
 };
 
 const issue = (number: number, closedAt: string, stateReason: string | null) => ({

@@ -6,6 +6,7 @@ const ledger = (rows: Ledger['rows'], titles: Record<string, string> = {}): Ledg
   rows,
   titles,
   finished: [],
+  mergedBranches: [],
 });
 
 describe('shippedWork', () => {

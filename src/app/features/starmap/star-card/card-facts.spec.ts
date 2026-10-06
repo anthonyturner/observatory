@@ -73,6 +73,24 @@ describe('cardFacts', () => {
     });
   });
 
+  it('says where it sits in a stack, and that a merged base wants an update', () => {
+    const facts = cardFacts(item, {
+      pairs: [],
+      binaries: [],
+      stack: {
+        parent: 41,
+        children: [59, 60],
+        landed: { number: 40, branch: 'feat/40', into: 'main' },
+      },
+    });
+
+    expect(facts.slice(0, 3).map((f) => [f.term, f.value, f.tone])).toEqual([
+      ['base', '#40 merged into main · update it', 'hot'],
+      ['stacked on', '#41', undefined],
+      ['stacked on it', '#59, #60', undefined],
+    ]);
+  });
+
   it('leaves the size out when GitHub did not give one', () => {
     const facts = cardFacts({ ...item, additions: null }, { pairs: [], binaries: [] });
     expect(facts.some((f) => f.term === 'size')).toBe(false);

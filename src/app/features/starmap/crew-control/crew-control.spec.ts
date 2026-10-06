@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { CrewDispatch } from '../../../core/crew/crew-dispatch';
 import { Crew } from '../../../core/crew/crew.types';
 import { QueueBucket } from '../../../core/queue/queue-report';
+import { LandedBase } from '../../../core/queue/stacks';
 import { CrewControl } from './crew-control';
 
 const out: Crew = {
@@ -16,7 +17,13 @@ const out: Crew = {
   endedAt: null,
 };
 
-function render(bucket: QueueBucket | null, fields: { available?: boolean; crews?: Crew[] } = {}) {
+interface Fields {
+  readonly available?: boolean;
+  readonly crews?: Crew[];
+  readonly landed?: LandedBase;
+}
+
+function render(bucket: QueueBucket | null, fields: Fields = {}) {
   const dispatch = {
     isAvailable: signal(fields.available ?? true),
     crews: signal(fields.crews ?? []),
@@ -33,6 +40,7 @@ function render(bucket: QueueBucket | null, fields: { available?: boolean; crews
   fixture.componentRef.setInput('repo', 'me/app');
   fixture.componentRef.setInput('number', 7);
   fixture.componentRef.setInput('bucket', bucket);
+  if (fields.landed) fixture.componentRef.setInput('landed', fields.landed);
   fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
   return { element, dispatch, button: element.querySelector<HTMLButtonElement>('button') };
@@ -47,6 +55,14 @@ describe('CrewControl', () => {
     button?.click();
 
     expect(dispatch.send).toHaveBeenCalledWith('me/app', 7);
+  });
+
+  it('offers to update a pull request whose stacked base has merged', () => {
+    const landed = { number: 6, branch: 'feat/6', into: 'main' };
+    const { button, element } = render('unreviewed', { landed });
+
+    expect(button?.textContent?.trim()).toBe('Send crew');
+    expect(element.querySelector('.crew__hint')?.textContent).toContain('stacked on has merged');
   });
 
   it('shows nothing where no crew can be sent from, or on a pull request that needs none', () => {

@@ -54,6 +54,12 @@
     />
   }
   @if (!context().replay) {
-    <app-crew-control class="crew" [repo]="repo()" [number]="item().number" [bucket]="shown()" />
+    <app-crew-control
+      class="crew"
+      [repo]="repo()"
+      [number]="item().number"
+      [bucket]="shown()"
+      [landed]="landed()"
+    />
   }
 </div>

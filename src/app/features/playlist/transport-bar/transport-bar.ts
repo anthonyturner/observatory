@@ -69,7 +69,7 @@ export class TransportBar {
   /** Sync, Video, Visual and Sky only do something on a page with a music sky. */
   protected readonly sky = inject(MusicSkyPresence);
   protected readonly fold = inject(PlaylistBarFold);
-  /** Null where no source can be heard, as on a phone, so Sync is left out. */
+  /** Null where no source can be heard, so Sync is left out. */
   protected readonly sync = computed((): SyncLabel | null => {
     const selected = this.soundSources.selected();
     return selected && syncLabelOf(this.pulse.status(), selected.source.guide);

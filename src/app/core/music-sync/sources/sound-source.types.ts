@@ -24,6 +24,8 @@ export interface SoundSource {
   /** Names the source in the chooser, heading its entries where it has several. */
   readonly name: string;
   readonly guide: SoundGuide;
+  /** Whether the first Play of a visit asks for it too, not only Sync. */
+  readonly opensWithPlay: boolean;
   /** Its entries in the chooser now; none where this browser cannot use it. */
   readonly options: Signal<readonly SoundOption[]>;
   /** Asks to hear the entry `optionId`, one of `options`; must run inside a click

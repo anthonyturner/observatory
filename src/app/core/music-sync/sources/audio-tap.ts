@@ -65,6 +65,9 @@ export function analyserTap(sound: TappedSound): AudioTap {
 /** Reads `audio`, a track of `stream`, as a spectrum; closing the tap stops the stream. */
 export function tapOf(stream: MediaStream, audio: MediaStreamTrack): AudioTap {
   const context = new AudioContext();
+  // Made once the browser's prompt is answered, outside the click, so a phone's
+  // browser may start it suspended, and a suspended analyser reads silence.
+  if (context.state === 'suspended') context.resume().catch(() => undefined);
   return analyserTap({
     context,
     source: context.createMediaStreamSource(stream),

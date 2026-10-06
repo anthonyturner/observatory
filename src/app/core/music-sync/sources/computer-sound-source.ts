@@ -54,6 +54,7 @@ export class ComputerSoundSource implements SoundSource {
     ask: 'Chrome asks to share a screen: pick Entire screen and tick “Also share system audio”. Nothing is recorded or sent.',
     silent: 'The screen was shared without the computer’s sound',
   };
+  readonly opensWithPlay = true;
   readonly options: Signal<readonly SoundOption[]> = signal(
     canShareDisplayAudio(this.media) && SYSTEM_AUDIO_PLATFORMS.has(this.platform ?? '')
       ? [COMPUTER]

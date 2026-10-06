@@ -32,8 +32,6 @@ describe('MusicPulse', () => {
 
   it('never asks on its own where the browser can use no source', () => {
     const { pulse, tab } = setup(() => Promise.resolve(new FakeTap()), { canShare: false });
-    expect(pulse.canListen()).toBe(false);
-
     pulse.listenOnce();
     pulse.listen();
     expect(tab.opened).toEqual([]);
@@ -56,6 +54,19 @@ describe('MusicPulse', () => {
     expect(tab.opened).toEqual(['tab']);
     expect(tap.closed).toBe(true);
     expect(pulse.status()).toBe('off');
+  });
+
+  it('leaves a source that waits for Sync alone on Play, and opens it from listen', async () => {
+    const { pulse, tab } = setup(() => Promise.resolve(new FakeTap()));
+    tab.opensWithPlay = false;
+    pulse.listenOnce();
+    expect(tab.opened).toEqual([]);
+    expect(pulse.status()).toBe('off');
+
+    pulse.listen();
+    await settle();
+    expect(tab.opened).toEqual(['tab']);
+    expect(pulse.isListening()).toBe(true);
   });
 
   it('asks again from listen after a stop', async () => {

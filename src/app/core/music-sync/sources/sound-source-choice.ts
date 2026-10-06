@@ -34,7 +34,7 @@ export class SoundSourceChoice {
       .map((source) => ({ source, options: source.options() }))
       .filter((group) => group.options.length > 0),
   );
-  /** Null where no source can be used, as on a phone. */
+  /** Null where no source can be used, as in a browser with no microphone access. */
   readonly selected: Signal<SoundSelection | null> = computed(() =>
     selectionOf(this.menu(), this.picked()),
   );

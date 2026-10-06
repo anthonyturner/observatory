@@ -11,12 +11,7 @@
     }
   </div>
   @if (!skyHidden()) {
-    <div class="toolgroup">
-      <button type="button" title="Zoom out" (click)="zoomOut.emit()">&minus;</button>
-      <button type="button" title="Zoom in" (click)="zoomIn.emit()">+</button>
-      <button type="button" title="Fit everything on screen" (click)="fit.emit()">Fit</button>
-    </div>
-    <div class="toolgroup">
+    <div class="toolgroup" role="group" aria-label="View">
       <button type="button" [attr.aria-pressed]="view() === 'map'" (click)="viewChange.emit('map')">
         Starmap
       </button>
@@ -29,19 +24,28 @@
       </button>
     </div>
   }
-  @if (!queueHidden()) {
+  @if (onMap()) {
+    <div class="toolgroup" role="group" aria-label="Zoom">
+      <button type="button" title="Zoom out" (click)="zoomOut.emit()">&minus;</button>
+      <button type="button" title="Zoom in" (click)="zoomIn.emit()">+</button>
+      <button type="button" title="Fit everything on screen" (click)="fit.emit()">Fit</button>
+    </div>
+  }
+  @if (!queueHidden() && chart() === 'prs') {
     <div class="toolgroup">
-      @if (chart() === 'prs') {
-        <button
-          type="button"
-          aria-keyshortcuts="n"
-          [title]="nextTitle()"
-          [disabled]="!next()"
-          (click)="nextStar.emit()"
-        >
-          Next star
-        </button>
-      }
+      <button
+        type="button"
+        aria-keyshortcuts="n"
+        [title]="nextTitle()"
+        [disabled]="!next()"
+        (click)="nextStar.emit()"
+      >
+        Next star
+      </button>
+    </div>
+  }
+  @if (!queueHidden() && onMap()) {
+    <div class="toolgroup" role="group" aria-label="On the sky">
       <button
         type="button"
         title="Threads between pull requests that would conflict with each other"
@@ -50,6 +54,24 @@
       >
         Collisions
       </button>
+      @if (chart() === 'prs') {
+        <label
+          class="hole"
+          title="Pull requests idle longer than this many days fall toward the black hole"
+          ><span aria-hidden="true">hole</span
+          ><input
+            type="number"
+            step="1"
+            aria-label="Black hole: idle days before a pull request falls in"
+            [min]="minHoleDays"
+            [max]="maxHoleDays"
+            [value]="blackHole.staleAfterDays()"
+            (change)="onHoleDays($event)"
+          /><span aria-hidden="true">d</span></label
+        >
+      }
+    </div>
+    <div class="toolgroup" role="group" aria-label="Side panel">
       <button
         type="button"
         title="The order to merge in that needs the fewest rebases"
@@ -74,22 +96,6 @@
       >
         Done
       </button>
-      @if (chart() === 'prs') {
-        <label
-          class="hole"
-          title="Pull requests idle longer than this many days fall toward the black hole"
-          ><span aria-hidden="true">hole</span
-          ><input
-            type="number"
-            step="1"
-            aria-label="Black hole: idle days before a pull request falls in"
-            [min]="minHoleDays"
-            [max]="maxHoleDays"
-            [value]="blackHole.staleAfterDays()"
-            (change)="onHoleDays($event)"
-          /><span aria-hidden="true">d</span></label
-        >
-      }
     </div>
   }
   <div class="toolgroup">
@@ -101,6 +107,8 @@
     >
       {{ refreshing() ? 'Refreshing…' : refreshFailed() ? 'Refresh failed — retry' : 'Refresh' }}
     </button>
+  </div>
+  <div class="toolgroup" role="group" aria-label="Motion and sound">
     <button
       type="button"
       [attr.aria-pressed]="!motion.isStill()"
@@ -130,6 +138,8 @@
           (input)="onVolume($event)"
       /></label>
     }
+  </div>
+  <div class="toolgroup">
     <button
       type="button"
       aria-label="Help"
@@ -140,7 +150,7 @@
       ?
     </button>
   </div>
-  @if (!skyHidden()) {
+  @if (onMap()) {
     <span class="hint">drag · scroll · hover or click a star</span>
   }
   <button type="button" class="fold" [attr.aria-expanded]="!folded()" (click)="toggleFold()">

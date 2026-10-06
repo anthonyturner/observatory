@@ -25,9 +25,10 @@ const CHARTS: readonly { readonly id: Chart; readonly label: string }[] = [
 ];
 
 /**
- * pr-starmap's bottom tools: which sky, zoom, Starmap or List, the queue's
- * overlays, then Refresh, Motion, Sound and help. On a small screen Controls
- * folds them away, remembered per viewer.
+ * The bottom tools, by purpose: which sky, Starmap or List, zoom, Next star,
+ * what the sky draws, the side panels, Refresh, Motion and Sound, then help.
+ * What only the map uses hides on a list. On a small screen Controls folds
+ * them away, remembered per viewer.
  */
 @Component({
   selector: 'app-starmap-tools',
@@ -84,6 +85,8 @@ export class StarmapTools {
   readonly folded = model(readFolded());
   /** Zoom, Starmap / List and the hint mean nothing over a list-only screen. */
   protected readonly skyHidden = computed(() => isListOnly(this.chart()));
+  /** Zoom, the sky's layers, the side panels and the hint need the map, not a list. */
+  protected readonly onMap = computed(() => !this.skyHidden() && this.view() === 'map');
   /** The queue's overlays mean nothing over the issues. */
   protected readonly queueHidden = computed(() => this.skyHidden() || this.chart() === 'issues');
   protected readonly nextTitle = computed(() => {

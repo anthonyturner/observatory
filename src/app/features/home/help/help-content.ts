@@ -195,6 +195,12 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
     section: USING,
   },
   {
+    term: 'Queue',
+    meaning:
+      'Say or type “what’s blocking?” to hear the top three pull requests across your projects, blocked first, or “next star” to open the one Next star would pick. “Snooze 412 till Monday” (or tomorrow, for 3 days; a week when no time is named) and “dismiss 412” ask first: say or type yes, or press Yes, and nothing changes until you do. Add “in” and a project’s name when the number is open in more than one. On your own machine only.',
+    section: USING,
+  },
+  {
     term: 'Talk',
     meaning:
       'Press Tap to talk once to start and again to stop, or hold it and let go to send. With ElevenLabs on, your recording is turned into text by ElevenLabs, on your ElevenLabs credits; otherwise a speech model in this browser does it, and no audio leaves it.',

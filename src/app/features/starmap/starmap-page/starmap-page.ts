@@ -21,7 +21,7 @@ import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { Stacks, stacksOf } from '../../../core/queue/stacks';
 import { queueFog } from '../../../core/queue/queue-fog';
-import { TriageChoice, TriageClient } from '../../../core/queue/triage-client';
+import { SNOOZE_DAYS, TriageChoice, TriageClient } from '../../../core/queue/triage-client';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { MotionPreference } from '../../../core/motion/motion-preference';
@@ -114,8 +114,6 @@ const SIDE_PANEL_MIN_WIDTH = 900;
 const SIDE_PANEL_WIDTH = 380;
 /** The merge plan's panel and the gap beside it. */
 const PLAN_PANEL_WIDTH = 400;
-/** The card's Snooze, as pr-starmap's: a week. */
-const SNOOZE_DAYS = 7;
 /** No failing check is known to be flaky: one list, so the PR screen's input keeps its reference. */
 const NO_FLAKY_CHECKS: readonly string[] = [];
 /** How long Next star leaves its star lit, card open, before opening its PR screen. */

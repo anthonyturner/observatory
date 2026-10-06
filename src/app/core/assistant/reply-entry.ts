@@ -5,11 +5,13 @@ import { ReplyChip, WAITING_CHIP } from './reply-chip';
 export type AskedHow = 'typed' | 'spoken' | 'skill';
 
 /** A button under a reply: send a request into this reply again (a pick or
- *  Try again), leave the options (Neither), or cancel a page jump. */
+ *  Try again), leave the options (Neither), cancel a page jump, or say words
+ *  for you, as a typed request of their own (Yes). */
 export type EntryAction =
   | { readonly kind: 'send'; readonly label: string; readonly request: RouteRequest }
   | { readonly kind: 'neither' }
-  | { readonly kind: 'stay' };
+  | { readonly kind: 'stay' }
+  | { readonly kind: 'say'; readonly label: string; readonly words: string };
 
 /** What a reply says. A quick answer shows its `inline code` and can be
  *  copied; a note is quieter; `openHref` follows it after Stay here. */

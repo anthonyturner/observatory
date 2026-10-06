@@ -11,6 +11,11 @@ export interface TriageChoice {
   readonly sha?: string;
 }
 
+/** A snooze naming no length lasts a week, as pr-starmap's card did. */
+export const SNOOZE_DAYS = 7;
+/** The longest snooze the API records. */
+export const MAX_SNOOZE_DAYS = 90;
+
 const TRIAGE_URL = '/api/triage';
 /** The API accepts writes only with this header, which no other site can add. */
 const WRITE_HEADERS = new HttpHeaders({ 'x-observatory': '1' });

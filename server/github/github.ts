@@ -1,4 +1,6 @@
 import type { FilesReader } from '../collisions/collisions-report.ts';
+import type { CheckHistoryReader } from './check-history.ts';
+import type { CheckRerunner } from './check-rerunner.ts';
 import type { CommitReader } from './commit-reader.ts';
 import type { CompareReader } from './compare-reader.ts';
 import type { FateReader } from './fate-reader.ts';
@@ -10,7 +12,7 @@ import type { PullReader } from './pull-reader.ts';
 import type { PullWriter } from './pull-writer.ts';
 import type { QueueReader } from './queue-reader.ts';
 
-/** Every reader the API uses, and the one writer, as one GitHub implementation provides them. */
+/** Every reader the API uses, and the writers, as one GitHub implementation provides them. */
 export type GitHub = GitHubReader &
   QueueReader &
   PullReader &
@@ -22,4 +24,6 @@ export type GitHub = GitHubReader &
   FateReader &
   FilesReader &
   LedgerReader &
-  AgentReader;
+  AgentReader &
+  CheckHistoryReader &
+  CheckRerunner;

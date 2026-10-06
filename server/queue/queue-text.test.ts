@@ -11,6 +11,7 @@ const item = (number: number, extra: Partial<TriagedItem> = {}): TriagedItem => 
   bucket: 'unreviewed',
   closes: [number + 100],
   failingChecks: 0,
+  flakyChecks: [],
   additions: 1,
   deletions: 0,
   updatedAt: '2026-09-20T00:00:00Z',

@@ -105,6 +105,48 @@ describe('githubApiReader, the parts the PR screen adds', () => {
     });
   });
 
+  it('reruns a workflow run’s failed jobs, and nothing else', async () => {
+    const { github, sent } = recording(['']);
+    await github.rerunFailedJobs(REPO, 42);
+
+    assert.deepEqual(
+      sent.map(({ method, url, body }) => [method, url, body]),
+      [['POST', `${API}/repos/me/app/actions/runs/42/rerun-failed-jobs`, null]],
+    );
+  });
+
+  it('reads the check history of rerun workflow runs through REST', async () => {
+    const { github, sent } = recording([
+      { workflow_runs: [{ id: 42, run_attempt: 2 }] },
+      {
+        jobs: [
+          {
+            name: 'e2e',
+            head_sha: 'f'.repeat(40),
+            conclusion: 'failure',
+            completed_at: '2026-10-01T10:00:00Z',
+          },
+        ],
+      },
+    ]);
+
+    assert.deepEqual(await github.checkHistory(REPO), [
+      {
+        name: 'e2e',
+        sha: 'f'.repeat(40),
+        conclusion: 'FAILURE',
+        completedAt: '2026-10-01T10:00:00Z',
+      },
+    ]);
+    assert.deepEqual(
+      sent.map(({ method, url }) => [method, url.replace(API, '')]),
+      [
+        ['GET', '/repos/me/app/actions/runs?per_page=100'],
+        ['GET', '/repos/me/app/actions/runs/42/jobs?filter=all&per_page=100'],
+      ],
+    );
+  });
+
   it('marks a draft ready through its node id', async () => {
     const { github, sent } = recording([pull({ id: 'PR_1' }), { data: {} }]);
     await github.markReady(REPO, 7);

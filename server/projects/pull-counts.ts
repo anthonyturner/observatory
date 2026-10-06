@@ -1,4 +1,4 @@
-import type { PullRequest } from '../github/github-reader.ts';
+import type { CheckRun, PullRequest } from '../github/github-reader.ts';
 import type { ProjectCounts } from './project-types.ts';
 
 export type PullBucket = 'conflicted' | 'failing' | 'unknown' | 'unlinked' | 'unreviewed';
@@ -17,16 +17,27 @@ export const bucketRank = (bucket: PullBucket): number => BUCKET_ORDER.indexOf(b
 const DAY_MS = 86_400_000;
 const FAILED_VERDICTS = new Set(['FAILURE', 'ERROR', 'TIMED_OUT']);
 
-export function failingChecks(pull: PullRequest): number {
-  return (pull.statusCheckRollup ?? []).filter((run) =>
-    FAILED_VERDICTS.has(run.conclusion ?? run.state ?? ''),
-  ).length;
+/** No check is known to be flaky. */
+export const NO_FLAKY_CHECKS: ReadonlySet<string> = new Set();
+
+const checkNameOf = (run: CheckRun): string => run.name ?? run.context ?? '';
+
+/** The name of each failing check, one per failing run. */
+export function failingCheckNames(pull: PullRequest): string[] {
+  return (pull.statusCheckRollup ?? [])
+    .filter((run) => FAILED_VERDICTS.has(run.conclusion ?? run.state ?? ''))
+    .map(checkNameOf);
 }
 
-/** The most urgent thing about a pull request, blocked first. */
-export function bucketOf(pull: PullRequest): PullBucket {
+export function failingChecks(pull: PullRequest): number {
+  return failingCheckNames(pull).length;
+}
+
+/** The most urgent thing about a pull request, blocked first. A pull request
+ *  failing only on checks in `flaky` is not counted as failing. */
+export function bucketOf(pull: PullRequest, flaky = NO_FLAKY_CHECKS): PullBucket {
   if (pull.mergeable === 'CONFLICTING') return 'conflicted';
-  if (failingChecks(pull) > 0) return 'failing';
+  if (failingCheckNames(pull).some((name) => !flaky.has(name))) return 'failing';
   // Still unsettled after the retries: an unanswered question is not a clean
   // bill of health.
   if (pull.mergeable === 'UNKNOWN') return 'unknown';
@@ -50,7 +61,7 @@ export function pullCounts(
   pulls: readonly PullRequest[],
   openIssues: readonly number[] | null,
 ): ProjectCounts {
-  const buckets = pulls.map(bucketOf);
+  const buckets = pulls.map((pull) => bucketOf(pull));
   const count = (bucket: PullBucket): number => buckets.filter((each) => each === bucket).length;
   return {
     conflicted: count('conflicted'),

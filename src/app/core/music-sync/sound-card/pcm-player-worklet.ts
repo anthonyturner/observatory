@@ -6,8 +6,10 @@ export interface PcmPlayerOptions {
   readonly channels: number;
   /** Frames to gather before playing, and after running dry: the jitter margin. */
   readonly startFrames: number;
-  /** More than this waiting means it fell behind; it skips back to `startFrames`. */
+  /** More than this waiting means it fell behind; it skips back to `startFrames` at once. */
   readonly maxFrames: number;
+  /** How often it checks for a backlog it never needed, which it then skips. */
+  readonly trimEveryFrames: number;
 }
 
 interface WorkletPort {
@@ -41,6 +43,9 @@ export function definePcmPlayer(): void {
     private offset = 0;
     private buffered = 0;
     private isPlaying = false;
+    /** The fewest frames waiting since the last trim: what was never needed to ride out a gap. */
+    private lowest = Infinity;
+    private sinceTrim = 0;
 
     constructor({ processorOptions }: { readonly processorOptions: PcmPlayerOptions }) {
       super();
@@ -54,7 +59,19 @@ export function definePcmPlayer(): void {
       if (!this.isPlaying && this.buffered >= this.options.startFrames) this.isPlaying = true;
       if (this.isPlaying && this.buffered < frames) this.isPlaying = false;
       if (this.isPlaying) this.play(output, frames);
+      this.trimBacklog(frames);
       return true;
+    }
+
+    private trimBacklog(frames: number): void {
+      this.lowest = this.isPlaying ? Math.min(this.lowest, this.buffered) : Infinity;
+      this.sinceTrim += frames;
+      if (this.sinceTrim < this.options.trimEveryFrames) return;
+      if (this.isPlaying && this.lowest > this.options.startFrames) {
+        this.skip(this.lowest - this.options.startFrames);
+      }
+      this.lowest = Infinity;
+      this.sinceTrim = 0;
     }
 
     private add(samples: Float32Array): void {

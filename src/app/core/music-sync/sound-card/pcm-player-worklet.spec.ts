@@ -7,7 +7,12 @@ interface Player {
 
 type PlayerClass = new (options: { processorOptions: PcmPlayerOptions }) => Player;
 
-const OPTIONS: PcmPlayerOptions = { channels: 2, startFrames: 4, maxFrames: 8 };
+const OPTIONS: PcmPlayerOptions = {
+  channels: 2,
+  startFrames: 4,
+  maxFrames: 8,
+  trimEveryFrames: 1000,
+};
 const QUANTUM = 2;
 
 /** The player as the worklet would register it, built from its source text alone. */
@@ -104,6 +109,33 @@ describe('the PCM player worklet', () => {
     expect(quantum()).toEqual([
       [6, 7],
       [-6, -7],
+    ]);
+  });
+
+  it('skips, once a while, a backlog the last while never dipped into', () => {
+    const { send, quantum } = player({ ...OPTIONS, maxFrames: 100, trimEveryFrames: 4 });
+
+    send(...Array.from({ length: 10 }, (_, frame) => [frame, -frame]).flat());
+    quantum();
+    quantum();
+
+    expect(quantum()).toEqual([
+      [6, 7],
+      [-6, -7],
+    ]);
+  });
+
+  it('keeps the margin it did dip into', () => {
+    const { send, quantum } = player({ ...OPTIONS, maxFrames: 100, trimEveryFrames: 4 });
+
+    send(...Array.from({ length: 6 }, (_, frame) => [frame, -frame]).flat());
+    quantum();
+    quantum();
+    send(6, -6, 7, -7);
+
+    expect(quantum()).toEqual([
+      [4, 5],
+      [-4, -5],
     ]);
   });
 });

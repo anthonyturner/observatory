@@ -18,6 +18,8 @@ export class SoundCardUnavailableError extends Error {
 const START_FRAMES = 1024;
 /** About 100 ms: more than this queued means the page fell behind, so it skips ahead. */
 const MAX_FRAMES = 4800;
+/** Once a second, any backlog the last second never dipped into is skipped. */
+const TRIM_EVERY_FRAMES = 48_000;
 const MAX_CHANNELS = 8;
 const MIN_SAMPLE_RATE = 8_000;
 const MAX_SAMPLE_RATE = 192_000;
@@ -66,6 +68,7 @@ async function playerIn(context: AudioContext, channels: number): Promise<AudioW
     channels,
     startFrames: START_FRAMES,
     maxFrames: MAX_FRAMES,
+    trimEveryFrames: TRIM_EVERY_FRAMES,
   };
   return new AudioWorkletNode(context, PCM_PLAYER, {
     numberOfInputs: 0,

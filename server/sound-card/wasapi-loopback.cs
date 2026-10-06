@@ -24,7 +24,10 @@ public static class ObservatoryLoopback
     const int SilentBufferFlag = 0x2;
     // 100 ms in 100-ns units: room for a late poll without losing sound.
     const long BufferDuration = 1000000;
-    const int PollMilliseconds = 5;
+    // With the timer at 1 ms, a 2 ms poll passes each 10 ms packet on within
+    // 2 ms; at Windows' default 15.6 ms tick, a short sleep lasts 15.6 ms.
+    const uint TimerMilliseconds = 1;
+    const int PollMilliseconds = 2;
     const int ReopenMilliseconds = 500;
 
     static readonly Guid AudioClientId = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
@@ -34,6 +37,19 @@ public static class ObservatoryLoopback
     static volatile bool stopping;
 
     public static int Run()
+    {
+        timeBeginPeriod(TimerMilliseconds);
+        try
+        {
+            return Capture();
+        }
+        finally
+        {
+            timeEndPeriod(TimerMilliseconds);
+        }
+    }
+
+    static int Capture()
     {
         Stream output = Console.OpenStandardOutput();
         Thread watcher = new Thread(WatchStdin);
@@ -155,6 +171,12 @@ public static class ObservatoryLoopback
         Marshal.Copy(FloatSubFormat.ToByteArray(), 0, format + 24, 16);
         return format;
     }
+
+    [DllImport("winmm.dll")]
+    static extern uint timeBeginPeriod(uint milliseconds);
+
+    [DllImport("winmm.dll")]
+    static extern uint timeEndPeriod(uint milliseconds);
 
     [ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")]
     class MMDeviceEnumerator { }

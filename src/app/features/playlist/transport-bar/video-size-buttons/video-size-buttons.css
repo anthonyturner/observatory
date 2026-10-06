@@ -1,0 +1,30 @@
+:host {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+button {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: var(--flow-tint);
+}
+
+button:focus-visible {
+  outline-offset: -2px;
+}

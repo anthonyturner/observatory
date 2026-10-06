@@ -284,7 +284,7 @@ describe('hostedApi', () => {
     }
   });
 
-  it('has no sound card, for anyone: only this machine�s server hears its speakers', async () => {
+  it('has no sound card, for anyone: only this machine’s server hears its speakers', async () => {
     const listen = (handle: ReturnType<typeof site>['handle'], path: string, cookie?: string) =>
       handle(
         new Request(`${SITE}${path}`, {

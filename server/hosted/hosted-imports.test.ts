@@ -30,7 +30,7 @@ function reachableFrom(entry: string): Set<string> {
 }
 
 describe('the hosted site', () => {
-  it('never imports the code that signs in to the owner’s mail', () => {
+  it('never imports the code that signs in to the owner’s mail or hears their speakers', () => {
     const reached = [...reachableFrom(HOSTED_ENTRY)];
 
     assert.ok(reached.some((file) => file.endsWith(join('hosted', 'hosted-api.ts'))));

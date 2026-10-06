@@ -16,7 +16,10 @@ so a missing line costs more than a long one.
   (type stripping, no build) on loopback port 4319; `ng serve` proxies `/api`
   to it (`proxy.conf.json`). Node built-ins, plus `imapflow` for reading the
   owner's iCloud and Gmail inboxes over IMAP (`server/mail/`, local only).
-  Tests: `node:test`.
+  The Sync sound card source hears the speakers through a small C# WASAPI
+  loopback helper (`server/sound-card/wasapi-loopback.cs`) that the Windows
+  PowerShell 5.1 shipped with Windows compiles at start: Windows only, local
+  only, no npm dependency. Tests: `node:test`.
 - Data: Claude Code usage is live, read from this machine's session logs
   (`~/.claude/projects`) and the status line's limit readings
   (`~/.claude/observatory/usage/`). Projects, open issues and the directives are live from

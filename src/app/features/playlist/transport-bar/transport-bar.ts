@@ -19,7 +19,8 @@ import { SoundSourceChoice } from '../../../core/music-sync/sources/sound-source
 import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
 import { PlaylistBarFold } from '../../../core/playlist/playlist-bar-fold';
-import { PlaylistLibrary, PlaylistSource } from '../../../core/playlist/playlist-library';
+import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
+import { StationId } from '../../../core/playlist/playlist-stations';
 import { PlaylistPlayer } from '../../../core/playlist/playlist-player';
 import { VideoBackground } from '../../../core/playlist/video-background';
 import { VideoCardSize } from '../../../core/playlist/video-card-size';
@@ -36,7 +37,7 @@ const BACK_STEP_S = 15;
 const FORWARD_STEP_S = 30;
 
 /** The playlist along the foot of every page: the video, the seek bar, the transport,
- *  the heart, the Mix / Favourites switch, the favourites file, the sky's Sync and
+ *  the heart, the Station picker and Favourites switch, the favourites file, the sky's Sync and
  *  where it hears the music, the Video switch, Milkdrop's visual and opacity, the
  *  beat's strength, and the volume, with the track list above; folded, only the
  *  seek bar, the transport, the heart and the song's name stay. It plays instead of
@@ -106,7 +107,9 @@ export class TransportBar {
   );
   protected readonly favoritesHint = computed(() =>
     this.library.hasFavorites()
-      ? 'Play the tracks you have hearted'
+      ? this.library.source() === 'favorites'
+        ? 'Back to the station'
+        : 'Play the tracks you have hearted'
       : 'No favourites yet: heart a track to save it here',
   );
   protected readonly exportHint = computed(() =>
@@ -157,9 +160,15 @@ export class TransportBar {
     this.listOpen.set(false);
   }
 
-  protected choose(source: PlaylistSource): void {
+  /** The select only offers the stations' ids. */
+  protected onStation(event: Event): void {
     if (this.player.isPlaying()) this.score.silence();
-    this.library.choose(source);
+    this.library.choose((event.target as HTMLSelectElement).value as StationId);
+  }
+
+  protected toggleFavorites(): void {
+    if (this.player.isPlaying()) this.score.silence();
+    this.library.toggleFavorites();
   }
 
   protected onScrub(event: Event): void {

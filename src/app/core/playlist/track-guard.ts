@@ -1,6 +1,5 @@
-import { Genre, Track } from './playlist.types';
+import { GENRES, Genre, Track } from './playlist.types';
 
-const GENRES: readonly Genre[] = ['trance', 'techno'];
 const VIDEO_ID = /^[\w-]{11}$/;
 
 /** Whether a value read from outside the program (storage, a file) is a track. */

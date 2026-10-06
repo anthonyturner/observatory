@@ -118,10 +118,10 @@ proposal, with the same limits pr-starmap set:
 - `CLAUDE_ARGS` in `server/runner/claude-command.ts` is a fixed list with no
   permission flags, and `process.stdin.end(this.proposal.prompt)` in
   `claude-run.ts` is the only place the prompt goes.
-- Tests hold the rest: `runner.test.ts` (used, expired and mismatched tokens,
+- Tests hold the rest: `runner.spec.ts` (used, expired and mismatched tokens,
   the folder check on use, one at a time, the time limit, cancel, the failed
-  kill), `claude-launcher.test.ts` (the fixed flags, the shim's command line,
-  the withheld credentials), `http/loopback-guard.test.ts` (Host and Origin), and
-  `hosted-api.test.ts` ("has no runs routes").
+  kill), `claude-launcher.spec.ts` (the fixed flags, the shim's command line,
+  the withheld credentials), `http/loopback-guard.spec.ts` (Host and Origin), and
+  `hosted-api.spec.ts` ("has no runs routes").
 - In review: any change to the gate, the folder rule, the spawn or the kill
   must say how it keeps the "now has to be true" points above.

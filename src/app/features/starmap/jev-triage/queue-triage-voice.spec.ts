@@ -15,7 +15,7 @@ import { ProjectSnapshot } from '../../../core/projects/project.types';
 import { ProjectsState } from '../../../core/projects/projects-feed';
 import { PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { REPLY_VOICE, ReplyVoice } from '../../../core/voice/reply-voice';
-import { QUEUE_CHIP, QUEUE_TRIAGE_SHORTCUT } from './queue-triage-voice';
+import { OUT_OF_REACH, QUEUE_CHIP, QUEUE_TRIAGE_SHORTCUT } from './queue-triage-voice';
 
 /** A Wednesday, so “till Monday” is five days. */
 const WEDNESDAY = new Date(2026, 9, 7, 10, 0);
@@ -265,6 +265,42 @@ describe('the Review Queue by voice or typing', () => {
     type('snooze 99 till Friday');
 
     expect(latest().said.text).toBe('Pull request 99 isn’t open in any project.');
+  });
+
+  it('snoozes for no longer than the API records, asking nothing', () => {
+    const { type, latest } = setUp();
+
+    type('snooze 12 for 13 weeks');
+
+    expect(latest().said.text).toBe('I can snooze for 90 days at most.');
+    expect(latest().actions).toEqual([]);
+  });
+
+  it('says so when no queue can be read', () => {
+    const { type, latest, http } = setUp();
+
+    type('what’s blocking?');
+    for (const repo of ['me/alpha', 'me/beta']) {
+      http
+        .expectOne(`/api/queue?repo=${repo}`)
+        .flush('down', { status: 502, statusText: 'Bad Gateway' });
+    }
+
+    expect(latest().said.text).toBe(OUT_OF_REACH);
+  });
+
+  it('reads the queues that answer and counts the ones that did not', () => {
+    const { type, latest, http } = setUp();
+
+    type('what’s blocking?');
+    http
+      .expectOne('/api/queue?repo=me/alpha')
+      .flush('down', { status: 502, statusText: 'Bad Gateway' });
+    http
+      .expectOne('/api/queue?repo=me/beta')
+      .flush({ generatedAt: 'x', repo: 'me/beta', items: [queueItem(3, 'conflicted')] });
+
+    expect(latest().said.text).toMatch(/^Only 1 pull request to work.* 1 queue out of reach\.$/);
   });
 
   it('leaves the words to the router where the site has no Jev', async () => {

@@ -8,9 +8,9 @@
 }
 
 /* The playlist keeps the far end of every page's foot, clear of the page's own
-   tools at the near end. Only the bar takes the pointer. The bar gets the
-   screen's height as it is now, toolbars and all, less the playlist's foot and
-   a margin above, as --playlist-room. */
+   tools at the near end. Only the bar takes the pointer. The bar gets the height
+   the browser's toolbars leave showing, less the playlist's foot and a margin
+   above, as --playlist-room. */
 .playlist {
   --playlist-foot: calc(18px + env(safe-area-inset-bottom, 0px));
   --playlist-room: calc(100dvh - var(--playlist-foot) - 16px);

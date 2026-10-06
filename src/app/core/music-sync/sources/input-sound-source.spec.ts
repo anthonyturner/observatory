@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { NoAudioError } from './audio-tap';
+import { CaptureUnsupportedError, NoAudioError } from './audio-tap';
 import { InputSoundSource } from './input-sound-source';
 import { MEDIA_DEVICES } from './media-devices';
 
@@ -151,5 +151,6 @@ describe('InputSoundSource', () => {
     const input = setup(phone);
     await settle();
     expect(input.options()).toEqual([]);
+    await expect(input.open('input')).rejects.toBeInstanceOf(CaptureUnsupportedError);
   });
 });

@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { AudioTap, NoAudioError, tapOf } from './audio-tap';
+import { AudioTap, CaptureUnsupportedError, NoAudioError, tapOf } from './audio-tap';
 import { UNPROCESSED_AUDIO } from './display-audio';
 import { MEDIA_DEVICES, canShareDisplay } from './media-devices';
 import { detailOf, optionIdOf } from './option-id';
@@ -49,7 +49,7 @@ export class InputSoundSource implements SoundSource {
   readonly id = SOURCE_ID;
   readonly name = 'Input device';
   readonly guide: SoundGuide = {
-    ask: 'The browser asks to use an audio input: allow it. For the computer’s own sound pick a loopback input, such as Stereo Mix (Windows: Sound settings › Recording, show disabled devices, enable it), VB-Audio Virtual Cable or BlackHole on a Mac; a microphone hears the room. Nothing is recorded or sent.',
+    ask: 'The browser asks to use an audio input: allow it. For the computer’s own sound pick a loopback input, such as Stereo Mix (Windows: Sound settings › More sound settings › Recording, show disabled devices, enable it), VB-Audio Virtual Cable or BlackHole on a Mac; a microphone hears the room. Nothing is recorded or sent.',
     silent: 'That input is missing or in use by another app',
   };
   readonly options: Signal<readonly SoundOption[]> = computed(() => {
@@ -72,7 +72,7 @@ export class InputSoundSource implements SoundSource {
    *  to the speakers, so a microphone cannot feed back. */
   async open(optionId: string): Promise<AudioTap> {
     const media = this.media;
-    if (!this.isUsable || !media) throw new NoAudioError();
+    if (!this.isUsable || !media) throw new CaptureUnsupportedError();
     const deviceId = detailOf(optionId);
     const audio: MediaTrackConstraints = deviceId
       ? { ...UNPROCESSED_AUDIO, deviceId: { exact: deviceId } }

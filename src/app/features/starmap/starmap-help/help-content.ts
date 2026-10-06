@@ -64,6 +64,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Merge plan numbers the stars in the order that needs the fewest rebases and lights the path through them; the list says what each merge will force to rebase. Stacked branches follow their base, and branches that already conflict go last.',
       ],
       [
+        'Next star',
+        'Next star, or the n key, flies to the one pull request to work next and opens it: from the most blocked group, the merge plan’s first step when it is there, else the one idle longest, with a quick win breaking a tie. Drafts, snoozed and dismissed ones are skipped. Rest the pointer on the button to see which it will open, and why.',
+      ],
+      [
         'Fog',
         'Fog means what you see may be out of date. The sky fogs over as its data ages: clear for six hours, full by three days. If refreshing fails, it fogs at once, thinly, and thickens to full an hour after the last good read, so a broken feed never passes for a quiet one. Issues, Usage and Logs each fog by the age of their own data. The badge by the title says how old it is; Refresh clears it.',
       ],

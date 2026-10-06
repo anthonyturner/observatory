@@ -335,6 +335,44 @@ describe('StarmapPage', () => {
     expect(button('Dismiss')).toBeUndefined();
   });
 
+  describe('Next star', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('names the pick, flies to it with its card, then opens its screen', () => {
+      const { fixture, element, http, button } = render();
+      expect(button('Next star')?.title).toBe(
+        'Next star (n): #7 Change 7 — Checks failing, idle 2 days',
+      );
+
+      button('Next star')?.click();
+      fixture.detectChanges();
+      expect(element.querySelector('.prno')?.textContent).toBe('#7');
+      expect(element.querySelector('app-pr-screen')).toBeNull();
+
+      vi.advanceTimersByTime(900);
+      fixture.detectChanges();
+      http.expectOne('/api/pull?repo=me/a&number=7');
+      http.expectOne('/api/edit?repo=me/a&number=7');
+      http.expectOne('/api/labels?repo=me/a');
+      expect(element.querySelector('app-pr-screen')).not.toBeNull();
+    });
+
+    it('goes on n, and opens no screen once its card is closed in the meantime', () => {
+      const { fixture, element } = render();
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'n' }));
+      fixture.detectChanges();
+      expect(element.querySelector('.prno')?.textContent).toBe('#7');
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      vi.advanceTimersByTime(900);
+      fixture.detectChanges();
+
+      expect(element.querySelector('.prno')).toBeNull();
+      expect(element.querySelector('app-pr-screen')).toBeNull();
+    });
+  });
+
   it('opens a pull request’s screen, or an issue’s window, from the link', () => {
     expect(render(null, { pr: '7' }).element.querySelector('app-pr-screen')).not.toBeNull();
     TestBed.resetTestingModule();

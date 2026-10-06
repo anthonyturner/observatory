@@ -289,10 +289,11 @@ export class StarmapPage {
     return replay ? replay.items.map((i) => this.replayed(i)) : this.items();
   });
   protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
-  /** Stacked pull requests: what each is stacked on, what is stacked on it, and a merged base. */
+  /** Stacked pull requests, snoozed and dismissed ones included, as the crew's API reads them:
+   *  what each is stacked on, what is stacked on it, and a merged base. */
   protected readonly stacks = computed((): Stacks => {
     if (this.memory.replay()) return NO_STACKS;
-    return stacksOf(this.items(), this.ledger.ledger()?.mergedBranches ?? []);
+    return stacksOf(this.report()?.items ?? [], this.ledger.ledger()?.mergedBranches ?? []);
   });
   /** The sky's news, as its layer reads it. */
   protected readonly skyNews = computed(() => {

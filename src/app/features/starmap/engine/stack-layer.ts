@@ -52,8 +52,8 @@ export function chainLinks(x0: number, y0: number, x1: number, y1: number): Chai
  * Stacked pull requests: a chain from each to the open pull request it merges
  * into, with a glint running toward the base, and a broken chain on one whose
  * base has merged, where a crew can update it. Drawn flat over both renderers,
- * in screen pixels, so it cannot be mistaken for a collision thread, a binary's
- * twisted strands, or the merge plan's gold path.
+ * in screen pixels. Its links set it apart from a collision thread, a binary's
+ * twisted strands and the merge plan's gold path.
  */
 export class StackLayer implements SkyLayer {
   links: readonly StackLink[] = [];

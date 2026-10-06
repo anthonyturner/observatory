@@ -4,6 +4,7 @@ import { HelpState } from '../../../shared/help/help-state';
 import { Chart } from '../starmap-view';
 import { StarmapTools } from './starmap-tools';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
+import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
 
 function render(chart: Chart = 'prs') {
   TestBed.configureTestingModule({
@@ -167,6 +168,25 @@ describe('StarmapTools', () => {
 
   it('offers the threshold only over the queue', () => {
     expect(render('logs').element.querySelector('.hole')).toBeNull();
+  });
+
+  it('sets the work-in-progress limit on the queue, keeping it in range', () => {
+    const { fixture, element } = render();
+    const field = element.querySelector<HTMLInputElement>('.wip input');
+    expect(field?.value).toBe('8');
+
+    if (field) field.value = '5';
+    field?.dispatchEvent(new Event('change'));
+    expect(TestBed.inject(WipLimitSetting).limit()).toBe(5);
+    if (field) field.value = '';
+    field?.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(field?.value).toBe('8');
+  });
+
+  it('offers the limit only over the queue', () => {
+    expect(render('logs').element.querySelector('.wip')).toBeNull();
   });
 
   it('opens help, and folds away, remembering the fold', () => {

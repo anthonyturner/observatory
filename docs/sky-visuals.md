@@ -29,6 +29,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Size             | Idle days                  | `mag` in `layoutQueue`         |
 | Review Queue | Fall to the hole | Idle days past a threshold | `fallOf`, `placeByHole`        |
 | Review Queue | Crew ship        | A crew run on the PR       | `crewPose(mark, clock)`        |
+| Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 
 ## Orrery worlds
 
@@ -269,6 +270,16 @@ like the gas disc; with motion off it is parked up and to the right. When the
 run ends the ship flies off over 4 s and a green tick (done) or red cross (any
 other ending) stays by the star for 10 minutes. There is no 3D model: the ship
 stays a few pixels long at every zoom so it reads as a marker.
+
+### Comet fade (data: open work past a limit)
+
+`wipCheck(items, limit)` in `wip-limit/wip-check.ts` counts the live queue's
+open pull requests that are not drafts; snoozed and dismissed ones still count.
+Past the limit (8, set per browser with **wip** in the tools, `WipLimitSetting`,
+1 to 50), `CometLayer` draws the comets, their tails and labels at 30% opacity
+(`FADED_ALPHA`) and the page shows a note under the search. It is a nudge only:
+a faded comet still takes hover and clicks, and getting back within the limit,
+by a refresh or a raised limit, brightens them again.
 
 ## Changing a visual
 

@@ -1,4 +1,5 @@
 import { AgentRun } from '../../../../core/agent-usage/agent-usage-document';
+import { median } from '../../../../core/stats/median';
 import { formatTokens } from '../../../../core/usage/usage-format';
 import { ChartLine, ChartText, tenth } from '../../../../shared/charts/chart-marks';
 import { STANDARD_WINDOW, formatMinutes, groupTotals, niceCeiling } from './agent-stats';
@@ -50,12 +51,6 @@ const TICKS = 4;
 /** Dots in a row spread a little up and down, so a crowd still shows its size. */
 const JITTER = [0, -6, 6, -3, 3, -8, 8, -1.5, 1.5];
 
-const medianOf = (values: readonly number[]): number => {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-};
-
 /** B: each run at its peak context, by agent, with each agent's median. */
 export function contextChart(runs: readonly AgentRun[]): ContextChart {
   const totals = groupTotals(runs);
@@ -71,12 +66,12 @@ export function contextChart(runs: readonly AgentRun[]): ContextChart {
     labelX: LEFT - 12,
     rows: totals.map((each, index) => {
       const y = TOP + index * ROW + ROW / 2;
-      const median = x(medianOf(each.runs.map((run) => run.peakContext)));
+      const medianX = x(median(each.runs.map((run) => run.peakContext)) ?? 0);
       return {
         id: each.group.id,
         label: each.group.label,
         y,
-        median: { x1: median, x2: median, y1: y - 11, y2: y + 11 },
+        median: { x1: medianX, x2: medianX, y1: y - 11, y2: y + 11 },
       };
     }),
     dots: totals.flatMap((each, index) =>

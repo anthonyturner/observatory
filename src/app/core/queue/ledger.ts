@@ -7,6 +7,14 @@ export interface LedgerRow {
   readonly closed: readonly number[];
 }
 
+/** A pull request that merged or closed in the ledger's window, timed to the second. */
+export interface FinishedPull {
+  readonly number: number;
+  readonly openedAt: number;
+  readonly finishedAt: number;
+  readonly fate: 'merged' | 'closed';
+}
+
 /** A merged pull request's branches: one still stacked on its head needs updating. */
 export interface MergedBranch {
   readonly number: number;
@@ -19,6 +27,7 @@ export interface Ledger {
   readonly generatedAt: string;
   readonly rows: readonly LedgerRow[];
   readonly titles: Readonly<Record<string, string>>;
+  readonly finished: readonly FinishedPull[];
   /** The merges whose branch is finished, newest first. */
   readonly mergedBranches: readonly MergedBranch[];
 }
@@ -44,6 +53,19 @@ function parseRow(value: unknown): LedgerRow | null {
   };
 }
 
+const timeOf = (value: unknown): number => (typeof value === 'string' ? Date.parse(value) : NaN);
+
+/** One finished pull request, or null if it is not one or finished before it opened. */
+function parseFinished(value: unknown): FinishedPull | null {
+  if (!isObject(value)) return null;
+  const { number, fate } = value;
+  const openedAt = timeOf(value['openedAt']);
+  const finishedAt = timeOf(value['finishedAt']);
+  if (!isNumber(number) || (fate !== 'merged' && fate !== 'closed')) return null;
+  if (!Number.isFinite(openedAt) || !(finishedAt >= openedAt)) return null;
+  return { number, openedAt, finishedAt, fate };
+}
+
 function parseMergedBranch(value: unknown): MergedBranch | null {
   if (!isObject(value)) return null;
   const { number, head, base } = value;
@@ -66,6 +88,9 @@ export function parseLedger(value: unknown): Ledger | null {
     generatedAt: value['generatedAt'],
     rows: value['rows'].map(parseRow).filter((row): row is LedgerRow => row !== null),
     titles,
+    finished: Array.isArray(value['finished'])
+      ? value['finished'].map(parseFinished).filter((pull): pull is FinishedPull => pull !== null)
+      : [],
     mergedBranches: merges
       .map(parseMergedBranch)
       .filter((merge): merge is MergedBranch => merge !== null),

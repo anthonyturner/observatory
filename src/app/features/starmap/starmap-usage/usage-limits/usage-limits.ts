@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { UsageLimits } from '../../../../core/usage/usage-document';
 import { pastWeeksChart } from '../charts/past-weeks-chart';
-import { UsagePastWeeks } from '../charts/usage-past-weeks/usage-past-weeks';
+import { UsageColumnChart } from '../charts/usage-column-chart/usage-column-chart';
 import { UsageWeekChart } from '../charts/usage-week-chart/usage-week-chart';
 import { weekChart } from '../charts/week-chart';
 import { limitTiles } from '../limit-tiles';
@@ -18,7 +18,7 @@ export const RECORD_LINE =
  *  reading by reading, and how far earlier weeks got. */
 @Component({
   selector: 'app-usage-limits',
-  imports: [UsageSection, UsageTiles, UsageWeekChart, UsagePastWeeks],
+  imports: [UsageSection, UsageTiles, UsageWeekChart, UsageColumnChart],
   templateUrl: './usage-limits.html',
   styleUrl: './usage-limits.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

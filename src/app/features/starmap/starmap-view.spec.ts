@@ -17,18 +17,21 @@ describe('chartOf', () => {
     expect(chartOf('logs')).toBe('logs');
     expect(chartOf('issues/closed')).toBe('issues');
     expect(chartOf('usage')).toBe('usage');
+    expect(chartOf('retro')).toBe('retro');
     expect(fragmentOf('prs')).toBeUndefined();
     expect(fragmentOf('logs')).toBe('logs');
   });
 
   it('titles each screen and knows which have no sky', () => {
-    expect(['prs', 'logs', 'issues', 'usage'].map((c) => titleOf(chartOf(c)))).toEqual([
+    expect(['prs', 'logs', 'issues', 'usage', 'retro'].map((c) => titleOf(chartOf(c)))).toEqual([
       'Review Queue',
       'Log Sky',
       'Issues',
       'Usage',
+      'Weekly retro',
     ]);
     expect(isListOnly('usage')).toBe(true);
+    expect(isListOnly('retro')).toBe(true);
     expect(isListOnly('prs')).toBe(false);
   });
 });

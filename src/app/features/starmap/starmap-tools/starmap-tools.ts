@@ -25,6 +25,7 @@ const CHARTS: readonly { readonly id: Chart; readonly label: string }[] = [
   { id: 'logs', label: 'Logs' },
   { id: 'issues', label: 'Issues' },
   { id: 'usage', label: 'Usage' },
+  { id: 'retro', label: 'Retro' },
 ];
 
 /**

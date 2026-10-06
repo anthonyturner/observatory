@@ -1,0 +1,36 @@
+@if (waits(); as waits) {
+  <app-usage-bars
+    heading="Where they waited"
+    small="hours, pull requests finished this week"
+    [note]="waits.note"
+    [items]="waits.items"
+    [width]="width()"
+    label="Hours this week's finished pull requests spent in each state"
+  />
+  @if (cycle(); as cycle) {
+    <app-usage-section heading="Cycle time" [small]="cycleSmall">
+      <app-usage-column-chart
+        [chart]="cycle"
+        label="Median hours from open to merge, week by week"
+      />
+    </app-usage-section>
+  }
+  @if (byAgent(); as rows) {
+    @if (rows.length) {
+      <app-usage-bars
+        heading="By agent"
+        small="merged this week"
+        note="From the agent report cards' handoffs. Hover a bar for closes and the median time to merge."
+        [items]="rows"
+        [width]="width()"
+        label="Pull requests merged this week by agent"
+      />
+    }
+  }
+} @else {
+  <p class="none">
+    No merged or closed pull requests read yet. The retro reads them from GitHub with the queue;
+    press <code>Refresh</code> if this stays.
+  </p>
+}
+<app-usage-tip [tip]="tip()" />

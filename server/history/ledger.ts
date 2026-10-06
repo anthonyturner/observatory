@@ -1,4 +1,5 @@
 import type { QueueReader } from '../github/queue-reader.ts';
+import type { Fate } from './frames.ts';
 
 /** When a pull request opened and closed: all the ledger's rows count. */
 export interface TimedPull {
@@ -53,6 +54,14 @@ export interface LedgerRow {
   readonly closed: readonly number[];
 }
 
+/** A pull request that merged or closed in the window, timed to the second rather than the day. */
+export interface FinishedPull {
+  readonly number: number;
+  readonly openedAt: string;
+  readonly finishedAt: string;
+  readonly fate: Fate;
+}
+
 /** A merged pull request's branches: one still stacked on its head needs updating. */
 export interface MergedBranch {
   readonly number: number;
@@ -67,6 +76,7 @@ export interface Ledger {
   readonly rows: readonly LedgerRow[];
   /** Titles of the pull requests the rows mention, for the timeline's tip. */
   readonly titles: Readonly<Record<string, string>>;
+  readonly finished: readonly FinishedPull[];
   /** The window's merges from this repository's own branches, newest first. */
   readonly mergedBranches: readonly MergedBranch[];
 }
@@ -101,6 +111,25 @@ const placed = (pull: TimedPull): Placed => ({
   closedAt: pull.state === 'OPEN' ? null : pull.mergedAt || pull.closedAt || null,
 });
 
+/** The merges and unmerged closes the rows list, oldest first. */
+const finishedIn = (prs: readonly Placed[], rows: readonly LedgerRow[]): FinishedPull[] => {
+  const listed = new Set(rows.flatMap((row) => [...row.merged, ...row.closed]));
+  return prs
+    .flatMap((p): FinishedPull[] =>
+      listed.has(p.pr) && p.closedAt
+        ? [
+            {
+              number: p.pr,
+              openedAt: p.openedAt,
+              finishedAt: p.closedAt,
+              fate: p.mergedAt ? 'merged' : 'closed',
+            },
+          ]
+        : [],
+    )
+    .sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
+};
+
 /**
  * The merges whose branch is finished, so a pull request still stacked on it
  * needs updating. A fork's branch is not this repository's, and a branch that
@@ -131,7 +160,7 @@ export function ledgerRows(
   pulls: readonly TimedPull[],
   now: number,
   days = LEDGER_DAYS,
-): { rows: LedgerRow[]; titles: Record<string, string> } {
+): { rows: LedgerRow[]; titles: Record<string, string>; finished: FinishedPull[] } {
   const prs = pulls.map(placed);
   const since = now - days * DAY_MS;
   const rows: LedgerRow[] = [];
@@ -156,7 +185,7 @@ export function ledgerRows(
   const titles = Object.fromEntries(
     prs.filter((p) => named.has(p.pr)).map((p) => [String(p.pr), p.title]),
   );
-  return { rows, titles };
+  return { rows, titles, finished: finishedIn(prs, rows) };
 }
 
 /**
@@ -183,12 +212,13 @@ export async function ledgerReport(
     state: 'OPEN',
   }));
   const byNumber = new Map<number, TimedPull>([...openNow, ...touched].map((p) => [p.number, p]));
-  const { rows, titles } = ledgerRows([...byNumber.values()], now, days);
+  const { rows, titles, finished } = ledgerRows([...byNumber.values()], now, days);
   return {
     generatedAt: new Date(now).toISOString(),
     days,
     rows,
     titles,
+    finished,
     mergedBranches: mergedBranchesOf(touched),
   };
 }

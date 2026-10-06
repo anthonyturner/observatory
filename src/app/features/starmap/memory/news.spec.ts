@@ -54,6 +54,7 @@ describe('knownFates', () => {
       generatedAt: 'x',
       rows: [{ day: '2026-09-25', open: 1, opened: [], merged: [7], closed: [8] }],
       titles: {},
+      finished: [],
       mergedBranches: [],
     };
     const frames = [

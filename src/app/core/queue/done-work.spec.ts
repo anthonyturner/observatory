@@ -9,6 +9,7 @@ const ledger: Ledger = {
     { day: '2026-10-04', open: 2, opened: [], merged: [5], closed: [6] },
   ],
   titles: { '4': 'Add the dial', '5': 'Fix the sun', '6': 'Abandoned idea' },
+  finished: [],
   mergedBranches: [],
 };
 

@@ -15,6 +15,13 @@ export interface TipAt {
   readonly pointer: Pointer;
 }
 
+/** The tooltip for the chart mark under the pointer: the nearest `data-tip`, or null when none. */
+export function tipAt(event: PointerEvent): TipAt | null {
+  const target = event.target instanceof Element ? event.target : null;
+  const text = target?.closest('[data-tip]')?.getAttribute('data-tip');
+  return text ? { text, pointer: { x: event.clientX, y: event.clientY } } : null;
+}
+
 /** The one tooltip every usage chart shares, following the pointer. It is
  *  placed after it renders, since where it fits depends on its own size. */
 @Component({

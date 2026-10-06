@@ -1,7 +1,7 @@
 import { BUCKETS, QUICK_COLOUR, SkyItem, isQuick } from './engine/sky-model';
 
-/** The star map's screens: the review queue, the log sky, issues and usage. */
-export type Chart = 'prs' | 'logs' | 'issues' | 'usage';
+/** The star map's screens: the review queue, the log sky, issues, usage and the weekly retro. */
+export type Chart = 'prs' | 'logs' | 'issues' | 'usage' | 'retro';
 export type SkyView = 'map' | 'list';
 
 /** The address fragment names the screen, as pr-starmap's hash did. */
@@ -9,6 +9,7 @@ export function chartOf(fragment: string | null): Chart {
   if (fragment === 'logs') return 'logs';
   if (fragment?.startsWith('issues')) return 'issues';
   if (fragment === 'usage') return 'usage';
+  if (fragment === 'retro') return 'retro';
   return 'prs';
 }
 
@@ -20,12 +21,13 @@ const TITLES: Readonly<Record<Chart, string>> = {
   logs: 'Log Sky',
   issues: 'Issues',
   usage: 'Usage',
+  retro: 'Weekly retro',
 };
 
 export const titleOf = (chart: Chart): string => TITLES[chart];
 
-/** Usage is a list with no sky behind it. */
-export const isListOnly = (chart: Chart): boolean => chart === 'usage';
+/** Usage and the retro are lists with no sky behind them. */
+export const isListOnly = (chart: Chart): boolean => chart === 'usage' || chart === 'retro';
 
 /** One chip of the legend. */
 export interface LegendChip {

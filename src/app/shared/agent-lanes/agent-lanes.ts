@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { AgentUsageFeed } from '../../core/agent-usage/agent-usage-feed';
-import { TipAt, UsageTip } from '../charts/usage-tip/usage-tip';
+import { TipAt, UsageTip, tipAt } from '../charts/usage-tip/usage-tip';
 import { issueFromBranch, lanesChart, runsFor } from './agent-lanes-chart';
 
 /** D: how one change went through the agent pipeline. Draws nothing when no
@@ -179,8 +179,6 @@ export class AgentLanes {
 
   /** A bar's `data-tip` shows beside the pointer. */
   protected pointAt(event: PointerEvent): void {
-    const target = event.target instanceof Element ? event.target : null;
-    const text = target?.closest('[data-tip]')?.getAttribute('data-tip');
-    this.tip.set(text ? { text, pointer: { x: event.clientX, y: event.clientY } } : null);
+    this.tip.set(tipAt(event));
   }
 }

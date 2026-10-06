@@ -17,7 +17,7 @@ import { AgentReminders } from '../../../core/agent-usage/agent-reminders';
 import { Weekday } from '../../../core/agent-usage/agent-review-week';
 import { AgentUsageFeed, AgentUsageState } from '../../../core/agent-usage/agent-usage-feed';
 import { formatTokens } from '../../../core/usage/usage-format';
-import { TipAt, UsageTip } from '../../../shared/charts/usage-tip/usage-tip';
+import { TipAt, UsageTip, tipAt } from '../../../shared/charts/usage-tip/usage-tip';
 import { TopLink } from '../../../shared/section-jump/top-link';
 import { projectGrid } from './charts/agent-grid';
 import { agentOrrery } from './charts/agent-orrery';
@@ -214,8 +214,6 @@ export class AgentsSection {
 
   /** Any chart mark with a `data-tip` shows its text beside the pointer. */
   protected pointAt(event: PointerEvent): void {
-    const target = event.target instanceof Element ? event.target : null;
-    const text = target?.closest('[data-tip]')?.getAttribute('data-tip');
-    this.tip.set(text ? { text, pointer: { x: event.clientX, y: event.clientY } } : null);
+    this.tip.set(tipAt(event));
   }
 }

@@ -11,7 +11,7 @@
     }
     @if (pastWeeks(); as chart) {
       <p class="cap">Earlier weeks, as far as each got before its reset</p>
-      <app-usage-past-weeks [chart]="chart" />
+      <app-usage-column-chart [chart]="chart" label="Weekly limit used in earlier weeks" />
     }
   </app-usage-section>
 } @else {

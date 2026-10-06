@@ -1,6 +1,6 @@
 import { QueueItem } from '../../core/queue/queue-report';
 import { skyItemOf, skyPairOf } from './sky-items';
-import { filterFor } from './starmap-sky/starmap-sky';
+import { SPRINT_FILTER, filterFor } from './starmap-sky/starmap-sky';
 import { SkyStar } from './engine/sky-model';
 
 const item: QueueItem = {
@@ -62,5 +62,12 @@ describe('filterFor', () => {
     expect(filterFor('failing')?.(star('failing', false))).toBe(true);
     expect(filterFor('failing')?.(star('unknown', false))).toBe(false);
     expect(filterFor('quick')?.(star('unreviewed', true))).toBe(true);
+  });
+
+  it('lights only a review sprint’s pull requests', () => {
+    const pull = (pr: number) => ({ item: { pr } }) as unknown as SkyStar;
+    const lit = filterFor(SPRINT_FILTER, [4, 5]);
+    expect(lit?.(pull(5))).toBe(true);
+    expect(lit?.(pull(6))).toBe(false);
   });
 });

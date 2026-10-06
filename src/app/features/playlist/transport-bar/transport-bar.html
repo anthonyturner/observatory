@@ -1,4 +1,4 @@
-<div class="above" data-playlist-above [class.above--large]="isVideoLarge()">
+<div class="above" data-playlist-above [class.above--large]="videoSize.isLarger()">
   @if (listOpen()) {
     <app-track-list
       id="playlist-tracks"
@@ -9,20 +9,16 @@
       (favoriteToggled)="favorites.toggle($event)"
     />
   }
-  <div class="card" [class.card--live]="isCardShown()" [class.card--large]="isVideoLarge()">
-    <!-- YouTube replaces whatever is inside the screen, so the button sits beside it. -->
+  <div
+    class="card"
+    [class.card--live]="isCardShown()"
+    [class.card--small]="videoSize.isSmaller()"
+    [class.card--large]="videoSize.isLarger()"
+  >
+    <!-- YouTube replaces whatever is inside the screen, so the buttons sit beside it. -->
     <div #screen class="screen"></div>
     @if (isCardShown()) {
-      <button
-        type="button"
-        class="enlarge"
-        aria-label="Bigger video"
-        [attr.aria-pressed]="isVideoLarge()"
-        [title]="isVideoLarge() ? 'Back to the usual size' : 'Make the video bigger'"
-        (click)="isVideoLarge.set(!isVideoLarge())"
-      >
-        <span aria-hidden="true">{{ isVideoLarge() ? '⤡' : '⤢' }}</span>
-      </button>
+      <app-video-size-buttons />
     }
   </div>
   <p class="notice" aria-live="polite">{{ transfer.notice() }}</p>

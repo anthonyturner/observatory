@@ -35,7 +35,7 @@ function render(chart: Chart = 'prs') {
 describe('StarmapTools', () => {
   beforeEach(() => localStorage.clear());
 
-  it('has pr-starmap’s groups, in its order', () => {
+  it('groups its controls by purpose, in order', () => {
     const { element } = render();
 
     expect(
@@ -44,10 +44,14 @@ describe('StarmapTools', () => {
       ),
     ).toEqual([
       ['Pull requests', 'Logs', 'Issues', 'Usage'],
-      ['−', '+', 'Fit'],
       ['Starmap', 'List'],
-      ['Next star', 'Collisions', 'Merge plan', 'Agents', 'Done'],
-      ['Refresh', 'Motion on', 'Sound off', '?'],
+      ['−', '+', 'Fit'],
+      ['Next star', 'Sprint'],
+      ['Collisions'],
+      ['Merge plan', 'Agents', 'Done'],
+      ['Refresh'],
+      ['Motion on', 'Sound off'],
+      ['?'],
     ]);
     expect(element.querySelector('.hint')?.textContent).toBe(
       'drag · scroll · hover or click a star',
@@ -74,6 +78,27 @@ describe('StarmapTools', () => {
     expect(button('Fit')).toBeDefined();
   });
 
+  it('keeps only what a list uses over the list', () => {
+    const { fixture, element } = render();
+    fixture.componentRef.setInput('view', 'list');
+    fixture.detectChanges();
+
+    expect(
+      Array.from(element.querySelectorAll('.toolgroup')).map((g) =>
+        Array.from(g.querySelectorAll('button')).map((b) => b.textContent?.trim()),
+      ),
+    ).toEqual([
+      ['Pull requests', 'Logs', 'Issues', 'Usage'],
+      ['Starmap', 'List'],
+      ['Next star', 'Sprint'],
+      ['Refresh'],
+      ['Motion on', 'Sound off'],
+      ['?'],
+    ]);
+    expect(element.querySelector('.hole')).toBeNull();
+    expect(element.querySelector('.hint')).toBeNull();
+  });
+
   it('offers Next star only on the queue, naming the pick and why', () => {
     const { fixture, button } = render();
     let asked = 0;
@@ -94,6 +119,24 @@ describe('StarmapTools', () => {
     fixture.componentRef.setInput('chart', 'logs');
     fixture.detectChanges();
     expect(button('Next star')).toBeUndefined();
+  });
+
+  it('asks for the review sprint, and leaves a running one to its panel', () => {
+    const { fixture, button } = render();
+    let asked = 0;
+    fixture.componentInstance.sprint.subscribe(() => asked++);
+    expect(button('Sprint')?.getAttribute('aria-pressed')).toBe('false');
+
+    button('Sprint')?.click();
+    fixture.componentRef.setInput('sprintPhase', 'setup');
+    fixture.detectChanges();
+    expect(asked).toBe(1);
+    expect(button('Sprint')?.getAttribute('aria-pressed')).toBe('true');
+
+    fixture.componentRef.setInput('sprintPhase', 'running');
+    fixture.detectChanges();
+    expect(button('Sprint')?.disabled).toBe(true);
+    expect(button('Sprint')?.title).toBe('A review sprint is on: its panel ends it');
   });
 
   it('shows the volume slider only while the sound is on', () => {

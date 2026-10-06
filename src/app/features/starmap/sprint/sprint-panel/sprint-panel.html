@@ -1,0 +1,74 @@
+<aside class="sprint" aria-labelledby="sprinttitle">
+  <header>
+    <h2 id="sprinttitle">{{ phase() === 'summary' ? 'Sprint over' : 'Review sprint' }}</h2>
+    @if (phase() !== 'running') {
+      <button type="button" class="x" aria-label="Close the sprint" (click)="closed.emit()">
+        &times;
+      </button>
+    }
+  </header>
+
+  @switch (phase()) {
+    @case ('setup') {
+      <p class="sub">
+        Pick a time box. The queue fills it with pull requests whose size fits, in queue order.
+      </p>
+      <div class="lengths" role="group" aria-label="Sprint length">
+        @for (each of optionViews(); track each.option.minutes) {
+          <button
+            type="button"
+            class="length"
+            [title]="each.title"
+            [disabled]="!each.option.picks.length"
+            (click)="start.emit(each.option)"
+          >
+            <span class="min">{{ each.label }}</span>
+            <span class="n">{{ each.count }}</span>
+          </button>
+        }
+      </div>
+    }
+    @case ('running') {
+      <div class="clock" role="timer">
+        <span class="left">{{ countdown() }}</span>
+        <span class="word">&nbsp;left</span>
+      </div>
+      <div class="track" aria-hidden="true">
+        <div class="bar" [style.width.%]="elapsedPercent()"></div>
+      </div>
+      <ul class="rows">
+        @for (row of rowViews(); track row.pr) {
+          <li>
+            <button type="button" [class]="'row ' + row.mark" (click)="go.emit(row.pr)">
+              <span class="dot" aria-hidden="true"></span>
+              <span class="num">#{{ row.pr }}</span>
+              <span class="title">{{ row.title }}</span>
+              <span class="mark">{{ row.label }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+      <button type="button" class="act" (click)="end.emit()">End sprint</button>
+    }
+    @case ('summary') {
+      <p class="sub" role="status">{{ summary().line }}</p>
+      @for (group of summary().groups; track group.name) {
+        <section>
+          <h3>{{ group.name }}</h3>
+          <ul class="rows">
+            @for (row of group.rows; track row.pr) {
+              <li>
+                <button type="button" [class]="'row ' + group.mark" (click)="go.emit(row.pr)">
+                  <span class="dot" aria-hidden="true"></span>
+                  <span class="num">#{{ row.pr }}</span>
+                  <span class="title">{{ row.title }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+      <button type="button" class="act" (click)="closed.emit()">Done</button>
+    }
+  }
+</aside>

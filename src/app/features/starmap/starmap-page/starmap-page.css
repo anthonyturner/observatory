@@ -89,8 +89,9 @@
   }
 }
 
-/* Beside the playlist while it leaves room, wrapping short of it; above it otherwise. */
+/* Beside the playlist while it leaves room, wrapping short of it; above it otherwise.
+   An open panel down the right edge reaches the tools' row, so they wrap short of it too. */
 .hud.bottom {
   bottom: var(--playlist-clear-bottom, 0px);
-  padding-right: var(--playlist-clear-right, 20px);
+  padding-right: max(var(--playlist-clear-right, 20px), calc(var(--panel-clear, 0px) + 10px));
 }

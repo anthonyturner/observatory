@@ -417,6 +417,43 @@ describe('StarmapPage', () => {
     });
   });
 
+  it('runs a review sprint: its stars lit, opened ones reviewed, then a summary', () => {
+    const { fixture, element, button } = render();
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+    const starting = (words: string) =>
+      Array.from(element.querySelectorAll<HTMLButtonElement>('app-sprint-panel button')).find((b) =>
+        b.textContent?.replace(/\s+/g, ' ').trim().startsWith(words),
+      );
+
+    button('Sprint')?.click();
+    fixture.detectChanges();
+    expect(starting('15 min')?.textContent).toContain('2 PRs');
+
+    starting('15 min')?.click();
+    fixture.detectChanges();
+    expect(sky.filter()).toBe('sprint');
+    expect(sky.litPrs()).toEqual([7, 9]);
+    expect(element.querySelector('[role="timer"] .left')?.textContent).toBe('15:00');
+    expect(button('Sprint')?.disabled).toBe(true);
+
+    starting('#9')?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-pr-screen')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    starting('End sprint')?.click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('app-sprint-panel [role="status"]')?.textContent).toBe(
+      '0 merged · 1 reviewed · 1 skipped',
+    );
+    starting('Done')?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-sprint-panel')).toBeNull();
+    expect(sky.filter()).toBeNull();
+  });
+
   it('opens a pull request’s screen, or an issue’s window, from the link', () => {
     expect(render(null, { pr: '7' }).element.querySelector('app-pr-screen')).not.toBeNull();
     TestBed.resetTestingModule();

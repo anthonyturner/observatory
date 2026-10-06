@@ -160,6 +160,11 @@ h2 {
   outline-offset: 2px;
 }
 
+/* Holds only comments when no crew can be sent from here, and takes no gap then. */
+.crew:empty {
+  display: none;
+}
+
 .cardacts .primary {
   border-color: var(--card-primary-edge);
   background: var(--starmap-press);

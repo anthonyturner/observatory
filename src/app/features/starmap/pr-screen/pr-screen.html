@@ -59,6 +59,7 @@
       }
     </section>
   }
+  <app-crew-control class="crew" [repo]="repo()" [number]="number()" [bucket]="shownBucket()" />
   @if (detail(); as pull) {
     <app-merge-box [detail]="pull" (saved)="refresh()" />
   }

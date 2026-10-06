@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
 import { sinceLookLabel } from '../../../core/queue/since-look';
 import { Draggable } from '../../../shared/draggable/draggable';
+import { CrewControl } from '../crew-control/crew-control';
 import { isPlainClick } from '../../issues/issue-list';
 import { BY_ID } from '../engine/sky-model';
 import { CardContext, cardFacts } from './card-facts';
@@ -15,12 +16,13 @@ const CARD_PLACE_KEY = 'observatory.cardPos';
  */
 @Component({
   selector: 'app-star-card',
-  imports: [Draggable],
+  imports: [Draggable, CrewControl],
   templateUrl: './star-card.html',
   styleUrl: './star-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StarCard {
+  readonly repo = input.required<string>();
   readonly item = input.required<QueueItem>();
   readonly context = input.required<CardContext>();
   /** A visitor to the hosted preview cannot change anything. */
@@ -34,7 +36,8 @@ export class StarCard {
   readonly issue = output<number>();
 
   protected readonly placeKey = CARD_PLACE_KEY;
-  protected readonly bucket = computed(() => BY_ID.get(shownBucket(this.item())));
+  protected readonly shown = computed(() => shownBucket(this.item()));
+  protected readonly bucket = computed(() => BY_ID.get(this.shown()));
   protected readonly facts = computed(() => cardFacts(this.item(), this.context()));
   /** What changed since it was last looked at; a past refresh on screen says nothing of now. */
   protected readonly sinceLook = computed(() => {

@@ -60,6 +60,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Agents opens a report card per agent: how many of its pull requests merged, are still open, conflict, or close no issue, and how long a merge takes. Each says whether its attribution is named, inferred or missing. Click a card to light only that agent’s stars.',
       ],
       [
+        'Crew',
+        'On your own machine, a conflicted or failing pull request’s card and screen offer Send crew: a Claude Code task merges the base into a conflicted branch, or fixes failing checks, and pushes to the pull request’s branch. It never merges the pull request. A small ship circles the star while the crew works (parked beside it when motion is off), then flies off, leaving a green tick or a red cross. One task runs at a time; the card shows how the crew stands and links to its log on Home.',
+      ],
+      [
         'Plan',
         'Merge plan numbers the stars in the order that needs the fewest rebases and lights the path through them; the list says what each merge will force to rebase. Stacked branches follow their base, and branches that already conflict go last.',
       ],

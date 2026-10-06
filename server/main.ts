@@ -30,6 +30,7 @@ import { processTreeKiller } from './runner/process-tree.ts';
 import { findClaude } from './runner/claude-command.ts';
 import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
 import { withRunsRoutes } from './runner/runs-routes.ts';
+import { withCrewRoutes } from './crew/crew-routes.ts';
 import { fileStore } from './store/file-store.ts';
 import { storeTriageStore } from './triage/triage-store.ts';
 import { fileHandoffStore } from './agents/handoff-store.ts';
@@ -144,14 +145,18 @@ const server = createApiServer(
               withReaderRoutes(
                 withVoiceRoutes(
                   withAssistant(
-                    withRunsRoutes(
-                      withNewsRoutes(
-                        withArchitectureRoutes(
-                          withAgentSpeechRoutes(ownerRoutes(reads, triage, editor), agentSpeech),
-                          fileArchitecture(),
+                    withCrewRoutes(
+                      withRunsRoutes(
+                        withNewsRoutes(
+                          withArchitectureRoutes(
+                            withAgentSpeechRoutes(ownerRoutes(reads, triage, editor), agentSpeech),
+                            fileArchitecture(),
+                          ),
+                          news,
                         ),
-                        news,
+                        runner,
                       ),
+                      reads,
                       runner,
                     ),
                     assistant,

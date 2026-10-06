@@ -1,11 +1,25 @@
+/* A phone's browser widens the box fixed elements sit in to fit any page wider
+   than the screen, body's overflow-x notwithstanding, and the playlist then hangs
+   off the screen's right and bottom edges. Clipping here keeps the page the
+   screen's width; it starts no scroll box, so sticky headers still work. */
+:host {
+  display: block;
+  overflow-x: clip;
+}
+
 /* The playlist keeps the far end of every page's foot, clear of the page's own
-   tools at the near end. Only the bar takes the pointer. */
+   tools at the near end. Only the bar takes the pointer. The bar gets the height
+   the browser's toolbars leave showing, less the playlist's foot and a margin
+   above, as --playlist-room. */
 .playlist {
+  --playlist-foot: calc(18px + env(safe-area-inset-bottom, 0px));
+  --playlist-room: calc(100dvh - var(--playlist-foot) - 16px);
+
   position: fixed;
   right: 0;
   bottom: 0;
   z-index: 5;
-  padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px));
+  padding: 0 max(20px, env(safe-area-inset-right, 0px)) var(--playlist-foot);
   pointer-events: none;
 }
 
@@ -23,6 +37,7 @@
 @media (max-width: 720px) {
   .playlist {
     left: 0;
-    padding-inline: 16px;
+    padding-inline: max(16px, env(safe-area-inset-left, 0px))
+      max(16px, env(safe-area-inset-right, 0px));
   }
 }

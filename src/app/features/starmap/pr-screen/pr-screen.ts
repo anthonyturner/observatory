@@ -24,6 +24,7 @@ import { checkRows, fileRows } from './sheet-rows/sheet-row';
 import { SheetRows } from './sheet-rows/sheet-rows';
 import { NO_COUNTS, SHEET_TABS, SheetTab, kickerOf, routeOf, tabCounts } from './sheet-view';
 import { AgentLanes } from '../../../shared/agent-lanes/agent-lanes';
+import { CrewControl } from '../crew-control/crew-control';
 
 /** Where the screen is left when dragged, per viewer, as pr-starmap keeps it. */
 const PLACE_KEY = 'queue.sheetPos';
@@ -46,6 +47,7 @@ const TYPING = 'input, textarea, select';
     SheetEditor,
     AgentLanes,
     MergeBox,
+    CrewControl,
   ],
   providers: [PullDetailFeed, PullEdits],
   templateUrl: './pr-screen.html',
@@ -84,7 +86,7 @@ export class PrScreen {
     return state.status === 'ready' ? state.detail : null;
   });
   protected readonly unreachable = computed(() => this.feed.state().status === 'unreachable');
-  private readonly shownBucket = computed(() => this.bucket() ?? this.detail()?.bucket ?? null);
+  protected readonly shownBucket = computed(() => this.bucket() ?? this.detail()?.bucket ?? null);
   protected readonly kicker = computed(() => {
     const bucket = this.shownBucket();
     return bucket ? kickerOf(bucket) : '';

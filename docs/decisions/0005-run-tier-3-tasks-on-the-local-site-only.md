@@ -1,6 +1,6 @@
 # ADR-0005: Run tier-3 tasks on the local site only, after a confirmed proposal
 
-- **Status:** Accepted
+- **Status:** Accepted; the point that only Run starts a run is superseded by [ADR-0008](0008-let-send-crew-start-a-run.md)
 - **Date:** 2026-09-26
 - **Deciders:** Anthony Turner (maintainer), in issue #131
 - **Related:** [#131](https://github.com/anthonyturner/observatory/issues/131), [#127](https://github.com/anthonyturner/observatory/issues/127); adapted from pr-starmap's [ADR-0004: Run tier-3 tasks on the local site, only after a confirmed proposal](https://github.com/anthonyturner/pr-starmap/blob/main/docs/decisions/0004-run-tier-3-tasks-on-the-local-site.md), which is its source

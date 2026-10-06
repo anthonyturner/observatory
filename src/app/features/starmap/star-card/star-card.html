@@ -42,4 +42,7 @@
       <button type="button" (click)="dismiss.emit(item().number)">Dismiss</button>
     }
   </div>
+  @if (!context().replay) {
+    <app-crew-control class="crew" [repo]="repo()" [number]="item().number" [bucket]="shown()" />
+  }
 </div>

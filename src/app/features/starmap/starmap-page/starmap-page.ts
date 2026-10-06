@@ -41,6 +41,8 @@ import { Timeline } from '../memory/timeline/timeline';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { StarCard } from '../star-card/star-card';
+import { CrewDispatch } from '../../../core/crew/crew-dispatch';
+import { crewMarksOf } from '../../../core/crew/crew-roster';
 import { CometCard } from '../comet-card/comet-card';
 import { StarmapSound } from '../sound/starmap-sound';
 import { mergePlan } from '../merge-plan';
@@ -195,6 +197,7 @@ export class StarmapPage {
   protected readonly logs = inject(LogSkyView);
   protected readonly issues = inject(IssuesScreen);
   private readonly router = inject(Router);
+  private readonly crew = inject(CrewDispatch);
   private readonly route = inject(ActivatedRoute);
   private readonly now = inject(Clock).now;
   private readonly window = inject(DOCUMENT).defaultView;
@@ -485,6 +488,8 @@ export class StarmapPage {
       this.comets(),
     ),
   );
+  /** The crews out in this repository, drawn as ships by their stars. */
+  protected readonly crewMarks = computed(() => crewMarksOf(this.crew.crews(), this.repo()));
   /** The open issues, for the search; it finds closed ones on the Done list. */
   private readonly searchIssues = computed(
     (): readonly SearchedIssue[] => this.issues.report()?.open ?? [],

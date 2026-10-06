@@ -23,6 +23,8 @@ const item: QueueItem = {
   changedFiles: 4,
   isSeen: false,
   hidden: null,
+  lookedSha: null,
+  sinceLook: null,
 };
 
 function render(hasRunner = false) {
@@ -59,6 +61,19 @@ describe('StarCard', () => {
     expect(element.querySelector('.prno')?.textContent).toBe('#58');
     expect(element.querySelector('h2')?.textContent).toBe('Replace the facade');
     expect(element.querySelector('.facts')?.textContent).toContain('ready · conflicting');
+  });
+
+  it('says how many commits are new since it was last looked at', () => {
+    const { fixture, element } = render();
+    expect(element.querySelector('.since')).toBeNull();
+
+    fixture.componentRef.setInput('item', { ...item, sinceLook: { newCommits: 3 } });
+    fixture.detectChanges();
+    expect(element.querySelector('.since')?.textContent).toBe('3 new commits since you looked');
+
+    fixture.componentRef.setInput('item', { ...item, sinceLook: { newCommits: null } });
+    fixture.detectChanges();
+    expect(element.querySelector('.since')?.textContent).toBe('Changed since you looked');
   });
 
   it('links to GitHub and the issue it closes', () => {

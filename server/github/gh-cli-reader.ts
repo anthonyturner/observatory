@@ -1,3 +1,4 @@
+import { comparePath, comparisonFrom } from './compare-reader.ts';
 import { gh, ghJson } from './gh-cli.ts';
 import { DIFF_MEDIA_TYPE } from './github-rest.ts';
 import { ghCliWriter } from './gh-cli-writer.ts';
@@ -142,6 +143,10 @@ export function ghCliReader(): GitHub {
     pullDiff: (repo, number) => gh(['pr', 'diff', String(number), '--repo', repo]),
     commitDiff: (repo, sha) =>
       gh(['api', `repos/${repo}/commits/${sha}`, '-H', `Accept: ${DIFF_MEDIA_TYPE}`]),
+    compare: async (repo, base, head) =>
+      comparisonFrom(await ghJson<unknown>(['api', `${comparePath(repo, base, head)}?per_page=1`])),
+    compareDiff: (repo, base, head) =>
+      gh(['api', comparePath(repo, base, head), '-H', `Accept: ${DIFF_MEDIA_TYPE}`]),
     repoLabels: (repo) =>
       ghJson<RawLabel[]>([
         'label',

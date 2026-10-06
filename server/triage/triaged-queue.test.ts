@@ -26,6 +26,7 @@ const report: QueueReport = {
       idleDays: 6,
       ageDays: 9,
       branch: 'feat/x',
+      headSha: 'a'.repeat(40),
       base: 'main',
       mergeable: 'MERGEABLE',
       changedFiles: 1,
@@ -56,8 +57,20 @@ describe('recordTriage and withTriage', () => {
       NOW,
     );
 
-    assert.deepEqual(result, { number: 7, isSeen: true, hidden: null });
+    assert.deepEqual(result, { number: 7, isSeen: true, hidden: null, lookedSha: 'a'.repeat(40) });
     assert.equal((await withTriage(report, store, NOW)).items[0].isSeen, true);
+  });
+
+  it('records the head the screen showed on a look, else the queue’s', async () => {
+    const store = memoryStore();
+    const look = { repo: 'me/a', number: 7, action: 'look' } as const;
+
+    const shown = await recordTriage({ ...look, sha: 'c'.repeat(40) }, report, store, NOW);
+    assert.equal(shown.lookedSha, 'c'.repeat(40));
+
+    const queued = await recordTriage(look, report, store, NOW);
+    assert.equal(queued.lookedSha, 'a'.repeat(40));
+    assert.equal((await withTriage(report, store, NOW)).items[0].lookedSha, 'a'.repeat(40));
   });
 
   it('refuses a pull request that is not open in the queue', async () => {

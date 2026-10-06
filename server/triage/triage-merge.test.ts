@@ -41,6 +41,19 @@ describe('mergeTriage', () => {
     assert.deepEqual(merged.changed, { '2': '2026-09-20T00:00:00.000Z' });
   });
 
+  it('keeps the head looked at from the side that has one, the newer choice first', () => {
+    const lookedHere = applyTriage(EMPTY_TRIAGE, 7, 'look', {
+      ...act(T2),
+      headSha: 'b'.repeat(40),
+    });
+    const seenThere = applyTriage(EMPTY_TRIAGE, 7, 'seen', { ...act(T1), headSha: 'a'.repeat(40) });
+    const dismissedThere = applyTriage(EMPTY_TRIAGE, 7, 'dismiss', act(T1));
+
+    assert.equal(mergeTriage(lookedHere, seenThere).looked['7'], 'a'.repeat(40));
+    assert.equal(mergeTriage(lookedHere, dismissedThere).looked['7'], 'b'.repeat(40));
+    assert.equal(mergeTriage(lookedHere, dismissedThere).dismissed['7'], UPDATED);
+  });
+
   it('comes out the same whichever side merges', () => {
     const a = applyTriage(applyTriage(EMPTY_TRIAGE, 1, 'seen', act(T1)), 2, 'dismiss', act(T2));
     const b = applyTriage(applyTriage(EMPTY_TRIAGE, 1, 'unseen', act(T2)), 2, 'snooze', act(T1));

@@ -6,6 +6,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { BehaviorSubject, of } from 'rxjs';
 import { AMBIENT_PLAYER } from '../../../core/sound/sound-preference';
 import { anIssue } from '../../../core/issues/testing/issues-fixture';
+import { PrScreen } from '../pr-screen/pr-screen';
 import { StarmapSound } from '../sound/starmap-sound';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { StarmapPage } from './starmap-page';
@@ -24,6 +25,8 @@ const pull = (number: number, bucket: string, extra: Record<string, unknown> = {
   ageDays: 5,
   isSeen: false,
   hidden: null,
+  lookedSha: null,
+  sinceLook: null,
   ...extra,
 });
 
@@ -33,7 +36,11 @@ const items = [
   pull(11, 'unreviewed', { hidden: { reason: 'dismissed' } }),
 ];
 
-function render(fragment: string | null = null, query: Record<string, string> = {}) {
+function render(
+  fragment: string | null = null,
+  query: Record<string, string> = {},
+  queued: readonly object[] = items,
+) {
   const fragments = new BehaviorSubject<string | null>(fragment);
   TestBed.configureTestingModule({
     providers: [
@@ -64,7 +71,7 @@ function render(fragment: string | null = null, query: Record<string, string> = 
   const http = TestBed.inject(HttpTestingController);
   http
     .expectOne('/api/queue?repo=me/a')
-    .flush({ generatedAt: new Date().toISOString(), repo: 'me/a', items });
+    .flush({ generatedAt: new Date().toISOString(), repo: 'me/a', items: queued });
   fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
   const button = (words: string) =>
@@ -281,6 +288,43 @@ describe('StarmapPage', () => {
     expect(post.request.body).toEqual({ repo: 'me/a', number: 9, action: 'snooze', days: 7 });
     post.flush({});
     http.expectOne('/api/queue?repo=me/a');
+  });
+
+  it('records a look at the head the screen shows, and keeps the old one to compare with', () => {
+    const looked = 'a'.repeat(40);
+    const head = 'b'.repeat(40);
+    const { fixture, http } = render(null, {}, [pull(7, 'failing', { lookedSha: looked })]);
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+    sky.picked.emit(7);
+    fixture.detectChanges();
+    http.expectOne('/api/pull?repo=me/a&number=7').flush({
+      number: 7,
+      title: 'Change 7',
+      url: 'https://github.com/me/a/pull/7',
+      bucket: 'failing',
+      head: 'feat/7',
+      base: 'main',
+      state: 'open',
+      headOid: head,
+    });
+    http.expectOne('/api/edit?repo=me/a&number=7');
+    http.expectOne('/api/labels?repo=me/a');
+    fixture.detectChanges();
+    http.expectOne(`/api/since-look?repo=me/a&base=${looked}&head=${head}`);
+
+    const post = http.expectOne('/api/triage');
+    expect(post.request.body).toEqual({ repo: 'me/a', number: 7, action: 'look', sha: head });
+    post.flush({});
+    http.expectOne('/api/queue?repo=me/a').flush({
+      generatedAt: new Date().toISOString(),
+      repo: 'me/a',
+      items: [pull(7, 'failing', { lookedSha: head })],
+    });
+    fixture.detectChanges();
+
+    const screen = fixture.debugElement.query(By.directive(PrScreen)).componentInstance as PrScreen;
+    expect(screen.lookedSha()).toBe(looked);
   });
 
   it('opens a clicked star’s full screen at once, and keeps the sky behind it still', () => {

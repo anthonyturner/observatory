@@ -19,6 +19,8 @@ export interface QueueItem {
   readonly updatedAt: string;
   /** The head branch, and GitHub's own word on whether it merges. */
   readonly branch: string;
+  /** The head commit's full hash. */
+  readonly headSha: string;
   /** The branch it merges into: another open pull request's head when it is stacked. */
   readonly base: string;
   readonly mergeable: string;
@@ -50,6 +52,7 @@ export function queueItemOf(pull: QueuePull, now: number): QueueItem {
     deletions: pull.deletions ?? null,
     updatedAt: pull.updatedAt,
     branch: pull.headRefName,
+    headSha: pull.headRefOid,
     base: pull.baseRefName,
     mergeable: pull.mergeable,
     changedFiles: pull.changedFiles ?? null,

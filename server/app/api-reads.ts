@@ -15,6 +15,12 @@ import { projectsReport } from '../projects/projects-report.ts';
 import { type CommitDiff, commitDiffOf } from '../queue/commit-diff.ts';
 import { type PullDetail, pullDetailOf } from '../queue/pull-detail.ts';
 import { type QueueReport, queueReport } from '../queue/queue-report.ts';
+import {
+  type SinceLook,
+  type SinceLookDiff,
+  sinceLookDiffOf,
+  sinceLookOf,
+} from '../queue/since-look.ts';
 import type { UsageReport } from '../usage/usage-types.ts';
 import type { AgentUsageReport } from '../agents/agent-usage-report.ts';
 import { cachedByKey, keyedCache } from '../util/cached-by-key.ts';
@@ -84,6 +90,10 @@ export interface ApiReads {
   forgetPull(repo: string, number: number): void;
   /** One commit's diff, for the PR screen's Commits tab. */
   commit(repo: string, sha: string): Promise<CommitDiff>;
+  /** What changed on a pull request between the head looked at and the head now. */
+  sinceLook(repo: string, base: string, head: string): Promise<SinceLook>;
+  /** The same, with the diff between the two heads, for the PR screen's Diff tab. */
+  sinceLookDiff(repo: string, base: string, head: string): Promise<SinceLookDiff>;
   /** Whether one pull request is open, merged or closed, and its title. */
   pullState(repo: string, number: number): Promise<PullState>;
   labels(repo: string): Promise<RawLabel[]>;
@@ -132,6 +142,32 @@ export function cachedReads(sources: ReadSources): ApiReads {
     const diff = await github.commitDiff(repo, sha);
     return commitDiffOf(sha, { diff, fetchedAt: new Date().toISOString() });
   }, COMMIT_TTL_MS);
+  // Two commits compare the same way forever, so these keep as long as a commit does.
+  const headsKey = (repo: string, base: string, head: string): string =>
+    `${repo}@${base}...${head}`;
+  const headsOf = (key: string): [string, string, string] => {
+    const [repo, heads] = key.split('@');
+    const [base, head] = heads.split('...');
+    return [repo, base, head];
+  };
+  const sinceLookOfHeads = keyedCache(async (key) => {
+    const [repo, base, head] = headsOf(key);
+    return sinceLookOf(await github.compare(repo, base, head));
+  }, COMMIT_TTL_MS);
+  const sinceLookDiffOfHeads = keyedCache(
+    async (key) => {
+      const [repo, base, head] = headsOf(key);
+      const since = await sinceLookOfHeads.read(key);
+      const diff =
+        since.newCommits === null
+          ? ''
+          : // Too large for GitHub to give is shown as such, like a pull request's own diff.
+            await github.compareDiff(repo, base, head).catch(() => '');
+      return sinceLookDiffOf({ base, head, since }, { diff, fetchedAt: new Date().toISOString() });
+    },
+    // An empty diff may be a failure that passes, so it is asked for again soon.
+    (answer) => (answer.diff ? COMMIT_TTL_MS : PULL_TTL_MS),
+  );
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
     return github.pullState(repo, Number(number));
@@ -149,6 +185,8 @@ export function cachedReads(sources: ReadSources): ApiReads {
     pull: (repo, number) => pullOf.read(numberKey(repo, number)),
     forgetPull: (repo, number) => pullOf.forget(numberKey(repo, number)),
     commit: (repo, sha) => commitOf.read(commitKey(repo, sha)),
+    sinceLook: (repo, base, head) => sinceLookOfHeads.read(headsKey(repo, base, head)),
+    sinceLookDiff: (repo, base, head) => sinceLookDiffOfHeads.read(headsKey(repo, base, head)),
     pullState: (repo, number) => pullStateOf.read(numberKey(repo, number)),
     labels: cachedByKey((repo) => github.repoLabels(repo), LABELS_TTL_MS),
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),

@@ -27,6 +27,7 @@ export function triageStateFrom(value: unknown): TriageState {
     seen: stringsOf(stored['seen']),
     dismissed: stringsOf(stored['dismissed']),
     snoozed: stringsOf(stored['snoozed']),
+    looked: stringsOf(stored['looked']),
     changed: stringsOf(stored['changed']),
   };
 }

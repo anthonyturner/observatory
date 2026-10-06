@@ -65,6 +65,7 @@ describe('ledgerReport', () => {
           additions: 1,
           deletions: 1,
           headRefName: 'x',
+          headRefOid: 'a'.repeat(40),
           baseRefName: 'main',
           changedFiles: 1,
         },

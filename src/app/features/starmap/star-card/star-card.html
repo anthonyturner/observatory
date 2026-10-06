@@ -6,6 +6,9 @@
     <div class="prno">#{{ item().number }}</div>
   </div>
   <h2>{{ item().title }}</h2>
+  @if (sinceLook(); as label) {
+    <p class="since">{{ label }}</p>
+  }
   <dl class="facts">
     @for (fact of facts(); track fact.term + fact.value) {
       <dt>{{ fact.term }}</dt>

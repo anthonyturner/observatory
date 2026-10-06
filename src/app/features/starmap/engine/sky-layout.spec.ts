@@ -1,3 +1,4 @@
+import { HOLE } from './black-hole';
 import { SkyLayout, buildField, carryOver, layoutQueue } from './sky-layout';
 import { SkyItem } from './sky-model';
 
@@ -71,6 +72,25 @@ describe('layoutQueue', () => {
     ]);
     expect(sky.stars.find((s) => s.item?.pr === 195)?.quick).toBe(true);
     expect(sky.stars.find((s) => s.item?.pr === 58)?.urgent).toBe(true);
+  });
+
+  it('draws only pull requests idle past the threshold toward the black hole', () => {
+    const [free, held] = [new SkyLayout(), new SkyLayout()];
+    layoutQueue(QUEUE, free);
+    layoutQueue(QUEUE, held, 14);
+    const star = (sky: SkyLayout, pr: number) => sky.stars.find((s) => s.item?.pr === pr);
+    const toHole = (pr: number, sky: SkyLayout): number => {
+      const s = star(sky, pr);
+      return s ? Math.hypot(s.x - HOLE.x, s.y - HOLE.y) : NaN;
+    };
+
+    expect(toHole(85, held)).toBeLessThan(toHole(85, free));
+    expect(star(held, 85)?.ax).toBe(star(held, 85)?.x);
+    expect(star(held, 85)?.colour).not.toBe(star(free, 85)?.colour);
+    expect([star(held, 537)?.x, star(held, 537)?.colour]).toEqual([
+      star(free, 537)?.x,
+      star(free, 537)?.colour,
+    ]);
   });
 });
 

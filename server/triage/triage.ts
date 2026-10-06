@@ -103,6 +103,21 @@ export function triageOf(
   return { isSeen: key in state.seen, hidden };
 }
 
+/**
+ * Idle days counted from the later of GitHub's last change and the end of a
+ * snooze, so a pull request back from a snooze starts its idle count afresh.
+ */
+export function idleDaysOf(
+  state: TriageState,
+  number: number,
+  idleDays: number,
+  now: number,
+): number {
+  const snoozedUntil = state.snoozed[String(number)];
+  const sinceWoken = snoozedUntil ? Math.floor((now - Date.parse(snoozedUntil)) / DAY_MS) : NaN;
+  return Number.isFinite(sinceWoken) && sinceWoken >= 0 ? Math.min(idleDays, sinceWoken) : idleDays;
+}
+
 export interface TriageRequest {
   readonly repo: string;
   readonly number: number;

@@ -1,3 +1,4 @@
+import { fallOf, keepApart, placeByHole, redshift } from './black-hole';
 import { rnd } from './rnd';
 import {
   BUCKETS,
@@ -75,8 +76,28 @@ export function spiralArm(n: number, turn: number): { dx: number; dy: number }[]
   });
 }
 
-/** Each bucket in use a constellation, left to right, alternately above and below. */
-export function layoutQueue(items: readonly SkyItem[], sky: SkyLayout): void {
+/** Moves each laid-out star where the black hole's pull puts it, then off any star it landed on. */
+function settleByHole(pulls: ReadonlyMap<SkyStar, number>): void {
+  for (const [star, pull] of pulls) Object.assign(star, placeByHole(star, pull));
+  const stars = [...pulls.keys()];
+  keepApart(stars, (star) => pulls.get(star) ?? 0);
+  for (const star of stars) {
+    star.ax = star.x;
+    star.ay = star.y;
+    star.az = star.z;
+  }
+}
+
+/**
+ * Each bucket in use a constellation, left to right, alternately above and
+ * below; a pull request idle past `staleAfterDays` is drawn toward the black
+ * hole at the centre. With no threshold nothing falls.
+ */
+export function layoutQueue(
+  items: readonly SkyItem[],
+  sky: SkyLayout,
+  staleAfterDays = Number.POSITIVE_INFINITY,
+): void {
   const groups = BUCKETS.map((bucket, bi) => {
     const mine = items.filter((i) => i.bucket === bucket.id);
     const arm = spiralArm(mine.length, bi * 1.9);
@@ -86,6 +107,7 @@ export function layoutQueue(items: readonly SkyItem[], sky: SkyLayout): void {
   }).filter((g) => g.mine.length);
   const span = groups.reduce((sum, g) => sum + g.half * 2, 0) + CLUSTER_GAP * (groups.length - 1);
   let left = WORLD.w / 2 - span / 2;
+  const pulls = new Map<SkyStar, number>();
 
   groups.forEach(({ bucket, mine, arm, half, below }, ci) => {
     const cx = left + half;
@@ -104,7 +126,8 @@ export function layoutQueue(items: readonly SkyItem[], sky: SkyLayout): void {
 
     mine.forEach((item, i) => {
       const r = rnd((item.pr * 2654435761) % 2147483647);
-      sky.makeStar(
+      const pull = fallOf(item.idleDays, staleAfterDays);
+      const star = sky.makeStar(
         {
           kind: 'pr',
           item,
@@ -118,17 +141,19 @@ export function layoutQueue(items: readonly SkyItem[], sky: SkyLayout): void {
           y: cy + arm[i].dy + (r() - 0.5) * 2 * JITTER,
           // Magnitude follows neglect: the longer it has sat, the bigger it burns.
           mag: 3.5 + Math.min(Math.sqrt(Math.max(item.idleDays, 0)) * 2.2, 9.5),
-          colour: bucket.colour,
+          colour: redshift(bucket.colour, pull),
           cluster,
         },
         r,
         // Drift stays well inside the gaps, so neighbours never wander together.
         5 + Math.min(item.idleDays * 0.2, 11),
       );
+      pulls.set(star, pull);
     });
 
     sky.clusters.push(cluster);
   });
+  settleByHole(pulls);
 }
 
 /** Real starfields are not white: a spread of colour temperature. */

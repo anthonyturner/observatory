@@ -11,6 +11,7 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { StarmapSound } from '../sound/starmap-sound';
 import { HelpState } from '../../../shared/help/help-state';
 import { NextStar } from '../next-star';
+import { BlackHoleSetting, MAX_STALE_DAYS, MIN_STALE_DAYS } from '../black-hole/black-hole-setting';
 import { Chart, SkyView, isListOnly } from '../starmap-view';
 
 const FOLDED_KEY = 'observatory.folded';
@@ -63,6 +64,17 @@ export class StarmapTools {
   protected readonly motion = inject(MotionPreference);
   protected readonly sound = inject(StarmapSound);
   protected readonly volumePercent = computed(() => Math.round(this.sound.volume() * 100));
+
+  protected readonly blackHole = inject(BlackHoleSetting);
+  protected readonly minHoleDays = MIN_STALE_DAYS;
+  protected readonly maxHoleDays = MAX_STALE_DAYS;
+
+  /** A cleared or out-of-range field shows the threshold actually kept. */
+  protected onHoleDays(event: Event): void {
+    const field = event.target as HTMLInputElement;
+    this.blackHole.set(field.valueAsNumber);
+    field.value = String(this.blackHole.staleAfterDays());
+  }
 
   protected onVolume(event: Event): void {
     this.sound.setVolume(Number((event.target as HTMLInputElement).value) / 100);

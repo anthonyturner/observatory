@@ -35,6 +35,15 @@ describe('cardFacts', () => {
     ]);
   });
 
+  it('says a pull request idle past the threshold is falling into the black hole', () => {
+    expect(words(cardFacts(item, { pairs: [], binaries: [], staleAfterDays: 14 }))).toContain(
+      'falling in: idle 49 days',
+    );
+    expect(words(cardFacts(item, { pairs: [], binaries: [], staleAfterDays: 49 }))).toContain(
+      'idle: 49 days',
+    );
+  });
+
   it('leads with collisions and binaries, and marks what is bad', () => {
     const facts = cardFacts(
       { ...item, closes: [], additions: 10, deletions: 2, bucket: 'unreviewed', changedFiles: 1 },

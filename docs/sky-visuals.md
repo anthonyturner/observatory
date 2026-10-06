@@ -27,6 +27,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Gas disc         | Lines changed, quick win   | `massOf(star)`                 |
 | Review Queue | Planets          | Issues the PR closes       | `issuePlanets(star)`           |
 | Review Queue | Size             | Idle days                  | `mag` in `layoutQueue`         |
+| Review Queue | Fall to the hole | Idle days past a threshold | `fallOf`, `placeByHole`        |
 | Review Queue | Crew ship        | A crew run on the PR       | `crewPose(mark, clock)`        |
 
 ## Orrery worlds
@@ -181,6 +182,32 @@ jitter. A crowded bucket grows wider instead of packing tighter.
 Constellations sit side by side by their measured width with 240 units
 between them, and each label sits under its arm. The camera's Fit frames the
 result, so the layout may be wider than `WORLD`.
+
+### The black hole (data: idle days past a threshold)
+
+A black hole sits at the world's centre (`HOLE` in `engine/black-hole.ts`),
+drawn flat over both renderers by `engine/black-hole-layer.ts`: a black shadow
+edged by a thin ring of bent light, and a tilted accretion disc whose far half
+passes behind the shadow. Its streaks turn with the scene's `time`, so it holds
+still when motion is off.
+
+A pull request idle past the threshold falls toward it. The threshold is 14
+days, set per browser with **hole** in the tools (`BlackHoleSetting`, 1 to 90).
+`fallOf(idleDays, threshold)` is 0 up to the threshold, then
+`1 − e^(−(days past) / 21)`. `placeByHole` moves the laid-out star 75% × pull
+of the way in to a 240-unit floor while turning it 0.9 × pull rad about the
+hole, so a growing pull traces a spiral and no star ever disappears; its depth
+eases toward the hole's plane the same way. `keepApart` then nudges a fallen
+star off any star it landed on (80 units, never past the floor). Every queue
+star, falling or not, is kept 150 units clear of the hole. `redshift` mixes
+the bucket colour up to 30% toward red, so the bucket still reads, and the
+layer stretches the light into a tapered smear toward the hole with a few
+specks streaming in.
+
+The server counts idle days from the later of GitHub's `updatedAt` and the end
+of a snooze (`idleDaysOf` in `server/triage/triage.ts`), so a commit, a review
+or a snooze ending resets the fall; a merged pull request leaves the sky. The
+star glides back out on the next refresh through `carryOver`.
 
 ### Size and brightness (data: idle days)
 

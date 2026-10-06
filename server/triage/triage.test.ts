@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BadRequest } from '../http/api-handler.ts';
-import { EMPTY_TRIAGE, applyTriage, triageOf, triageRequestFrom } from './triage.ts';
+import { EMPTY_TRIAGE, applyTriage, idleDaysOf, triageOf, triageRequestFrom } from './triage.ts';
 
 const NOW = Date.parse('2026-09-26T12:00:00Z');
 const DAY = 86_400_000;
@@ -38,6 +38,24 @@ describe('triage', () => {
 
     assert.equal(triageOf(state, 7, UPDATED, NOW).hidden, null);
     assert.equal(triageOf(state, 8, UPDATED, NOW).hidden?.reason, 'snoozed');
+  });
+});
+
+describe('idleDaysOf', () => {
+  it('counts idle days from the end of a snooze, once it has ended', () => {
+    const snoozed = applyTriage(EMPTY_TRIAGE, 7, 'snooze', { ...at(NOW), days: 7 });
+
+    assert.equal(idleDaysOf(snoozed, 7, 40, NOW + 7 * DAY), 0);
+    assert.equal(idleDaysOf(snoozed, 7, 40, NOW + 10 * DAY), 3);
+    assert.equal(idleDaysOf(snoozed, 7, 2, NOW + 10 * DAY), 2);
+  });
+
+  it('leaves the count alone with no snooze, or one still running', () => {
+    const snoozed = applyTriage(EMPTY_TRIAGE, 7, 'snooze', { ...at(NOW), days: 7 });
+
+    assert.equal(idleDaysOf(EMPTY_TRIAGE, 7, 40, NOW), 40);
+    assert.equal(idleDaysOf(snoozed, 7, 40, NOW + DAY), 40);
+    assert.equal(idleDaysOf(snoozed, 8, 40, NOW + 10 * DAY), 40);
   });
 });
 

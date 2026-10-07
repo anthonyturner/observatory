@@ -307,6 +307,17 @@ describe('hostedApi', () => {
     }
   });
 
+  it('has no live agents, for anyone: only this machine’s server reads its transcripts', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+    const session = '11111111-1111-4111-8111-111111111111';
+
+    for (const path of ['/api/live-agents', `/api/live-agents?session=${session}`]) {
+      for (const cookie of [ownerCookie, undefined]) {
+        assert.equal((await get(handle, path, cookie)).status, 404, path);
+      }
+    }
+  });
+
   it('refuses a visitor’s rerun before GitHub is asked', async () => {
     const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
 

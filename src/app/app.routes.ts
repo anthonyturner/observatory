@@ -1,5 +1,8 @@
 import { Routes } from '@angular/router';
 
+const agentDetailPage = () =>
+  import('./features/agents/agent-detail-page/agent-detail-page').then((m) => m.AgentDetailPage);
+
 export const routes: Routes = [
   {
     path: '',
@@ -19,6 +22,27 @@ export const routes: Routes = [
       import('./features/architecture/architecture-page/architecture-page').then(
         (m) => m.ArchitecturePage,
       ),
+  },
+  {
+    path: 'agents',
+    children: [
+      {
+        path: '',
+        title: 'Agents · Observatory',
+        loadComponent: () =>
+          import('./features/agents/agents-page/agents-page').then((m) => m.AgentsPage),
+      },
+      {
+        path: ':session',
+        title: 'Agent · Observatory',
+        loadComponent: agentDetailPage,
+      },
+      {
+        path: ':session/:agentId',
+        title: 'Agent · Observatory',
+        loadComponent: agentDetailPage,
+      },
+    ],
   },
   {
     path: 'p/:owner/:repo/releases',

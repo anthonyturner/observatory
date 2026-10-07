@@ -7,6 +7,7 @@ import {
   model,
   output,
 } from '@angular/core';
+import { LiveAgentsLink } from '../../agents/live-agents-link/live-agents-link';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { StarmapSound } from '../sound/starmap-sound';
 import { HelpState } from '../../../shared/help/help-state';
@@ -30,18 +31,21 @@ const CHARTS: readonly { readonly id: Chart; readonly label: string }[] = [
 
 /**
  * The bottom tools, by purpose: which sky, Starmap or List, zoom, Next star,
- * what the sky draws, the side panels, Refresh, Motion and Sound, then help.
+ * what the sky draws, the side panels, the repo's agent sessions, Refresh, Motion and Sound, then help.
  * What only the map uses hides on a list. On a small screen Controls folds
  * them away, remembered per viewer.
  */
 @Component({
   selector: 'app-starmap-tools',
+  imports: [LiveAgentsLink],
   templateUrl: './starmap-tools.html',
   styleUrl: './starmap-tools.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[attr.data-folded]': 'folded() ? "" : null' },
 })
 export class StarmapTools {
+  /** The queue's repository (owner/name), whose agents the Agent sessions link counts. */
+  readonly repo = input<string | null>(null);
   readonly chart = input.required<Chart>();
   readonly view = input.required<SkyView>();
   readonly showCollisions = input(true);

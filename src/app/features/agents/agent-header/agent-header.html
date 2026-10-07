@@ -1,0 +1,28 @@
+@let shown = agent();
+<header>
+  <div class="kicker">
+    {{ kicker() }}
+    @if (shown.isHeadless) {
+      <span class="tag">headless (claude -p)</span>
+    }
+  </div>
+  <div class="toprow">
+    <h1>{{ title() }}</h1>
+    <span class="status">
+      <app-agent-state-chip [state]="shown.state" [text]="stateText()" />
+      <app-time-ago [at]="shown.lastActiveAt" />
+    </span>
+  </div>
+  <div class="route">
+    @if (shown.branch) {
+      <code>{{ shown.branch }}</code>
+    }
+    @if (shown.folder) {
+      <span class="folder">{{ shown.folder }}</span>
+    }
+  </div>
+  @if (notRunning(); as note) {
+    <p class="banner">{{ note }}</p>
+  }
+  <ng-content select="[tabs]" />
+</header>

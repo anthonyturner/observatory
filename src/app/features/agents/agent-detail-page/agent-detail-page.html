@@ -1,0 +1,28 @@
+@let shown = state();
+<main class="page">
+  <app-up-link to="/agents" label="Agents" />
+  @switch (shown.status) {
+    @case ('reading') {
+      <p class="note">Reading the session…</p>
+    }
+    @case ('local-only') {
+      <app-local-only-note />
+    }
+    @case ('unreachable') {
+      <p class="note warn">
+        Observatory's API did not answer, so the session could not be read.
+        <button type="button" class="abtn" (click)="retry()">Try again</button>
+      </p>
+    }
+    @case ('ready') {
+      @if (shown.agent; as agent) {
+        <app-agent-header [agent]="agent" />
+      } @else {
+        <p class="note">
+          No session on this machine has that address.
+          <a routerLink="/agents">See the agents running now</a>
+        </p>
+      }
+    }
+  }
+</main>

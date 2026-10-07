@@ -1,5 +1,8 @@
 import { gitHubLinkOf, timeOf } from '../actions/actions-report';
 import { isNumber, isObject, isText, listOf, oneOf } from '../json/json-fields';
+import { SeverityCounts, countsTotal, parseCounts } from './alert-counts';
+
+export type { SeverityCounts } from './alert-counts';
 
 /** Which of GitHub's three alert lists an alert came from. */
 export type AlertKind = 'dependabot' | 'code-scanning' | 'secret-scanning';
@@ -8,8 +11,6 @@ export const ALERT_KINDS: readonly AlertKind[] = ['dependabot', 'code-scanning',
 /** Most severe first. */
 export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low';
 export const SEVERITIES: readonly AlertSeverity[] = ['critical', 'high', 'medium', 'low'];
-
-export type SeverityCounts = Readonly<Record<AlertSeverity, number>>;
 
 /** Read, or why not: switched `off`, the token has `no-access`, or GitHub `failed`. */
 export type SourceStatus = 'read' | 'off' | 'no-access' | 'failed';
@@ -50,19 +51,6 @@ const isAlertKind = oneOf(ALERT_KINDS);
 const isSeverity = oneOf(SEVERITIES);
 const isSourceStatus = oneOf(SOURCE_STATUSES);
 
-const countOf = (value: unknown): number =>
-  isNumber(value) && Number.isInteger(value) && value > 0 ? value : 0;
-
-function parseCounts(value: unknown): SeverityCounts {
-  const counts = isObject(value) ? value : {};
-  return {
-    critical: countOf(counts['critical']),
-    high: countOf(counts['high']),
-    medium: countOf(counts['medium']),
-    low: countOf(counts['low']),
-  };
-}
-
 function parseSource(value: unknown): AlertSource | null {
   if (!isObject(value) || !isAlertKind(value['kind']) || !isSourceStatus(value['status'])) {
     return null;
@@ -101,9 +89,6 @@ export function parseSecurityReport(body: unknown): SecurityReport | null {
     isWithheld: body['isWithheld'] === true,
   };
 }
-
-export const countsTotal = (counts: SeverityCounts): number =>
-  counts.critical + counts.high + counts.medium + counts.low;
 
 /** Every open alert the report counted, withheld or not. */
 export const openAlertCount = (report: SecurityReport): number =>

@@ -1,10 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import {
-  AlertSource,
-  SEVERITIES,
-  SourceStatus,
-  countsTotal,
-} from '../../../core/security/security-report';
+import { AlertSource, SEVERITIES, SourceStatus } from '../../../core/security/security-report';
+import { countsTotal } from '../../../core/security/alert-counts';
 import { KIND_WORDS, SEVERITY_WORDS, severityColour } from '../security-words';
 
 export interface SourceCount {

@@ -10,6 +10,7 @@ import {
   startWith,
   switchMap,
 } from 'rxjs';
+import { SECURITY_URL } from './alert-counts';
 import { SecurityReport, parseSecurityReport } from './security-report';
 
 /** Where one repository's alerts stand. Only `ready` carries them. */
@@ -19,7 +20,6 @@ export type SecurityState =
   | { readonly status: 'missing' }
   | { readonly status: 'ready'; readonly report: SecurityReport };
 
-export const SECURITY_URL = '/api/security';
 const HTTP_NOT_FOUND = 404;
 /** As often as the API reads GitHub for them. */
 const POLL_MS = 5 * 60_000;

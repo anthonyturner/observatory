@@ -2,8 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { TabBadge } from '../../shared/project-tabs/tab-badge';
-import { SECURITY_URL } from './security-feed';
-import { openAlertCount, parseSecurityReport } from './security-report';
+import { SECURITY_URL, openAlertsIn } from './alert-counts';
 
 /**
  * The open alerts on a project's Security tab. Each screen with the tab strip
@@ -19,10 +18,7 @@ export class SecurityTabBadge implements TabBadge {
 
   count(repo: string): Observable<number | null> {
     return this.http.get<unknown>(SECURITY_URL, { params: { repo } }).pipe(
-      map((body) => {
-        const report = parseSecurityReport(body);
-        return report ? openAlertCount(report) : null;
-      }),
+      map(openAlertsIn),
       catchError(() => of(null)),
     );
   }

@@ -32,6 +32,8 @@ describe('crewReferenceOf', () => {
     ['get a crew on it', 'it'],
     ['Jev, could you send crew to the first one please', 'the first one'],
     ['have a crew fix 412 in starmap', '412 in starmap'],
+    ['um, send a through to PR four twelve', 'pr 412'],
+    ['hey Jeff, assign a crew to four hundred and twelve', '412'],
     ['what did the crew do', null],
     ['send it to me', null],
     ['what’s blocking?', null],

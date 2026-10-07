@@ -1,7 +1,7 @@
 import { OpenItem } from '../../../core/assistant/open-items';
 import { itemsMeantBy, itemsNamedBy } from '../../../core/assistant/question-answer';
-import { wordsOf } from '../../../core/assistant/spoken-numbers';
-import { POLITE } from './queue-command';
+import { commandWordsOf } from './command-words';
+import { withNumbersInDigits } from './pull-number';
 
 /** Which pull request a request for a crew means. */
 export type CrewPick =
@@ -30,9 +30,10 @@ const MOST_NAMED = 3;
 export const ASK_NUMBER = 'Which pull request? Say its number, as in “send a crew to 412”.';
 
 /** The words of a request for a crew, less the crew's own, which leaves what
- *  says which pull request; null when the words ask for no crew. */
+ *  says which pull request, its number in digits however it was said; null
+ *  when the words ask for no crew. */
 export function crewReferenceOf(said: string): string | null {
-  const words = wordsOf(said).filter((word) => !POLITE.has(word));
+  const words = withNumbersInDigits(commandWordsOf(said));
   const isCrewAsked =
     words.some((word) => CREW_NOUNS.has(word)) && words.some((word) => CREW_VERBS.has(word));
   return isCrewAsked ? words.filter((word) => !CREW_WORDS.has(word)).join(' ') : null;

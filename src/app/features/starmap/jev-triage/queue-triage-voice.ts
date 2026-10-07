@@ -7,6 +7,7 @@ import { LEFT_IT } from '../../../core/assistant/spoken-answer';
 import { TierOneActions } from '../../../core/assistant/tier-one-actions';
 import { PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { Clock } from '../../../core/time/clock';
+import { closestCommandTo, heardWords } from './closest-command';
 import { readProjectsOf } from './project-pulls';
 import { QueueCommand, queueCommandOf } from './queue-command';
 import { QueueReply } from './queue-reply';
@@ -18,7 +19,8 @@ const TRIAGE_NOT_LOADED = 'The Review Queue commands didn’t load. Try again in
  * The Review Queue by voice or typing on Home: "what's blocking?", "next
  * star", "snooze 412 till Monday" and "dismiss 412". Matched here with no
  * model, so typed and spoken words do exactly the same, then handed to
- * QueueTriage to carry out.
+ * QueueTriage to carry out. A snooze or dismissal it cannot make out gets
+ * what Jev heard and the command it can do, rather than a chat.
  */
 @Injectable({ providedIn: 'root' })
 export class QueueTriageVoice implements AskShortcut {
@@ -37,14 +39,18 @@ export class QueueTriageVoice implements AskShortcut {
   actOf(words: string): ShortcutAct | null {
     if (this.info.isElsewhere()) return null;
     const command = queueCommandOf(words, this.projects() ?? [], this.clock.now());
-    return command && ((how) => this.run(words, how, command));
+    if (command) return (how) => this.carryOut(this.openReply(words, how), command);
+    const closest = closestCommandTo(words);
+    if (closest === null) return null;
+    return (how) => this.replies.say(this.openReply(words, how), heardWords(words, closest));
   }
 
-  private run(words: string, how: AskedHow, command: QueueCommand): void {
+  /** Leaves whatever was waiting on an answer, and opens the reply; its id. */
+  private openReply(words: string, how: AskedHow): number {
     this.yesNo.leave(LEFT_IT);
     this.question.close();
     this.actions.cancelJump();
-    this.carryOut(this.replies.open(words, how), command);
+    return this.replies.open(words, how);
   }
 
   /** Reading and recording load only when a command is first heard. */

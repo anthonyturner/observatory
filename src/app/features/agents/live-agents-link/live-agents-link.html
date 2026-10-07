@@ -1,0 +1,13 @@
+@if (count(); as count) {
+  <a
+    routerLink="/agents"
+    [attr.aria-label]="name()"
+    [title]="name()"
+    [attr.data-waiting]="count.waiting ? '' : null"
+  >
+    {{ label() }}
+    @if (count.running) {
+      <span class="count" aria-hidden="true">{{ count.running }}</span>
+    }
+  </a>
+}

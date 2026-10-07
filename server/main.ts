@@ -58,6 +58,8 @@ import { MAIL_ACCOUNTS } from './mail/mail-types.ts';
 import { LOOPBACK_FORMAT, wasapiLoopback } from './sound-card/loopback-helper.ts';
 import { SoundCardCapture } from './sound-card/sound-card-capture.ts';
 import { withSoundCardRoutes } from './sound-card/sound-card-routes.ts';
+import { liveAgentReader } from './live-agents/live-agents.ts';
+import { withLiveAgentsRoutes } from './live-agents/live-agents-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -142,6 +144,8 @@ const soundCard = {
   isAvailable: process.platform === 'win32',
 };
 
+const liveAgentsSource = liveAgentReader();
+
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it
 // with no Origin, so it checks the Host and its own session token instead.
 const server = createApiServer(
@@ -160,10 +164,17 @@ const server = createApiServer(
                           withArchitectureRoutes(
                             withAgentSpeechRoutes(
                               withRiskRoutes(
-                                withActionsRerunRoute(
-                                  withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
-                                  reads,
-                                  github,
+                                withLiveAgentsRoutes(
+                                  withActionsRerunRoute(
+                                    withRerunRoute(
+                                      ownerRoutes(reads, triage, editor),
+                                      reads,
+                                      github,
+                                    ),
+                                    reads,
+                                    github,
+                                  ),
+                                  liveAgentsSource,
                                 ),
                                 reads.pull,
                                 summaries,

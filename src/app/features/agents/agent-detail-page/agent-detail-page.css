@@ -1,0 +1,44 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  padding: 18px 20px 40px;
+  background: var(--queue-sky);
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+app-agent-header {
+  align-self: stretch;
+}
+
+.note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.note a {
+  color: var(--flow);
+}
+
+.note.warn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--warm);
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 14px 12px 32px;
+  }
+}

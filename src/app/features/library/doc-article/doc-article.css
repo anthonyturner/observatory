@@ -1,0 +1,199 @@
+/* Readability first: a measure of about seventy characters, generous leading,
+   and text well above contrast against the glass behind it. On a wide screen
+   the page's headings take a rail of their own to the right. */
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 72ch);
+  grid-template-areas:
+    'head'
+    'outline'
+    'body'
+    'turn';
+  column-gap: 40px;
+  color: var(--sheet-md-ink);
+  font-size: 16px;
+  line-height: 1.72;
+  overflow-wrap: break-word;
+}
+
+.head {
+  grid-area: head;
+  margin-bottom: 26px;
+}
+
+.origin {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 1.12;
+}
+
+h1:focus {
+  outline: none;
+}
+
+.out {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--flow);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.out:hover {
+  text-decoration: underline;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.outline {
+  grid-area: outline;
+  margin-bottom: 26px;
+  padding: 12px 16px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 12px;
+  background: var(--panel-soft);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.outline h2 {
+  margin: 0 0 6px;
+  color: var(--detail-heading);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.outline ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.outline li {
+  padding: 2px 0;
+}
+
+.outline li.sub {
+  padding-left: 14px;
+}
+
+.outline a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.outline a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.body {
+  grid-area: body;
+  min-width: 0;
+}
+
+.turn {
+  grid-area: turn;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--edge-soft);
+}
+
+.turn a {
+  display: flex;
+  flex-direction: column;
+  max-width: 48%;
+  padding: 10px 14px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.turn a:hover {
+  border-color: var(--flow-edge);
+  background: var(--flow-wash);
+}
+
+.turn .next {
+  margin-left: auto;
+  text-align: right;
+}
+
+.way {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* In a narrow column the long list of sub-headings would push the text down. */
+@container (max-width: 999px) {
+  .outline li.sub {
+    display: none;
+  }
+}
+
+@container (min-width: 1000px) {
+  :host {
+    grid-template-columns: minmax(0, 72ch) 220px;
+    grid-template-areas:
+      'head head'
+      'body outline'
+      'turn .';
+  }
+
+  .outline {
+    align-self: start;
+    position: sticky;
+    top: 0;
+    max-height: calc(100dvh - 200px);
+    overflow-y: auto;
+    padding: 4px 0 4px 16px;
+    border: 0;
+    border-left: 1px solid var(--edge-soft);
+    border-radius: 0;
+    background: none;
+  }
+}
+
+@media (max-width: 720px) {
+  :host {
+    font-size: 15.5px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  .turn a {
+    max-width: 100%;
+  }
+}

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { libraryMatcher } from './core/library/library-route';
 
 const agentDetailPage = () =>
   import('./features/agents/agent-detail-page/agent-detail-page').then((m) => m.AgentDetailPage);
@@ -55,6 +56,12 @@ export const routes: Routes = [
     title: 'Actions · Observatory',
     loadComponent: () =>
       import('./features/actions/actions-page/actions-page').then((m) => m.ActionsPage),
+  },
+  {
+    matcher: libraryMatcher,
+    title: 'Library · Observatory',
+    loadComponent: () =>
+      import('./features/library/library-page/library-page').then((m) => m.LibraryPage),
   },
   {
     path: 'p/:owner/:repo',

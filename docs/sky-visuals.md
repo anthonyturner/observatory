@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars, and the Releases and Actions skies
+# Sky visuals: Orrery worlds, Review Queue stars, the Releases and Actions skies, and the Library
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -41,6 +41,7 @@ TypeScript and the shader only draws it.
 | Actions      | Star type, flare | How the run went           | `runStarType`, `flareReach`    |
 | Actions      | Pulse ring       | A run queued or running    | `pulsePhase`                   |
 | Actions      | Amber ring       | Passed only on a rerun     | `isFlaky` (server)             |
+| Library      | Star size        | How long the page is       | `starDiameterOf`               |
 
 ## Orrery worlds
 
@@ -388,6 +389,18 @@ skipped ones veiled. A run whose job failed and then passed on a rerun at the
 same commit (the queue's flaky-check history) carries a turning dashed amber
 ring with a small tag. Everything that moves reads the frame loop's scene time,
 so it holds still when motion is off.
+
+## The Library's star chart
+
+Code: `features/library/library-index/`. The Library is for reading, so its
+only sky is the index beside the text: plain HTML and CSS, no canvas. Each
+shelf (the wiki, or a folder of `docs/`) is a constellation, its pages strung
+on one faint line in reading order. A page's star is `starDiameterOf(words)`
+across (`core/library/page-star.ts`): 4 px, growing 1.7 px for each doubling
+of its length past 100 words, at most 13 px. The open page's star is lit gold
+and slowly breathes; it holds still when motion is off. The scatter of faint
+stars behind the index is scenery. The links themselves are the list
+alternative: Tab or the arrow keys walk them, and search narrows them.
 
 ## Changing a visual
 

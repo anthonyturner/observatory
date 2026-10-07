@@ -1,0 +1,8 @@
+.box {
+  margin-right: 6px;
+  color: var(--flow);
+}
+
+:host {
+  display: contents;
+}

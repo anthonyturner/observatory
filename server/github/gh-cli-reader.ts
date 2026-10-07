@@ -31,6 +31,8 @@ import {
 import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
 import { readReleases, readTags } from './release-reader.ts';
+import { readFilePaths, readFileText } from './docs-reader.ts';
+import { rawWikiReader } from './wiki-reader.ts';
 import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -64,6 +66,9 @@ export function ghCliReader(): GitHub {
     workflows: (repo) => readWorkflows(getJson, repo),
     runJobs: (repo, runId) => readRunJobs(getJson, repo, runId),
     defaultBranch: (repo) => readDefaultBranch(getJson, repo),
+    filePaths: (repo, ref) => readFilePaths(getJson, repo, ref),
+    fileText: (repo, path, ref) => readFileText(getJson, repo, path, ref),
+    ...rawWikiReader(),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([

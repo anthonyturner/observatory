@@ -1,0 +1,42 @@
+@for (span of spans(); track $index) {
+  @switch (span.kind) {
+    @case ('code') {
+      <code>{{ span.text }}</code>
+    }
+    @case ('image') {
+      <img [src]="span.src" [alt]="span.alt" loading="lazy" />
+    }
+    @case ('link') {
+      @switch (span.link.kind) {
+        @case ('out') {
+          <a [href]="span.link.href" target="_blank" rel="noopener noreferrer"
+            ><app-doc-spans [spans]="span.parts"
+          /></a>
+        }
+        @case ('page') {
+          <a [routerLink]="span.link.path" [fragment]="span.link.fragment ?? undefined"
+            ><app-doc-spans [spans]="span.parts"
+          /></a>
+        }
+        @case ('anchor') {
+          <a [routerLink]="[]" [fragment]="span.link.fragment"
+            ><app-doc-spans [spans]="span.parts"
+          /></a>
+        }
+      }
+    }
+    @default {
+      @if (span.strong && span.em) {
+        <strong
+          ><em>{{ span.text }}</em></strong
+        >
+      } @else if (span.strong) {
+        <strong>{{ span.text }}</strong>
+      } @else if (span.em) {
+        <em>{{ span.text }}</em>
+      } @else {
+        <ng-container>{{ span.text }}</ng-container>
+      }
+    }
+  }
+}

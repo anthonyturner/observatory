@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { rewriteLinks, type LinkContext } from './wiki-links.ts';
+import { linkTargets, rewriteLinks, rewriteRepoLinks, type LinkContext } from './wiki-links.ts';
 
 const REPO = 'https://github.com/me/app';
 const WIKI = `${REPO}/wiki`;
@@ -89,5 +89,31 @@ describe('rewriteLinks', () => {
 
   it('leaves a link that climbs out of the repository as written', () => {
     assert.equal(rewriteLinks('[up](../../x.md)', context('docs/a.md')), '[up](../../x.md)');
+  });
+});
+
+describe('rewriteRepoLinks', () => {
+  it('points a published file at the page its caller names, the rest as the wiki does', () => {
+    assert.equal(
+      rewriteRepoLinks(
+        '[stack](docs/tech-stack.md#build) [rules](docs/rules.md)',
+        context('README.md'),
+        (page) => `/library/${page}`,
+      ),
+      `[stack](/library/Tech-stack#build) [rules](${REPO}/blob/main/docs/rules.md)`,
+    );
+  });
+});
+
+describe('linkTargets', () => {
+  it('lists every target in the prose in reading order, code left out', () => {
+    assert.deepEqual(
+      linkTargets(
+        ['[a](One) `[b](Two)` <img src="x.png">', '[c]: Three', '```', '[d](Four)', '```'].join(
+          '\n',
+        ),
+      ),
+      ['One', 'x.png', 'Three'],
+    );
   });
 });

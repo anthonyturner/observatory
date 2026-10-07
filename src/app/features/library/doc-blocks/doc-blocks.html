@@ -1,0 +1,86 @@
+<!-- The page's own title is the article's only h1, so its headings start at h2. -->
+@for (block of blocks(); track $index) {
+  @switch (block.kind) {
+    @case ('heading') {
+      @switch (block.level) {
+        @case (3) {
+          <h3 [id]="idPrefix + block.id" tabindex="-1"><app-doc-spans [spans]="block.spans" /></h3>
+        }
+        @case (4) {
+          <h4 [id]="idPrefix + block.id" tabindex="-1"><app-doc-spans [spans]="block.spans" /></h4>
+        }
+        @case (5) {
+          <h5 [id]="idPrefix + block.id" tabindex="-1"><app-doc-spans [spans]="block.spans" /></h5>
+        }
+        @case (6) {
+          <h5 [id]="idPrefix + block.id" tabindex="-1"><app-doc-spans [spans]="block.spans" /></h5>
+        }
+        @default {
+          <h2 [id]="idPrefix + block.id" tabindex="-1"><app-doc-spans [spans]="block.spans" /></h2>
+        }
+      }
+    }
+    @case ('p') {
+      <p><app-doc-spans [spans]="block.spans" /></p>
+    }
+    @case ('list') {
+      @if (block.ordered) {
+        <ol [attr.start]="block.start === 1 ? null : block.start">
+          @for (item of block.items; track $index) {
+            <li [class.task]="item.checked !== null">
+              <app-doc-item [item]="item" />
+              @if (item.blocks.length) {
+                <app-doc-blocks [blocks]="item.blocks" />
+              }
+            </li>
+          }
+        </ol>
+      } @else {
+        <ul>
+          @for (item of block.items; track $index) {
+            <li [class.task]="item.checked !== null">
+              <app-doc-item [item]="item" />
+              @if (item.blocks.length) {
+                <app-doc-blocks [blocks]="item.blocks" />
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+    @case ('quote') {
+      <blockquote><app-doc-blocks [blocks]="block.blocks" /></blockquote>
+    }
+    @case ('pre') {
+      <pre
+        tabindex="0"
+        [attr.aria-label]="block.language ? block.language + ' code' : 'Code'"
+      ><code>{{ block.code }}</code></pre>
+    }
+    @case ('table') {
+      <div class="table" tabindex="0" role="region" aria-label="Table">
+        <table>
+          <thead>
+            <tr>
+              @for (cell of block.head; track $index) {
+                <th scope="col"><app-doc-spans [spans]="cell" /></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of block.rows; track $index) {
+              <tr>
+                @for (cell of row; track $index) {
+                  <td><app-doc-spans [spans]="cell" /></td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    @case ('rule') {
+      <hr />
+    }
+  }
+}

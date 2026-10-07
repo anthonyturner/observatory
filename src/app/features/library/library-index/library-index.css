@@ -1,0 +1,164 @@
+/* Each shelf is a constellation: its stars strung on one faint line, each a
+   page sized by its length (page-star.ts), the open page lit and slowly
+   breathing unless motion is off. */
+:host {
+  display: block;
+  font-size: 13.5px;
+}
+
+.search label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.search input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 7px 11px;
+  border: 1px solid var(--edge);
+  border-radius: 9px;
+  background: var(--well);
+  color: var(--ink);
+  font: inherit;
+}
+
+.search input::placeholder {
+  color: var(--faint);
+}
+
+.search input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 1px;
+}
+
+.result {
+  min-height: 1.4em;
+  margin: 6px 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.shelf {
+  margin-top: 14px;
+}
+
+h2 {
+  margin: 0 0 4px;
+  color: var(--detail-heading);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.chart {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The constellation's line, through the middle of every star on the shelf. */
+.chart::before {
+  content: '';
+  position: absolute;
+  top: 17px;
+  bottom: 17px;
+  left: 10px;
+  border-left: 1px solid var(--release-path);
+}
+
+.chart a {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px 6px 0;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.chart a:hover {
+  color: var(--ink);
+  background: var(--starmap-hover);
+}
+
+.chart a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+.chart a[aria-current='page'] {
+  color: var(--ink);
+  background: var(--starmap-press);
+}
+
+.star {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 21px;
+  height: 1.4em;
+}
+
+.dot {
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--release-speck) 0%,
+    var(--release-patch) 45%,
+    var(--flow) 100%
+  );
+  box-shadow: 0 0 6px 1px var(--flow-glow);
+}
+
+[aria-current='page'] .dot {
+  background: radial-gradient(
+    circle,
+    var(--release-speck) 0%,
+    var(--release-major) 60%,
+    var(--warm) 100%
+  );
+  box-shadow:
+    0 0 8px 2px var(--release-major),
+    0 0 18px 4px var(--flow-glow);
+  animation: breathe 3.6s ease-in-out infinite alternate;
+}
+
+:host(.still) [aria-current='page'] .dot {
+  animation: none;
+}
+
+@keyframes breathe {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.25);
+  }
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+.snippet {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}

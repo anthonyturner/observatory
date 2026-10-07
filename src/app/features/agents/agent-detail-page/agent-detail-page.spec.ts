@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { AGENT_CHANGES_API } from '../../../core/live-agents/agent-changes-api';
 import { LIVE_AGENTS_API } from '../../../core/live-agents/live-agents-api';
 import { LiveAgentKey, OneAgentState } from '../../../core/live-agents/live-agents.types';
 import {
@@ -8,6 +9,7 @@ import {
   fakeLiveAgentsApi,
   liveAgent,
 } from '../../../core/live-agents/testing/live-agent-fixture';
+import { fakeAgentChangesApi } from '../../../core/live-agents/testing/agent-changes-fixture';
 import { AgentDetailPage } from './agent-detail-page';
 
 function render(state: OneAgentState, params: Record<string, string> = { session: SESSION }) {
@@ -27,6 +29,7 @@ function render(state: OneAgentState, params: Record<string, string> = { session
         },
       },
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(params)) } },
+      { provide: AGENT_CHANGES_API, useValue: fakeAgentChangesApi() },
     ],
   });
   const fixture = TestBed.createComponent(AgentDetailPage);
@@ -52,6 +55,15 @@ describe('AgentDetailPage', () => {
     expect(textOf(page.querySelector('.state'))).toBe('Working');
     expect(textOf(page.querySelector('.route code'))).toBe('feat/490-agents');
     expect(page.querySelector('.banner')).toBeNull();
+  });
+
+  it('shows the agent’s changes under a Changes tab', () => {
+    const { page } = render({ status: 'ready', agent: liveAgent() });
+
+    const tab = page.querySelector('[role="tab"]');
+    expect(textOf(tab)).toBe('Changes');
+    expect(tab?.getAttribute('aria-selected')).toBe('true');
+    expect(page.querySelector('[role="tabpanel"] app-agent-changes-panel')).not.toBeNull();
   });
 
   it('opens an agent that has stopped, saying it is not running', () => {

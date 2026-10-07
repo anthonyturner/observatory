@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { checkoutFolderOf } from '../usage/checkout-projects.ts';
+import { checkoutFolderOf, worktreeRootOf } from '../usage/checkout-projects.ts';
 import { DETAIL_LIMIT_BYTES, sizeOf } from '../queue/pull-size.ts';
 import { type ChangesSources, agentChangesReader, changesIn } from './agent-changes.ts';
 import type { AgentChanges, ChangesDiff } from './agent-changes-types.ts';
@@ -20,6 +20,7 @@ function sources(gitRunner: Git = readOnlyGit()): ChangesSources {
     git: gitRunner,
     projectOf: () => ({ name: 'app', repo: 'me/app' }),
     checkoutFolderOf,
+    rootOf: worktreeRootOf,
   };
 }
 
@@ -213,5 +214,37 @@ describe('agentChangesReader', () => {
     assert.equal(found.generatedAt, '2026-10-07T10:00:00.000Z');
     assert.equal(diffOf(found.changes).folder, clone);
     assert.deepEqual(unknown.changes, { kind: 'problem', problem: 'no-folder', folder: null });
+  });
+
+  it('reads the worktree a subagent standing in the main checkout writes its files in', async () => {
+    const clone = cloneOf(origin());
+    const worktree = join(clone, '.claude', 'worktrees', 'w');
+    git(clone, 'worktree', 'add', '--quiet', '-b', 'feat/w', worktree);
+    write(worktree, 'made.txt', 'made\n');
+    const reading = sources();
+    const project = join(reading.logsDir, 'e--repos-app');
+    mkdirSync(project);
+    const lines = [
+      {
+        type: 'assistant',
+        cwd: clone,
+        gitBranch: 'main',
+        message: {
+          content: [
+            { type: 'tool_use', name: 'Write', input: { file_path: join(worktree, 'made.txt') } },
+          ],
+        },
+      },
+      { type: 'user', cwd: clone, gitBranch: 'main' },
+    ];
+    write(project, `${SESSION}.jsonl`, lines.map((each) => `${JSON.stringify(each)}\n`).join(''));
+
+    const found = diffOf(
+      (await agentChangesReader(reading).changes({ session: SESSION, agentId: null })).changes,
+    );
+
+    assert.equal(found.branch, 'feat/w');
+    assert.equal(found.isSharedCheckout, false);
+    assert.match(found.diff, /^diff --git a\/made\.txt b\/made\.txt$/m);
   });
 });

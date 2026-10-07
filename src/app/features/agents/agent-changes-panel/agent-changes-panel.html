@@ -1,0 +1,62 @@
+@let shown = state();
+<div class="bar">
+  @if (view(); as ready) {
+    <p class="where">
+      <span class="folder">{{ ready.changes.readFrom }}</span>
+      @if (ready.changes.branch) {
+        <code>{{ ready.changes.branch }}</code>
+      }
+      <span class="compared">{{ ready.compared }}</span>
+    </p>
+  }
+  <span class="actions">
+    @if (pull(); as link) {
+      <a class="pull" [routerLink]="link.path" [queryParams]="link.query">
+        Pull request #{{ link.number }}
+      </a>
+    }
+    <button type="button" class="abtn" (click)="refresh()">Refresh</button>
+  </span>
+</div>
+@switch (shown.status) {
+  @case ('reading') {
+    <p class="note" role="status">Reading the working tree…</p>
+  }
+  @case ('local-only') {
+    <app-local-only-note />
+  }
+  @case ('unreachable') {
+    <p class="note warn" role="status">
+      Observatory's API did not answer, so the changes could not be read.
+    </p>
+  }
+  @case ('problem') {
+    @if (problem(); as gap) {
+      <p class="note" role="status" [class.warn]="gap.canRetry">{{ gap.text }}</p>
+    }
+  }
+  @case ('ready') {
+    @if (view(); as ready) {
+      @if (ready.changes.isSharedCheckout) {
+        <p class="note warn">{{ sharedCheckoutText }}</p>
+      }
+      @if (ready.committedOnly; as note) {
+        <p class="note gone">{{ note }}</p>
+      }
+      @for (note of ready.notes; track note) {
+        <p class="note">{{ note }}</p>
+      }
+      @if (ready.empty; as empty) {
+        <p class="note" role="status">{{ empty }}</p>
+      } @else {
+        <app-sheet-diff
+          [diff]="ready.changes.diff"
+          [diffBytes]="ready.changes.diffBytes"
+          [truncated]="ready.changes.diffTruncated"
+          [viewedKey]="ready.viewedKey"
+          [wording]="wording"
+        />
+      }
+    }
+  }
+}

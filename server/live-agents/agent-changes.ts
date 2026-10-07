@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises';
 import { fitDiff } from '../queue/pull-size.ts';
-import { checkoutFolderOf, resolveProject } from '../usage/checkout-projects.ts';
+import { checkoutFolderOf, resolveProject, worktreeRootOf } from '../usage/checkout-projects.ts';
 import type { ProjectOf } from '../usage/project-usage.ts';
 import { SESSION_LOGS_DIR } from '../usage/usage-paths.ts';
 import type {
@@ -10,7 +10,7 @@ import type {
   ChangesGap,
   ChangesProblem,
 } from './agent-changes-types.ts';
-import { type WorkPlace, workPlaceOf } from './changes-folder.ts';
+import { type RootOf, type WorkPlace, workPlaceOf } from './changes-folder.ts';
 import {
   type Base,
   ChangesFailure,
@@ -35,6 +35,7 @@ export interface ChangesSources {
   readonly projectOf: ProjectOf;
   /** The checkout a folder is in, or was in once it is gone, or null. */
   readonly checkoutFolderOf: (cwd: string) => string | null;
+  readonly rootOf: RootOf;
 }
 
 const DEFAULT_SOURCES: ChangesSources = {
@@ -42,6 +43,7 @@ const DEFAULT_SOURCES: ChangesSources = {
   git: readOnlyGit(),
   projectOf: resolveProject,
   checkoutFolderOf,
+  rootOf: worktreeRootOf,
 };
 
 /** Reads one agent's changes; the routes know nothing of how. */
@@ -181,7 +183,9 @@ export function agentChangesReader(
   return {
     async changes(key) {
       const transcript = await transcriptOf(sources.logsDir, key);
-      const place = transcript ? workPlaceOf(await tailLines(transcript.file)) : null;
+      const place = transcript
+        ? workPlaceOf(await tailLines(transcript.file), sources.rootOf)
+        : null;
       const changes = place ? await changesIn(place, sources) : gap('no-folder', null);
       return { generatedAt: new Date(clock()).toISOString(), changes };
     },

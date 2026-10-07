@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import { rewriteLinks, type LinkContext } from './wiki-links.ts';
 
 const REPO = 'https://github.com/me/app';
+const WIKI = `${REPO}/wiki`;
 
 const context = (source: string): LinkContext => ({
   source,
@@ -27,8 +28,8 @@ describe('rewriteLinks', () => {
       context('docs/decisions/0001-a.md'),
     );
 
-    assert.equal(fromReadme, 'See [the stack](Tech-stack#build).');
-    assert.equal(fromDecision, '[ADR](ADR-0007-squash), [index](Decisions)');
+    assert.equal(fromReadme, `See [the stack](${WIKI}/Tech-stack#build).`);
+    assert.equal(fromDecision, `[ADR](${WIKI}/ADR-0007-squash), [index](${WIKI}/Decisions)`);
   });
 
   it('points a link to an unpublished file at GitHub, resolved from the page’s folder', () => {
@@ -57,7 +58,7 @@ describe('rewriteLinks', () => {
   it('rewrites a reference-style link definition', () => {
     assert.equal(
       rewriteLinks('[stack]: docs/tech-stack.md', context('README.md')),
-      '[stack]: Tech-stack',
+      `[stack]: ${WIKI}/Tech-stack`,
     );
   });
 
@@ -82,7 +83,7 @@ describe('rewriteLinks', () => {
       '```markdown',
       '[stack](docs/tech-stack.md)',
       '```',
-      '[stack](Tech-stack)',
+      `[stack](${WIKI}/Tech-stack)`,
     ]);
   });
 

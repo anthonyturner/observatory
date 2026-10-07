@@ -73,9 +73,11 @@ await Promise.all(plan.remove.map((name) => unlink(pageFile(name))));
 console.log(`Wrote ${plan.write.size} wiki pages to ${out}.`);
 if (plan.remove.length)
   console.log(`Removed pages no longer published: ${plan.remove.join(', ')}.`);
+/** Shown as a warning on the run in GitHub Actions, rather than only in its log. */
+const warningPrefix = process.env['GITHUB_ACTIONS'] === 'true' ? '::warning::' : '';
 if (plan.kept.length) {
   console.warn(
-    `Left hand-written pages alone, so their /docs versions were not published: ${plan.kept.join(', ')}.` +
+    `${warningPrefix}Left hand-written pages alone, so their /docs versions were not published: ${plan.kept.join(', ')}.` +
       ' Rename or delete them on the wiki to let the sync publish these pages.',
   );
 }

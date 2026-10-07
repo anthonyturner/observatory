@@ -15,6 +15,11 @@ export interface LinkContext extends RepoLinks {
   readonly pageBySource: ReadonlyMap<string, string>;
 }
 
+/** A page's full wiki URL: GitHub documents full URLs for wiki links, not bare page names. */
+export function wikiPageUrl(repo: RepoLinks, page: string): string {
+  return `${repo.repoUrl}/wiki/${page}`;
+}
+
 /** Served as the file itself, so the wiki can show it inline; anything else opens on GitHub. */
 const RAW_EXTENSIONS: ReadonlySet<string> = new Set([
   '.png',
@@ -74,7 +79,7 @@ function wikiTarget(target: string, context: LinkContext): string {
   const path = repoPath(pathPart, context.source);
   if (path === null) return target;
   const page = context.pageBySource.get(path);
-  if (page) return page + anchor;
+  if (page) return wikiPageUrl(context, page) + anchor;
   return `${context.repoUrl}/${viewOf(pathPart)}/${context.branch}/${path}${anchor}`;
 }
 

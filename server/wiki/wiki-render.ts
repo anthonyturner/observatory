@@ -1,4 +1,4 @@
-import { rewriteLinks, type LinkContext, type RepoLinks } from './wiki-links.ts';
+import { rewriteLinks, wikiPageUrl, type LinkContext, type RepoLinks } from './wiki-links.ts';
 import type { WikiPage } from './wiki-pages.ts';
 
 /** The first line of every page the sync writes: how it tells its own pages from hand-written ones. */
@@ -28,8 +28,10 @@ export function renderSidebar(pages: readonly WikiPage[], repo: RepoLinks): stri
   const lines = pages
     .filter((page) => !page.parent)
     .flatMap((page) => [
-      entry(page, ''),
-      ...pages.filter((child) => child.parent === page.name).map((child) => entry(child, '  ')),
+      entry(page, repo, ''),
+      ...pages
+        .filter((child) => child.parent === page.name)
+        .map((child) => entry(child, repo, '  ')),
     ]);
   return [
     `${MARKER}: generated from server/wiki/wiki-pages.ts; edit it there -->`,
@@ -40,8 +42,8 @@ export function renderSidebar(pages: readonly WikiPage[], repo: RepoLinks): stri
   ].join('\n');
 }
 
-function entry(page: WikiPage, indent: string): string {
-  return `${indent}- [${page.title}](${page.name})`;
+function entry(page: WikiPage, repo: RepoLinks, indent: string): string {
+  return `${indent}- [${page.title}](${wikiPageUrl(repo, page.name)})`;
 }
 
 function normalized(markdown: string): string {

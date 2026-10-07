@@ -4,6 +4,7 @@ import type { WikiPage } from './wiki-pages.ts';
 import { isGenerated, renderPage, renderSidebar } from './wiki-render.ts';
 
 const REPO = { repoUrl: 'https://github.com/me/app', branch: 'main' };
+const WIKI = `${REPO.repoUrl}/wiki`;
 const STACK: WikiPage = { source: 'docs/tech-stack.md', name: 'Tech-stack', title: 'Tech stack' };
 
 describe('renderPage', () => {
@@ -21,7 +22,13 @@ describe('renderPage', () => {
       /Generated from \[`docs\/tech-stack.md`\]\(https:\/\/github.com\/me\/app\/blob\/main\/docs\/tech-stack.md\)/,
     );
     assert.match(lines[1] ?? '', /Edit it there/);
-    assert.deepEqual(lines.slice(2), ['', '# Tech stack', '', 'See [home](Home).', '']);
+    assert.deepEqual(lines.slice(2), [
+      '',
+      '# Tech stack',
+      '',
+      'See [home](https://github.com/me/app/wiki/Home).',
+      '',
+    ]);
   });
 });
 
@@ -44,10 +51,10 @@ describe('renderSidebar', () => {
 
     assert.ok(isGenerated(sidebar));
     assert.deepEqual(sidebar.split('\n').slice(1, 5), [
-      '- [Home](Home)',
-      '- [Decisions](Decisions)',
-      '  - [ADR-0001: A](ADR-0001-a)',
-      '- [Tech stack](Tech-stack)',
+      `- [Home](${WIKI}/Home)`,
+      `- [Decisions](${WIKI}/Decisions)`,
+      `  - [ADR-0001: A](${WIKI}/ADR-0001-a)`,
+      `- [Tech stack](${WIKI}/Tech-stack)`,
     ]);
   });
 });

@@ -7,7 +7,7 @@ export interface LineWindow {
 }
 
 /** A transcript's end: the most a reader keeps of a file that runs to megabytes. */
-export const TAIL_BYTES = 256 * 1024;
+const TAIL_BYTES = 256 * 1024;
 
 const NEWLINE = 0x0a;
 

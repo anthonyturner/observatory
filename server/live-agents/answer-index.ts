@@ -5,7 +5,7 @@ import { lastLines, linesFrom } from './transcript-window.ts';
  *  spawner's answer can lie megabytes before its end, past the tail the rest
  *  of the list reads; one further back than this is missed until the server
  *  has followed the file from here, and its subagent reads quiet meanwhile. */
-export const FIRST_READ_BYTES = 8 * 1024 * 1024;
+const FIRST_READ_BYTES = 8 * 1024 * 1024;
 
 interface Cursor {
   readonly next: number;

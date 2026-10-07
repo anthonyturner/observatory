@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import type { ProjectOf } from '../usage/project-usage.ts';
-import { type LiveAgentSources, liveAgentReader } from './live-agents.ts';
+import { type TranscriptSources, liveAgentReader } from './live-agents.ts';
 
 const NOW = Date.UTC(2026, 9, 7, 12, 0);
 const MINUTE = 60_000;
@@ -24,7 +24,7 @@ const projectOf: ProjectOf = (cwd) => ({
 
 let folders = 0;
 /** A fresh session logs folder holding one project folder. */
-function logs(): { sources: LiveAgentSources; project: string } {
+function logs(): { sources: TranscriptSources; project: string } {
   const logsDir = join(root, `logs-${folders++}`);
   const project = join(logsDir, 'e--repos-app');
   mkdirSync(project, { recursive: true });
@@ -202,7 +202,7 @@ describe('liveAgentReader list', () => {
     writeSubagent(resumed.project, 0);
     write(sessionFile(resumed.project), [line('user', 3), notice(1)], 1);
 
-    const isListed = async (sources: LiveAgentSources) =>
+    const isListed = async (sources: TranscriptSources) =>
       (await liveAgentReader(sources, clock).list()).agents.some(
         (agent) => agent.agentId === AGENT,
       );

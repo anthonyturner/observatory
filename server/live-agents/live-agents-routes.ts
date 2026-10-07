@@ -5,7 +5,7 @@ import type { AgentKey, LiveAgentAnswer, LiveAgentsReport } from './live-agent-t
 export const LIVE_AGENTS_PATH = '/api/live-agents';
 
 /** Every page with a badge asks; one read of the transcripts serves them all. */
-export const LIVE_AGENTS_CACHE_MS = 5_000;
+const LIVE_AGENTS_CACHE_MS = 5_000;
 
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const AGENT_ID = /^[0-9a-f]{1,64}$/i;

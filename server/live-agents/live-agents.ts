@@ -19,12 +19,12 @@ import { type TranscriptSummary, summaryOf } from './transcript-summary.ts';
 import { tailLines } from './transcript-window.ts';
 
 /** Where the live list reads from; a test gives its own folder. */
-export interface LiveAgentSources {
+export interface TranscriptSources {
   readonly logsDir: string;
   readonly projectOf: ProjectOf;
 }
 
-export const DEFAULT_LIVE_SOURCES: LiveAgentSources = {
+const DEFAULT_SOURCES: TranscriptSources = {
   logsDir: SESSION_LOGS_DIR,
   projectOf: resolveProject,
 };
@@ -135,7 +135,7 @@ function bySession(reads: readonly ReadTranscript[]): ReadTranscript[][] {
 }
 
 async function listAt(
-  sources: LiveAgentSources,
+  sources: TranscriptSources,
   index: AnswerIndex,
   now: number,
 ): Promise<LiveAgentsReport> {
@@ -156,7 +156,7 @@ async function listAt(
 }
 
 async function oneAt(
-  sources: LiveAgentSources,
+  sources: TranscriptSources,
   index: AnswerIndex,
   key: AgentKey,
   now: number,
@@ -177,7 +177,7 @@ async function oneAt(
 /** The agents running on this machine, and any one of them, read from its
  *  transcripts as of each request. */
 export function liveAgentReader(
-  sources = DEFAULT_LIVE_SOURCES,
+  sources = DEFAULT_SOURCES,
   clock: () => number = Date.now,
 ): LiveAgentsSource {
   const index = new AnswerIndex();

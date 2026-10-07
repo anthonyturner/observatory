@@ -50,8 +50,7 @@ const agentFileOf = (project: string, session: string, agentId: string): string 
   join(project, session, SUBAGENTS, `agent-${agentId}.jsonl`);
 
 /** The subagent's task, beside its transcript. */
-export const metaFileOf = (transcript: string): string =>
-  transcript.replace(/\.jsonl$/, '.meta.json');
+const metaFileOf = (transcript: string): string => transcript.replace(/\.jsonl$/, '.meta.json');
 
 async function subagentsOf(project: string, session: string): Promise<(TranscriptFile | null)[]> {
   const entries = await entriesOf(join(project, session, SUBAGENTS));

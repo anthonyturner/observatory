@@ -1,0 +1,57 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.limit {
+  --meter: var(--meter-fill);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.limit.hot {
+  --meter: var(--meter-fill-hot);
+}
+
+.limit__label {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.limit__meter {
+  width: 28px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--flow-tint);
+}
+
+.limit__fill {
+  display: block;
+  height: 100%;
+  background: var(--meter);
+}
+
+.limit__value,
+.peak {
+  color: var(--ink);
+}
+
+.hot .limit__value,
+.peak.hot {
+  color: var(--meh);
+}
+
+.reset {
+  color: var(--muted);
+}
+
+/* On a phone the reset gives way, so the strip stays one short line. */
+@media (max-width: 720px) {
+  .reset {
+    display: none;
+  }
+}

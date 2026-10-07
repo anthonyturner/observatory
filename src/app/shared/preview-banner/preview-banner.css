@@ -1,5 +1,6 @@
 /* Bottom right is clear of the pages' controls on a wide screen; on a phone the
-   controls take the bottom row, so it moves to the top corner. */
+   controls take the bottom row, so it moves to the top corner, under the status
+   strip. */
 .preview {
   position: fixed;
   right: 14px;
@@ -29,7 +30,7 @@
 
 @media (max-width: 700px) {
   .preview {
-    top: 8px;
+    top: calc(8px + var(--status-strip-height, 0px));
     right: 8px;
     bottom: auto;
     padding: 4px 10px;

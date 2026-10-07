@@ -8,6 +8,14 @@ import { PlaylistPlacement } from './core/playlist/playlist-placement';
 import { ELEMENT_SIZE } from './shared/element-size/element-size';
 
 const NOTHING = { width: 0, height: 0 };
+const STRIP = { width: 240, height: 26 };
+const BAR = { width: 560, height: 84 };
+
+/** Nothing floats over the bar before the first play. */
+const sizeOf = (element: Element) => {
+  if (element.hasAttribute('data-playlist-above')) return NOTHING;
+  return element.localName === 'app-status-strip' ? STRIP : BAR;
+};
 
 function render() {
   TestBed.configureTestingModule({
@@ -17,9 +25,7 @@ function render() {
       provideHttpClientTesting(),
       {
         provide: ELEMENT_SIZE,
-        // Nothing floats over the bar before the first play.
-        useValue: (element: Element) =>
-          of(element.hasAttribute('data-playlist-above') ? NOTHING : { width: 560, height: 84 }),
+        useValue: (element: Element) => of(sizeOf(element)),
       },
     ],
   });
@@ -48,6 +54,13 @@ describe('App', () => {
     expect(stack?.closest('router-outlet')).toBeNull();
   });
 
+  it('keeps the status strip, with usage in it, outside the routed page', () => {
+    const { element } = render();
+    const usage = element.querySelector('app-status-strip app-usage-fact');
+    expect(usage).not.toBeNull();
+    expect(usage?.closest('router-outlet')).toBeNull();
+  });
+
   it('moves the playlist clear of the task dock while a page says it is open', () => {
     const { fixture, element } = render();
     const foot = element.querySelector('.playlist');
@@ -66,5 +79,11 @@ describe('App', () => {
     expect(style.getPropertyValue('--playlist-clear-right')).toBe('20px');
     expect(style.getPropertyValue('--playlist-clear-bottom')).toBe('84px');
     expect(style.getPropertyValue('--playlist-reach')).toBe('84px');
+  });
+
+  it("tells every page the status strip's height, for their top HUD to keep below it", async () => {
+    const { fixture } = render();
+    await fixture.whenStable();
+    expect(document.documentElement.style.getPropertyValue('--status-strip-height')).toBe('26px');
   });
 });

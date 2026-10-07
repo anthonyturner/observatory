@@ -1,4 +1,5 @@
 import { LimitWindow, UsageDocument, workTokensOf } from '../../../core/usage/usage-document';
+import { HOT_PERCENT, hasReset } from '../../../core/usage/limit-window';
 import { UsageState } from '../../../core/usage/usage-reader';
 import {
   ageOf,
@@ -8,7 +9,7 @@ import {
   localDayKey,
   weekdayTime,
 } from '../../../core/usage/usage-format';
-import { HOT_PERCENT, VitalReading, WeeklyUsage } from './vitals';
+import { VitalReading, WeeklyUsage } from './vitals';
 import { weekToday } from './week-today';
 
 /** The three meters Home draws from Claude Code's usage. */
@@ -68,9 +69,6 @@ function tokensToday(document: UsageDocument, now: number): VitalReading {
     series,
   };
 }
-
-const hasReset = (window: LimitWindow, now: number): boolean =>
-  window.expired === true || Date.parse(window.resetsAt) <= now;
 
 /** " · last read Fri 09:05": the window's newest point, else the newest reading. */
 function lastRead(window: LimitWindow, limitsAt: string | undefined, locale?: string): string {

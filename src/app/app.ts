@@ -15,19 +15,22 @@ import { footClearanceOf, playlistReachOf } from './core/playlist/foot-clearance
 import { PlaylistPlacement } from './core/playlist/playlist-placement';
 import { NoticeStack } from './features/notices/notice-stack/notice-stack';
 import { TransportBar } from './features/playlist/transport-bar/transport-bar';
+import { UsageFact } from './features/usage-strip/usage-fact/usage-fact';
 import { ELEMENT_SIZE, ElementSize } from './shared/element-size/element-size';
 import { PreviewBanner } from './shared/preview-banner/preview-banner';
+import { StatusStrip } from './shared/status-strip/status-strip';
 
 const NO_SIZE: ElementSize = { width: 0, height: 0 };
 
-/** The shell: the routed page, and outside it the notices and the playlist, so
- *  both carry on from page to page and the music and its video never reload.
+/** The shell: the routed page, and outside it the notices, the status strip and
+ *  the playlist, so they carry on from page to page and the music and its video never reload.
  *  Every page's tools and cards at the foot keep clear of the playlist through
  *  `--playlist-clear-right` and `--playlist-clear-bottom`, and `--playlist-height`;
- *  the cards on the right keep above its video through `--playlist-reach`. */
+ *  the cards on the right keep above its video through `--playlist-reach`. Each
+ *  page's top HUD keeps below the status strip through `--status-strip-height`. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, PreviewBanner, TransportBar, NoticeStack],
+  imports: [RouterOutlet, PreviewBanner, TransportBar, NoticeStack, StatusStrip, UsageFact],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +38,7 @@ const NO_SIZE: ElementSize = { width: 0, height: 0 };
 export class App {
   protected readonly placement = inject(PlaylistPlacement);
   private readonly foot = viewChild.required<ElementRef<HTMLElement>>('foot');
+  private readonly strip = viewChild.required('strip', { read: ElementRef<HTMLElement> });
 
   constructor() {
     const sizeOf = inject(ELEMENT_SIZE);
@@ -62,6 +66,9 @@ export class App {
           root.style.setProperty('--playlist-clear-bottom', `${clearance.bottom}px`);
           root.style.setProperty('--playlist-reach', `${playlistReachOf(bar, aboveBar)}px`);
         });
+      sizeOf(this.strip().nativeElement)
+        .pipe(takeUntilDestroyed(destroyRef))
+        .subscribe(({ height }) => root.style.setProperty('--status-strip-height', `${height}px`));
     });
   }
 }

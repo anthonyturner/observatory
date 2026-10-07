@@ -19,7 +19,7 @@
 
 .hud.top {
   top: 0;
-  padding-top: calc(18px + env(safe-area-inset-top, 0px));
+  padding-top: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
 }
 
 .hud.bottom {
@@ -43,7 +43,7 @@
   overflow-y: auto;
   background: var(--queue-sky);
   padding-inline: 20px;
-  padding-block: calc(150px + env(safe-area-inset-top, 0px)) 100px;
+  padding-block: calc(150px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)) 100px;
   z-index: 4;
 }
 

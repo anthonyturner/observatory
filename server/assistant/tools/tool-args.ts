@@ -20,6 +20,18 @@ export function requiredText(args: ToolArgs, name: string): string {
   return value;
 }
 
+const WHOLE_NUMBER = /^\d+$/;
+
+/** The whole number above zero `name` holds, as a number or as its digits. */
+export function requiredWholeNumber(args: ToolArgs, name: string): number {
+  const value = args[name];
+  const number = typeof value === 'string' && WHOLE_NUMBER.test(value) ? Number(value) : value;
+  if (typeof number !== 'number' || !Number.isInteger(number) || number < 1) {
+    throw new ToolArgError(`${name} must be a whole number above 0`);
+  }
+  return number;
+}
+
 const knownNames = (projects: readonly Project[]): string =>
   projects.map((each) => each.name).join(', ') || 'none';
 

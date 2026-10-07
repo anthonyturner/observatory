@@ -72,6 +72,26 @@ export interface Source {
   readonly url: string;
 }
 
+/** The open pull request a Review Queue command is about. */
+export interface OnePull {
+  readonly repo: string;
+  readonly pr: number;
+}
+
+/** A Review Queue command Jev chose, which the page carries out as it would
+ *  the typed one: reading the queues itself, and asking before any change. */
+export type QueueAct =
+  | { readonly kind: 'blocking'; readonly repo: string | null }
+  | (OnePull & { readonly kind: 'open' })
+  | (OnePull & { readonly kind: 'dismiss' })
+  | (OnePull & { readonly kind: 'crew' })
+  | (OnePull & {
+      readonly kind: 'snooze';
+      readonly days: number;
+      /** "till Monday 12 October". */
+      readonly words: string;
+    });
+
 /** How the router reached its reply. */
 export type ReplyVia = 'keyword' | 'agent' | 'pick' | 'skill';
 
@@ -103,4 +123,6 @@ export interface RouteReply {
   readonly runWhy?: string;
   /** Only the local site sends one: the proposal can run here. */
   readonly run?: RunTicket;
+  /** A Review Queue command Jev chose, for the page to carry out. */
+  readonly queue?: QueueAct;
 }

@@ -1,5 +1,5 @@
 import type { JsonSchema } from '../chat-messages.ts';
-import type { ActionReply, Project, Proposal, Source } from '../route-contract.ts';
+import type { ActionReply, Project, Proposal, QueueAct, Source } from '../route-contract.ts';
 
 /** A tool's arguments, as the model wrote them: each tool checks its own. */
 export type ToolArgs = Readonly<Record<string, unknown>>;
@@ -10,10 +10,12 @@ export interface ToolContext {
   readonly projects: readonly Project[];
 }
 
-/** What a tool chose for the reply: a page to open or an op, or a proposal. */
+/** What a tool chose for the reply: a page to open or an op, a proposal, or
+ *  a Review Queue command. */
 export type AgentEffect =
   | { readonly kind: 'action'; readonly reply: ActionReply }
-  | { readonly kind: 'proposal'; readonly proposal: Proposal };
+  | { readonly kind: 'proposal'; readonly proposal: Proposal }
+  | { readonly kind: 'queue'; readonly act: QueueAct };
 
 export interface ToolResult {
   /** What the model reads back: kept small, since every token is paid for. */

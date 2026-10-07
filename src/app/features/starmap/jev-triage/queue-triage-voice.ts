@@ -13,14 +13,15 @@ import { QueueCommand, queueCommandOf } from './queue-command';
 import { QueueReply } from './queue-reply';
 import { YesNoQuestion } from './yes-no-question';
 
-const TRIAGE_NOT_LOADED = 'The Review Queue commands didn’t load. Try again in a moment.';
+export const TRIAGE_NOT_LOADED = 'The Review Queue commands didn’t load. Try again in a moment.';
 
 /**
  * The Review Queue by voice or typing on Home: "what's blocking?", "next
  * star", "snooze 412 till Monday" and "dismiss 412". Matched here with no
  * model, so typed and spoken words do exactly the same, then handed to
- * QueueTriage to carry out. A snooze or dismissal it cannot make out gets
- * what Jev heard and the command it can do, rather than a chat.
+ * QueueTriage to carry out. A snooze or dismissal it cannot make out goes to
+ * Jev's model, which has the queue's commands as tools; with the model off,
+ * it gets what Jev heard and the command it can do instead.
  */
 @Injectable({ providedIn: 'root' })
 export class QueueTriageVoice implements AskShortcut {
@@ -40,6 +41,7 @@ export class QueueTriageVoice implements AskShortcut {
     if (this.info.isElsewhere()) return null;
     const command = queueCommandOf(words, this.projects() ?? [], this.clock.now());
     if (command) return (how) => this.carryOut(this.openReply(words, how), command);
+    if (this.info.jev() === 'on') return null;
     const closest = closestCommandTo(words);
     if (closest === null) return null;
     return (how) => this.replies.say(this.openReply(words, how), heardWords(words, closest));

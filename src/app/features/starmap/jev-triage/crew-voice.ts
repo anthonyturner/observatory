@@ -79,7 +79,6 @@ export class CrewVoice implements AskShortcut {
     const entryId = this.replies.open(words, how);
     if (pick.kind !== 'one') return this.askWhich(entryId, pick);
     this.question.close();
-    this.replies.show(entryId, 'Checking it…');
     this.check(entryId, pick.pull);
   }
 
@@ -92,8 +91,11 @@ export class CrewVoice implements AskShortcut {
     this.choosingId = this.question.question()?.id ?? null;
   }
 
-  /** Send crew brings the task runner with it, so it loads only when a crew is asked for. */
-  private check(entryId: number, pull: OpenItem): void {
+  /** Checks a crew can take `pull`, asking yes or no before one goes, in reply
+   *  `entryId`. Send crew brings the task runner with it, so it loads only
+   *  when a crew is asked for. */
+  check(entryId: number, pull: OpenItem): void {
+    this.replies.show(entryId, 'Checking it…');
     import('./crew-check')
       .then(({ CrewCheck }) => this.injector.get(CrewCheck).check(entryId, pull))
       .catch((error: unknown) => {

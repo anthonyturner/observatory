@@ -11,7 +11,7 @@ import { MAX_SNOOZE_DAYS, TriageChoice, TriageClient } from '../../../core/queue
 import { plural } from '../../../shared/text/plural';
 import { pullItemOf, readProjectsOf } from './project-pulls';
 import { QueueCommand } from './queue-command';
-import { NOT_READ_YET, OUT_OF_REACH, QueueReply } from './queue-reply';
+import { NOT_READ_YET, OUT_OF_REACH, QueueReply, notOpenWords } from './queue-reply';
 import {
   BLOCKING_COUNT,
   ProjectQueue,
@@ -143,10 +143,7 @@ export class QueueTriage {
         (each.openPulls ?? []).some((pull) => pull.number === pr),
     );
     if (!holding.length) {
-      return this.replies.say(
-        entryId,
-        `Pull request ${pr} isn’t open in ${project?.name ?? 'any project'}.`,
-      );
+      return this.replies.say(entryId, notOpenWords(pr, project?.name ?? 'any project'));
     }
     if (holding.length > 1) {
       const names = holding.map((each) => each.name).join(' and ');

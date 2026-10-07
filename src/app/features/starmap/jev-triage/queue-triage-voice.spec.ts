@@ -7,7 +7,7 @@ import { ASK_CHANNEL } from '../../../core/assistant/ask-channel';
 import { ASK_FEED_CHANNEL, AskFeed } from '../../../core/assistant/ask-feed';
 import { ASSISTANT_API, AssistantApi } from '../../../core/assistant/assistant-api';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
-import { RouteReply, RouteRequest } from '../../../core/assistant/assistant.types';
+import { QueueAct, RouteReply, RouteRequest } from '../../../core/assistant/assistant.types';
 import { OpenQuestion, QUESTION_MS, TIMED_OUT_NOTE } from '../../../core/assistant/open-question';
 import { GRACE_MS } from '../../../core/assistant/page-jump';
 import { ReplyLog } from '../../../core/assistant/reply-log';
@@ -21,6 +21,16 @@ import { REVIEW_QUEUE_SHORTCUTS } from './review-queue-shortcuts';
 /** A Wednesday, so “till Monday” is five days. */
 const WEDNESDAY = new Date(2026, 9, 7, 10, 0);
 const HELLO: RouteReply = { tier: 2, text: 'Hi', ask: [], commands: [], sources: [] };
+
+/** Jev's reply when its tools chose a Review Queue command. */
+const jevChose = (queue: QueueAct): RouteReply => ({
+  via: 'agent',
+  tier: 1,
+  queue,
+  says: 'I’ll check with you first.',
+  ask: [],
+  commands: [],
+});
 
 const project = (name: string, pulls: readonly number[]): ProjectSnapshot => ({
   name,
@@ -324,8 +334,9 @@ describe('the Review Queue by voice or typing', () => {
     http.expectNone('/api/triage');
   });
 
-  it('says what it heard, and what it can do, for a command it cannot make out', async () => {
-    const { type, latest, route, voice } = setUp();
+  it('says what it heard, and what it can do, for a command it cannot make out with Jev off', async () => {
+    const { type, latest, route, voice, info } = setUp();
+    info.noteJev('off');
 
     await type('snooze 12 till the cows come home');
 
@@ -335,6 +346,18 @@ describe('the Review Queue by voice or typing', () => {
     expect(latest().said.text).toBe(heard);
     expect(voice.speak).toHaveBeenCalledWith(heard, 1);
     expect(route).not.toHaveBeenCalled();
+  });
+
+  it('leaves a command it cannot make out to Jev, whose tools can, with Jev on', async () => {
+    const { type, route, info } = setUp();
+    info.noteJev('on');
+
+    await type('dismiss the PR about the login fix');
+
+    await vi.waitFor(() => expect(route).toHaveBeenCalled());
+    expect(route.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ text: 'dismiss the PR about the login fix' }),
+    );
   });
 
   it('says when the pull request is not open', async () => {
@@ -388,5 +411,87 @@ describe('the Review Queue by voice or typing', () => {
     await type('next star');
 
     await vi.waitFor(() => expect(route).toHaveBeenCalled());
+  });
+
+  describe('when Jev chose the command', () => {
+    it('asks before a dismissal, recording it only on a yes', async () => {
+      const { type, latest, route, http } = setUp();
+      route.mockResolvedValueOnce(jevChose({ kind: 'dismiss', repo: 'me/beta', pr: 3 }));
+
+      await type('get rid of the conflicted one in beta');
+
+      await vi.waitFor(() =>
+        expect(latest().said.text).toBe(
+          'Dismiss beta pull request 3, “Change 3”? It comes back if it changes.',
+        ),
+      );
+      expect(latest().actions.map((action) => action.kind)).toEqual(['say', 'say']);
+      http.expectNone('/api/triage');
+      await type('yes');
+      expect(http.expectOne('/api/triage').request.body).toEqual({
+        repo: 'me/beta',
+        number: 3,
+        action: 'dismiss',
+      });
+      expect(route).toHaveBeenCalledTimes(1);
+    });
+
+    it('asks before a snooze, till the day Jev named', async () => {
+      const { type, latest, route, http } = setUp();
+      route.mockResolvedValueOnce(
+        jevChose({
+          kind: 'snooze',
+          repo: 'me/alpha',
+          pr: 12,
+          days: 5,
+          words: 'till Monday 12 October',
+        }),
+      );
+
+      await type('park the twelve one until the start of next week');
+
+      await vi.waitFor(() =>
+        expect(latest().said.text).toBe(
+          'Snooze alpha pull request 12, “Change 12”, till Monday 12 October?',
+        ),
+      );
+      http.expectNone('/api/triage');
+    });
+
+    it('reads out what’s blocking itself', async () => {
+      const { type, latest, route, flushQueues } = setUp();
+      route.mockResolvedValueOnce(jevChose({ kind: 'blocking', repo: null }));
+
+      await type('anything holding me up today?');
+      await vi.waitFor(() => expect(latest().said.text).toBe('Reading the queues…'));
+      flushQueues();
+
+      expect(latest().said.text).toBe(BLOCKING_LINE);
+    });
+
+    it('opens the pull request after the grace second, with Stay here', async () => {
+      const { type, latest, route, navigate } = setUp();
+      route.mockResolvedValueOnce(jevChose({ kind: 'open', repo: 'me/alpha', pr: 13 }));
+
+      await type('show me change thirteen');
+
+      await vi.waitFor(() =>
+        expect(latest().said.text).toBe('Opening alpha pull request 13, “Change 13”…'),
+      );
+      expect(latest().actions).toEqual([{ kind: 'stay' }]);
+      await vi.advanceTimersByTimeAsync(GRACE_MS);
+      expect(navigate).toHaveBeenCalledExactlyOnceWith('/p/me/alpha?pr=13');
+    });
+
+    it('says so when the pull request is not open', async () => {
+      const { type, latest, route } = setUp();
+      route.mockResolvedValueOnce(jevChose({ kind: 'open', repo: 'me/alpha', pr: 99 }));
+
+      await type('show me ninety nine');
+
+      await vi.waitFor(() =>
+        expect(latest().said.text).toBe('Pull request 99 isn’t open in alpha.'),
+      );
+    });
   });
 });

@@ -4,6 +4,7 @@ import {
   AskOption,
   AssistantStatus,
   JevState,
+  QueueAct,
   ReplyVia,
   RouteReply,
   RoutePick,
@@ -74,6 +75,23 @@ function parseRunTicket(value: unknown): RunTicket | undefined {
   return { token, folder, name, expiresAt, limitMs, command };
 }
 
+const PULL_ACTS = ['open', 'dismiss', 'crew'] as const;
+
+const isWhole = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0;
+
+/** A Review Queue command, whole or not at all: the page acts on every field of it. */
+function parseQueueAct(value: unknown): QueueAct | undefined {
+  if (!isObject(value)) return undefined;
+  const { kind, repo, pr, days, words } = value;
+  if (kind === 'blocking') return repo === null || isText(repo) ? { kind, repo } : undefined;
+  if (!isText(repo) || !isWhole(pr)) return undefined;
+  if (kind === 'snooze') {
+    return isWhole(days) && isText(words) ? { kind, repo, pr, days, words } : undefined;
+  }
+  return oneOf(PULL_ACTS)(kind) ? { kind, repo, pr } : undefined;
+}
+
 /** What `GET /api/route` returns, or null when it is not that. */
 export function parseAssistantStatus(body: unknown): AssistantStatus | null {
   if (!isObject(body)) return null;
@@ -108,5 +126,6 @@ export function parseRouteReply(body: unknown): RouteReply | null {
     project: text('project'),
     runWhy: text('runWhy'),
     run: parseRunTicket(body['run']),
+    queue: parseQueueAct(body['queue']),
   };
 }

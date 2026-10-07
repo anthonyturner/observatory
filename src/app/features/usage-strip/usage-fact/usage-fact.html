@@ -1,0 +1,21 @@
+@if (glance(); as glance) {
+  @if (strip.isCollapsed()) {
+    <span class="peak" [class.hot]="glance.peak.isHot">
+      <span class="visually-hidden">Claude Code usage, higher limit: </span>{{ glance.peak.text }}
+    </span>
+  } @else {
+    <span class="visually-hidden">Claude Code usage</span>
+    @for (limit of glance.limits; track limit.id) {
+      <span class="limit" [class.hot]="limit.isHot">
+        <abbr class="limit__label" [title]="limit.title">{{ limit.label }}</abbr>
+        <span class="limit__meter" aria-hidden="true">
+          <span class="limit__fill" [style.width.%]="limit.fill"></span>
+        </span>
+        <span class="limit__value">{{ limit.text }}</span>
+      </span>
+    }
+    @if (glance.reset; as reset) {
+      <span class="reset">{{ reset }}</span>
+    }
+  }
+}

@@ -60,6 +60,8 @@ import { SoundCardCapture } from './sound-card/sound-card-capture.ts';
 import { withSoundCardRoutes } from './sound-card/sound-card-routes.ts';
 import { liveAgentReader } from './live-agents/live-agents.ts';
 import { withLiveAgentsRoutes } from './live-agents/live-agents-routes.ts';
+import { agentFeedReader } from './live-agents/feed-reader.ts';
+import { withLiveAgentFeedRoute } from './live-agents/feed-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -145,6 +147,14 @@ const soundCard = {
 };
 
 const liveAgentsSource = liveAgentReader();
+const ownerAndFeedRoutes = withLiveAgentFeedRoute(
+  withActionsRerunRoute(
+    withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+    reads,
+    github,
+  ),
+  agentFeedReader(),
+);
 
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it
 // with no Origin, so it checks the Host and its own session token instead.
@@ -164,18 +174,7 @@ const server = createApiServer(
                           withArchitectureRoutes(
                             withAgentSpeechRoutes(
                               withRiskRoutes(
-                                withLiveAgentsRoutes(
-                                  withActionsRerunRoute(
-                                    withRerunRoute(
-                                      ownerRoutes(reads, triage, editor),
-                                      reads,
-                                      github,
-                                    ),
-                                    reads,
-                                    github,
-                                  ),
-                                  liveAgentsSource,
-                                ),
+                                withLiveAgentsRoutes(ownerAndFeedRoutes, liveAgentsSource),
                                 reads.pull,
                                 summaries,
                               ),

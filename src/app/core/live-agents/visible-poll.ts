@@ -1,20 +1,38 @@
-import { EMPTY, Observable, interval, startWith, switchMap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  combineLatest,
+  distinctUntilChanged,
+  interval,
+  of,
+  startWith,
+  switchMap,
+} from 'rxjs';
 
 /** `read`, now and every `everyMs`, while the page is shown. Hidden, it stops
- *  asking; shown again, it reads at once and carries on. */
-export function whileVisible<T>(
+ *  asking; shown again, or given a new interval, it reads at once and carries on. */
+export function whileVisibleEvery<T>(
   isHidden: Observable<boolean>,
-  everyMs: number,
+  everyMs: Observable<number>,
   read: () => Observable<T>,
 ): Observable<T> {
-  return isHidden.pipe(
-    switchMap((hidden) =>
+  return combineLatest([isHidden, everyMs.pipe(distinctUntilChanged())]).pipe(
+    switchMap(([hidden, ms]) =>
       hidden
         ? EMPTY
-        : interval(everyMs).pipe(
+        : interval(ms).pipe(
             startWith(0),
             switchMap(() => read()),
           ),
     ),
   );
+}
+
+/** `read`, now and every `everyMs`, while the page is shown. */
+export function whileVisible<T>(
+  isHidden: Observable<boolean>,
+  everyMs: number,
+  read: () => Observable<T>,
+): Observable<T> {
+  return whileVisibleEvery(isHidden, of(everyMs), read);
 }

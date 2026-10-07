@@ -8,7 +8,7 @@ export interface SnoozeUntil {
 }
 
 const DAYS_PER_WEEK = 7;
-const WEEKDAYS = [
+export const WEEKDAYS = [
   'sunday',
   'monday',
   'tuesday',
@@ -73,6 +73,14 @@ function oneWordOf(word: string, today: Date): SnoozeUntil | null {
   return weekday < 0 ? null : tillWeekday(weekday, today);
 }
 
+/** Every word a time can hold besides its number. */
+const TIME_WORDS: ReadonlySet<string> = new Set([
+  ...JOINERS,
+  ...WEEKDAYS,
+  ...DAY_UNITS.keys(),
+  'tomorrow',
+]);
+
 /** How long the words after a snooze's number ask for, from `today`: a week
  *  when they name no time, or null when they are not a time at all. */
 export function snoozeUntilOf(words: readonly string[], today: Date): SnoozeUntil | null {
@@ -80,4 +88,17 @@ export function snoozeUntilOf(words: readonly string[], today: Date): SnoozeUnti
   if (!said.length) return words.length ? null : forDays(SNOOZE_DAYS);
   if (said.length === 1) return oneWordOf(said[0], today);
   return countOf(said);
+}
+
+/** The time named somewhere in the words after a snooze's number, among
+ *  others: "because it's stale, till Monday". A week when they hold no time
+ *  word; null when they start a time that is none ("till the cows come home"). */
+export function snoozeTimeIn(words: readonly string[], today: Date): SnoozeUntil | null {
+  for (let start = 0; start < words.length; start++) {
+    for (let end = words.length; end > start; end--) {
+      const until = snoozeUntilOf(words.slice(start, end), today);
+      if (until) return until;
+    }
+  }
+  return words.some((word) => TIME_WORDS.has(word)) ? null : snoozeUntilOf([], today);
 }

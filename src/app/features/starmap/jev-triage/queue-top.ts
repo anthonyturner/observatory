@@ -3,7 +3,7 @@ import { QueueItem } from '../../../core/queue/queue-report';
 import { plural } from '../../../shared/text/plural';
 import { SkyItem } from '../engine/sky-model';
 import { blockedFirst, byBlockedFirst, standingOf } from '../next-star';
-import { NamedProject } from './queue-command';
+import { NamedProject } from './project-mention';
 
 /** One project's open pull requests, as its review queue reads them. */
 export interface ProjectQueue {

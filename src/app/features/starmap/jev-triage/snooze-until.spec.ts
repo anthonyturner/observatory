@@ -1,4 +1,4 @@
-import { snoozeUntilOf } from './snooze-until';
+import { snoozeTimeIn, snoozeUntilOf } from './snooze-until';
 
 /** A Wednesday. */
 const WEDNESDAY = new Date(2026, 9, 7, 10, 0);
@@ -34,5 +34,26 @@ describe('snoozeUntilOf', () => {
     expect(until('for 3 hours')).toBeNull();
     expect(until('for 0 days')).toBeNull();
     expect(until('monday and friday')).toBeNull();
+  });
+});
+
+describe('snoozeTimeIn', () => {
+  const timeIn = (said: string) => snoozeTimeIn(said ? said.split(' ') : [], WEDNESDAY);
+
+  it.each<[string, number, string]>([
+    ['', 7, 'for a week'],
+    ['till monday', 5, 'till Monday'],
+    ["because it's stale till monday", 5, 'till Monday'],
+    ['till monday because it is stale', 5, 'till Monday'],
+    ['for three days while i am away', 3, 'for 3 days'],
+    ["because it's stale", 7, 'for a week'],
+  ])('finds the time in %j', (said, days, words) => {
+    expect(timeIn(said)).toEqual({ days, words });
+  });
+
+  it('finds none when a time is started but is not one', () => {
+    for (const said of ['till the cows come home', 'for the release', 'weeks']) {
+      expect(timeIn(said), said).toBeNull();
+    }
   });
 });

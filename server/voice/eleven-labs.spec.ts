@@ -169,4 +169,24 @@ describe('elevenLabs', () => {
 
     await assert.rejects(elevenLabs({ key: KEY, fetch }).voices(), hasReason('shape'));
   });
+
+  it('hears in English with Scribe v2, sending the keyterms Scribe takes', async () => {
+    const { sent, fetch: send } = fakeFetch(() => Response.json({ text: ' dismiss PR 412 ' }));
+    const voice = elevenLabs({ key: KEY, fetch: send, sleep: noSleep });
+
+    const heard = await voice.hear({
+      audio: new Uint8Array([26, 69, 223, 163]),
+      contentType: 'audio/webm',
+      keyterms: ['Jev', 'PR 412', 'a[b'],
+    });
+
+    assert.equal(heard, 'dismiss PR 412');
+    assert.equal(sent[0].url, 'https://api.elevenlabs.io/v1/speech-to-text');
+    const form = sent[0].init.body;
+    assert.ok(form instanceof FormData);
+    assert.equal(form.get('model_id'), 'scribe_v2');
+    assert.equal(form.get('language_code'), 'en');
+    assert.deepEqual(form.getAll('keyterms'), ['Jev', 'PR 412']);
+    assert.ok(form.get('file') instanceof Blob);
+  });
 });

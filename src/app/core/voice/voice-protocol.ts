@@ -15,7 +15,8 @@ export interface DevicePath {
 }
 
 export type RunRequest =
-  | { readonly model: 'listen'; readonly audio: Float32Array }
+  /** `prompt` primes Whisper with words to expect; empty for none. */
+  | { readonly model: 'listen'; readonly audio: Float32Array; readonly prompt: string }
   | { readonly model: 'speak'; readonly text: string };
 
 export type VoiceRequest =

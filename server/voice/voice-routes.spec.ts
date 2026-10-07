@@ -126,6 +126,14 @@ describe('withVoiceRoutes', () => {
     assert.deepEqual(await response.json(), { text: 'open the orrery' });
     assert.deepEqual([...heard[0].audio], [26, 69, 223, 163]);
     assert.equal(heard[0].contentType, 'audio/webm;codecs=opus');
+    assert.deepEqual(heard[0].keyterms, []);
+  });
+
+  it('passes the words to expect on', async () => {
+    const { handle, heard } = account(true);
+    const response = await handle(hear({ ...CLIP, keyterms: ['Jev', 'PR 412'] }));
+    assert.equal(response.status, 200);
+    assert.deepEqual(heard[0].keyterms, ['Jev', 'PR 412']);
   });
 
   it('answers 503 with no key, hearing nothing', async () => {
@@ -151,6 +159,8 @@ describe('withVoiceRoutes', () => {
       {},
       { audio: CLIP.audio, type: 'text/html' },
       { audio: '', type: 'audio/webm' },
+      { ...CLIP, keyterms: 'Jev' },
+      { ...CLIP, keyterms: ['Jev', 412] },
     ]) {
       assert.equal((await handle(hear(body))).status, 400);
     }

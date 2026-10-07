@@ -36,25 +36,26 @@
   --count-unreviewed: var(--sev-waiting);
   --count-unclaimed: #9fe8ff;
 
-  /* The core: the assistant's body, green as on pr-starmap's Home. Its state
-     picks the ball's tint; the floor and rings stay as they are. */
-  --core-idle: #5cff8e;
-  --core-routing: #7dffc8;
+  /* The core: the assistant's body, in the panels' blue. Its state picks the
+     ball's tint; the floor and rings stay as they are. */
+  --core-idle: #7f98ff;
+  --core-routing: #8fc4ff;
   --core-error: var(--bad);
-  --core-listening: #8fffb4;
-  --core-transcribing: #c4ffdc;
-  /* The voice ring round the core's centre, and the dot that sweeps it. */
-  --voice-ring: #8ea2ff;
+  --core-listening: #a6b8ff;
+  --core-transcribing: #ccd6ff;
+  /* The voice ring round the core's centre, and the dot that sweeps it: comet
+     cyan, so it reads over the blue ball. */
+  --voice-ring: var(--count-unclaimed);
   --voice-ring-sweep: #ffffff;
-  --core-speaking: #b4ffd2;
+  --core-speaking: #b9c8ff;
   /* The mood blends toward these: warm as projects strain, grey while unknown. */
   --core-uneasy: #ffb35c;
   --core-unknown: #8d9bc4;
   /* A neglected project's bead: a grey ring, apart from the blocked one's colour. */
   --core-stale: var(--muted);
-  --core-floor: #46ff86;
+  --core-floor: #6683ff;
   /* Paler than the ball, so the orbit and the tier arcs read over it. */
-  --core-ring: #b4ffd0;
+  --core-ring: #c4d0ff;
   --core-heart: #ffffff;
 
   --edge: rgba(120, 150, 220, 0.22);
@@ -99,11 +100,12 @@
   --meter-fill: linear-gradient(90deg, rgba(142, 162, 255, 0.3), rgba(142, 162, 255, 0.6));
   --meter-fill-hot: linear-gradient(90deg, rgba(255, 194, 77, 0.3), rgba(255, 194, 77, 0.65));
   --flow-wash: rgba(142, 162, 255, 0.04);
-  /* Home's night: a green glow round the core, deepening to near black. The
-     canvas paints it; this gradient stands in until it does, or without one. */
-  --sky-glow: #0a2214;
-  --sky-mid: #06120b;
-  --sky-deep: #020604;
+  /* Home's night: a navy glow round the core, the panels' glass deepening to
+     near black. The canvas paints it; this gradient stands in until it does, or
+     without one. */
+  --sky-glow: #0c1736;
+  --sky-mid: #070c1f;
+  --sky-deep: #02040a;
   --sky-vignette: rgba(0, 0, 0, 0.66);
   /* The playlist's colours over the sky: trance cool and dreamy, techno hot and stark,
      and one set for each tech station's talks. */

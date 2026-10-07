@@ -4,7 +4,7 @@
 export const DEG = Math.PI / 180;
 
 /** The ball, the beads' orbit just clear of it so a bead never sinks into the
- *  green, and the tier ring outside that. */
+ *  ball, and the tier ring outside that. */
 export const BALL = 1.18;
 export const ORBIT = 1.3;
 export const TIER_RING = 1.44;

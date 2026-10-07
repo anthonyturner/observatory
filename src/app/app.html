@@ -2,5 +2,13 @@
 <footer #foot class="playlist" [class.playlist--beside-dock]="placement.isBesideDock()">
   <app-transport-bar />
 </footer>
+<app-status-strip
+  #strip
+  class="status"
+  [class.status--beside-dock]="placement.isBesideDock()"
+  label="Status details"
+>
+  <app-usage-fact />
+</app-status-strip>
 <app-preview-banner />
 <app-notice-stack />

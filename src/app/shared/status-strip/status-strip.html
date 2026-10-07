@@ -1,0 +1,12 @@
+<div class="strip" [class.strip--collapsed]="isCollapsed()">
+  <div class="strip__facts"><ng-content /></div>
+  <button
+    type="button"
+    class="strip__toggle"
+    [attr.aria-label]="label()"
+    [attr.aria-expanded]="!isCollapsed()"
+    (click)="toggle()"
+  >
+    <span class="strip__chevron" aria-hidden="true"></span>
+  </button>
+</div>

@@ -1,0 +1,65 @@
+:host {
+  display: block;
+}
+
+.strip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 2px 2px 12px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  box-shadow: var(--sheen-inset);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.strip--collapsed {
+  padding-left: 10px;
+}
+
+.strip__facts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.strip__toggle {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.strip__toggle:hover {
+  background: var(--flow-tint);
+  color: var(--ink);
+}
+
+.strip__toggle:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 1px;
+}
+
+/* A chevron drawn from two borders: up to fold, down to open. */
+.strip__chevron {
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.strip--collapsed .strip__chevron {
+  transform: translateY(-2px) rotate(45deg);
+}

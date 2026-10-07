@@ -1,6 +1,3 @@
-/** At or above this share of a limit, a reading turns amber. */
-export const HOT_PERCENT = 80;
-
 /** One vital. A null `value` means unknown, and `note` then says why. */
 export interface VitalReading {
   readonly id: string;

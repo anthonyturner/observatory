@@ -10,7 +10,7 @@ header {
   grid-template-areas: 'brand middle clock';
   align-items: start;
   gap: 10px 24px;
-  padding: calc(18px + env(safe-area-inset-top, 0px)) 28px 8px;
+  padding: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)) 28px 8px;
 }
 
 .brand {

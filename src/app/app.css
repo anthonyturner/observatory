@@ -50,3 +50,21 @@
     padding-inline: max(20px, env(safe-area-inset-right, 0px));
   }
 }
+
+/* The status strip hangs from the top centre. Every page's top HUD sits
+   --status-strip-height lower, which is 0 while the strip has nothing to show.
+   Its layer is below the sheets and docks (8 and up), so an open one covers it. */
+.status {
+  position: fixed;
+  top: calc(4px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  z-index: 7;
+  transform: translateX(-50%);
+}
+
+/* Centred over the page, not under Home's task dock beside it. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .status--beside-dock {
+    left: calc((100% - var(--run-dock-clearance)) / 2);
+  }
+}

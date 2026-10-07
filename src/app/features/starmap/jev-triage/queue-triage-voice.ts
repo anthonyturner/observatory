@@ -7,9 +7,9 @@ import { LEFT_IT } from '../../../core/assistant/spoken-answer';
 import { TierOneActions } from '../../../core/assistant/tier-one-actions';
 import { PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { Clock } from '../../../core/time/clock';
+import { readProjectsOf } from './project-pulls';
 import { QueueCommand, queueCommandOf } from './queue-command';
 import { QueueReply } from './queue-reply';
-import { readProjectsOf } from './project-pulls';
 import { YesNoQuestion } from './yes-no-question';
 
 const TRIAGE_NOT_LOADED = 'The Review Queue commands didn’t load. Try again in a moment.';

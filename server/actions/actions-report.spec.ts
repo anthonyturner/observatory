@@ -55,7 +55,10 @@ function sources(more: Partial<ActionsSources> = {}): ActionsSources {
     workflowRuns: async (_repo, branch) =>
       branch
         ? [run(3, { conclusion: 'failure' })]
-        : [run(1, { attempt: 2 }), run(2, { status: 'in_progress', conclusion: null })],
+        : [
+            run(1, { attempt: 2 }),
+            run(2, { status: 'in_progress', conclusion: null, workflowName: 'Bump typescript' }),
+          ],
     runJobs: async () => [],
     defaultBranch: async () => 'main',
     checkHistory: async () => HISTORY,
@@ -95,6 +98,8 @@ describe('actionsReport', () => {
       ],
     );
     assert.deepEqual(report.flakyChecks, ['test']);
+    // Named by its workflow, not by its own title as a Dependabot run is.
+    assert.equal(report.runs[1].workflow, 'CI');
     assert.equal(report.workflows[0].isActive, true);
     assert.equal(report.workflows[0].url, 'https://github.com/me/app/actions/workflows/ci.yml');
     assert.deepEqual(report.health, {

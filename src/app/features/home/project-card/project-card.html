@@ -38,6 +38,7 @@
     @for (part of parts; track part.label) {
       <a [routerLink]="snapshot.dashboardUrl" [fragment]="part.fragment">{{ part.label }}</a>
     }
+    <app-ci-mark [repo]="snapshot.repo" [name]="snapshot.name" />
   </nav>
   <a
     class="github"

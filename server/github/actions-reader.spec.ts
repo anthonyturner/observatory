@@ -6,6 +6,7 @@ import {
   readWorkflowRuns,
   runJobsOf,
   workflowRunsOf,
+  workflowLabelOf,
   workflowsOf,
 } from './actions-reader.ts';
 
@@ -57,6 +58,15 @@ describe('workflowRunsOf', () => {
       '2026-10-07T10:00:00Z',
     );
     assert.deepEqual(workflowRunsOf({ message: 'Not Found' }), []);
+  });
+});
+
+describe('workflowLabelOf', () => {
+  it('keeps a workflow’s name, and names one without by its file', () => {
+    assert.equal(workflowLabelOf('CI', '.github/workflows/ci.yml'), 'CI');
+    assert.equal(workflowLabelOf('.github/workflows/qa.yml', '.github/workflows/qa.yml'), 'qa.yml');
+    assert.equal(workflowLabelOf(null, '.github/workflows/qa.yml'), 'qa.yml');
+    assert.equal(workflowLabelOf(null, null), 'Workflow');
   });
 });
 

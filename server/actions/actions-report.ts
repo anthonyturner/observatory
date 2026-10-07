@@ -1,4 +1,10 @@
-import type { ActionsReader, RunJob, Workflow, WorkflowRun } from '../github/actions-reader.ts';
+import {
+  type ActionsReader,
+  type RunJob,
+  type Workflow,
+  type WorkflowRun,
+  WORKFLOW_FOLDER,
+} from '../github/actions-reader.ts';
 import type { CheckAttempt, CheckHistoryReader } from '../github/check-history.ts';
 import { flakyCheckNames } from '../queue/flaky-checks.ts';
 import type {
@@ -14,7 +20,6 @@ import { ciHealthOf, outcomeOf, secondsBetween } from './run-outcome.ts';
 /** Everything the Actions report reads from GitHub. */
 export type ActionsSources = ActionsReader & CheckHistoryReader;
 
-const WORKFLOW_FOLDER = '.github/workflows/';
 const ACTIVE = 'active';
 
 /** A workflow's page of runs on GitHub; one GitHub made itself, such as Pages, has none of its own. */
@@ -38,13 +43,20 @@ const workflowOf = (repo: string, workflow: Workflow): ActionsWorkflow => ({
   url: workflowUrl(repo, workflow.path),
 });
 
-export function actionsRunOf(run: WorkflowRun, flaky: ReadonlySet<string>): ActionsRun {
+/** What a run knows besides itself: its workflow's name, and the commits found flaky. */
+export interface RunContext {
+  /** By workflow id. A run's own name can be its title instead, as Dependabot's are. */
+  readonly workflowNames: ReadonlyMap<number, string>;
+  readonly flaky: ReadonlySet<string>;
+}
+
+export function actionsRunOf(run: WorkflowRun, context: RunContext): ActionsRun {
   const outcome = outcomeOf(run.status, run.conclusion);
   const hasEnded = run.status === 'completed';
   return {
     id: run.id,
     workflowId: run.workflowId,
-    workflow: run.workflowName,
+    workflow: context.workflowNames.get(run.workflowId) ?? run.workflowName,
     title: run.title,
     number: run.number,
     attempt: run.attempt,
@@ -56,7 +68,7 @@ export function actionsRunOf(run: WorkflowRun, flaky: ReadonlySet<string>): Acti
     startedAt: run.startedAt,
     durationS: hasEnded ? secondsBetween(run.startedAt, run.updatedAt) : null,
     outcome,
-    isFlaky: run.attempt > 1 && flaky.has(run.sha),
+    isFlaky: run.attempt > 1 && context.flaky.has(run.sha),
     url: run.url,
   };
 }
@@ -69,6 +81,7 @@ export async function ciHealthReport(github: ActionsReader, repo: string): Promi
     repo,
     branch,
     runs.map((run) => ({
+      workflowId: run.workflowId,
       workflow: run.workflowName,
       outcome: outcomeOf(run.status, run.conclusion),
     })),
@@ -97,12 +110,15 @@ export async function actionsReport(
     attemptsOf(github, repo),
     ciHealthReport(github, repo),
   ]);
-  const flaky = flakyCommits(attempts);
+  const context: RunContext = {
+    workflowNames: new Map(workflows.map((workflow) => [workflow.id, workflow.name])),
+    flaky: flakyCommits(attempts),
+  };
   return {
     generatedAt: new Date(now).toISOString(),
     repo,
     workflows: workflows.map((workflow) => workflowOf(repo, workflow)),
-    runs: runs.map((run) => actionsRunOf(run, flaky)),
+    runs: runs.map((run) => actionsRunOf(run, context)),
     flakyChecks: [...flakyCheckNames(attempts)].sort(),
     health,
   };

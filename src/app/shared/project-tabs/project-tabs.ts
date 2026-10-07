@@ -9,6 +9,9 @@ export interface ProjectTab {
   readonly path: string;
 }
 
+/** The Actions screen, which Home's project cards also link to. */
+export const ACTIONS_TAB: ProjectTab = { id: 'actions', label: 'Actions', path: 'actions' };
+
 /**
  * Every per-project screen, in the order the strip shows them. A new screen
  * adds its entry here and its route in `app.routes.ts`, and passes its `id`
@@ -17,6 +20,7 @@ export interface ProjectTab {
 export const PROJECT_TABS: readonly ProjectTab[] = [
   { id: 'queue', label: 'Queue', path: '' },
   { id: 'releases', label: 'Releases', path: 'releases' },
+  ACTIONS_TAB,
 ];
 
 /** Where a tab lives for one repository, `owner/name`. */

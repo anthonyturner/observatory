@@ -74,6 +74,17 @@ const isId = (value: unknown): value is number => Number.isInteger(value) && Num
 const textOr = (value: unknown, otherwise: string): string => (isText(value) ? value : otherwise);
 const textOrNull = (value: unknown): string | null => (isText(value) ? value : null);
 
+export const WORKFLOW_FOLDER = '.github/workflows/';
+
+/** A workflow file with no `name:` goes by its path, which reads better as the file's name. */
+export function workflowLabelOf(name: unknown, path: unknown): string {
+  if (isText(name) && !name.startsWith(WORKFLOW_FOLDER)) return name;
+  const from = isText(path) ? path : textOr(name, '');
+  return from.startsWith(WORKFLOW_FOLDER)
+    ? from.slice(WORKFLOW_FOLDER.length)
+    : textOr(from, 'Workflow');
+}
+
 function runOf(run: Json): WorkflowRun | null {
   const { id, workflow_id: workflowId, run_number: number, html_url: url } = run;
   const { head_sha: sha, status, created_at: createdAt, updated_at: updatedAt } = run;
@@ -83,7 +94,7 @@ function runOf(run: Json): WorkflowRun | null {
   return {
     id,
     workflowId,
-    workflowName: textOr(run['name'], 'Workflow'),
+    workflowName: workflowLabelOf(run['name'], run['path']),
     title: textOr(run['display_title'], ''),
     number,
     attempt: isId(run['run_attempt']) ? run['run_attempt'] : 1,
@@ -109,7 +120,9 @@ export const workflowRunsOf = (body: unknown): WorkflowRun[] =>
 /** The workflows in a `GET /actions/workflows` answer. */
 export function workflowsOf(body: unknown): Workflow[] {
   return jsonListIn(body, 'workflows').flatMap(({ id, name, path, state }) =>
-    isId(id) && isText(name) && isText(path) ? [{ id, name, path, state: textOr(state, '') }] : [],
+    isId(id) && isText(path)
+      ? [{ id, name: workflowLabelOf(name, path), path, state: textOr(state, '') }]
+      : [],
   );
 }
 

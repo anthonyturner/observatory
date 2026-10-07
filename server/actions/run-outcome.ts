@@ -31,6 +31,8 @@ export function secondsBetween(from: string | null, to: string | null): number |
 
 /** A run as the health rule reads it. */
 export interface HealthRun {
+  readonly workflowId: number;
+  /** Named in the failing list. */
   readonly workflow: string;
   readonly outcome: RunOutcome;
 }
@@ -44,13 +46,13 @@ const SILENT: ReadonlySet<RunOutcome> = new Set(['cancelled', 'skipped']);
  * still going is running; else any passing is passing.
  */
 export function ciHealthOf(repo: string, branch: string, runs: readonly HealthRun[]): CiHealth {
-  const newest = new Map<string, RunOutcome>();
+  const newest = new Map<number, HealthRun>();
   for (const run of runs) {
-    if (!SILENT.has(run.outcome) && !newest.has(run.workflow))
-      newest.set(run.workflow, run.outcome);
+    if (!SILENT.has(run.outcome) && !newest.has(run.workflowId)) newest.set(run.workflowId, run);
   }
-  const failing = [...newest].filter(([, outcome]) => outcome === 'failed').map(([name]) => name);
-  return { repo, branch, state: stateOf(new Set(newest.values())), failing };
+  const latest = [...newest.values()];
+  const failing = latest.filter((run) => run.outcome === 'failed').map((run) => run.workflow);
+  return { repo, branch, state: stateOf(new Set(latest.map((run) => run.outcome))), failing };
 }
 
 function stateOf(outcomes: ReadonlySet<RunOutcome>): CiState {

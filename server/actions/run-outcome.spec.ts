@@ -30,9 +30,9 @@ describe('secondsBetween', () => {
 describe('ciHealthOf', () => {
   it('is failing when any workflow’s newest run failed, naming each', () => {
     const health = ciHealthOf('me/app', 'main', [
-      { workflow: 'CI', outcome: 'failed' },
-      { workflow: 'Deploy', outcome: 'passed' },
-      { workflow: 'CI', outcome: 'passed' },
+      { workflowId: 9, workflow: 'CI', outcome: 'failed' },
+      { workflowId: 10, workflow: 'Deploy', outcome: 'passed' },
+      { workflowId: 9, workflow: 'CI', outcome: 'passed' },
     ]);
 
     assert.deepEqual(health, { repo: 'me/app', branch: 'main', state: 'failing', failing: ['CI'] });
@@ -40,8 +40,8 @@ describe('ciHealthOf', () => {
 
   it('reads past a cancelled or skipped run to the one before it', () => {
     const health = ciHealthOf('me/app', 'main', [
-      { workflow: 'CI', outcome: 'cancelled' },
-      { workflow: 'CI', outcome: 'passed' },
+      { workflowId: 9, workflow: 'CI', outcome: 'cancelled' },
+      { workflowId: 9, workflow: 'CI', outcome: 'passed' },
     ]);
 
     assert.equal(health.state, 'passing');
@@ -49,9 +49,9 @@ describe('ciHealthOf', () => {
 
   it('is running while a newest run is going and none failed, and none with no runs', () => {
     const running = ciHealthOf('me/app', 'main', [
-      { workflow: 'CI', outcome: 'running' },
-      { workflow: 'CI', outcome: 'failed' },
-      { workflow: 'Deploy', outcome: 'passed' },
+      { workflowId: 9, workflow: 'CI', outcome: 'running' },
+      { workflowId: 9, workflow: 'CI', outcome: 'failed' },
+      { workflowId: 10, workflow: 'Deploy', outcome: 'passed' },
     ]);
 
     assert.equal(running.state, 'running');

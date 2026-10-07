@@ -27,6 +27,12 @@ export const routes: Routes = [
       import('./features/releases/releases-page/releases-page').then((m) => m.ReleasesPage),
   },
   {
+    path: 'p/:owner/:repo/actions',
+    title: 'Actions · Observatory',
+    loadComponent: () =>
+      import('./features/actions/actions-page/actions-page').then((m) => m.ActionsPage),
+  },
+  {
     path: 'p/:owner/:repo',
     title: 'Review Queue · Observatory',
     loadComponent: () =>

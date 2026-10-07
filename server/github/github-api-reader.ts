@@ -2,6 +2,7 @@ import { comparePath, comparisonFrom } from './compare-reader.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
+import { readChangelog } from './changelog-reader.ts';
 import { readCheckHistory } from './check-history.ts';
 import { githubApiRerunner, githubApiWriter } from './github-api-writer.ts';
 import { type GraphQl, type GraphQlConfig, githubGraphQl } from './github-graphql.ts';
@@ -16,8 +17,11 @@ import {
   type RawIssueDetail,
 } from './issue-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
+import { readMergedPulls } from './merged-pull-reader.ts';
 import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
+import { readReleases, readTags } from './release-reader.ts';
+import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
 
@@ -80,6 +84,8 @@ async function allPages(load: (after: string | null) => Promise<Page>, limit: nu
 export function githubApiReader(config: GraphQlConfig): GitHub {
   const graphql = githubGraphQl(config);
   const rest = githubRest(config);
+  const getJson: JsonGet = async (path) =>
+    JSON.parse(await rest({ method: 'GET', path: `/${path}` })) as unknown;
   const repositoryOf = async (query: string, variables: Node): Promise<Node> =>
     asNode(asNode(await graphql(query, variables))['repository']);
 
@@ -213,11 +219,11 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
   return {
     ...githubApiWriter(graphql, rest),
     ...githubApiRerunner(rest),
-    checkHistory: (repo) =>
-      readCheckHistory(
-        async (path) => JSON.parse(await rest({ method: 'GET', path: `/${path}` })) as unknown,
-        repo,
-      ),
+    checkHistory: (repo) => readCheckHistory(getJson, repo),
+    releases: (repo, limit) => readReleases(getJson, repo, limit),
+    tags: (repo, limit) => readTags(getJson, repo, limit),
+    changelog: (repo) => readChangelog(getJson, repo),
+    mergedPulls: (repo) => readMergedPulls(getJson, repo),
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),

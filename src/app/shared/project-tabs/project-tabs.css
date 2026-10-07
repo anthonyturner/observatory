@@ -1,0 +1,50 @@
+/* Sits beside the up-link and matches its pill; the current screen carries a
+   bar under it, so it never rests on colour alone. */
+:host {
+  display: block;
+  width: fit-content;
+}
+
+nav {
+  display: flex;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+  overflow: hidden;
+}
+
+a {
+  padding: 4px 12px 3px;
+  border-right: 1px solid var(--edge-soft);
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+a:last-child {
+  border-right: 0;
+}
+
+a:hover {
+  color: var(--ink);
+  background: var(--starmap-hover);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+a[aria-current='page'] {
+  color: var(--ink);
+  background: var(--starmap-press);
+  border-bottom-color: var(--flow);
+}

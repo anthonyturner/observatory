@@ -87,6 +87,7 @@ export function visitorRoutes(
       '/api/collisions': async (query) => reads.collisions(await visibleRepo(query)),
       '/api/history': async (query) => reads.history(await visibleRepo(query)),
       '/api/ledger': async (query) => reads.ledger(await visibleRepo(query)),
+      '/api/releases': async (query) => reads.releases(await visibleRepo(query)),
       '/api/issues': async (query) => reads.issues(await visibleRepo(query)),
       '/api/issue': async (query) =>
         reads.issue(await visibleRepo(query), issueNumberFrom(query.get('number'))),

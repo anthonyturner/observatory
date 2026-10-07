@@ -16,6 +16,7 @@ const owner: RouteTable = {
 
 const reads = {
   history: async (repo: string) => ({ repo, frames: [] }),
+  releases: async (repo: string) => ({ repo, releases: [] }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
   commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
@@ -90,6 +91,8 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/history?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/issue?repo=me/app&number=3')).status, 200);
     assert.equal((await get(handle, '/api/issue?repo=me/secret&number=3')).status, 404);
+    assert.equal((await get(handle, '/api/releases?repo=me/app')).status, 200);
+    assert.equal((await get(handle, '/api/releases?repo=me/secret')).status, 404);
   });
 
   it('says whether a pull request merged only in a repository it may see', async () => {

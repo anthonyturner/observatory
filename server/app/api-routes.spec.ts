@@ -60,6 +60,7 @@ const reads = {
   forgetIssue: (repo: string, number: number) => forgotten.push(`issue ${repo}#${number}`),
   forgetPull: (repo: string, number: number) => forgotten.push(`${repo}#${number}`),
   labels: async () => [{ name: 'bug', color: 'd73a4a' }],
+  releases: async (repo: string) => ({ repo, source: 'none', releases: [] }),
   logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
   agentUsage: async () => ({
     generatedAt: 'x',
@@ -113,6 +114,14 @@ describe('ownerRoutes', () => {
 
   it('reads a pull request by repository and number', async () => {
     assert.deepEqual(await get('/api/pull?repo=me/app&number=7'), { repo: 'me/app', number: 7 });
+  });
+
+  it('reads a repository’s releases', async () => {
+    assert.deepEqual(await get('/api/releases?repo=me/app'), {
+      repo: 'me/app',
+      source: 'none',
+      releases: [],
+    });
   });
 
   it('reads one issue by repository and number, and refuses a bad number', async () => {

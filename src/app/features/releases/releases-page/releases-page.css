@@ -1,0 +1,230 @@
+:host {
+  position: fixed;
+  inset: 0;
+  display: block;
+  background: var(--void);
+}
+
+.hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.way {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  width: fit-content;
+  margin-bottom: 9px;
+}
+
+.way app-up-link {
+  margin-bottom: 0;
+}
+
+.brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  width: fit-content;
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 34px;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  background: var(--starmap-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.stamp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.note {
+  width: fit-content;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  width: fit-content;
+  margin-top: 12px;
+}
+
+.views {
+  display: flex;
+  gap: 6px;
+}
+
+.views .abtn {
+  min-height: 30px;
+}
+
+.views .abtn[aria-pressed='true'] {
+  border-color: var(--flow);
+  background: var(--flow-tint-strong);
+}
+
+.abtn:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend li::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 8px 1px var(--ink);
+}
+
+.legend [data-ink='major']::before {
+  background: var(--release-major);
+  box-shadow: 0 0 8px 1px var(--release-major);
+}
+
+.legend [data-ink='minor']::before {
+  background: var(--release-minor);
+  box-shadow: 0 0 8px 1px var(--release-minor);
+}
+
+.legend [data-ink='patch']::before {
+  background: var(--release-patch);
+  box-shadow: 0 0 8px 1px var(--release-patch);
+}
+
+.legend [data-ink='comet']::before {
+  background: var(--release-comet);
+  box-shadow: 0 0 8px 1px var(--release-comet);
+}
+
+.legend [data-ink='speck']::before {
+  width: 3px;
+  height: 3px;
+  background: var(--release-speck);
+}
+
+.listview {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--queue-sky);
+  padding: calc(190px + env(safe-area-inset-top, 0px)) 20px 120px;
+  z-index: 4;
+}
+
+.listview.beside {
+  right: 410px;
+}
+
+.listview app-release-list {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.state {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.state strong {
+  color: var(--ink);
+  font-weight: 400;
+  font-size: 17px;
+}
+
+/* The picked release: a glass column down the right on a wide screen, a sheet
+   rising from the foot on a narrow one, clear of the playlist either way. */
+.panel {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + var(--playlist-clear-bottom, 0px));
+  max-height: 44dvh;
+  overflow-y: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--detail-glass);
+  box-shadow: var(--changes-shadow);
+  z-index: 6;
+}
+
+.panel.side {
+  left: auto;
+  top: calc(18px + env(safe-area-inset-top, 0px));
+  right: 20px;
+  width: 380px;
+  max-height: none;
+}
+
+@media (max-width: 720px) {
+  .hud {
+    padding-inline: 16px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .listview {
+    padding-top: calc(200px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(46dvh + 24px);
+  }
+}

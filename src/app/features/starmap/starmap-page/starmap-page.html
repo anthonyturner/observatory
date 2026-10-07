@@ -84,6 +84,7 @@
 
 <div class="hud top">
   <app-starmap-header
+    [repo]="repo()"
     [title]="title()"
     [stamp]="chart() === 'logs' ? logs.stamp() : stamp()"
     [stale]="chart() === 'logs' ? logs.stale() : stale()"

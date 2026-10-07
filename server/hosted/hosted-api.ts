@@ -11,6 +11,7 @@ import { storeHistoryStore } from '../history/history-store.ts';
 import { type ApiHandler, createApiHandler, json } from '../http/api-handler.ts';
 import { withoutCode } from '../queue/pull-detail.ts';
 import { withRerunRoute } from '../queue/rerun-routes.ts';
+import { withActionsRerunRoute } from '../actions/actions-rerun.ts';
 import { withRiskRoutes } from '../queue/risk-routes.ts';
 import { NO_SUMMARIES } from '../queue/risk-summary.ts';
 import type { Store } from '../store/store.ts';
@@ -132,7 +133,11 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
   // (ADR-0006). Keys set on the hosted site are never read.
   const owner = withNewsRoutes(
     withRiskRoutes(
-      withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+      withActionsRerunRoute(
+        withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+        reads,
+        github,
+      ),
       reads.pull,
       NO_SUMMARIES,
     ),

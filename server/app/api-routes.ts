@@ -1,3 +1,4 @@
+import { runIdFrom } from '../actions/actions-rerun.ts';
 import type { AssistantRouter } from '../assistant/assistant-router.ts';
 import { routeRequestFrom } from '../assistant/route-request.ts';
 import { editRequestFrom, editTargetFrom } from '../edits/edit-request.ts';
@@ -42,6 +43,13 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/ledger': (query) => reads.ledger(repoOf(query)),
       '/api/releases': (query) => reads.releases(repoOf(query)),
+      '/api/actions': (query) => {
+        const repo = repoOf(query);
+        if (isFresh(query)) reads.forgetActions(repo);
+        return reads.actions(repo);
+      },
+      '/api/actions/run': (query) => reads.runJobs(repoOf(query), runIdFrom(query.get('run'))),
+      '/api/ci-health': (query) => reads.ciHealth(repoOf(query)),
       '/api/issues': (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetIssues(repo);

@@ -1,4 +1,5 @@
 import { type RouteTable, json } from '../http/api-handler.ts';
+import { fieldsOf } from '../http/body-fields.ts';
 import { numberFrom } from '../http/number-from.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { type CrewQueue, type CrewRunner, proposeCrew } from './crew-proposal.ts';
@@ -6,9 +7,6 @@ import { type CrewQueue, type CrewRunner, proposeCrew } from './crew-proposal.ts
 export const CREW_PATH = '/api/crew';
 
 const HTTP_CREATED = 201;
-
-const fieldsOf = (body: unknown): Record<string, unknown> =>
-  typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {};
 
 async function propose(queue: CrewQueue, runner: CrewRunner, body: unknown): Promise<Response> {
   const fields = fieldsOf(body);

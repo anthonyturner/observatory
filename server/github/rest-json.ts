@@ -13,6 +13,10 @@ export const isText = (value: unknown): value is string =>
 /** The objects in a REST answer that is a list; anything else reads as none. */
 export const jsonList = (body: unknown): Json[] => (Array.isArray(body) ? body.filter(isJson) : []);
 
+/** The objects in the list a REST answer holds under `key`, such as `workflow_runs`; anything else reads as none. */
+export const jsonListIn = (body: unknown, key: string): Json[] =>
+  jsonList(isJson(body) ? body[key] : null);
+
 /** `gh api` and the REST client both put the status in their error: a path that is not there. */
 const NOT_FOUND = /HTTP 404/;
 

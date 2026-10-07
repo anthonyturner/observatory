@@ -1,4 +1,10 @@
 import { comparePath, comparisonFrom } from './compare-reader.ts';
+import {
+  readDefaultBranch,
+  readRunJobs,
+  readWorkflowRuns,
+  readWorkflows,
+} from './actions-reader.ts';
 import { gh, ghJson } from './gh-cli.ts';
 import { DIFF_MEDIA_TYPE } from './github-rest.ts';
 import { readChangelog } from './changelog-reader.ts';
@@ -54,6 +60,10 @@ export function ghCliReader(): GitHub {
     tags: (repo, limit) => readTags(getJson, repo, limit),
     changelog: (repo) => readChangelog(getJson, repo),
     mergedPulls: (repo) => readMergedPulls(getJson, repo),
+    workflowRuns: (repo, branch) => readWorkflowRuns(getJson, repo, branch),
+    workflows: (repo) => readWorkflows(getJson, repo),
+    runJobs: (repo, runId) => readRunJobs(getJson, repo, runId),
+    defaultBranch: (repo) => readDefaultBranch(getJson, repo),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([

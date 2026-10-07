@@ -36,8 +36,6 @@ export interface PlacedWeek {
   /** Where on the path it sits, and how far along the path it reaches each way. */
   readonly t: number;
   readonly reach: number;
-  readonly x: number;
-  readonly y: number;
   /** How wide the tail is here, in pixels each side of the path. */
   readonly spread: number;
 }
@@ -182,8 +180,6 @@ function placeWeeks(
       count: week.pulls.length,
       t,
       reach,
-      x: point.x,
-      y: point.y,
       spread: point.depth * (SPREAD_NEAR_PX + SPREAD_FAR_PX * (1 - nearHead)) + crowd,
     };
   });

@@ -5,9 +5,10 @@ which data each mark carries, and how to change one safely. The help cards
 (`orrery-help.ts`, `starmap-help/help-content.ts`) say what a mark _means_ in a
 line; this page says how it works.
 
-Everything here is the WebGL renderer. Each sky also has a Canvas 2D fallback
-for when WebGL can't start or a shader won't compile; the fallback keeps the
-older, simpler marks unless a section says otherwise.
+The Orrery and Review Queue sections describe the WebGL renderer. Each of those
+skies also has a Canvas 2D fallback for when WebGL can't start or a shader
+won't compile; the fallback keeps the older, simpler marks unless a section
+says otherwise. The Releases sky is Canvas 2D only.
 
 ## Principle: meaning versus scenery
 
@@ -32,7 +33,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
-| Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseLook`        |
+| Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseStarType`    |
 | Releases     | Ring specks      | Merged PRs it shipped      | `ringSpeck`                    |
 | Releases     | Comet tail knots | Unreleased PRs by week     | `weeksOf`, `tailSpeck`         |
 
@@ -332,7 +333,7 @@ nearest neighbour so stars never merge. `bumpOf` compares each tag with the
 one before: a major release is a flaring giant in `--release-major`, a minor
 one a clear star in `--release-minor`, a patch a calm one in `--release-patch`,
 and a tag that is no version is calm in `--release-other`; a prerelease is
-veiled (`releaseLook`). Each merged pull request it shipped circles it on a
+veiled (`releaseStarType`). Each merged pull request it shipped circles it on a
 tilted ring (`ringSpeck`, seeded by number, at most 64 drawn), the far half
 dimmer and behind the star.
 

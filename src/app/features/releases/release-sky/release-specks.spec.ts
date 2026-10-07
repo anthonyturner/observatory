@@ -26,8 +26,6 @@ const WEEK: PlacedWeek = {
   count: 3,
   t: 0.6,
   reach: 0.05,
-  x: 0,
-  y: 0,
   spread: 20,
 };
 

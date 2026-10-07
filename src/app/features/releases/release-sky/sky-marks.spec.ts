@@ -2,7 +2,7 @@ import { UNRELEASED_KEY } from '../../../core/releases/release-timeline';
 import { PlacedComet, PlacedRelease, TimelineLayout } from './release-layout';
 import { Stage } from './release-path';
 import { skyMarks } from './sky-marks';
-import { releaseLook } from './release-look';
+import { releaseStarType } from './release-look';
 
 const STAGE: Stage = { left: 0, top: 0, width: 1200, height: 600 };
 
@@ -39,8 +39,6 @@ const COMET: PlacedComet = {
       count: 80,
       t: 0.6,
       reach: 0.05,
-      x: 0,
-      y: 0,
       spread: 30,
     },
     {
@@ -49,8 +47,6 @@ const COMET: PlacedComet = {
       count: 150,
       t: 0.8,
       reach: 0.05,
-      x: 0,
-      y: 0,
       spread: 15,
     },
   ],
@@ -86,14 +82,11 @@ describe('skyMarks', () => {
   });
 });
 
-describe('releaseLook', () => {
+describe('releaseStarType', () => {
   it('draws a major release as a giant, a minor one clear, a patch calm and a prerelease veiled', () => {
-    expect(releaseLook({ bump: 'major', isPrerelease: false })).toEqual({
-      type: 'giant',
-      token: 'release-major',
-    });
-    expect(releaseLook({ bump: 'minor', isPrerelease: false }).type).toBe('bright');
-    expect(releaseLook({ bump: 'patch', isPrerelease: false }).type).toBe('calm');
-    expect(releaseLook({ bump: 'minor', isPrerelease: true }).type).toBe('veiled');
+    expect(releaseStarType({ bump: 'major', isPrerelease: false })).toBe('giant');
+    expect(releaseStarType({ bump: 'minor', isPrerelease: false })).toBe('bright');
+    expect(releaseStarType({ bump: 'patch', isPrerelease: false })).toBe('calm');
+    expect(releaseStarType({ bump: 'minor', isPrerelease: true })).toBe('veiled');
   });
 });

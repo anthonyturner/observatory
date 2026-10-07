@@ -21,7 +21,7 @@ import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { PortraitPainter } from '../../../shared/planets/planet-portrait.types';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
 import { readOrreryPalette } from '../../orrery/orrery-canvas/orrery-palette';
-import { releaseLook } from './release-look';
+import { releaseStarType } from './release-look';
 import { PlacedRelease, TimelineLayout, layoutTimeline } from './release-layout';
 import { Stage } from './release-path';
 import { PortraitRequest, ReleasePortraits, portraitKey } from './release-portraits';
@@ -146,8 +146,11 @@ export class ReleaseSky {
   }
 
   private requestOf(scene: ReleaseScene, release: PlacedRelease): PortraitRequest {
-    const look = releaseLook(release);
-    return { type: look.type, ink: scene.inkOf(release.bump), radius: release.radius };
+    return {
+      type: releaseStarType(release),
+      ink: scene.inkOf(release.bump),
+      radius: release.radius,
+    };
   }
 
   private draw(time: number, wall: number): void {

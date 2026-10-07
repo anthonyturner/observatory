@@ -1,4 +1,10 @@
 import { comparePath, comparisonFrom } from './compare-reader.ts';
+import {
+  readDefaultBranch,
+  readRunJobs,
+  readWorkflowRuns,
+  readWorkflows,
+} from './actions-reader.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
@@ -224,6 +230,10 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     tags: (repo, limit) => readTags(getJson, repo, limit),
     changelog: (repo) => readChangelog(getJson, repo),
     mergedPulls: (repo) => readMergedPulls(getJson, repo),
+    workflowRuns: (repo, branch) => readWorkflowRuns(getJson, repo, branch),
+    workflows: (repo) => readWorkflows(getJson, repo),
+    runJobs: (repo, runId) => readRunJobs(getJson, repo, runId),
+    defaultBranch: (repo) => readDefaultBranch(getJson, repo),
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),

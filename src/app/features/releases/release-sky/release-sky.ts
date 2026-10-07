@@ -20,11 +20,11 @@ import { ReleaseTimeline } from '../../../core/releases/release-timeline';
 import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { PortraitPainter } from '../../../shared/planets/planet-portrait.types';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
+import { PortraitRequest, SunPortraits, portraitKey } from '../../../shared/planets/sun-portraits';
 import { readOrreryPalette } from '../../orrery/orrery-canvas/orrery-palette';
 import { releaseStarType } from './release-look';
 import { PlacedRelease, TimelineLayout, layoutTimeline } from './release-layout';
 import { Stage } from './release-path';
-import { PortraitRequest, ReleasePortraits, portraitKey } from './release-portraits';
 import { ReleaseScene } from './release-scene';
 import { skyMarks } from './sky-marks';
 
@@ -70,7 +70,7 @@ export class ReleaseSky {
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
   private readonly painter = inject(PlanetPortraits).painter();
-  private readonly portraits = new ReleasePortraits(this.document, () => this.loop?.kick());
+  private readonly portraits = new SunPortraits(this.document, () => this.loop?.kick());
   private readonly size = toSignal(inject(ELEMENT_SIZE)(this.host), { initialValue: NO_SIZE });
   private scene: ReleaseScene | null = null;
   private context: CanvasRenderingContext2D | null = null;

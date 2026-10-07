@@ -1,4 +1,5 @@
 import type { FilesReader } from '../collisions/collisions-report.ts';
+import type { ActionsReader } from './actions-reader.ts';
 import type { CheckHistoryReader } from './check-history.ts';
 import type { ChangelogReader } from './changelog-reader.ts';
 import type { CheckRerunner } from './check-rerunner.ts';
@@ -32,4 +33,5 @@ export type GitHub = GitHubReader &
   CheckRerunner &
   ReleaseReader &
   ChangelogReader &
-  MergedPullReader;
+  MergedPullReader &
+  ActionsReader;

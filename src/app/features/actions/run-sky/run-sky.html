@@ -1,0 +1,35 @@
+<canvas #canvas aria-hidden="true"></canvas>
+
+@if (marks().now; as now) {
+  <span class="now" aria-hidden="true" [style.left.px]="now.x" [style.top.px]="now.y">now</span>
+}
+
+@for (lane of marks().lanes; track lane.key) {
+  <span
+    class="lane"
+    [class.compact]="marks().isCompact"
+    aria-hidden="true"
+    [style.--dot]="lane.colour"
+    [style.left.px]="lane.x"
+    [style.top.px]="lane.y"
+    ><b>{{ lane.name }}</b
+    ><small>{{ lane.count }}</small></span
+  >
+}
+
+<div class="bodies" role="group" aria-label="Workflow runs, oldest first">
+  @for (run of marks().runs; track run.key) {
+    <button
+      type="button"
+      class="body"
+      [style.left.px]="run.x"
+      [style.top.px]="run.y"
+      [style.--hit.px]="run.hit"
+      [attr.aria-label]="run.spoken"
+      [attr.aria-pressed]="run.key === selected()"
+      (click)="picked.emit(run.key)"
+    >
+      <span class="tip" aria-hidden="true">{{ run.tip }}</span>
+    </button>
+  }
+</div>

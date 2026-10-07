@@ -1,0 +1,23 @@
+<ol aria-label="Workflow runs, newest first">
+  @for (row of rows(); track row.key) {
+    <li>
+      <button
+        type="button"
+        [attr.aria-pressed]="row.key === selected()"
+        [style.--dot]="row.colour"
+        (click)="picked.emit(row.key)"
+      >
+        <span class="dot" aria-hidden="true"></span>
+        <b>{{ row.title }}</b>
+        <span class="outcome"
+          >{{ row.outcome }}
+          @if (row.isFlaky) {
+            <span class="flaky">flaky</span>
+          }
+        </span>
+        <span class="workflow">{{ row.workflow }} · {{ row.meta }}</span>
+        <span class="when">{{ row.took }} · {{ row.when }}</span>
+      </button>
+    </li>
+  }
+</ol>

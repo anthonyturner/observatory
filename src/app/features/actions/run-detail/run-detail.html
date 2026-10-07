@@ -1,0 +1,74 @@
+@let run = detail();
+<header [style.--dot]="run.colour">
+  <p class="kind">{{ run.kind }}</p>
+  <h2>{{ run.title }}</h2>
+  <p class="outcome">
+    <span class="dot" aria-hidden="true"></span>{{ run.outcome }}
+    @if (run.isFlaky) {
+      <span class="flaky">flaky: a job passed on a rerun</span>
+    }
+  </p>
+  <dl>
+    @for (fact of run.facts; track fact.label) {
+      <div>
+        <dt>{{ fact.label }}</dt>
+        <dd>{{ fact.value }}</dd>
+      </div>
+    }
+  </dl>
+  <p class="links">
+    <a [href]="run.url" target="_blank" rel="noopener noreferrer"
+      >Run on GitHub <span aria-hidden="true">↗</span></a
+    >
+    @if (run.workflowUrl) {
+      <a [href]="run.workflowUrl" target="_blank" rel="noopener noreferrer"
+        >Workflow <span aria-hidden="true">↗</span></a
+      >
+    }
+  </p>
+  @if (canRerun()) {
+    <app-run-rerun [repo]="repo()" [runId]="run.runId" (requested)="rerun.emit()" />
+  }
+</header>
+
+<section aria-labelledby="run-jobs-heading">
+  <h3 id="run-jobs-heading">Jobs</h3>
+  @let state = jobs();
+  @if (state.status === 'reading') {
+    <p class="none" role="status">Reading the jobs…</p>
+  } @else if (state.status === 'unreachable') {
+    <p class="none" role="status">Could not read the jobs. Try again in a moment.</p>
+  } @else {
+    <ul>
+      @for (job of state.jobs; track job.key) {
+        <li [style.--dot]="job.colour">
+          <a class="job" [href]="job.url" target="_blank" rel="noopener noreferrer"
+            ><span class="dot" aria-hidden="true"></span>{{ job.name }}</a
+          >
+          <span class="when"
+            >{{ job.outcome }} · {{ job.took }}
+            @if (job.isFlaky) {
+              · <span class="flaky">known flaky</span>
+            }
+          </span>
+          @if (job.failedSteps.length) {
+            <ul class="steps" [attr.aria-label]="job.name + ': failed steps'">
+              @for (step of job.failedSteps; track step.key) {
+                <li>
+                  <a [href]="step.url" target="_blank" rel="noopener noreferrer"
+                    >{{ step.label }} <span aria-hidden="true">↗</span></a
+                  >
+                </li>
+              }
+            </ul>
+          }
+          @if (job.note) {
+            <p class="note">{{ job.note }}</p>
+          }
+        </li>
+      } @empty {
+        <li class="none">No jobs ran.</li>
+      }
+    </ul>
+  }
+</section>

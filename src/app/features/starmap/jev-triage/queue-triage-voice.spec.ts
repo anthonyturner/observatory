@@ -315,6 +315,28 @@ describe('the Review Queue by voice or typing', () => {
     http.expectNone('/api/triage');
   });
 
+  it('snoozes what was said in speech’s own words, asking first', async () => {
+    const { say, latest, http } = setUp();
+
+    await say('Um, hey Jeff, I want to snoozed P.R. twelve tell Monday');
+
+    expect(latest().said.text).toBe('Snooze alpha pull request 12, “Change 12”, till Monday?');
+    http.expectNone('/api/triage');
+  });
+
+  it('says what it heard, and what it can do, for a command it cannot make out', async () => {
+    const { type, latest, route, voice } = setUp();
+
+    await type('snooze 12 till the cows come home');
+
+    const heard =
+      'I heard: “snooze 12 till the cows come home”. Did you mean “snooze 12 till Monday”?';
+    expect(latest()).toEqual(expect.objectContaining({ chip: QUEUE_CHIP }));
+    expect(latest().said.text).toBe(heard);
+    expect(voice.speak).toHaveBeenCalledWith(heard, 1);
+    expect(route).not.toHaveBeenCalled();
+  });
+
   it('says when the pull request is not open', async () => {
     const { type, latest } = setUp();
 

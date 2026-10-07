@@ -1,7 +1,7 @@
 import { OpenItem, hrefOf } from '../../../core/assistant/open-items';
 import { ProjectSnapshot } from '../../../core/projects/project.types';
 import { ProjectsState } from '../../../core/projects/projects-feed';
-import { NamedProject } from './queue-command';
+import { NamedProject } from './project-mention';
 
 /** The projects GitHub could read, or null until they are read. */
 export const readProjectsOf = (state: ProjectsState): readonly ProjectSnapshot[] | null =>

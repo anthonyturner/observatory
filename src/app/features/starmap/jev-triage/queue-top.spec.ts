@@ -1,6 +1,6 @@
 import { QueueItem } from '../../../core/queue/queue-report';
 import { nextStar } from '../next-star';
-import { NamedProject } from './queue-command';
+import { NamedProject } from './project-mention';
 import { blockingWords, nextStarWords, topOfQueues } from './queue-top';
 
 const ALPHA: NamedProject = { name: 'alpha', repo: 'me/alpha' };

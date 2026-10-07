@@ -33,6 +33,7 @@ import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
 import { withRunsRoutes } from './runner/runs-routes.ts';
 import { withCrewRoutes } from './crew/crew-routes.ts';
 import { withRerunRoute } from './queue/rerun-routes.ts';
+import { withActionsRerunRoute } from './actions/actions-rerun.ts';
 import { withRiskRoutes } from './queue/risk-routes.ts';
 import { riskSummaries } from './queue/risk-summary.ts';
 import { fileStore } from './store/file-store.ts';
@@ -59,6 +60,8 @@ import { SoundCardCapture } from './sound-card/sound-card-capture.ts';
 import { withSoundCardRoutes } from './sound-card/sound-card-routes.ts';
 import { liveAgentReader } from './live-agents/live-agents.ts';
 import { withLiveAgentsRoutes } from './live-agents/live-agents-routes.ts';
+import { agentFeedReader } from './live-agents/feed-reader.ts';
+import { withLiveAgentFeedRoute } from './live-agents/feed-routes.ts';
 import { agentChangesReader } from './live-agents/agent-changes.ts';
 import { withAgentChangesRoutes } from './live-agents/changes-routes.ts';
 
@@ -146,12 +149,17 @@ const soundCard = {
 };
 
 const liveAgentsSource = liveAgentReader();
+const ownerAndFeedRoutes = withLiveAgentFeedRoute(
+  withActionsRerunRoute(
+    withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+    reads,
+    github,
+  ),
+  agentFeedReader(),
+);
 
 // Only this server runs git in an agent's folder; the hosted API has no such route.
-const ownerTable = withAgentChangesRoutes(
-  withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
-  agentChangesReader(),
-);
+const ownerTable = withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader());
 
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it
 // with no Origin, so it checks the Host and its own session token instead.

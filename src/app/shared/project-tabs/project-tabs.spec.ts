@@ -24,7 +24,8 @@ describe('ProjectTabs', () => {
     expect(links.map((link) => [link.textContent?.trim(), link.getAttribute('href')])).toEqual([
       ['Queue', '/p/me/app'],
       ['Releases', '/p/me/app/releases'],
+      ['Actions', '/p/me/app/actions'],
     ]);
-    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([null, 'page']);
+    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([null, 'page', null]);
   });
 });

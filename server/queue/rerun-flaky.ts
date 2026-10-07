@@ -73,7 +73,12 @@ export async function rerunFlaky(
   return { number, runs };
 }
 
-async function rerunOne(rerunner: CheckRerunner, repo: string, runId: number): Promise<void> {
+/** Reruns one workflow run's failed jobs, or a Forbidden in words a person can act on. */
+export async function rerunOne(
+  rerunner: CheckRerunner,
+  repo: string,
+  runId: number,
+): Promise<void> {
   try {
     await rerunner.rerunFailedJobs(repo, runId);
   } catch (error: unknown) {

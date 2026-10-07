@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { AGENT_FEED_API } from '../../../core/live-agents/agent-feed-api';
+import { AgentFeedRead } from '../../../core/live-agents/agent-feed.types';
 import { AGENT_CHANGES_API } from '../../../core/live-agents/agent-changes-api';
 import { LIVE_AGENTS_API } from '../../../core/live-agents/live-agents-api';
 import { LiveAgentKey, OneAgentState } from '../../../core/live-agents/live-agents.types';
@@ -12,7 +14,16 @@ import {
 import { fakeAgentChangesApi } from '../../../core/live-agents/testing/agent-changes-fixture';
 import { AgentDetailPage } from './agent-detail-page';
 
-function render(state: OneAgentState, params: Record<string, string> = { session: SESSION }) {
+const NO_ACTIVITY: AgentFeedRead = {
+  status: 'ready',
+  page: { events: [], next: 0, isRestart: true },
+};
+
+function render(
+  state: OneAgentState,
+  params: Record<string, string> = { session: SESSION },
+  feed: Observable<AgentFeedRead> = of(NO_ACTIVITY),
+) {
   const asked: LiveAgentKey[] = [];
   const api = fakeLiveAgentsApi(undefined, () => of(state));
   TestBed.configureTestingModule({
@@ -28,6 +39,7 @@ function render(state: OneAgentState, params: Record<string, string> = { session
           },
         },
       },
+      { provide: AGENT_FEED_API, useValue: { feed: () => feed } },
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(params)) } },
       { provide: AGENT_CHANGES_API, useValue: fakeAgentChangesApi() },
     ],
@@ -35,7 +47,9 @@ function render(state: OneAgentState, params: Record<string, string> = { session
   const fixture = TestBed.createComponent(AgentDetailPage);
   TestBed.tick();
   fixture.detectChanges();
-  return { page: fixture.nativeElement as HTMLElement, asked };
+  TestBed.tick();
+  fixture.detectChanges();
+  return { page: fixture.nativeElement as HTMLElement, asked, fixture };
 }
 
 const textOf = (element: Element | null | undefined): string =>
@@ -57,13 +71,18 @@ describe('AgentDetailPage', () => {
     expect(page.querySelector('.banner')).toBeNull();
   });
 
-  it('shows the agent’s changes under a Changes tab', () => {
-    const { page } = render({ status: 'ready', agent: liveAgent() });
+  it('shows the agent’s changes under the Changes tab', () => {
+    const { page, fixture } = render({ status: 'ready', agent: liveAgent() });
+    const tab = [...page.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find(
+      (each) => textOf(each) === 'Changes',
+    );
 
-    const tab = page.querySelector('[role="tab"]');
-    expect(textOf(tab)).toBe('Changes');
+    tab?.click();
+    fixture.detectChanges();
+
     expect(tab?.getAttribute('aria-selected')).toBe('true');
     expect(page.querySelector('[role="tabpanel"] app-agent-changes-panel')).not.toBeNull();
+    expect(page.querySelector('[role="tabpanel"] app-agent-activity-panel')).toBeNull();
   });
 
   it('opens an agent that has stopped, saying it is not running', () => {
@@ -82,5 +101,41 @@ describe('AgentDetailPage', () => {
     const { page } = render({ status: 'local-only' });
 
     expect(textOf(page)).toContain('Agents show only on your own machine.');
+  });
+
+  it('opens on the Activity tab, showing what the agent said and did', () => {
+    const said = {
+      type: 'assistant',
+      message: { content: [{ type: 'text', text: 'Reading the header.' }] },
+    };
+    const { page } = render(
+      { status: 'ready', agent: liveAgent() },
+      undefined,
+      of({
+        status: 'ready',
+        page: { events: [said], next: 80, isRestart: true },
+      }),
+    );
+
+    const tab = page.querySelector('[role="tab"]');
+    expect(textOf(tab)).toBe('Activity');
+    expect(tab?.getAttribute('aria-selected')).toBe('true');
+    const panel = page.querySelector('[role="tabpanel"]');
+    expect(panel?.getAttribute('aria-labelledby')).toBe(tab?.id);
+    expect(textOf(panel?.querySelector('.text'))).toBe('Reading the header.');
+  });
+
+  it('says the activity shows only on your own machine when the feed is not there', () => {
+    const { page } = render(
+      { status: 'ready', agent: liveAgent() },
+      undefined,
+      of({
+        status: 'local-only',
+      }),
+    );
+
+    expect(textOf(page.querySelector('[role="tabpanel"]'))).toContain(
+      'Agents show only on your own machine.',
+    );
   });
 });

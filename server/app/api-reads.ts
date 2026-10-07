@@ -1,3 +1,5 @@
+import { actionsReport, ciHealthReport, runJobsReport } from '../actions/actions-report.ts';
+import type { ActionsReport, CiHealth, RunJobsReport } from '../actions/actions-types.ts';
 import { type AgentsReport, type Handoff, reportCards } from '../agents/agents-report.ts';
 import type { CollisionsReport } from '../collisions/collisions-report.ts';
 import type { PullState } from '../github/fate-reader.ts';
@@ -47,6 +49,12 @@ const AGENTS_TTL_MS = 5 * 60_000;
 const LEDGER_TTL_MS = 10 * 60_000;
 /** Releases are cut rarely and merges land a few times a day: ten minutes is fresh enough. */
 const RELEASES_TTL_MS = 10 * 60_000;
+/** Runs start and end every few minutes while work is going on. */
+const ACTIONS_TTL_MS = 2 * 60_000;
+/** A run's jobs, while it is open on screen; a finished one changes only on a rerun. */
+const RUN_JOBS_TTL_MS = 60_000;
+/** Each Home card asks for its project's; as often as the projects themselves. */
+const CI_HEALTH_TTL_MS = 5 * 60_000;
 
 /** The projects report's one key in its cache. */
 const ALL_PROJECTS = 'all';
@@ -107,6 +115,14 @@ export interface ApiReads {
   ledger(repo: string): Promise<Ledger>;
   /** Releases or tags, each with its notes and the merged pull requests it shipped. */
   releases(repo: string): Promise<ReleasesReport>;
+  /** Workflows and their newest runs, with flaky runs tagged and the default branch's health. */
+  actions(repo: string): Promise<ActionsReport>;
+  /** The next read of these runs, and of the branch's health, goes to GitHub. */
+  forgetActions(repo: string): void;
+  /** One run's jobs and steps. */
+  runJobs(repo: string, runId: number): Promise<RunJobsReport>;
+  /** The default branch's CI, for a project card. */
+  ciHealth(repo: string): Promise<CiHealth>;
   usage(): Promise<UsageReport | null>;
   agentUsage(): Promise<AgentUsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
@@ -174,6 +190,12 @@ export function cachedReads(sources: ReadSources): ApiReads {
     // An empty diff may be a failure that passes, so it is asked for again soon.
     (answer) => (answer.diff ? COMMIT_TTL_MS : PULL_TTL_MS),
   );
+  const actionsOf = keyedCache((repo) => actionsReport(github, repo), ACTIONS_TTL_MS);
+  const ciHealthOf = keyedCache((repo) => ciHealthReport(github, repo), CI_HEALTH_TTL_MS);
+  const runJobsOf = keyedCache(async (key) => {
+    const [repo, runId] = key.split('#');
+    return runJobsReport(github, repo, Number(runId));
+  }, RUN_JOBS_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
     return github.pullState(repo, Number(number));
@@ -199,6 +221,13 @@ export function cachedReads(sources: ReadSources): ApiReads {
     history: async (repo) => ({ repo, frames: await history.read(repo) }),
     ledger: cachedByKey((repo) => ledgerReport(github, repo), LEDGER_TTL_MS),
     releases: cachedByKey((repo) => releasesReport(github, repo), RELEASES_TTL_MS),
+    actions: (repo) => actionsOf.read(repo),
+    forgetActions: (repo) => {
+      actionsOf.forget(repo);
+      ciHealthOf.forget(repo);
+    },
+    runJobs: (repo, runId) => runJobsOf.read(numberKey(repo, runId)),
+    ciHealth: (repo) => ciHealthOf.read(repo),
     usage: sources.usage,
     agentUsage: sources.agentUsage,
     logs: cachedByKey(sources.logs, LOGS_TTL_MS),

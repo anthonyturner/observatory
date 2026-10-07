@@ -6,6 +6,7 @@ import { ReleaseTimeline, VersionBump } from '../../../core/releases/release-tim
 import {
   makeGrain,
   paintField,
+  paintGlow,
   paintGrain,
   paintVignette,
   rgba,
@@ -161,7 +162,7 @@ export class ReleaseScene {
     ctx.globalCompositeOperation = 'lighter';
     for (let step = 0; step <= WAKE_STEPS; step++) {
       const point = pathAt(from + ((to - from) * step) / WAKE_STEPS, stage);
-      glow(
+      paintGlow(
         ctx,
         { x: point.x, y: point.y, reach: WAKE_REACH_PX * point.depth },
         rgba(ink, WAKE_ALPHA),
@@ -212,7 +213,7 @@ export class ReleaseScene {
   ): void {
     const { x, y, radius } = release;
     const ink = this.bumpInk[release.bump];
-    glow(ctx, { x, y, reach: radius * HALO_REACH }, rgba(ink, HALO_ALPHA * fade));
+    paintGlow(ctx, { x, y, reach: radius * HALO_REACH }, rgba(ink, HALO_ALPHA * fade));
     const portrait = frame.portraitOf(release);
     if (portrait) {
       const reach = radius * SUN_FRAME;
@@ -278,16 +279,4 @@ function paintSpeck(
   ctx.beginPath();
   ctx.arc(speck.x, speck.y, speck.size, 0, Math.PI * 2);
   ctx.fill();
-}
-
-function glow(
-  ctx: CanvasRenderingContext2D,
-  at: { readonly x: number; readonly y: number; readonly reach: number },
-  colour: string,
-): void {
-  const gradient = ctx.createRadialGradient(at.x, at.y, 0, at.x, at.y, at.reach);
-  gradient.addColorStop(0, colour);
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(at.x - at.reach, at.y - at.reach, at.reach * 2, at.reach * 2);
 }

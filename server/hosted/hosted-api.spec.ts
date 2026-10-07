@@ -314,6 +314,7 @@ describe('hostedApi', () => {
     const paths = [
       '/api/live-agents',
       `/api/live-agents?session=${session}`,
+      `/api/live-agents/feed?session=${session}&from=0`,
       `/api/live-agents/changes?session=${session}`,
     ];
     for (const path of paths) {

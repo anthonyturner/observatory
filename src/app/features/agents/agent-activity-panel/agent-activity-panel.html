@@ -1,0 +1,33 @@
+@let shown = state();
+@switch (shown.status) {
+  @case ('reading') {
+    <p class="note">Reading the transcript…</p>
+  }
+  @case ('local-only') {
+    <app-local-only-note />
+  }
+  @case ('unreachable') {
+    <p class="note warn">
+      Observatory's API did not answer, so the activity could not be read. Trying again.
+    </p>
+  }
+  @case ('ready') {
+    @if (shown.entries.length === 0) {
+      <p class="note">Nothing said or done yet.</p>
+    } @else {
+      <div
+        #scroller
+        class="scroller"
+        role="region"
+        aria-label="Agent activity"
+        tabindex="0"
+        (scroll)="onScroll()"
+      >
+        <app-run-transcript [entries]="shown.entries" />
+      </div>
+      @if (!isPinned()) {
+        <button type="button" class="latest" (click)="jumpToLatest()">Jump to latest</button>
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@ import { OpenQuestion } from './open-question';
 import { quotedWords } from './proposal';
 import { QuestionAnswer, UnclearWhy, answerTo } from './question-answer';
 import { QUESTION_ANSWER_CHIP } from './reply-chip';
-import { noting } from './reply-entry';
+import { AskedHow, noting } from './reply-entry';
 import { ReplyLog } from './reply-log';
 import { ReplySpeech } from './reply-speech';
 import { TierOneActions } from './tier-one-actions';
@@ -23,9 +23,9 @@ const unclearLine = (words: string, why: UnclearWhy): string =>
     : `Heard “${quotedWords(words)}”, but I can’t tell which one that is. Say its number, or press Open.`;
 
 /**
- * Carries out a spoken answer to Jev's open question. Each answer gets a
- * reply of its own, so opening an item waits the grace second with Stay
- * here, as any page Jev opens does.
+ * Carries out a spoken or typed answer to Jev's open question. Each answer
+ * gets a reply of its own, so opening an item waits the grace second with
+ * Stay here, as any page Jev opens does.
  */
 @Injectable({ providedIn: 'root' })
 export class SpokenAnswer {
@@ -42,10 +42,11 @@ export class SpokenAnswer {
     return asked && this.question.isWaiting() ? answerTo(words, asked.items) : null;
   }
 
-  carryOut(words: string, answer: QuestionAnswer): void {
+  carryOut(words: string, how: AskedHow, answer: QuestionAnswer): void {
     this.actions.cancelJump();
-    const entryId = this.log.open(words, 'spoken');
+    const entryId = this.log.open(words, how);
     this.log.setChip(entryId, QUESTION_ANSWER_CHIP);
+    if (how === 'spoken') this.keepUnmatched(words, answer);
     if (answer.kind === 'open') this.open(entryId, answer.item);
     else if (answer.kind === 'unclear') this.askAgain(entryId, words, answer.why);
     else if (answer.kind === 'all') this.say(entryId, ONE_AT_A_TIME);
@@ -58,10 +59,14 @@ export class SpokenAnswer {
     this.speech.speak(this.log.find(entryId)?.said.text ?? '', entryId, ANSWER_TIER);
   }
 
-  /** The card stays. Words that named nothing also go into the box, in case
-   *  they were a request after all. */
+  /** Spoken words that named nothing go into the box, in case they were a
+   *  request after all. */
+  private keepUnmatched(words: string, answer: QuestionAnswer): void {
+    if (answer.kind === 'unclear' && answer.why === 'unmatched') this.draft.add(words);
+  }
+
+  /** The card stays. */
   private askAgain(entryId: number, words: string, why: UnclearWhy): void {
-    if (why === 'unmatched') this.draft.add(words);
     const line = unclearLine(words, why);
     this.log.say(entryId, noting(line));
     if (this.question.hasSaidUnclear()) return;

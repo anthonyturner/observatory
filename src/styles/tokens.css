@@ -318,6 +318,20 @@
   --release-comet-head: var(--orrery-comet-head);
   --release-speck: #f4f8ff;
 
+  /* The Actions sky: a run's colour says how it went; a flaky one is ringed
+     in amber. The CI mark on a project card uses the same colours. */
+  --actions-failed: #ff5a4a;
+  --actions-running: #7fd8ff;
+  --actions-queued: #a9b6dc;
+  --actions-passed: #9ff0c8;
+  --actions-cancelled: #7d88aa;
+  --actions-flaky: var(--meh);
+  --actions-lane: #3a4d7a;
+  --ci-failing: var(--actions-failed);
+  --ci-running: var(--actions-running);
+  --ci-passing: var(--actions-passed);
+  --ci-none: var(--muted);
+
   /* pr-starmap's PR screen: its glass, the diff's washes, and the Edit tab. */
   --sheet-glass: linear-gradient(170deg, rgba(16, 24, 50, 0.95), rgba(6, 10, 22, 0.97));
   --sheet-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 40px 90px -24px rgba(0, 0, 0, 0.9);

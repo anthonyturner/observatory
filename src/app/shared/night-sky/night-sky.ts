@@ -106,3 +106,16 @@ export function paintGrain(
   );
   ctx.restore();
 }
+
+/** A soft round glow, `colour` at its centre fading to nothing at `reach`. */
+export function paintGlow(
+  ctx: CanvasRenderingContext2D,
+  at: { readonly x: number; readonly y: number; readonly reach: number },
+  colour: string,
+): void {
+  const gradient = ctx.createRadialGradient(at.x, at.y, 0, at.x, at.y, at.reach);
+  gradient.addColorStop(0, colour);
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(at.x - at.reach, at.y - at.reach, at.reach * 2, at.reach * 2);
+}

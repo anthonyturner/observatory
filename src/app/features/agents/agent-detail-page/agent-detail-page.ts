@@ -9,6 +9,7 @@ import { whileVisible } from '../../../core/live-agents/visible-poll';
 import { PageVisibility } from '../../../core/presence/page-visibility';
 import { TabStrip, TabStripTab, tabStripTabId } from '../../../shared/tab-strip/tab-strip';
 import { UpLink } from '../../../shared/up-link/up-link';
+import { AgentActivityPanel } from '../agent-activity-panel/agent-activity-panel';
 import { AgentChangesPanel } from '../agent-changes-panel/agent-changes-panel';
 import { AgentHeader } from '../agent-header/agent-header';
 import { LocalOnlyNote } from '../local-only-note/local-only-note';
@@ -27,13 +28,21 @@ const tab = (id: string, label: string): TabStripTab => ({
 
 /** The agent page's tabs, in order: another view is one more entry here and
  *  one more case in the template. */
-const AGENT_TABS: readonly TabStripTab[] = [tab('changes', 'Changes')];
+const AGENT_TABS: readonly TabStripTab[] = [tab('activity', 'Activity'), tab('changes', 'Changes')];
 
 /** One agent's page, at `/agents/:session` or `/agents/:session/:agentId`,
  *  read again every 15 s while it is shown. Its transcript, running or not. */
 @Component({
   selector: 'app-agent-detail-page',
-  imports: [RouterLink, UpLink, AgentHeader, LocalOnlyNote, TabStrip, AgentChangesPanel],
+  imports: [
+    RouterLink,
+    UpLink,
+    AgentHeader,
+    LocalOnlyNote,
+    TabStrip,
+    AgentActivityPanel,
+    AgentChangesPanel,
+  ],
   templateUrl: './agent-detail-page.html',
   styleUrl: './agent-detail-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

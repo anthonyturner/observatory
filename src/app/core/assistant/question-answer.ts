@@ -221,11 +221,11 @@ const READERS: readonly Reader[] = [
 /** Each word of the items' titles and projects, and which items hold it. A stand-in
  *  title ("Open the issue") is all filler and kind words, so it never
  *  matches: the readers before readTitleWord take those words first. */
-function cardOf(items: readonly OpenItem[], hasPlaces: boolean): Card {
+function cardOf(items: readonly OpenItem[]): Card {
   return {
     titleWords: holdersOf(items.map(({ title }) => title)),
     projectWords: holdersOf(items.map(({ label }) => label)),
-    hasPlaces,
+    hasPlaces: true,
   };
 }
 
@@ -287,7 +287,7 @@ function decide(heard: Heard, items: readonly OpenItem[]): QuestionAnswer | null
  *  model: an ordinary request must never be taken for an answer. */
 export function answerTo(said: string, items: readonly OpenItem[]): QuestionAnswer | null {
   if (!items.length) return null;
-  const heard = hear(wordsOf(said), cardOf(items, true));
+  const heard = hear(wordsOf(said), cardOf(items));
   return heard && decide(heard, items);
 }
 
@@ -296,13 +296,13 @@ export function answerTo(said: string, items: readonly OpenItem[]): QuestionAnsw
  *  apart. Null when a word in it is no part of an answer. Yes, no and all are
  *  heard and passed over, for a caller that has its own question to ask. */
 export function itemsMeantBy(said: string, items: readonly OpenItem[]): OpenItem[] | null {
-  return itemsFitting(said, cardOf(items, true), items);
+  return itemsFitting(said, cardOf(items), items);
 }
 
 /** As itemsMeantBy, for items in no order anyone heard: only a number, a
  *  project or title words name one, never a place like "the first one". */
 export function itemsNamedBy(said: string, items: readonly OpenItem[]): OpenItem[] | null {
-  return itemsFitting(said, cardOf(items, false), items);
+  return itemsFitting(said, { ...cardOf(items), hasPlaces: false }, items);
 }
 
 function itemsFitting(said: string, card: Card, items: readonly OpenItem[]): OpenItem[] | null {

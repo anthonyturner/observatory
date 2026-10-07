@@ -16,6 +16,7 @@
     "arch:scan": "node server/architecture/scan-cli.ts",
     "push": "node server/push.ts",
     "queue": "node server/queue/queue-cli.ts",
+    "wiki:sync": "node server/wiki/wiki-sync-cli.ts",
     "prepare": "husky"
   },
   "private": true,

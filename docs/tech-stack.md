@@ -34,4 +34,6 @@ so a missing line costs more than a long one.
   the weights from pinned Hugging Face commits: none are npm dependencies.
 - Build: Angular CLI (`ng build`, esbuild). Tests: Vitest through `ng test`.
   Lint: angular-eslint. Format: Prettier. Deployment: not yet decided.
-- CI: none yet.
+- CI: GitHub Actions runs one workflow, **Wiki sync**
+  (`.github/workflows/wiki-sync.yml`), which publishes the README and chosen
+  `/docs` pages to the wiki on every merge to main. No build or test checks yet.

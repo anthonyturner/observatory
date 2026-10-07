@@ -60,6 +60,7 @@ export class AgentActivityPanel {
   constructor() {
     afterRenderEffect({
       write: () => {
+        // Read only so that every new page of rows runs this again.
         this.state();
         const scroller = this.scroller()?.nativeElement;
         if (scroller && this.isPinned()) scroller.scrollTop = scroller.scrollHeight;

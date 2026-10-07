@@ -111,6 +111,18 @@ describe('AgentActivity', () => {
     expect(texts(states.at(-1))).toEqual(['Kept.']);
   });
 
+  it('shows nothing new for a read that adds no rows, yet asks from its cursor next', () => {
+    const { http, states } = follow(ACTIVITY_WORKING_MS);
+    http.expectOne(isFeed).flush(page(10, ['First.'], true));
+
+    vi.advanceTimersByTime(ACTIVITY_WORKING_MS);
+    http.expectOne(isFeed).flush(page(25));
+    vi.advanceTimersByTime(ACTIVITY_WORKING_MS);
+
+    expect(states).toHaveLength(1);
+    expect(http.expectOne(isFeed).request.params.get('from')).toBe('25');
+  });
+
   it('starts the rows afresh when the server says the feed restarted', () => {
     const { http, states } = follow(ACTIVITY_WORKING_MS);
     http.expectOne(isFeed).flush(page(10, ['Old.'], true));

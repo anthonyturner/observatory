@@ -3,8 +3,9 @@ import { ASK_SHORTCUTS, AskShortcut, ShortcutAct } from '../../../core/assistant
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
 import { OpenItem } from '../../../core/assistant/open-items';
 import { OpenQuestion } from '../../../core/assistant/open-question';
-import { itemsMeantBy } from '../../../core/assistant/question-answer';
+import { answerTo } from '../../../core/assistant/question-answer';
 import { AskedHow } from '../../../core/assistant/reply-entry';
+import { wordsOf } from '../../../core/assistant/spoken-numbers';
 import { LEFT_IT } from '../../../core/assistant/spoken-answer';
 import { TierOneActions } from '../../../core/assistant/tier-one-actions';
 import { PROJECTS_STATE } from '../../../core/projects/projects-source';
@@ -16,6 +17,9 @@ import { YesNoQuestion } from './yes-no-question';
 /** The card's question while Jev waits to hear which pull request a crew takes. */
 export const CREW_WHICH = 'Which one should the crew take?';
 const CREW_NOT_LOADED = 'Send crew didn’t load. Try again in a moment.';
+/** Words that ask to open one, which the open question's answer takes even
+ *  while Jev asks which one the crew should take. */
+const OPEN_WORDS: ReadonlySet<string> = new Set(['open', 'show']);
 
 /**
  * Hears a crew asked for on Home, typed or spoken: "send a crew to 412", or,
@@ -49,13 +53,13 @@ export class CrewVoice implements AskShortcut {
     return pick && ((how) => this.run(words, how, pick));
   }
 
-  /** A request for a crew, or, while Jev asks which one, words that name one. */
+  /** A request for a crew, or, while Jev asks which one, an answer that names one. */
   private pickOf(words: string): CrewPick | null {
     const reference = crewReferenceOf(words);
     if (reference !== null) return crewPickOf(reference, this.listed(), this.openPulls());
-    if (!this.isChoosing()) return null;
-    const named = itemsMeantBy(words, this.listed());
-    return named?.length === 1 ? { kind: 'one', pull: named[0] } : null;
+    if (!this.isChoosing() || wordsOf(words).some((word) => OPEN_WORDS.has(word))) return null;
+    const answer = answerTo(words, this.listed());
+    return answer?.kind === 'open' ? { kind: 'one', pull: answer.item } : null;
   }
 
   /** The pull requests on the question waiting: the blocking list, or Jev's "which one?". */

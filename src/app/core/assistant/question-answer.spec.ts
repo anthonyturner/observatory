@@ -1,6 +1,6 @@
 import { UNREAD_PULL_TITLE, UNREAD_TITLE } from '../activity/activity-watch';
 import { OpenItem, OpenKind } from './open-items';
-import { QuestionAnswer, answerTo, itemsMeantBy } from './question-answer';
+import { QuestionAnswer, answerTo, itemsMeantBy, itemsNamedBy } from './question-answer';
 
 const item = (kind: OpenKind, repo: string, number: number, title: string): OpenItem => ({
   kind,
@@ -206,6 +206,18 @@ describe('answerTo', () => {
     it('gives none when nothing fits, and null for words that answer nothing', () => {
       expect(itemsMeantBy('number 13', ITEMS)).toEqual([]);
       expect(itemsMeantBy('what is the weather', ITEMS)).toBeNull();
+    });
+  });
+
+  describe('itemsNamedBy, for items in no order anyone heard', () => {
+    it('names by number, project and title, as itemsMeantBy does', () => {
+      expect(itemsNamedBy('the alpha one', ITEMS)).toEqual([ITEMS[0], ITEMS[3]]);
+      expect(itemsNamedBy('number 12', ITEMS)).toEqual([ITEMS[0]]);
+    });
+
+    it('never by place', () => {
+      expect(itemsNamedBy('the first one', ITEMS)).toBeNull();
+      expect(itemsNamedBy('number two', ITEMS)).toEqual([]);
     });
   });
 

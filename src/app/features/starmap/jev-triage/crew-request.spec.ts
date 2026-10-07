@@ -57,6 +57,8 @@ describe('crewPickOf', () => {
       ['412 in observatory', one(OPEN[3])],
       ['412', { kind: 'which', pulls: [OPEN[3], OPEN[4]] }],
       ['number 999', { kind: 'unmatched', listed: LISTED }],
+      ['the fourth one', { kind: 'unmatched', listed: LISTED }],
+      ['number five', { kind: 'unmatched', listed: LISTED }],
       ['the flux capacitor', null],
     ])('picks %j as %j', (reference, expected) => {
       expect(crewPickOf(reference, LISTED, OPEN)).toEqual(expected);
@@ -70,6 +72,8 @@ describe('crewPickOf', () => {
       ['412', { kind: 'which', pulls: [OPEN[3], OPEN[4]] }],
       ['', { kind: 'number' }],
       ['number 999', { kind: 'number' }],
+      ['number nine', one(OPEN[5])],
+      ['the first one', null],
       ['the flux capacitor', null],
     ])('picks %j as %j', (reference, expected) => {
       expect(crewPickOf(reference, [], OPEN)).toEqual(expected);

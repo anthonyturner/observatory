@@ -232,6 +232,35 @@ describe('sending a crew by voice or typing', () => {
     expect(latest().said.text).toMatch(/^Send a crew to alpha pull request 12/);
   });
 
+  it('opens one named with “open” while asking which the crew takes', async () => {
+    const { listBlocking, say, latest, navigate, launch } = setUp();
+    listBlocking();
+    say('send a crew to the alpha one');
+
+    say('open the second one');
+    await vi.advanceTimersByTimeAsync(GRACE_MS);
+
+    expect(latest().said.text).toBe('Opening pull request 13 in alpha…');
+    expect(navigate).toHaveBeenCalledExactlyOnceWith('/p/me/alpha?pr=13');
+    expect(launch).not.toHaveBeenCalled();
+  });
+
+  it('takes a no to “which one?” as a no, even with one to choose from', async () => {
+    const { type, say, latest, checked, http, question } = setUp();
+    type('what’s blocking in beta');
+    await checked('beta');
+    say('send a crew to number 999');
+    expect(latest().said.text).toBe(
+      'I can’t tell which one that is. Is it beta pull request 3 (“Change 3”)?',
+    );
+
+    say('no');
+
+    expect(latest().said.text).toBe('Left it.');
+    expect(question.question()).toBeNull();
+    http.expectNone('/api/queue?repo=me/beta');
+  });
+
   it('names every open one when none is named and there are few', () => {
     const { type, latest, http, question } = setUp();
 

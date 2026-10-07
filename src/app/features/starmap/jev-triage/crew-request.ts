@@ -1,5 +1,5 @@
 import { OpenItem } from '../../../core/assistant/open-items';
-import { itemsMeantBy } from '../../../core/assistant/question-answer';
+import { itemsMeantBy, itemsNamedBy } from '../../../core/assistant/question-answer';
 import { wordsOf } from '../../../core/assistant/spoken-numbers';
 import { POLITE } from './queue-command';
 
@@ -43,7 +43,8 @@ const pickOf = (pulls: readonly OpenItem[]): CrewPick =>
 
 /**
  * Which pull request `reference` means: one of those Jev just `listed` first,
- * by number, place in the list, project or title words, else any `open` one.
+ * by number, place in the list, project or title words, else any `open` one
+ * by number, project or title words.
  * Null when a word in it says nothing about a pull request, so the words can
  * go on to the router as a request of their own.
  */
@@ -54,7 +55,7 @@ export function crewPickOf(
 ): CrewPick | null {
   const fromList = listed.length ? itemsMeantBy(reference, listed) : null;
   if (fromList?.length) return pickOf(fromList);
-  const fromOpen = itemsMeantBy(reference, open);
+  const fromOpen = itemsNamedBy(reference, open);
   if (!fromOpen) return fromList && { kind: 'unmatched', listed };
   if (!fromOpen.length) return listed.length ? { kind: 'unmatched', listed } : { kind: 'number' };
   return fromOpen.length > MOST_NAMED ? { kind: 'number' } : pickOf(fromOpen);

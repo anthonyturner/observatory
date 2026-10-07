@@ -25,10 +25,12 @@ interface Heard {
 }
 
 /** What a reader needs besides the words: each title word and each project
- *  name word, with the items that hold it. */
+ *  name word, with the items that hold it, and whether the items' order
+ *  means anything, so that "the first one" can name one. */
 interface Card {
   readonly titleWords: ReadonlyMap<string, readonly number[]>;
   readonly projectWords: ReadonlyMap<string, readonly number[]>;
+  readonly hasPlaces: boolean;
 }
 
 /** Reads the words starting at `at` into `heard`, and says how many it took:
@@ -139,12 +141,12 @@ const numberOrPlace =
     items.some((each) => each.number === number) ? item.number === number : index === number - 1;
 
 /** "number 12", and "No. 12", which is how a transcript may write "number". */
-const readNumberWord: Reader = (words, at, heard) => {
+const readNumberWord: Reader = (words, at, heard, card) => {
   const word = words[at];
   const isNumberWord = word === 'number' || (word === 'no' && isDigits(words[at + 1]));
   const number = isNumberWord ? numberAt(words, at + 1) : null;
   if (!number) return 0;
-  heard.clues.push(numberOrPlace(number.value));
+  heard.clues.push(card.hasPlaces ? numberOrPlace(number.value) : sameNumber(number.value));
   return 1 + number.length;
 };
 
@@ -159,7 +161,8 @@ const readNumber: Reader = (words, at, heard) => {
 };
 
 /** "first" to "fifth", and "the last one", in the card's order. */
-const readOrdinal: Reader = (words, at, heard) => {
+const readOrdinal: Reader = (words, at, heard, card) => {
+  if (!card.hasPlaces) return 0;
   const word = words[at];
   const place = ORDINALS.get(word);
   if (place !== undefined) heard.clues.push((_, index) => index === place);
@@ -218,10 +221,11 @@ const READERS: readonly Reader[] = [
 /** Each word of the items' titles and projects, and which items hold it. A stand-in
  *  title ("Open the issue") is all filler and kind words, so it never
  *  matches: the readers before readTitleWord take those words first. */
-function cardOf(items: readonly OpenItem[]): Card {
+function cardOf(items: readonly OpenItem[], hasPlaces: boolean): Card {
   return {
     titleWords: holdersOf(items.map(({ title }) => title)),
     projectWords: holdersOf(items.map(({ label }) => label)),
+    hasPlaces,
   };
 }
 
@@ -283,15 +287,25 @@ function decide(heard: Heard, items: readonly OpenItem[]): QuestionAnswer | null
  *  model: an ordinary request must never be taken for an answer. */
 export function answerTo(said: string, items: readonly OpenItem[]): QuestionAnswer | null {
   if (!items.length) return null;
-  const heard = hear(wordsOf(said), cardOf(items));
+  const heard = hear(wordsOf(said), cardOf(items, true));
   return heard && decide(heard, items);
 }
 
-/** The items `said` could mean, in the card's order: each that fits all it
- *  says about them, or every item when it says nothing that tells them apart.
- *  Null when a word in it is no part of an answer. Yes, no and all are heard
- *  and passed over, for a caller that has its own question to ask. */
+/** The items `said` could mean, of a list read out in order: each that fits
+ *  all it says about them, or every item when it says nothing that tells them
+ *  apart. Null when a word in it is no part of an answer. Yes, no and all are
+ *  heard and passed over, for a caller that has its own question to ask. */
 export function itemsMeantBy(said: string, items: readonly OpenItem[]): OpenItem[] | null {
-  const heard = hear(wordsOf(said), cardOf(items));
+  return itemsFitting(said, cardOf(items, true), items);
+}
+
+/** As itemsMeantBy, for items in no order anyone heard: only a number, a
+ *  project or title words name one, never a place like "the first one". */
+export function itemsNamedBy(said: string, items: readonly OpenItem[]): OpenItem[] | null {
+  return itemsFitting(said, cardOf(items, false), items);
+}
+
+function itemsFitting(said: string, card: Card, items: readonly OpenItem[]): OpenItem[] | null {
+  const heard = hear(wordsOf(said), card);
   return heard && fitting(heard.clues, items);
 }

@@ -12,6 +12,8 @@ import { libraryReport } from '../library/library-report.ts';
 import type { LibraryReport } from '../library/library-types.ts';
 import type { ReleasesReport } from '../releases/release-types.ts';
 import { releasesReport } from '../releases/releases-report.ts';
+import { securityReport } from '../security/security-report.ts';
+import type { SecurityReport } from '../security/security-types.ts';
 import { recordFrame } from '../history/record-frame.ts';
 import { type IssueDetail, issueDetail } from '../issues/issue-detail.ts';
 import { type IssuesReport, issuesReport } from '../issues/issues-report.ts';
@@ -59,6 +61,9 @@ const ACTIONS_TTL_MS = 2 * 60_000;
 const RUN_JOBS_TTL_MS = 60_000;
 /** Each Home card asks for its project's; as often as the projects themselves. */
 const CI_HEALTH_TTL_MS = 5 * 60_000;
+/** Alerts open and close as dependencies and code change: a few times a day at most. Every
+ *  project's tab strip asks for the count, so it is kept as long as the projects. */
+const SECURITY_TTL_MS = 5 * 60_000;
 
 /** The projects report's one key in its cache. */
 const ALL_PROJECTS = 'all';
@@ -129,6 +134,8 @@ export interface ApiReads {
   runJobs(repo: string, runId: number): Promise<RunJobsReport>;
   /** The default branch's CI, for a project card. */
   ciHealth(repo: string): Promise<CiHealth>;
+  /** Open Dependabot, code-scanning and secret-scanning alerts, most severe first. */
+  security(repo: string): Promise<SecurityReport>;
   usage(): Promise<UsageReport | null>;
   agentUsage(): Promise<AgentUsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
@@ -235,6 +242,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     },
     runJobs: (repo, runId) => runJobsOf.read(numberKey(repo, runId)),
     ciHealth: (repo) => ciHealthOf.read(repo),
+    security: cachedByKey((repo) => securityReport(github, repo), SECURITY_TTL_MS),
     usage: sources.usage,
     agentUsage: sources.agentUsage,
     logs: cachedByKey(sources.logs, LOGS_TTL_MS),

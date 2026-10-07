@@ -1,0 +1,13 @@
+<ul aria-label="Alert lists">
+  @for (source of views(); track source.key) {
+    <li [attr.data-status]="source.status">
+      <b>{{ source.name }}</b>
+      @for (count of source.counts; track count.key) {
+        <span class="count" [style.--dot]="count.colour">{{ count.words }}</span>
+      }
+      @if (source.note; as note) {
+        <span class="note">{{ note }}</span>
+      }
+    </li>
+  }
+</ul>

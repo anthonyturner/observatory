@@ -21,6 +21,12 @@ const reads = {
   actions: async (repo: string) => ({ repo, runs: [] }),
   runJobs: async (repo: string, runId: number) => ({ repo, runId, jobs: [] }),
   ciHealth: async (repo: string) => ({ repo, state: 'passing' }),
+  security: async (repo: string) => ({
+    repo,
+    sources: [{ kind: 'secret-scanning', status: 'read', note: null, counts: { critical: 1 } }],
+    alerts: [{ kind: 'secret-scanning', number: 1, title: 'GitHub Personal Access Token' }],
+    isWithheld: false,
+  }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
   commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
@@ -105,6 +111,21 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/actions/run?repo=me/secret&run=5')).status, 404);
     assert.equal((await get(handle, '/api/ci-health?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/ci-health?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/security?repo=me/secret')).status, 404);
+  });
+
+  it('gives a visitor a repository’s alert counts and never the alerts', async () => {
+    const response = await get(visitor(false), '/api/security?repo=me/app');
+
+    assert.equal(response.status, 200);
+    const report = (await response.json()) as {
+      alerts: unknown[];
+      isWithheld: boolean;
+      sources: { counts: unknown }[];
+    };
+    assert.deepEqual(report.alerts, []);
+    assert.equal(report.isWithheld, true);
+    assert.deepEqual(report.sources[0].counts, { critical: 1 });
   });
 
   it('says whether a pull request merged only in a repository it may see', async () => {

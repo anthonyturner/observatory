@@ -48,3 +48,19 @@ a[aria-current='page'] {
   background: var(--starmap-press);
   border-bottom-color: var(--flow);
 }
+
+/* A count on a tab, such as Security's open alerts: a small warm pill. */
+.badge {
+  display: inline-block;
+  min-width: 15px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--security-badge);
+  color: var(--void);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 14px;
+  text-align: center;
+}

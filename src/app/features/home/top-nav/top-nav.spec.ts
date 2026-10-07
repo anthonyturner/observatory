@@ -1,6 +1,8 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { LIVE_AGENTS_API } from '../../../core/live-agents/live-agents-api';
+import { fakeLiveAgentsApi } from '../../../core/live-agents/testing/live-agent-fixture';
 import { MAIL_SHOWN } from '../../../core/mail/mail-inbox';
 import { TopNav } from './top-nav';
 
@@ -10,12 +12,25 @@ describe('TopNav', () => {
   beforeEach(() => {
     hasMail.set(false);
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: MAIL_SHOWN, useValue: hasMail }],
+      providers: [
+        provideRouter([]),
+        { provide: MAIL_SHOWN, useValue: hasMail },
+        { provide: LIVE_AGENTS_API, useValue: fakeLiveAgentsApi() },
+      ],
     });
   });
 
   const jumpLinks = (element: HTMLElement) =>
     Array.from(element.querySelectorAll<HTMLAnchorElement>('.jumps a'));
+
+  it('leads to the agents running now', () => {
+    const fixture = TestBed.createComponent(TopNav);
+    TestBed.tick();
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector('a[href="/agents"]');
+    expect(link?.textContent?.trim()).toBe('Agent sessions');
+  });
 
   it('leads to the orrery inside the app', () => {
     const fixture = TestBed.createComponent(TopNav);

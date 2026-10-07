@@ -1,0 +1,66 @@
+/* No box of its own, so a hidden link leaves no gap in the row it sits in. */
+:host {
+  display: contents;
+}
+
+a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 12px;
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+a:hover {
+  border-color: var(--flow);
+  background: var(--flow-tint);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+:host(.tool) a {
+  min-height: 0;
+  padding: 8px 13px;
+  color: var(--muted);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+:host(.tool) a:hover {
+  color: var(--ink);
+}
+
+.count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--chip-lit);
+  color: var(--flow);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+[data-waiting] .count {
+  color: var(--meh);
+}
+
+[data-waiting] .count::before {
+  content: '\25CF';
+  margin-right: 4px;
+}
+
+@media (max-width: 720px) {
+  a {
+    min-height: 44px;
+  }
+}

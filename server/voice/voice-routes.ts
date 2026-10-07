@@ -46,7 +46,7 @@ async function spoken(
   }
 }
 
-/** The words in the recording in `body` ({ audio: base64, type }), or why not. */
+/** The words in the recording in `body` ({ audio: base64, type, keyterms? }), or why not. */
 async function heard(
   voice: ElevenLabs,
   body: unknown,
@@ -63,9 +63,19 @@ async function heard(
   }
 }
 
+/** The words to expect: none when the page sent none. */
+function keytermsFrom(body: object): readonly string[] {
+  const keyterms: unknown = Reflect.get(body, 'keyterms');
+  if (keyterms === undefined) return [];
+  if (!Array.isArray(keyterms) || !keyterms.every((term) => typeof term === 'string'))
+    throw new BadRequest('bad request: keyterms');
+  return keyterms;
+}
+
 function clipFrom(body: unknown): Clip {
-  const audio = typeof body === 'object' && body !== null ? Reflect.get(body, 'audio') : undefined;
-  const type = typeof body === 'object' && body !== null ? Reflect.get(body, 'type') : undefined;
+  if (typeof body !== 'object' || body === null) throw new BadRequest('bad request: no audio');
+  const audio: unknown = Reflect.get(body, 'audio');
+  const type: unknown = Reflect.get(body, 'type');
   if (typeof audio !== 'string' || !audio) throw new BadRequest('bad request: no audio');
   if (typeof type !== 'string' || !AUDIO_TYPE.test(type))
     throw new BadRequest('bad request: not audio');
@@ -74,7 +84,7 @@ function clipFrom(body: unknown): Clip {
     throw new BadRequest('bad request: clip size');
   const copy = new Uint8Array(bytes.length);
   copy.set(bytes);
-  return { audio: copy, contentType: type };
+  return { audio: copy, contentType: type, keyterms: keytermsFrom(body) };
 }
 
 /**
@@ -82,7 +92,7 @@ function clipFrom(body: unknown): Clip {
  *
  *   GET  /api/voice          { elevenlabs: 'on'|'off', voices: [{ id, name }], defaultVoice, failed? }
  *   POST /api/voice/speak    { text, voice } → the audio; 400, 503 with no key, 502 when ElevenLabs fails
- *   POST /api/voice/hear     { audio: base64, type } → { text }; 400, 503 with no key, 502 when ElevenLabs fails
+ *   POST /api/voice/hear     { audio: base64, type, keyterms? } → { text }; 400, 503 with no key, 502 when ElevenLabs fails
  */
 export function withVoiceRoutes(table: RouteTable, options: VoiceRoutesOptions): RouteTable {
   const { voice, warn = console.warn } = options;

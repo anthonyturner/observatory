@@ -11,8 +11,9 @@ export class HearingFailed extends Error {
   }
 }
 
-/** Sends a recording to ElevenLabs Scribe through the site and gets the words back. */
-export type HearClip = (clip: Blob) => Promise<string>;
+/** Sends a recording to ElevenLabs Scribe through the site and gets the words
+ *  back; `keyterms` are words it should expect, most needed first. */
+export type HearClip = (clip: Blob, keyterms: readonly string[]) => Promise<string>;
 
 const HEAR_URL = '/api/voice/hear';
 /** The API accepts writes only with this header, which no other site can add. */
@@ -44,13 +45,13 @@ export const HEAR_CLIP = new InjectionToken<HearClip>('HearClip', {
   providedIn: 'root',
   factory: () => {
     const http = inject(HttpClient);
-    return async (clip) => {
+    return async (clip, keyterms) => {
       const audio = base64Of(new Uint8Array(await clip.arrayBuffer()));
       try {
         const answer = await firstValueFrom(
           http.post<unknown>(
             HEAR_URL,
-            { audio, type: clip.type || 'audio/webm' },
+            { audio, type: clip.type || 'audio/webm', keyterms },
             { headers: WRITE_HEADERS },
           ),
         );
@@ -80,10 +81,11 @@ export class ElevenLabsHearing {
     () => this.catalog.state().status === 'on' && this.failed() === null,
   );
 
-  /** The words in `clip`. On failure, remembers why and rejects with HearingFailed. */
-  async hear(clip: Blob): Promise<string> {
+  /** The words in `clip`, listening out for `keyterms`. On failure, remembers
+   *  why and rejects with HearingFailed. */
+  async hear(clip: Blob, keyterms: readonly string[]): Promise<string> {
     try {
-      return await this.hearClip(clip);
+      return await this.hearClip(clip, keyterms);
     } catch (error: unknown) {
       const words = error instanceof HearingFailed ? error.words : 'it failed';
       this.failed.set(words);

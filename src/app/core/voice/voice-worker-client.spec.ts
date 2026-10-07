@@ -59,7 +59,10 @@ describe('VoiceWorkerClient', () => {
     ports[0].answer({ op: 'done', id: ports[0].lastId(), result: { cached: true } });
     await expect(cached).resolves.toBe(true);
 
-    const heard = client.transcribe(new Float32Array(4));
+    const heard = client.transcribe(new Float32Array(4), 'Jev, crew.');
+    expect(ports[0].sent.at(-1)?.request).toEqual(
+      expect.objectContaining({ op: 'run', model: 'listen', prompt: 'Jev, crew.' }),
+    );
     ports[0].answer({ op: 'done', id: ports[0].lastId(), result: { text: 'hello' } });
     await expect(heard).resolves.toBe('hello');
     expect(ports).toHaveLength(1);
@@ -90,7 +93,7 @@ describe('VoiceWorkerClient', () => {
   it('gives up on a run that never answers, and starts a fresh worker', async () => {
     vi.useFakeTimers();
     const { client, ports, losses } = setup();
-    const heard = client.transcribe(new Float32Array(4));
+    const heard = client.transcribe(new Float32Array(4), '');
     const failed = expect(heard).rejects.toSatisfy(kindOf('run'));
     await vi.advanceTimersByTimeAsync(LIMIT_MS.run);
     await failed;

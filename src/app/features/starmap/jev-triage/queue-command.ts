@@ -22,7 +22,7 @@ export type QueueCommand =
 export type Confirmation = 'yes' | 'no';
 
 /** Words any command may carry and still be one: "Jev, please dismiss 412". */
-const POLITE: ReadonlySet<string> = new Set([
+export const POLITE: ReadonlySet<string> = new Set([
   'hey', 'jev', 'please', 'thanks', 'ok', 'okay', 'can', 'could', 'would', 'you', 'just', 'now',
 ]); // prettier-ignore
 /** What may stand round a project's name: "in observatory". */

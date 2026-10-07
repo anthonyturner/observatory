@@ -98,6 +98,40 @@ describe('CrewDispatch', () => {
     expect(dispatch.isAvailable()).toBe(false);
   });
 
+  describe('availability', () => {
+    it('says yes at once once the API has said there is a runner', () => {
+      const { dispatch, crew } = setUp();
+      const told: boolean[] = [];
+
+      dispatch.availability().subscribe((isAvailable) => told.push(isAvailable));
+
+      expect(told).toEqual([true]);
+      expect(crew.availabilityAsked).toBe(1);
+    });
+
+    it('asks the API again while it has not said yes', () => {
+      const { dispatch, crew } = setUp({ hasRunner: false });
+      crew.available = true;
+      const told: boolean[] = [];
+
+      dispatch.availability().subscribe((isAvailable) => told.push(isAvailable));
+
+      expect(told).toEqual([true]);
+      expect(dispatch.isAvailable()).toBe(true);
+      expect(crew.availabilityAsked).toBe(2);
+    });
+
+    it('says no on the hosted site, asking nothing', () => {
+      const { dispatch, crew } = setUp({ where: 'hosted' });
+      const told: boolean[] = [];
+
+      dispatch.availability().subscribe((isAvailable) => told.push(isAvailable));
+
+      expect(told).toEqual([false]);
+      expect(crew.availabilityAsked).toBe(0);
+    });
+  });
+
   it('starts the crew the API proposed, word for word, and shows it at work', async () => {
     const { dispatch, runs, crew } = setUp();
 
@@ -185,6 +219,49 @@ describe('CrewDispatch', () => {
     expect(dispatch.refusalFor('me/app', 7)).toBe(
       'Another task started first. Send the crew once it ends.',
     );
+  });
+
+  describe('launch, for a caller that says how it went', () => {
+    it('tells null once the runner has the crew', async () => {
+      const { dispatch, runs } = setUp();
+      const told: (string | null)[] = [];
+
+      dispatch.launch('me/app', 7).subscribe((refusal) => told.push(refusal));
+      await settle();
+
+      expect(told).toEqual([null]);
+      expect(runs.started).toEqual([REQUEST]);
+    });
+
+    it('tells why the crew did not launch', async () => {
+      const { dispatch, runs } = setUp();
+      runs.startAnswer = () => Promise.reject(new RunsApiError(409, 'a run is already going'));
+      const told: (string | null)[] = [];
+
+      dispatch.launch('me/app', 7).subscribe((refusal) => told.push(refusal));
+      await settle();
+
+      expect(told).toEqual(['Another task started first. Send the crew once it ends.']);
+    });
+
+    it('does nothing until subscribed', () => {
+      const { dispatch, crew } = setUp();
+
+      dispatch.launch('me/app', 7);
+
+      expect(crew.proposed).toEqual([]);
+      expect(dispatch.isSending('me/app', 7)).toBe(false);
+    });
+
+    it('tells why where no runner can take a crew, asking the API nothing', () => {
+      const { dispatch, crew } = setUp({ hasRunner: false });
+      const told: (string | null)[] = [];
+
+      dispatch.launch('me/app', 7).subscribe((refusal) => told.push(refusal));
+
+      expect(told).toEqual(['No crew can launch from here: this site has no task runner.']);
+      expect(crew.proposed).toEqual([]);
+    });
   });
 
   it('finds a crew already out from the runner’s list, as after a reload', async () => {

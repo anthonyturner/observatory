@@ -120,8 +120,14 @@ function setUp(canSendCrew = true) {
     asked.flush(reply(repo));
   };
   return {
-    type: (words: string): void => channel.submit(words),
-    say: (words: string): void => channel.submit(words, { spoken: true }),
+    async type(words: string): Promise<void> {
+      channel.submit(words);
+      await vi.dynamicImportSettled();
+    },
+    async say(words: string): Promise<void> {
+      channel.submit(words, { spoken: true });
+      await vi.dynamicImportSettled();
+    },
     latest: () => log.entries()[0],
     feed: TestBed.inject(AskFeed),
     question,
@@ -138,8 +144,9 @@ function setUp(canSendCrew = true) {
       http.expectOne(`/api/ledger?repo=me/${repo}`).flush(ledger);
     },
     /** "What's blocking?", read: beta 3 conflicted, alpha 12 failing, alpha 13 waiting. */
-    listBlocking(): void {
+    async listBlocking(): Promise<void> {
       channel.submit('what’s blocking?');
+      await vi.dynamicImportSettled();
       flush('alpha');
       flush('beta');
     },
@@ -152,9 +159,9 @@ describe('sending a crew by voice or typing', () => {
 
   it('takes a spoken reply naming one from the blocking list, and sends on a yes', async () => {
     const { listBlocking, say, type, latest, checked, question, voice, launch, route } = setUp();
-    listBlocking();
+    await listBlocking();
 
-    say('the beta one about change 3, assign it to a crew member');
+    await say('the beta one about change 3, assign it to a crew member');
     expect(latest()).toEqual(expect.objectContaining({ how: 'spoken', chip: QUEUE_CHIP }));
     expect(latest().said.text).toBe('Checking it…');
     expect(question.question()).toBeNull();
@@ -169,7 +176,7 @@ describe('sending a crew by voice or typing', () => {
     ]);
     expect(launch).not.toHaveBeenCalled();
 
-    type('yes');
+    await type('yes');
 
     expect(launch).toHaveBeenCalledExactlyOnceWith('me/beta', 3);
     expect(latest().said.text).toBe(
@@ -180,9 +187,9 @@ describe('sending a crew by voice or typing', () => {
 
   it('takes a place on the list, and the Yes button', async () => {
     const { listBlocking, type, latest, checked, feed, launch } = setUp();
-    listBlocking();
+    await listBlocking();
 
-    type('send a crew to number two');
+    await type('send a crew to number two');
     await checked('alpha');
     feed.press(latest().id, latest().actions[0]);
 
@@ -191,11 +198,11 @@ describe('sending a crew by voice or typing', () => {
 
   it('sends nothing on a no', async () => {
     const { listBlocking, type, say, latest, checked, launch } = setUp();
-    listBlocking();
+    await listBlocking();
 
-    type('get a crew on the second one');
+    await type('get a crew on the second one');
     await checked('alpha');
-    say('no');
+    await say('no');
 
     expect(latest().said.text).toBe('Left it.');
     expect(launch).not.toHaveBeenCalled();
@@ -204,7 +211,7 @@ describe('sending a crew by voice or typing', () => {
   it('works on its own, with no list first', async () => {
     const { type, latest, checked } = setUp();
 
-    type('send a crew to 12');
+    await type('send a crew to 12');
     await checked('alpha');
 
     expect(latest().said.text).toBe(
@@ -214,15 +221,15 @@ describe('sending a crew by voice or typing', () => {
 
   it('offers to open one a crew cannot take, and opens it on a yes', async () => {
     const { listBlocking, type, latest, checked, launch, navigate } = setUp();
-    listBlocking();
+    await listBlocking();
 
-    type('send a crew to the third one');
+    await type('send a crew to the third one');
     await checked('alpha');
     expect(latest().said.text).toBe(
       'A crew only takes a pull request that is failing, conflicted or stacked on a base that has merged, and this one isn’t: waiting on you, idle 9 days. Want me to open alpha pull request 13, “Change 13” instead?',
     );
 
-    type('yes');
+    await type('yes');
     await vi.advanceTimersByTimeAsync(GRACE_MS);
 
     expect(launch).not.toHaveBeenCalled();
@@ -231,30 +238,30 @@ describe('sending a crew by voice or typing', () => {
 
   it('sends one to a pull request whose stacked base has merged, as the star card does', async () => {
     const { listBlocking, type, latest, checked, launch } = setUp();
-    listBlocking();
+    await listBlocking();
 
-    type('send a crew to the third one');
+    await type('send a crew to the third one');
     await checked('alpha', BASE_MERGED);
     expect(latest().said.text).toBe(
       `Send a crew to alpha pull request 13, “Change 13”? ${UPDATE_STACK}`,
     );
 
-    type('yes');
+    await type('yes');
 
     expect(launch).toHaveBeenCalledExactlyOnceWith('me/alpha', 13);
   });
 
   it('asks which, naming them, and takes the next reply as the crew’s pick', async () => {
     const { listBlocking, say, latest, checked, question } = setUp();
-    listBlocking();
+    await listBlocking();
 
-    say('send a crew to the alpha one');
+    await say('send a crew to the alpha one');
     expect(latest().said.text).toBe(
       'Which one: alpha pull request 12 (“Change 12”) or alpha pull request 13 (“Change 13”)?',
     );
     expect(question.question()?.words).toBe(CREW_WHICH);
 
-    say('the first one');
+    await say('the first one');
     await checked('alpha');
 
     expect(latest().said.text).toMatch(/^Send a crew to alpha pull request 12/);
@@ -262,10 +269,10 @@ describe('sending a crew by voice or typing', () => {
 
   it('opens one named with “open” while asking which the crew takes', async () => {
     const { listBlocking, say, latest, navigate, launch } = setUp();
-    listBlocking();
-    say('send a crew to the alpha one');
+    await listBlocking();
+    await say('send a crew to the alpha one');
 
-    say('open the second one');
+    await say('open the second one');
     await vi.advanceTimersByTimeAsync(GRACE_MS);
 
     expect(latest().said.text).toBe('Opening pull request 13 in alpha…');
@@ -275,24 +282,24 @@ describe('sending a crew by voice or typing', () => {
 
   it('takes a no to “which one?” as a no, even with one to choose from', async () => {
     const { type, say, latest, read, http, question } = setUp();
-    type('what’s blocking in beta');
+    await type('what’s blocking in beta');
     await read('beta');
-    say('send a crew to number 999');
+    await say('send a crew to number 999');
     expect(latest().said.text).toBe(
       'I can’t tell which one that is. Is it beta pull request 3 (“Change 3”)?',
     );
 
-    say('no');
+    await say('no');
 
     expect(latest().said.text).toBe('Left it.');
     expect(question.question()).toBeNull();
     http.expectNone('/api/queue?repo=me/beta');
   });
 
-  it('names every open one when none is named and there are few', () => {
+  it('names every open one when none is named and there are few', async () => {
     const { type, latest, http, question } = setUp();
 
-    type('send a crew please');
+    await type('send a crew please');
 
     expect(latest().said.text).toBe(
       'Which one: alpha pull request 12 (“Change 12”), alpha pull request 13 (“Change 13”) or beta pull request 3 (“Change 3”)?',
@@ -304,7 +311,7 @@ describe('sending a crew by voice or typing', () => {
   it('says so where no crew can launch, reading nothing', async () => {
     const { type, latest, http } = setUp(false);
 
-    type('send a crew to 12');
+    await type('send a crew to 12');
 
     await vi.waitFor(() => expect(latest().said.text).toBe(NO_RUNNER_TEXT));
     http.expectNone('/api/queue?repo=me/alpha');
@@ -314,9 +321,9 @@ describe('sending a crew by voice or typing', () => {
     const { type, latest, checked, launch } = setUp();
     launch.mockReturnValue(of('Another task started first. Send the crew once it ends.'));
 
-    type('send a crew to 12');
+    await type('send a crew to 12');
     await checked('alpha');
-    type('yes');
+    await type('yes');
 
     expect(latest().said.text).toBe('Another task started first. Send the crew once it ends.');
   });
@@ -324,7 +331,7 @@ describe('sending a crew by voice or typing', () => {
   it('leaves words that name no pull request to the router', async () => {
     const { type, route } = setUp();
 
-    type('send a crew to the flux capacitor');
+    await type('send a crew to the flux capacitor');
 
     await vi.waitFor(() => expect(route).toHaveBeenCalled());
   });

@@ -81,6 +81,11 @@ describe('toolRegistry', () => {
         'refresh',
         'show_help',
         'propose_task',
+        'whats_blocking',
+        'open_pull_request',
+        'snooze_pull_request',
+        'dismiss_pull_request',
+        'send_crew',
       ],
     );
   });

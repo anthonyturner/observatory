@@ -3,7 +3,10 @@ import { describe, it } from 'node:test';
 import { OpenRouterError } from '../open-router-error.ts';
 import { openRouter } from '../open-router.ts';
 import type { Project } from '../route-contract.ts';
+import type { QueueItem, QueueReport } from '../../queue/queue-report.ts';
+import { queueTools } from '../tools/queue-tools.ts';
 import type { AgentTool } from './agent-tool.ts';
+import { agentReply } from './agent-reply.ts';
 import { AGENT_DEADLINE_MS, type AgentRequest, MAX_TOOL_ROUNDS, jevAgent } from './jev-agent.ts';
 import { toolRegistry } from './tool-registry.ts';
 
@@ -215,5 +218,59 @@ describe('jevAgent', () => {
       (error: OpenRouterError) => error.reason === 'timeout',
     );
     assert.equal(bodies.length, 1);
+  });
+});
+
+const PULL_412: QueueItem = {
+  number: 412,
+  title: 'Fix login',
+  url: '',
+  isDraft: false,
+  bucket: 'failing',
+  closes: [],
+  failingChecks: 1,
+  flakyChecks: [],
+  additions: 1,
+  deletions: 1,
+  updatedAt: '',
+  branch: '',
+  headSha: 'a'.repeat(40),
+  base: 'main',
+  mergeable: 'MERGEABLE',
+  changedFiles: 1,
+  idleDays: 4,
+  ageDays: 9,
+};
+
+describe('jevAgent with the Review Queue tools', () => {
+  it('turns a noisy request into a dismissal for the page to ask about, changing nothing', async () => {
+    const read: string[] = [];
+    const queue = async (repo: string): Promise<QueueReport> => {
+      read.push(repo);
+      return { generatedAt: '', repo, items: [PULL_412] };
+    };
+    const { bodies, fetch } = scripted(
+      calls({ id: 'd', name: 'dismiss_pull_request', args: { project: 'app', number: 412 } }),
+      answers('I’ll ask you to confirm dismissing it.'),
+    );
+    const agent = jevAgent({
+      models: openRouter({ key: KEY, fetch, sleep: async () => undefined }),
+      tools: toolRegistry(
+        queueTools(queue, () => TODAY),
+        () => undefined,
+      ),
+      now: () => TODAY,
+    });
+
+    const run = await agent.answer({ ...request, text: 'um jeff dismissed P.R. four twelve' });
+
+    assert.deepEqual(agentReply(run, 'model'), {
+      tier: 1,
+      queue: { kind: 'dismiss', repo: 'me/app', pr: 412 },
+      says: 'I’ll ask you to confirm dismissing it.',
+    });
+    assert.deepEqual(read, ['me/app']);
+    assert.match(String(messagesOf(bodies[0])[0].content), /speech-to-text/);
+    assert.match(String(messagesOf(bodies[1]).at(-1)?.content), /asks the owner yes or no first/);
   });
 });

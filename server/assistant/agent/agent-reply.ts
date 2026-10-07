@@ -8,10 +8,14 @@ const JEV_LABEL = 'Jev';
 export type SourcedReply = Reply & { readonly sources?: readonly Source[] };
 
 /** What Jev chose to do, in the shapes the page already knows: a page to open
- *  or an op, with Jev's words as what it says; or a proposal, with them as its text. */
+ *  or an op, with Jev's words as what it says; a proposal, with them as its
+ *  text; or a Review Queue command, which the page words itself. */
 function effectReply(run: AgentRun): Reply | null {
   const { effect, text } = run;
   if (effect?.kind === 'proposal') return { ...effect.proposal, text };
+  if (effect?.kind === 'queue') {
+    return text ? { tier: 1, queue: effect.act, says: text } : { tier: 1, queue: effect.act };
+  }
   if (effect?.kind === 'action' && 'href' in effect.reply) {
     return { ...effect.reply, says: text || effect.reply.says };
   }

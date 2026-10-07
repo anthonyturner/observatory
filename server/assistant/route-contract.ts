@@ -112,12 +112,41 @@ export interface Proposal {
   readonly text?: string;
 }
 
+/** The open pull request a Review Queue command is about. */
+export interface OnePull {
+  readonly repo: string;
+  readonly pr: number;
+}
+
+/** A Review Queue command Jev's tools chose. The page carries it out as it
+ *  would the typed command: it reads the queues itself, and asks yes or no
+ *  before anything changes. */
+export type QueueAct =
+  | { readonly kind: 'blocking'; readonly repo: string | null }
+  | (OnePull & { readonly kind: 'open' })
+  | (OnePull & { readonly kind: 'dismiss' })
+  | (OnePull & { readonly kind: 'crew' })
+  | (OnePull & {
+      readonly kind: 'snooze';
+      readonly days: number;
+      /** How the page says it: "till Monday 12 October". */
+      readonly words: string;
+    });
+
+/** A Review Queue command for the page; `says` is what Jev said of it, kept
+ *  for the conversation while the page speaks for itself. */
+export interface QueueActReply {
+  readonly tier: 1;
+  readonly queue: QueueAct;
+  readonly says?: string;
+}
+
 /** A skill that cannot be proposed, and why. */
 export interface NoteReply {
   readonly note: string;
 }
 
-export type Reply = ActionReply | AskReply | AnswerReply | Proposal | NoteReply;
+export type Reply = ActionReply | AskReply | AnswerReply | Proposal | NoteReply | QueueActReply;
 
 /** A page an answer drew on. */
 export interface Source {

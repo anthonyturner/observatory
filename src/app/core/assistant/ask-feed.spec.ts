@@ -460,6 +460,17 @@ describe('AskFeed', () => {
     expect(latest().said.text).toBe('Refreshed every project.');
   });
 
+  it('says so when Jev chose a Review Queue command and the page has no Review Queue', async () => {
+    const queue = { kind: 'dismiss', repo: 'me/app', pr: 412 } as const;
+    const { feed, latest, voice } = setUp([answer(reply({ tier: 1, queue, says: 'Asking.' }))]);
+
+    feed.submit('dismiss the login fix');
+    await settle();
+
+    expect(latest().said.text).toBe('The Review Queue’s commands aren’t on this page.');
+    expect(voice.speak).not.toHaveBeenCalled();
+  });
+
   it('stops speaking on "stop", saying whether anything was', async () => {
     const { feed, latest, voice } = setUp([answer(reply({ tier: 1, op: 'stop' }))]);
     voice.stop.mockReturnValueOnce(true);

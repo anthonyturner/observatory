@@ -100,12 +100,12 @@
   --meter-fill: linear-gradient(90deg, rgba(142, 162, 255, 0.3), rgba(142, 162, 255, 0.6));
   --meter-fill-hot: linear-gradient(90deg, rgba(255, 194, 77, 0.3), rgba(255, 194, 77, 0.65));
   --flow-wash: rgba(142, 162, 255, 0.04);
-  /* Home's night: a navy glow round the core, the panels' glass deepening to
-     near black. The canvas paints it; this gradient stands in until it does, or
-     without one. */
-  --sky-glow: #0c1736;
-  --sky-mid: #070c1f;
-  --sky-deep: #02040a;
+  /* Home's night: black like the other skies, with a faint glow of the core's
+     blue round it. The canvas paints it; this gradient stands in until it does,
+     or without one. */
+  --sky-glow: #0b1130;
+  --sky-mid: var(--void);
+  --sky-deep: #010207;
   --sky-vignette: rgba(0, 0, 0, 0.66);
   /* The playlist's colours over the sky: trance cool and dreamy, techno hot and stark,
      and one set for each tech station's talks. */

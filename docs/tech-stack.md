@@ -27,7 +27,7 @@ so a missing line costs more than a long one.
   GitHub through the `gh` CLI (`server/github/`), as its signed-in account.
   Everything else is still sample data. No
   secrets live in this repository.
-- Voice: Whisper base (hears) and Kokoro-82M (speaks) run in the browser, in a
+- Voice: Whisper base.en (hears) and Kokoro-82M (speaks) run in the browser, in a
   web worker (`src/app/core/voice/worker/`), on WebGPU with a processor
   fallback. transformers.js 4.3.0, kokoro-js 1.2.1 and phonemizer 1.2.1 load
   at run time from pinned jsDelivr files (the last two SHA-256 checked), and

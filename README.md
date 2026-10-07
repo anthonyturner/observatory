@@ -338,8 +338,12 @@ most 24 skills in all.
 Home reads its replies aloud in an [ElevenLabs](https://elevenlabs.io/) voice,
 with Kokoro, which runs in the page itself, standing in whenever ElevenLabs
 can't speak. ElevenLabs also hears you: `POST /api/voice/hear` turns a spoken
-request into words with its Scribe model, with Whisper, in the page, standing
-in. Hearing needs the key's speech-to-text permission.
+request into words with its Scribe v2 model, with Whisper, in the page, standing
+in. Both hear English and are told to expect the words Jev's commands use: the
+command words, project and repository names, and open pull requests as
+"PR 412". Scribe takes the first 100 of these as keyterms, which add a fifth to
+the cost of each recording; more would bill each as at least 20 seconds.
+Hearing needs the key's speech-to-text permission.
 `GET /api/voice` says whether it is on and lists the account's voices (kept for
 ten minutes), and `POST /api/voice/speak` turns one sentence of up to 1,000
 characters into MP3 audio in a chosen voice, with the `eleven_flash_v2_5` model.

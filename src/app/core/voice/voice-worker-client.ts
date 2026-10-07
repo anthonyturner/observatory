@@ -87,9 +87,10 @@ export class VoiceWorkerClient {
     return this.call({ op: 'cached', model, dtype }).then(readCached);
   }
 
-  /** The clip's words; `audio` is 16 kHz mono, and is moved to the worker. */
-  transcribe(audio: Float32Array): Promise<string> {
-    return this.run({ model: 'listen', audio }, [audio.buffer]).then(readTranscript);
+  /** The clip's words; `audio` is 16 kHz mono, and is moved to the worker.
+   *  `prompt` is text Whisper reads as just heard, to expect its words. */
+  transcribe(audio: Float32Array, prompt: string): Promise<string> {
+    return this.run({ model: 'listen', audio, prompt }, [audio.buffer]).then(readTranscript);
   }
 
   synthesize(text: string): Promise<SpokenClip> {

@@ -118,6 +118,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- Home's sky is black like the Orrery, Releases and Actions skies, with the same twinkling field stars and a faint glow of the core's blue round the core; the star trails and comets are unchanged ([#514](https://github.com/anthonyturner/observatory/pull/514)).
 - The Review Queue's toolbar is grouped by purpose: which sky, Starmap or List, zoom, Next star, what the sky draws (Collisions and the black hole), the side panels (Merge plan, Agents, Done), Refresh, Motion and Sound, then help. Zoom, the sky's layers, the side panels and the drag hint hide in List view, where they did nothing, and the toolbar wraps short of an open panel on the right instead of running under it ([#460](https://github.com/anthonyturner/observatory/pull/460)).
 - On a phone, portrait or landscape, the Review Queue's chrome takes far less of the sky: the legend chips and the tools each keep to one row you swipe sideways, with Controls always at the right end, and the title and stamp shrink to fit; on its side, the way back shares the title's row and the timeline no longer covers the legend ([#409](https://github.com/anthonyturner/observatory/pull/409)).
 - The Review Queue's stars are dimmer and calmer, and each group's pull requests are spaced evenly along a spiral, so a big group such as the blocked ones grows wider instead of piling stars on top of each other ([#345](https://github.com/anthonyturner/observatory/pull/345)).

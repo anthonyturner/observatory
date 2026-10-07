@@ -12,7 +12,7 @@ import { ASK_FEED_CHANNEL } from './core/assistant/ask-feed';
 import { provideNoticeAnnouncer } from './core/assistant/provide-notice-announcer';
 import { DesktopNotices } from './core/notices/desktop-notices';
 import { provideVoice } from './core/voice/provide-voice';
-import { QUEUE_TRIAGE_SHORTCUT } from './features/starmap/jev-triage/queue-triage-voice';
+import { REVIEW_QUEUE_SHORTCUTS } from './features/starmap/jev-triage/review-queue-shortcuts';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -20,7 +20,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withFetch()),
     ASK_FEED_CHANNEL,
-    QUEUE_TRIAGE_SHORTCUT,
+    REVIEW_QUEUE_SHORTCUTS,
     provideVoice(),
     provideNoticeAnnouncer(),
     provideJevHold(),

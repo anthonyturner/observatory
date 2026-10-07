@@ -22,14 +22,13 @@ type Reply = 'yes' | 'no' | 'all';
 interface Heard {
   readonly clues: Clue[];
   readonly replies: Set<Reply>;
-  /** A word from more than one title: about the items, but naming none. */
-  hasSharedTitleWord: boolean;
 }
 
-/** What a reader needs besides the words: each title word and the items
- *  whose titles hold it. */
+/** What a reader needs besides the words: each title word and each project
+ *  name word, with the items that hold it. */
 interface Card {
   readonly titleWords: ReadonlyMap<string, readonly number[]>;
+  readonly projectWords: ReadonlyMap<string, readonly number[]>;
 }
 
 /** Reads the words starting at `at` into `heard`, and says how many it took:
@@ -100,6 +99,10 @@ const FILLER: ReadonlySet<string> = new Set([
   'oh',
   'request',
   'number',
+  'about',
+  'with',
+  'in',
+  'from',
 ]);
 
 const sameNumber =
@@ -128,13 +131,20 @@ const readKind: Reader = (words, at, heard) => {
   return taken + (number?.length ?? 0);
 };
 
+/** "Number two" is the item numbered 2 where there is one, and otherwise the
+ *  second: a list Jev reads out is numbered by place. */
+const numberOrPlace =
+  (number: number): Clue =>
+  (item, index, items) =>
+    items.some((each) => each.number === number) ? item.number === number : index === number - 1;
+
 /** "number 12", and "No. 12", which is how a transcript may write "number". */
 const readNumberWord: Reader = (words, at, heard) => {
   const word = words[at];
   const isNumberWord = word === 'number' || (word === 'no' && isDigits(words[at + 1]));
   const number = isNumberWord ? numberAt(words, at + 1) : null;
   if (!number) return 0;
-  heard.clues.push(sameNumber(number.value));
+  heard.clues.push(numberOrPlace(number.value));
   return 1 + number.length;
 };
 
@@ -167,13 +177,28 @@ const readReply: Reader = (words, at, heard) => {
 
 const readFiller: Reader = (words, at) => (FILLER.has(words[at]) ? 1 : 0);
 
-/** A word from exactly one item's title names that item; a word from several
- *  names none of them. */
+/** Whether an item is one of `holders`, by its place on the card. */
+const heldBy =
+  (holders: readonly number[]): Clue =>
+  (_, index) =>
+    holders.includes(index);
+
+/** A word of a project's name narrows the items to that project's:
+ *  "the observatory one". */
+const readProjectWord: Reader = (words, at, heard, card) => {
+  const holders = card.projectWords.get(words[at]);
+  if (!holders) return 0;
+  heard.clues.push(heldBy(holders));
+  return 1;
+};
+
+/** A title word narrows the items to those whose titles hold it, so a word
+ *  from one title names that item, and one from several names none alone:
+ *  "the observatory one about the playlist" needs both. */
 const readTitleWord: Reader = (words, at, heard, card) => {
   const holders = card.titleWords.get(words[at]);
   if (!holders) return 0;
-  if (holders.length === 1) heard.clues.push((_, index) => index === holders[0]);
-  else heard.hasSharedTitleWord = true;
+  heard.clues.push(heldBy(holders));
   return 1;
 };
 
@@ -186,20 +211,29 @@ const READERS: readonly Reader[] = [
   readOrdinal,
   readReply,
   readFiller,
+  readProjectWord,
   readTitleWord,
 ];
 
-/** Each word of the items' titles, and which items hold it. A stand-in
+/** Each word of the items' titles and projects, and which items hold it. A stand-in
  *  title ("Open the issue") is all filler and kind words, so it never
  *  matches: the readers before readTitleWord take those words first. */
 function cardOf(items: readonly OpenItem[]): Card {
-  const titleWords = new Map<string, number[]>();
-  items.forEach(({ title }, index) => {
-    for (const word of new Set(wordsOf(title))) {
-      titleWords.set(word, [...(titleWords.get(word) ?? []), index]);
+  return {
+    titleWords: holdersOf(items.map(({ title }) => title)),
+    projectWords: holdersOf(items.map(({ label }) => label)),
+  };
+}
+
+/** Each word of `texts`, and the indexes of the texts that hold it. */
+function holdersOf(texts: readonly string[]): ReadonlyMap<string, readonly number[]> {
+  const holders = new Map<string, number[]>();
+  texts.forEach((text, index) => {
+    for (const word of new Set(wordsOf(text))) {
+      holders.set(word, [...(holders.get(word) ?? []), index]);
     }
   });
-  return { titleWords };
+  return holders;
 }
 
 /** How many words the first reader that knows them took, or 0 when none did. */
@@ -213,7 +247,7 @@ function readAt(words: readonly string[], at: number, heard: Heard, card: Card):
 
 /** Everything the words say, or null when one of them is no part of an answer. */
 function hear(words: readonly string[], card: Card): Heard | null {
-  const heard: Heard = { clues: [], replies: new Set(), hasSharedTitleWord: false };
+  const heard: Heard = { clues: [], replies: new Set() };
   for (let at = 0; at < words.length;) {
     const taken = readAt(words, at, heard, card);
     if (!taken) return null;
@@ -221,6 +255,10 @@ function hear(words: readonly string[], card: Card): Heard | null {
   }
   return heard;
 }
+
+/** The items that fit every clue: all of them when there are none. */
+const fitting = (clues: readonly Clue[], items: readonly OpenItem[]): OpenItem[] =>
+  items.filter((item, index) => clues.every((fits) => fits(item, index, items)));
 
 function oneOf(matches: readonly OpenItem[]): QuestionAnswer {
   return matches.length === 1
@@ -233,13 +271,11 @@ function oneOf(matches: readonly OpenItem[]): QuestionAnswer {
 function decide(heard: Heard, items: readonly OpenItem[]): QuestionAnswer | null {
   const { clues, replies } = heard;
   if (replies.has('all')) return { kind: 'all' };
-  if (clues.length) {
-    return oneOf(items.filter((item, index) => clues.every((fits) => fits(item, index, items))));
-  }
+  if (clues.length) return oneOf(fitting(clues, items));
   if (replies.has('no')) return { kind: 'no' };
   if (replies.has('yes'))
     return items.length === 1 ? oneOf(items) : { kind: 'unclear', why: 'several' };
-  return heard.hasSharedTitleWord ? { kind: 'unclear', why: 'unmatched' } : null;
+  return null;
 }
 
 /** What `said` answers to Jev's question about `items`, or null when it is
@@ -249,4 +285,13 @@ export function answerTo(said: string, items: readonly OpenItem[]): QuestionAnsw
   if (!items.length) return null;
   const heard = hear(wordsOf(said), cardOf(items));
   return heard && decide(heard, items);
+}
+
+/** The items `said` could mean, in the card's order: each that fits all it
+ *  says about them, or every item when it says nothing that tells them apart.
+ *  Null when a word in it is no part of an answer. Yes, no and all are heard
+ *  and passed over, for a caller that has its own question to ask. */
+export function itemsMeantBy(said: string, items: readonly OpenItem[]): OpenItem[] | null {
+  const heard = hear(wordsOf(said), cardOf(items));
+  return heard && fitting(heard.clues, items);
 }

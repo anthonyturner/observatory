@@ -8,8 +8,9 @@ export type ShortcutAct = (how: AskedHow) => void;
 export interface AskShortcut {
   /** What `words` would do here, or null to leave them to the router. */
   actOf(words: string): ShortcutAct | null;
-  /** A request went to the router instead, so nothing still waits on an answer here. */
-  passOver(): void;
+  /** A request went to the router instead, so nothing still waits on an answer
+   *  here. Only a shortcut that leaves something waiting needs one. */
+  passOver?(): void;
 }
 
 /** Every shortcut, asked in turn before a request goes to the router. Each is

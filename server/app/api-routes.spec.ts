@@ -61,6 +61,10 @@ const reads = {
   forgetPull: (repo: string, number: number) => forgotten.push(`${repo}#${number}`),
   labels: async () => [{ name: 'bug', color: 'd73a4a' }],
   releases: async (repo: string) => ({ repo, source: 'none', releases: [] }),
+  actions: async (repo: string) => ({ repo, runs: [] }),
+  forgetActions: (repo: string) => forgotten.push(`actions ${repo}`),
+  runJobs: async (repo: string, runId: number) => ({ repo, runId, jobs: [] }),
+  ciHealth: async (repo: string) => ({ repo, state: 'passing' }),
   logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
   agentUsage: async () => ({
     generatedAt: 'x',
@@ -122,6 +126,19 @@ describe('ownerRoutes', () => {
       source: 'none',
       releases: [],
     });
+  });
+
+  it('reads a repository’s runs, afresh when asked, a run’s jobs and its CI health', async () => {
+    assert.deepEqual(await get('/api/actions?repo=me/app'), { repo: 'me/app', runs: [] });
+    forgotten.length = 0;
+    await get('/api/actions?repo=me/app&fresh=1');
+    assert.deepEqual(forgotten, ['actions me/app']);
+    assert.deepEqual(await get('/api/actions/run?repo=me/app&run=18234567890'), {
+      repo: 'me/app',
+      runId: 18234567890,
+      jobs: [],
+    });
+    assert.deepEqual(await get('/api/ci-health?repo=me/app'), { repo: 'me/app', state: 'passing' });
   });
 
   it('reads one issue by repository and number, and refuses a bad number', async () => {

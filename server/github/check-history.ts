@@ -1,4 +1,4 @@
-import { type Json, type JsonGet, isJson, isText } from './rest-json.ts';
+import { type JsonGet, isText, jsonListIn } from './rest-json.ts';
 
 /** One finished attempt of a check at one commit. */
 export interface CheckAttempt {
@@ -21,14 +21,9 @@ const RUN_LIMIT = 100;
 const RERUN_LIMIT = 20;
 const JOB_LIMIT = 100;
 
-const listIn = (body: unknown, key: string): Json[] => {
-  const list = isJson(body) ? body[key] : null;
-  return Array.isArray(list) ? list.filter(isJson) : [];
-};
-
 /** The ids of the workflow runs in a `GET /actions/runs` answer that were run again. */
 export function rerunIdsOf(body: unknown): number[] {
-  return listIn(body, 'workflow_runs')
+  return jsonListIn(body, 'workflow_runs')
     .filter((run) => typeof run['run_attempt'] === 'number' && run['run_attempt'] > 1)
     .map((run) => run['id'])
     .filter((id): id is number => Number.isInteger(id));
@@ -36,7 +31,7 @@ export function rerunIdsOf(body: unknown): number[] {
 
 /** The finished jobs, from every attempt, in a `GET /actions/runs/{id}/jobs?filter=all` answer. */
 export function attemptsOf(body: unknown): CheckAttempt[] {
-  return listIn(body, 'jobs').flatMap((job) => {
+  return jsonListIn(body, 'jobs').flatMap((job) => {
     const { name, head_sha: sha, conclusion, completed_at: completedAt } = job;
     if (!isText(name) || !isText(sha) || !isText(conclusion) || !isText(completedAt)) return [];
     return [{ name, sha, conclusion: conclusion.toUpperCase(), completedAt }];

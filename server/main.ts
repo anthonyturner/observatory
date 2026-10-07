@@ -33,6 +33,7 @@ import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
 import { withRunsRoutes } from './runner/runs-routes.ts';
 import { withCrewRoutes } from './crew/crew-routes.ts';
 import { withRerunRoute } from './queue/rerun-routes.ts';
+import { withActionsRerunRoute } from './actions/actions-rerun.ts';
 import { withRiskRoutes } from './queue/risk-routes.ts';
 import { riskSummaries } from './queue/risk-summary.ts';
 import { fileStore } from './store/file-store.ts';
@@ -164,7 +165,15 @@ const server = createApiServer(
                             withAgentSpeechRoutes(
                               withRiskRoutes(
                                 withLiveAgentsRoutes(
-                                  withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+                                  withActionsRerunRoute(
+                                    withRerunRoute(
+                                      ownerRoutes(reads, triage, editor),
+                                      reads,
+                                      github,
+                                    ),
+                                    reads,
+                                    github,
+                                  ),
                                   liveAgentsSource,
                                 ),
                                 reads.pull,

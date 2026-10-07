@@ -19,6 +19,7 @@ import { ProjectJump } from '../../../core/projects/project-jump';
 import { totalsOf } from '../../../core/projects/project-totals';
 import { ProjectSnapshot } from '../../../core/projects/project.types';
 import { severityOf } from '../../../core/projects/severity';
+import { CiMark } from '../ci-mark/ci-mark';
 
 /** A part of a project's star map the card links to. */
 interface StarMapPart {
@@ -40,7 +41,7 @@ const FLASH_MS = 1800;
 /** One project: its worst problem as a colour, what is waiting, and the way in. */
 @Component({
   selector: 'app-project-card',
-  imports: [RouterLink],
+  imports: [RouterLink, CiMark],
   templateUrl: './project-card.html',
   styleUrl: './project-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

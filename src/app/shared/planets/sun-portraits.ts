@@ -1,5 +1,5 @@
-import { StarType } from '../../../shared/gl/star-shader';
-import { PortraitPainter, SUN_FRAME } from '../../../shared/planets/planet-portrait.types';
+import { StarType } from '../gl/star-shader';
+import { PortraitPainter, SUN_FRAME } from './planet-portrait.types';
 
 /** One star picture to have ready. */
 export interface PortraitRequest {
@@ -13,7 +13,7 @@ export interface PortraitRequest {
 /** Sizes are rounded up to a step, so stars of nearly one size share a picture. */
 const SIZE_STEP_PX = 16;
 const MAX_PIXELS = 256;
-/** Enough for every release on show at a few sizes; past it the cache starts over. */
+/** Enough for every star on show at a few sizes; past it the cache starts over. */
 const MAX_IMAGES = 120;
 
 const pixelsFor = (radius: number, pixelRatio: number): number =>
@@ -26,11 +26,11 @@ export const portraitKey = (request: PortraitRequest, pixelRatio: number): strin
   `${request.type}|${request.ink}|${pixelsFor(request.radius, pixelRatio)}`;
 
 /**
- * The release stars as the review queue draws its stars close up, painted once
- * each by the shared portrait painter and kept as images for the canvas.
+ * Stars on a 2D sky as the review queue draws its stars close up, painted
+ * once each by the shared portrait painter and kept as images for the canvas.
  * Until one has loaded the sky draws its flat glow instead.
  */
-export class ReleasePortraits {
+export class SunPortraits {
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly loaded = new Set<string>();
 

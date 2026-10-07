@@ -45,7 +45,7 @@ export function codeScanningSeverity(alert: CodeScanningAlert): AlertSeverity {
 }
 
 /** A secret that still works, or is out in public, is the worst thing on the list. */
-export const secretSeverity = (alert: SecretScanningAlert): AlertSeverity =>
+const secretSeverity = (alert: SecretScanningAlert): AlertSeverity =>
   alert.isActive || alert.isPubliclyLeaked ? 'critical' : 'high';
 
 export function dependabotAlert(alert: DependabotAlert): SecurityAlert {
@@ -74,7 +74,7 @@ export function codeScanningAlert(alert: CodeScanningAlert): SecurityAlert {
   };
 }
 
-export function secretScanningAlert(alert: SecretScanningAlert, where: string): SecurityAlert {
+function secretScanningAlert(alert: SecretScanningAlert, where: string): SecurityAlert {
   const notes = [alert.isActive && 'still works', alert.isPubliclyLeaked && 'leaked publicly'];
   const said = notes.filter(Boolean).join(', ');
   return {
@@ -89,12 +89,12 @@ export function secretScanningAlert(alert: SecretScanningAlert, where: string): 
 }
 
 /** Most severe first, then the one open longest. */
-export function bySeverity(a: SecurityAlert, b: SecurityAlert): number {
+function bySeverity(a: SecurityAlert, b: SecurityAlert): number {
   const rank = SEVERITIES.indexOf(a.severity) - SEVERITIES.indexOf(b.severity);
   return rank || Date.parse(a.createdAt) - Date.parse(b.createdAt);
 }
 
-export function severityCounts(alerts: readonly SecurityAlert[]): SeverityCounts {
+function severityCounts(alerts: readonly SecurityAlert[]): SeverityCounts {
   const counts = { critical: 0, high: 0, medium: 0, low: 0 };
   for (const alert of alerts) counts[alert.severity]++;
   return counts;

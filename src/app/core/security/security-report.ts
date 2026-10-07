@@ -46,8 +46,8 @@ export interface SecurityReport {
   readonly isWithheld: boolean;
 }
 
-export const isAlertKind = oneOf(ALERT_KINDS);
-export const isSeverity = oneOf(SEVERITIES);
+const isAlertKind = oneOf(ALERT_KINDS);
+const isSeverity = oneOf(SEVERITIES);
 const isSourceStatus = oneOf(SOURCE_STATUSES);
 
 const countOf = (value: unknown): number =>

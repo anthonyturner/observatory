@@ -22,7 +22,7 @@ import {
   unreadNote,
 } from '../security-words';
 
-export type SecurityView = 'list' | 'sky';
+type SecurityView = 'list' | 'sky';
 
 /** The header's height, with its legend, which the belts keep clear of. */
 const SKY_INSETS: SkyInsets = { top: 190, right: 0, bottom: 100, left: 0 };

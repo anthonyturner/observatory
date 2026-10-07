@@ -55,7 +55,7 @@ export interface SecurityReader {
 }
 
 /** One request's worth: GitHub lists at most a hundred a page. */
-export const ALERT_LIMIT = 100;
+const ALERT_LIMIT = 100;
 
 const isId = (value: unknown): value is number => Number.isInteger(value) && Number(value) > 0;
 const textOr = (value: unknown, otherwise: string): string => (isText(value) ? value : otherwise);

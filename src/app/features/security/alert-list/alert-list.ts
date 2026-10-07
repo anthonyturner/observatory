@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { SecurityAlert } from '../../../core/security/security-report';
 import { SEVERITY_WORDS, alertMeta, severityColour } from '../security-words';
 
-export interface AlertRow {
+interface AlertRow {
   readonly key: string;
   readonly title: string;
   readonly severity: string;
@@ -14,10 +14,10 @@ export interface AlertRow {
   readonly url: string;
 }
 
-export const alertKey = (alert: SecurityAlert): string => `${alert.kind}-${alert.number}`;
+const alertKey = (alert: SecurityAlert): string => `${alert.kind}-${alert.number}`;
 
 /** The alerts as rows, in the report's order, `now` being when the report was made. */
-export function alertRows(alerts: readonly SecurityAlert[], now: number): AlertRow[] {
+function alertRows(alerts: readonly SecurityAlert[], now: number): AlertRow[] {
   return alerts.map((alert) => ({
     key: alertKey(alert),
     title: alert.title,

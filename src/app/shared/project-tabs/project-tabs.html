@@ -1,0 +1,7 @@
+<nav aria-label="Project screens">
+  @for (tab of links(); track tab.id) {
+    <a [routerLink]="tab.link" [attr.aria-current]="tab.isCurrent ? 'page' : null">{{
+      tab.label
+    }}</a>
+  }
+</nav>

@@ -43,10 +43,7 @@ describe('changelogSections', () => {
   const sections = changelogSections(CHANGELOG);
 
   it('keys each section by its version, with the markdown under its heading', () => {
-    assert.deepEqual(
-      [...sections.keys()],
-      ['unreleased', '1.1.0', '1.0.0'],
-    );
+    assert.deepEqual([...sections.keys()], ['unreleased', '1.1.0', '1.0.0']);
     assert.equal(
       sections.get('unreleased'),
       '### Added\n\n- Releases screen ([#484](https://github.com/me/app/pull/484)).',

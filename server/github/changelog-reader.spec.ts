@@ -28,7 +28,10 @@ describe('readChangelog', () => {
   });
 
   it('answers none for a repository without one, from either reader', async () => {
-    for (const message of ['gh: Not Found (HTTP 404)', 'GitHub: HTTP 404 {"message":"Not Found"}']) {
+    for (const message of [
+      'gh: Not Found (HTTP 404)',
+      'GitHub: HTTP 404 {"message":"Not Found"}',
+    ]) {
       assert.equal(
         await readChangelog(async () => {
           throw new Error(message);

@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { commitDateOf, readReleases, readTags, releasesOf, taggedCommitsOf } from './release-reader.ts';
+import {
+  commitDateOf,
+  readReleases,
+  readTags,
+  releasesOf,
+  taggedCommitsOf,
+} from './release-reader.ts';
 
 const release = (tag: string, publishedAt: string | null, extra: object = {}) => ({
   tag_name: tag,

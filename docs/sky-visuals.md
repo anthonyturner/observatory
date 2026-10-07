@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds and Review Queue stars
+# Sky visuals: Orrery worlds, Review Queue stars and the Releases sky
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -31,6 +31,10 @@ TypeScript and the shader only draws it.
 | Review Queue | Crew ship        | A crew run on the PR       | `crewPose(mark, clock)`        |
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
+| Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
+| Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseLook`        |
+| Releases     | Ring specks      | Merged PRs it shipped      | `ringSpeck`                    |
+| Releases     | Comet tail knots | Unreleased PRs by week     | `weeksOf`, `tailSpeck`         |
 
 ## Orrery worlds
 
@@ -299,6 +303,52 @@ Past the limit (8, set per browser with **wip** in the tools, `WipLimitSetting`,
 (`FADED_ALPHA`) and the page shows a note under the search. It is a nudge only:
 a faded comet still takes hover and clicks, and getting back within the limit,
 by a refresh or a raised limit, brightens them again.
+
+## The Releases sky
+
+Code: `features/releases/release-sky/`. It is Canvas 2D only: the Orrery's
+night (`paintBackground`, `paintField`, and the vignette and grain from
+`shared/night-sky`), with each release's star painted once by the shared
+portrait painter (`shared/planets`, the review queue's star shader) and drawn
+as an image. Until the painter loads, or where WebGL cannot start, a star is a
+flat glow. Each star and the comet's head is a real button laid over the
+canvas, so hover and keyboard focus show the version, date and count, and the
+List view gives the same data.
+
+### Trajectory (scenery)
+
+One cubic curve (`release-path.ts`) rises out of the distance at the upper
+left, swings down through the middle and climbs to the leading edge on the
+right; nearness (`depth`) runs from 0.42 to 1 along it and scales every size.
+`layoutTimeline` puts releases oldest first at even steps of the curve's length
+on screen (`alongPath`), eased by `share^1.35` so older ones crowd into the
+distance. The whole curve is drawn faintly dashed, and the stretch flown, from
+the oldest release to the comet's head, firmer with a soft wake.
+
+### Stars (data: what each release shipped)
+
+Size is `depth × min(28, 7 + 2.4 × √PRs)` px, capped at 42% of the gap to its
+nearest neighbour so stars never merge. `bumpOf` compares each tag with the
+one before: a major release is a flaring giant in `--release-major`, a minor
+one a clear star in `--release-minor`, a patch a calm one in `--release-patch`,
+and a tag that is no version is calm in `--release-other`; a prerelease is
+veiled (`releaseLook`). Each merged pull request it shipped circles it on a
+tilted ring (`ringSpeck`, seeded by number, at most 64 drawn), the far half
+dimmer and behind the star.
+
+A pull request belongs to the first release published at or after it merged
+(`shippedIn` on the server): dates, not the commits between tags, so a release
+cut from another branch can be placed one release late.
+
+### The Unreleased comet (data: work merged since the last release)
+
+Its head rides at 0.9 of the curve; its dust tail runs back to just past the
+newest release, or along most of the curve when there is none. `weeksOf`
+groups the merges by local week, Monday first, and each week is a knot along
+the tail, older ones wider, named with its date and count; its specks stream
+back through the knot and fade at its ends (`tailSpeck`). A fine ion tail
+points from the head toward the middle of the dust tail. Everything that moves
+runs on the frame loop's scene time, so it holds still when motion is off.
 
 ## Changing a visual
 

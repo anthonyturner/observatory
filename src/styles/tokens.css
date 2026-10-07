@@ -307,6 +307,17 @@
   --orrery-star-4: #fff0d6;
   --orrery-star-5: #ffd9b8;
 
+  /* The Releases sky: a star's colour says how far its version moved; the
+     comet is the work merged since the last release. */
+  --release-major: #ffc46b;
+  --release-minor: #8ea2ff;
+  --release-patch: #dce8ff;
+  --release-other: #c9b8ff;
+  --release-path: #3a4d7a;
+  --release-comet: var(--count-unclaimed);
+  --release-comet-head: var(--orrery-comet-head);
+  --release-speck: #f4f8ff;
+
   /* pr-starmap's PR screen: its glass, the diff's washes, and the Edit tab. */
   --sheet-glass: linear-gradient(170deg, rgba(16, 24, 50, 0.95), rgba(6, 10, 22, 0.97));
   --sheet-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 40px 90px -24px rgba(0, 0, 0, 0.9);

@@ -5,6 +5,7 @@ import { StarmapHeader } from './starmap-header';
 function render() {
   TestBed.configureTestingModule({ providers: [provideRouter([])] });
   const fixture = TestBed.createComponent(StarmapHeader);
+  fixture.componentRef.setInput('repo', 'me/a');
   fixture.componentRef.setInput('title', 'Review Queue');
   fixture.componentRef.setInput('stamp', 'me/a · 2 open');
   fixture.componentRef.setInput('chips', [
@@ -21,6 +22,9 @@ describe('StarmapHeader', () => {
 
     expect(element.querySelector('app-up-link a')?.getAttribute('href')).toBe('/orrery');
     expect(element.querySelector('h1')?.textContent).toBe('Review Queue');
+    expect(
+      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
+    ).toBe('/p/me/a');
     expect(element.querySelector('.stale')).toBeNull();
   });
 

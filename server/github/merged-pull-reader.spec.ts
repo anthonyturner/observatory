@@ -58,7 +58,9 @@ describe('readMergedPulls', () => {
     let pages = 0;
     const pulls = await readMergedPulls(async () => {
       pages++;
-      return Array.from({ length: 100 }, (_, index) => pull(pages * 1000 + index, '2026-01-01T00:00:00Z'));
+      return Array.from({ length: 100 }, (_, index) =>
+        pull(pages * 1000 + index, '2026-01-01T00:00:00Z'),
+      );
     }, 'me/app');
 
     assert.equal(pages, MERGED_LIMIT / 100);

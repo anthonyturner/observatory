@@ -29,7 +29,9 @@ export interface Shipped {
  * somewhere other than the default branch can be placed one release late.
  */
 export function shippedIn(marks: readonly ReleaseMark[], pulls: readonly MergedPull[]): Shipped {
-  const oldestFirst = [...marks].sort((a, b) => Date.parse(a.publishedAt) - Date.parse(b.publishedAt));
+  const oldestFirst = [...marks].sort(
+    (a, b) => Date.parse(a.publishedAt) - Date.parse(b.publishedAt),
+  );
   const byTag = new Map<string, MergedPull[]>(marks.map((mark) => [mark.tag, []]));
   const unreleased: MergedPull[] = [];
   for (const pull of pulls) {
@@ -75,17 +77,15 @@ export function releaseEntries(
   const newestFirst = [...marks].sort(
     (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
   );
-  const releases = newestFirst.slice(0, RELEASE_LIMIT).map(
-    (mark): ReleaseEntry => ({
-      tag: mark.tag,
-      name: mark.name,
-      publishedAt: mark.publishedAt,
-      url: mark.url,
-      isPrerelease: mark.isPrerelease,
-      notes: notesFor(mark, sections),
-      pulls: shipped.byTag.get(mark.tag) ?? [],
-    }),
-  );
+  const releases = newestFirst.slice(0, RELEASE_LIMIT).map((mark): ReleaseEntry => ({
+    tag: mark.tag,
+    name: mark.name,
+    publishedAt: mark.publishedAt,
+    url: mark.url,
+    isPrerelease: mark.isPrerelease,
+    notes: notesFor(mark, sections),
+    pulls: shipped.byTag.get(mark.tag) ?? [],
+  }));
   return { releases, unreleased: unreleasedOf(sections, shipped.unreleased) };
 }
 

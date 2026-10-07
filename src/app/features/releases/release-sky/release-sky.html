@@ -1,0 +1,29 @@
+<canvas #canvas aria-hidden="true"></canvas>
+
+@for (week of marks().weeks; track week.key) {
+  <span class="week" aria-hidden="true" [style.left.px]="week.x" [style.top.px]="week.y">{{
+    week.text
+  }}</span>
+}
+
+<div class="bodies" role="group" aria-label="Releases along the timeline, oldest first">
+  @for (body of marks().bodies; track body.key) {
+    <button
+      type="button"
+      class="body"
+      [style.left.px]="body.x"
+      [style.top.px]="body.y"
+      [style.--hit.px]="body.hit"
+      [attr.aria-label]="body.spoken"
+      [attr.aria-pressed]="body.key === selected()"
+      (click)="picked.emit(body.key)"
+    >
+      <span class="tip" aria-hidden="true">{{ body.tip }}</span>
+      @if (body.name) {
+        <span class="name" aria-hidden="true"
+          >{{ body.name }}<small>{{ body.date }}</small></span
+        >
+      }
+    </button>
+  }
+</div>

@@ -1,6 +1,9 @@
 import { InjectionToken } from '@angular/core';
 import { CoreView } from '../instrument/core-view';
 import { resolveColour } from '../instrument/palette';
+import { OrreryCamera } from '../orrery/orrery-camera';
+import { FIELD_TINT_COUNT, FieldStar, starField } from '../orrery/star-field';
+import { channelReader, paintField } from '../../shared/night-sky/night-sky';
 import { Comet, CometFlight, flightAt } from './comets';
 import { Flare, flareAt, flaresFrom } from './flares';
 import { StarTrails } from './star-trails';
@@ -23,6 +26,8 @@ interface SkyInks {
   readonly vignette: string;
   /** The green of a flare: work got done. */
   readonly progress: string;
+  /** The field stars' tints, as `r, g, b` triples. */
+  readonly stars: readonly string[];
 }
 
 const GRAIN_SIZE = 128;
@@ -38,6 +43,9 @@ const FLARE_LIFE_S = 3;
 const HEAD_GROWTH = 1.3;
 /** The core's size before one is measured, for where the trails thin out. */
 const DEFAULT_CORE_RADIUS = 120;
+/** The Releases sky's field: enough stars, spread wide enough, to fill a window. */
+const FIELD_STARS = 1400;
+const FIELD_SPREAD = 2.4;
 
 /** Where the sky glows from: the core, or where a core would be before one is measured. */
 export function skyViewOf(
@@ -74,9 +82,9 @@ export const SKY_CANVAS = new InjectionToken<(host: HTMLElement) => SkyCanvas>('
   factory: () => (host) => new SkyPainter(host),
 });
 
-/** Paints the night behind Home: a green glow round the core, star trails
- *  turning about it, a rain of comets in their projects' colours, a vignette
- *  and grain. */
+/** Paints the night behind Home: near black with a faint blue glow round the
+ *  core, the other skies' field stars, star trails turning about the core, a
+ *  rain of comets in their projects' colours, a vignette and grain. */
 export class SkyPainter implements SkyCanvas {
   private readonly canvas: HTMLCanvasElement;
   private readonly context: CanvasRenderingContext2D | null;
@@ -85,6 +93,9 @@ export class SkyPainter implements SkyCanvas {
   private readonly colours = new Map<string, string>();
   private readonly host: HTMLElement;
   private readonly trails: StarTrails;
+  private readonly field: readonly FieldStar[] = starField(FIELD_STARS, FIELD_SPREAD);
+  /** Never moves: the field only twinkles. */
+  private readonly camera = new OrreryCamera();
   private view: SkyView | null = null;
   private comets: readonly Comet[] = [];
   private flares: Flare[] = [];
@@ -139,6 +150,7 @@ export class SkyPainter implements SkyCanvas {
     context.globalCompositeOperation = 'source-over';
     context.globalAlpha = 1;
     this.paintNight(context, view);
+    paintField(context, this.field, this.camera, view, time, this.inks.stars);
     if (this.flaresWaiting > 0) this.trails.spinUp(this.flaresWaiting, time);
     this.trails.draw(context, view, time, this.trailSpeed);
     this.paintComets(context, view, time);
@@ -287,12 +299,16 @@ export class SkyPainter implements SkyCanvas {
 
 function readInks(host: HTMLElement): SkyInks {
   const ink = (token: string): string => resolveColour(host, `var(${token})`);
+  const channels = channelReader(host);
   return {
     glow: ink('--sky-glow'),
     mid: ink('--sky-mid'),
     deep: ink('--sky-deep'),
     vignette: ink('--sky-vignette'),
     progress: ink('--ok'),
+    stars: Array.from({ length: FIELD_TINT_COUNT }, (_, index) =>
+      channels(`var(--orrery-star-${index + 1})`),
+    ),
   };
 }
 

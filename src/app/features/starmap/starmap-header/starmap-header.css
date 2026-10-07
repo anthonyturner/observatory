@@ -20,7 +20,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 14px;
+  gap: 4px 12px;
+  .title{
+    h1{
+      text-transform: uppercase;
+    }
+    flex-basis: 100%; /* fills the row, so the h2, stamp and fog chip wrap below */
+  }
 }
 
 h1 {

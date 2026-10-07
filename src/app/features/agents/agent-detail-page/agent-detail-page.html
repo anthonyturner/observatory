@@ -16,7 +16,24 @@
     }
     @case ('ready') {
       @if (shown.agent; as agent) {
-        <app-agent-header [agent]="agent" />
+        <app-agent-header [agent]="agent">
+          <app-tab-strip
+            ngProjectAs="[tabs]"
+            [name]="tabStrip"
+            label="Agent views"
+            [panelId]="panelId"
+            [tabs]="tabs"
+            [selected]="selected()"
+            (selectedChange)="selected.set($event)"
+          />
+        </app-agent-header>
+        <section [id]="panelId" role="tabpanel" [attr.aria-labelledby]="selectedTabId()">
+          @switch (selected()) {
+            @case ('activity') {
+              <app-agent-activity-panel [agent]="agent" />
+            }
+          }
+        </section>
       } @else {
         <p class="note">
           No session on this machine has that address.

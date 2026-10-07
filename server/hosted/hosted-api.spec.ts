@@ -311,7 +311,12 @@ describe('hostedApi', () => {
     const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
     const session = '11111111-1111-4111-8111-111111111111';
 
-    for (const path of ['/api/live-agents', `/api/live-agents?session=${session}`]) {
+    const paths = [
+      '/api/live-agents',
+      `/api/live-agents?session=${session}`,
+      `/api/live-agents/feed?session=${session}&from=0`,
+    ];
+    for (const path of paths) {
       for (const cookie of [ownerCookie, undefined]) {
         assert.equal((await get(handle, path, cookie)).status, 404, path);
       }

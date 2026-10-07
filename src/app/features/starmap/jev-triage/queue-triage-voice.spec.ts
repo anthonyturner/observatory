@@ -76,8 +76,14 @@ function setUp(
   const log = TestBed.inject(ReplyLog);
   const channel = TestBed.inject(ASK_CHANNEL);
   return {
-    type: (words: string): void => channel.submit(words),
-    say: (words: string): void => channel.submit(words, { spoken: true }),
+    async type(words: string): Promise<void> {
+      channel.submit(words);
+      await vi.dynamicImportSettled();
+    },
+    async say(words: string): Promise<void> {
+      channel.submit(words, { spoken: true });
+      await vi.dynamicImportSettled();
+    },
     latest: () => log.entries()[0],
     entry: (id: number) => log.find(id),
     feed: TestBed.inject(AskFeed),
@@ -110,10 +116,10 @@ describe('the Review Queue by voice or typing', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it('reads out the top three, blocked first, with no router or model', () => {
+  it('reads out the top three, blocked first, with no router or model', async () => {
     const { type, latest, flushQueues, route, voice } = setUp();
 
-    type('What’s blocking?');
+    await type('What’s blocking?');
     expect(latest().said.text).toBe('Reading the queues…');
     flushQueues();
 
@@ -128,11 +134,11 @@ describe('the Review Queue by voice or typing', () => {
   describe('with Home’s Ask panel on screen', () => {
     const OFFER = 'Want to work on one? I can open it or send a crew.';
 
-    it('ends the list with an offer, keeping the three as the question’s items', () => {
+    it('ends the list with an offer, keeping the three as the question’s items', async () => {
       const { type, latest, flushQueues, question, voice } = setUp();
       question.panelArrived();
 
-      type('what’s blocking?');
+      await type('what’s blocking?');
       flushQueues();
 
       expect(latest().said.text).toBe(`${BLOCKING_LINE} ${OFFER}`);
@@ -148,10 +154,10 @@ describe('the Review Queue by voice or typing', () => {
     it('opens one named in a typed reply, as a spoken one would', async () => {
       const { type, latest, flushQueues, question, navigate } = setUp();
       question.panelArrived();
-      type('what’s blocking?');
+      await type('what’s blocking?');
       flushQueues();
 
-      type('open the alpha one about change 13');
+      await type('open the alpha one about change 13');
 
       expect(latest().how).toBe('typed');
       expect(latest().said.text).toBe('Opening pull request 13 in alpha…');
@@ -159,11 +165,11 @@ describe('the Review Queue by voice or typing', () => {
       expect(navigate).toHaveBeenCalledExactlyOnceWith('/p/me/alpha?pr=13');
     });
 
-    it('offers nothing when nothing is waiting', () => {
+    it('offers nothing when nothing is waiting', async () => {
       const { type, latest, http, question } = setUp([project('beta', [3])]);
       question.panelArrived();
 
-      type('what’s blocking?');
+      await type('what’s blocking?');
       http
         .expectOne('/api/queue?repo=me/beta')
         .flush({ generatedAt: 'x', repo: 'me/beta', items: [] });
@@ -173,20 +179,20 @@ describe('the Review Queue by voice or typing', () => {
     });
   });
 
-  it('answers spoken words exactly as typed ones', () => {
+  it('answers spoken words exactly as typed ones', async () => {
     const { say, latest, flushQueues } = setUp();
 
-    say('what is blocked');
+    await say('what is blocked');
     flushQueues();
 
     expect(latest().how).toBe('spoken');
     expect(latest().said.text).toBe(BLOCKING_LINE);
   });
 
-  it('reads only the project named', () => {
+  it('reads only the project named', async () => {
     const { type, latest, http } = setUp();
 
-    type('what’s blocking in beta');
+    await type('what’s blocking in beta');
     http
       .expectOne('/api/queue?repo=me/beta')
       .flush({ generatedAt: 'x', repo: 'me/beta', items: [queueItem(3, 'conflicted')] });
@@ -198,7 +204,7 @@ describe('the Review Queue by voice or typing', () => {
   it('opens Next star’s pick after the grace second, with Stay here', async () => {
     const { type, latest, flushQueues, navigate } = setUp();
 
-    type('next star');
+    await type('next star');
     flushQueues();
 
     expect(latest().said.text).toBe(
@@ -209,10 +215,10 @@ describe('the Review Queue by voice or typing', () => {
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/p/me/beta?pr=3');
   });
 
-  it('asks before snoozing, and snoozes only on a yes', () => {
+  it('asks before snoozing, and snoozes only on a yes', async () => {
     const { type, latest, http, voice } = setUp();
 
-    type('snooze 12 till Monday');
+    await type('snooze 12 till Monday');
     const asked = latest();
     expect(asked.said.text).toBe('Snooze alpha pull request 12, “Change 12”, till Monday?');
     expect(voice.speak).toHaveBeenCalledWith(asked.said.text, 1);
@@ -222,7 +228,7 @@ describe('the Review Queue by voice or typing', () => {
     ]);
     http.expectNone('/api/triage');
 
-    type('yes');
+    await type('yes');
     const post = http.expectOne('/api/triage');
     expect(post.request.body).toEqual({ repo: 'me/alpha', number: 12, action: 'snooze', days: 5 });
     post.flush({ number: 12, isSeen: false, hidden: null, lookedSha: null });
@@ -230,10 +236,10 @@ describe('the Review Queue by voice or typing', () => {
     expect(latest().said.text).toBe('Snoozed alpha pull request 12, “Change 12”, till Monday.');
   });
 
-  it('takes the Yes button as a typed yes', () => {
+  it('takes the Yes button as a typed yes', async () => {
     const { type, latest, http, feed } = setUp();
 
-    type('dismiss 3');
+    await type('dismiss 3');
     const asked = latest();
     feed.press(asked.id, asked.actions[0]);
 
@@ -242,23 +248,23 @@ describe('the Review Queue by voice or typing', () => {
     expect(latest().asked).toBe('yes');
   });
 
-  it('leaves it on a spoken no, recording nothing', () => {
+  it('leaves it on a spoken no, recording nothing', async () => {
     const { type, say, latest, entry, http } = setUp();
 
-    type('dismiss 3');
+    await type('dismiss 3');
     const askedId = latest().id;
-    say('no thanks');
+    await say('no thanks');
 
     http.expectNone('/api/triage');
     expect(latest().said.text).toBe('Left it.');
     expect(entry(askedId)?.actions).toEqual([]);
   });
 
-  it('says so when the API does not take it', () => {
+  it('says so when the API does not take it', async () => {
     const { type, latest, http } = setUp();
 
-    type('dismiss 3');
-    type('yes');
+    await type('dismiss 3');
+    await type('yes');
     http.expectOne('/api/triage').flush('no', { status: 500, statusText: 'Server Error' });
 
     expect(latest().said.text).toBe(
@@ -269,9 +275,9 @@ describe('the Review Queue by voice or typing', () => {
   it('drops the question when something else is asked, which goes to the router', async () => {
     const { type, entry, latest, route, http } = setUp();
 
-    type('dismiss 3');
+    await type('dismiss 3');
     const askedId = latest().id;
-    type('how are you');
+    await type('how are you');
     await vi.waitFor(() => expect(route).toHaveBeenCalled());
 
     expect(entry(askedId)?.said.text).toBe(
@@ -284,52 +290,52 @@ describe('the Review Queue by voice or typing', () => {
   it('lets the question lapse, so a later yes is only words', async () => {
     const { type, entry, latest, route, http } = setUp();
 
-    type('snooze 12');
+    await type('snooze 12');
     const askedId = latest().id;
     vi.advanceTimersByTime(QUESTION_MS);
     expect(entry(askedId)?.said.text).toBe(
       `Snooze alpha pull request 12, “Change 12”, for a week? ${TIMED_OUT_NOTE}`,
     );
 
-    type('yes');
+    await type('yes');
     await vi.waitFor(() => expect(route).toHaveBeenCalled());
     http.expectNone('/api/triage');
   });
 
-  it('asks which project when the number is open in more than one', () => {
+  it('asks which project when the number is open in more than one', async () => {
     const { type, latest, http } = setUp([project('alpha', [3]), project('beta', [3])]);
 
-    type('dismiss 3');
+    await type('dismiss 3');
 
     expect(latest().said.text).toBe(
       'Pull request 3 is open in alpha and beta. Say which, as in “dismiss 3 in alpha”.',
     );
     expect(latest().actions).toEqual([]);
-    type('yes');
+    await type('yes');
     http.expectNone('/api/triage');
   });
 
-  it('says when the pull request is not open', () => {
+  it('says when the pull request is not open', async () => {
     const { type, latest } = setUp();
 
-    type('snooze 99 till Friday');
+    await type('snooze 99 till Friday');
 
     expect(latest().said.text).toBe('Pull request 99 isn’t open in any project.');
   });
 
-  it('snoozes for no longer than the API records, asking nothing', () => {
+  it('snoozes for no longer than the API records, asking nothing', async () => {
     const { type, latest } = setUp();
 
-    type('snooze 12 for 13 weeks');
+    await type('snooze 12 for 13 weeks');
 
     expect(latest().said.text).toBe('I can snooze for 90 days at most.');
     expect(latest().actions).toEqual([]);
   });
 
-  it('says so when no queue can be read', () => {
+  it('says so when no queue can be read', async () => {
     const { type, latest, http } = setUp();
 
-    type('what’s blocking?');
+    await type('what’s blocking?');
     for (const repo of ['me/alpha', 'me/beta']) {
       http
         .expectOne(`/api/queue?repo=${repo}`)
@@ -339,10 +345,10 @@ describe('the Review Queue by voice or typing', () => {
     expect(latest().said.text).toBe(OUT_OF_REACH);
   });
 
-  it('reads the queues that answer and counts the ones that did not', () => {
+  it('reads the queues that answer and counts the ones that did not', async () => {
     const { type, latest, http } = setUp();
 
-    type('what’s blocking?');
+    await type('what’s blocking?');
     http
       .expectOne('/api/queue?repo=me/alpha')
       .flush('down', { status: 502, statusText: 'Bad Gateway' });
@@ -357,7 +363,7 @@ describe('the Review Queue by voice or typing', () => {
     const { type, info, route } = setUp();
     info.noteAbsent();
 
-    type('next star');
+    await type('next star');
 
     await vi.waitFor(() => expect(route).toHaveBeenCalled());
   });

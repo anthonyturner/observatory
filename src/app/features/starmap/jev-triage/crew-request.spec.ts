@@ -1,6 +1,6 @@
 import { OpenItem } from '../../../core/assistant/open-items';
 import { ASK_NUMBER, CrewPick, crewPickOf, crewReferenceOf, whichWords } from './crew-request';
-import { pullItemOf } from './queue-top';
+import { pullItemOf } from './project-pulls';
 
 const observatory = { name: 'observatory', repo: 'me/observatory' };
 const starmap = { name: 'starmap', repo: 'me/starmap' };

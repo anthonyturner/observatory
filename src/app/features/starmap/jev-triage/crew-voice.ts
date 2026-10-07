@@ -10,8 +10,8 @@ import { LEFT_IT } from '../../../core/assistant/spoken-answer';
 import { TierOneActions } from '../../../core/assistant/tier-one-actions';
 import { PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { CrewPick, crewPickOf, crewReferenceOf, whichWords } from './crew-request';
+import { pullItemOf, readProjectsOf } from './project-pulls';
 import { QueueReply } from './queue-reply';
-import { pullItemOf, readProjectsOf } from './queue-top';
 import { YesNoQuestion } from './yes-no-question';
 
 /** The card's question while Jev waits to hear which pull request a crew takes. */

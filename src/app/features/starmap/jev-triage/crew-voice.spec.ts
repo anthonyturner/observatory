@@ -114,6 +114,11 @@ function setUp(canSendCrew = true) {
   const flush = (repo: 'alpha' | 'beta'): void => {
     http.expectOne(`/api/queue?repo=me/${repo}`).flush(reply(repo));
   };
+  /** Answers a queue read made once its feature has loaded. */
+  const read = async (repo: 'alpha' | 'beta'): Promise<void> => {
+    const asked = await vi.waitFor(() => http.expectOne(`/api/queue?repo=me/${repo}`));
+    asked.flush(reply(repo));
+  };
   return {
     type: (words: string): void => channel.submit(words),
     say: (words: string): void => channel.submit(words, { spoken: true }),
@@ -125,15 +130,10 @@ function setUp(canSendCrew = true) {
     navigate,
     http,
     launch,
-    /** Answers a queue read made once its feature has loaded. */
-    async read(repo: 'alpha' | 'beta'): Promise<void> {
-      const read = await vi.waitFor(() => http.expectOne(`/api/queue?repo=me/${repo}`));
-      read.flush(reply(repo));
-    },
+    read,
     /** Answers the queue and ledger reads a crew's check makes, once Send crew has loaded. */
     async checked(repo: 'alpha' | 'beta', mergedBranches: readonly object[] = []): Promise<void> {
-      const read = await vi.waitFor(() => http.expectOne(`/api/queue?repo=me/${repo}`));
-      read.flush(reply(repo));
+      await read(repo);
       const ledger = { generatedAt: 'x', rows: [], titles: {}, finished: [], mergedBranches };
       http.expectOne(`/api/ledger?repo=me/${repo}`).flush(ledger);
     },

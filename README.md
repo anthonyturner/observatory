@@ -574,3 +574,18 @@ are no readings. What a push brings shows at once.
 
 Changes follow the workflow in [AGENTS.md](AGENTS.md): every change starts as a
 GitHub issue and lands through a pull request.
+
+### The wiki
+
+The [wiki](https://github.com/anthonyturner/observatory/wiki) is generated from
+this README, `CHANGELOG.md` and chosen `/docs` pages (the list is in
+`server/wiki/wiki-pages.ts`) by the **Wiki sync** workflow on every merge to
+main, so edit those files, not the wiki. The sync replaces only the pages it
+wrote, which open with a `docs-wiki-sync` marker; pages written by hand on the
+wiki stay. `npm run wiki:sync` writes the same pages to `dist/wiki` to read
+before they go live.
+
+The wiki's git repository exists only once its first page is saved in GitHub's
+web UI. Until then the workflow passes with a notice saying so; save a page
+named Home with any text (the first sync replaces it), then run **Wiki sync**
+from the Actions tab.

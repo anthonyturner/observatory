@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
 import { UpLink } from '../../../shared/up-link/up-link';
 import { LegendChip, fmtN } from '../starmap-view';
@@ -16,6 +16,7 @@ import { LegendChip, fmtN } from '../starmap-view';
 export class StarmapHeader {
   /** `owner/name`, for the project's other screens. */
   readonly repo = input.required<string>();
+  readonly repoName = computed(()=> this.repo().split('/').pop() ?? '');
   readonly title = input.required<string>();
   readonly stamp = input.required<string>();
   /** "fogged · 9 hours old", once the sky has fogged over. */

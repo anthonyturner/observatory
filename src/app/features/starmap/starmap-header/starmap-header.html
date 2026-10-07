@@ -3,7 +3,10 @@
   <app-project-tabs [repo]="repo()" current="queue" />
 </div>
 <div class="brand">
-  <h1>{{ title() }}</h1>
+  <div class="title">
+      <h1>{{ repoName() }}</h1>
+    </div>
+  <h2>{{ title() }}</h2>
   <span class="stamp" [class.replaying]="replaying()">{{ stamp() }}</span>
   @if (stale(); as words) {
     <span

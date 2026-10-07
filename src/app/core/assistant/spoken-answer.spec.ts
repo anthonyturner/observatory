@@ -170,7 +170,43 @@ describe('a spoken answer to Jev’s question', () => {
     expect(voice.speak).toHaveBeenCalledTimes(2);
   });
 
+  it('takes typed words as the same answer, in a typed reply', () => {
+    const { latest, route } = setUp();
+
+    TestBed.inject(ASK_CHANNEL).submit('12');
+
+    expect(latest()).toEqual(expect.objectContaining({ asked: '12', how: 'typed' }));
+    expect(latest().said.text).toBe('Opening pull request 12 in alpha…');
+    expect(route).not.toHaveBeenCalled();
+  });
+
+  it('leaves typed words that named nothing out of the box, where they were typed', () => {
+    const { latest, draft } = setUp();
+
+    TestBed.inject(ASK_CHANNEL).submit('number 13');
+
+    expect(latest().said.text).toContain('Heard “number 13”');
+    expect(draft.heard()).toBeNull();
+  });
+
+  it('opens one named by its project: “the alpha one”', () => {
+    const { say, latest } = setUp();
+
+    say('the alpha one');
+
+    expect(latest().said.text).toBe('Opening pull request 12 in alpha…');
+  });
+
   describe('is not taken from words that answer nothing', () => {
+    it('treats typed words that answer nothing as a request', () => {
+      const { question, route } = setUp();
+
+      TestBed.inject(ASK_CHANNEL).submit('what is the weather');
+
+      expect(route).toHaveBeenCalledWith({ text: 'what is the weather', history: [] });
+      expect(question.question()).toBeNull();
+    });
+
     it('sends an ordinary request on as before, which closes the question', async () => {
       const { say, question, route } = setUp();
 
@@ -190,15 +226,6 @@ describe('a spoken answer to Jev’s question', () => {
       expect(route).not.toHaveBeenCalled();
       expect(draft.heard()?.words).toBe('refresh everything');
       expect(question.isWaiting()).toBe(true);
-    });
-
-    it('treats typed words as a request', () => {
-      const { question, route } = setUp();
-
-      TestBed.inject(ASK_CHANNEL).submit('12');
-
-      expect(route).toHaveBeenCalledWith({ text: '12', history: [] });
-      expect(question.question()).toBeNull();
     });
 
     it('sends an answer as a request once the question has timed out', () => {

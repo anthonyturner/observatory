@@ -1,6 +1,6 @@
 import { UNREAD_PULL_TITLE, UNREAD_TITLE } from '../activity/activity-watch';
 import { OpenItem, OpenKind } from './open-items';
-import { QuestionAnswer, answerTo } from './question-answer';
+import { QuestionAnswer, answerTo, itemsMeantBy, itemsNamedBy } from './question-answer';
 
 const item = (kind: OpenKind, repo: string, number: number, title: string): OpenItem => ({
   kind,
@@ -149,6 +149,76 @@ describe('answerTo', () => {
     const items = [item('issue', 'alpha', 7, UNREAD_TITLE), item('issue', 'beta', 8, 'Real bug')];
 
     expect(answerTo(UNREAD_TITLE, items)).toEqual(UNMATCHED);
+  });
+
+  describe('naming a project, and title words within it', () => {
+    const items = [
+      item('pull', 'observatory', 486, 'Play the playlist video'),
+      item('pull', 'observatory', 488, 'Floating usage strip'),
+      item('pull', 'starmap', 7, 'Playlist sync'),
+    ];
+
+    it.each<[string, QuestionAnswer | null]>([
+      ['the observatory one about the playlist', { kind: 'open', item: items[0] }],
+      ['the starmap one', { kind: 'open', item: items[2] }],
+      ['the one in starmap', { kind: 'open', item: items[2] }],
+      ['486 in observatory', { kind: 'open', item: items[0] }],
+      ['the observatory one with the usage strip', { kind: 'open', item: items[1] }],
+      ['the observatory one', UNMATCHED],
+      ['the playlist one', UNMATCHED],
+      ['the starmap one about the usage strip', UNMATCHED],
+    ])('hears %j as %j', (said, expected) => {
+      expect(answerTo(said, items)).toEqual(expected);
+    });
+  });
+
+  describe('“number two” on a list Jev read out numbered', () => {
+    const items = [
+      item('pull', 'beta', 3, 'Change three'),
+      item('pull', 'alpha', 12, 'Change twelve'),
+      item('pull', 'alpha', 13, 'Change thirteen'),
+    ];
+
+    it.each<[string, QuestionAnswer]>([
+      ['number two', { kind: 'open', item: items[1] }],
+      ['Number 2.', { kind: 'open', item: items[1] }],
+      ['number three', { kind: 'open', item: items[0] }],
+      ['number 12', { kind: 'open', item: items[1] }],
+      ['number four', UNMATCHED],
+      ['two', UNMATCHED],
+    ])('hears %j as %j, a number on the list first', (said, expected) => {
+      expect(answerTo(said, items)).toEqual(expected);
+    });
+  });
+
+  describe('itemsMeantBy', () => {
+    it('gives every item that fits, in the card’s order', () => {
+      expect(itemsMeantBy('the alpha one', ITEMS)).toEqual([ITEMS[0], ITEMS[3]]);
+      expect(itemsMeantBy('the login one', ITEMS)).toEqual([ITEMS[1], ITEMS[2]]);
+      expect(itemsMeantBy('number 12', ITEMS)).toEqual([ITEMS[0]]);
+    });
+
+    it('gives them all when the words tell none apart, yes and no passed over', () => {
+      expect(itemsMeantBy('', ITEMS)).toEqual(ITEMS);
+      expect(itemsMeantBy('yes, that one', ITEMS)).toEqual(ITEMS);
+    });
+
+    it('gives none when nothing fits, and null for words that answer nothing', () => {
+      expect(itemsMeantBy('number 13', ITEMS)).toEqual([]);
+      expect(itemsMeantBy('what is the weather', ITEMS)).toBeNull();
+    });
+  });
+
+  describe('itemsNamedBy, for items in no order anyone heard', () => {
+    it('names by number, project and title, as itemsMeantBy does', () => {
+      expect(itemsNamedBy('the alpha one', ITEMS)).toEqual([ITEMS[0], ITEMS[3]]);
+      expect(itemsNamedBy('number 12', ITEMS)).toEqual([ITEMS[0]]);
+    });
+
+    it('never by place', () => {
+      expect(itemsNamedBy('the first one', ITEMS)).toBeNull();
+      expect(itemsNamedBy('number two', ITEMS)).toEqual([]);
+    });
   });
 
   it('hears nothing as an answer with no items to choose from', () => {

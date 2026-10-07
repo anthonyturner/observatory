@@ -68,17 +68,20 @@ export class AskFeed implements AskChannel {
   /** How each request ended, as it ends. */
   readonly outcomes: Observable<AskOutcome> = this.ended.asObservable();
 
+  /** A shortcut's words come before an answer to the open question: only a
+   *  shortcut's own yes or no can be both, and its Yes button sends one. */
   submit(text: string, options?: { readonly spoken?: boolean }): void {
     const asked = text.trim();
     const spoken = options?.spoken ?? false;
-    const answer = spoken ? this.answers.answerOf(asked) : null;
-    if (answer) return this.answers.carryOut(asked, answer);
+    const how: AskedHow = spoken ? 'spoken' : 'typed';
+    const act = this.shortcutActOf(asked);
+    const answer = act ? null : this.answers.answerOf(asked);
+    if (answer) return this.answers.carryOut(asked, how, answer);
     if (asked && spoken && this.holdsSpeech()) return this.hold(asked);
     if (!asked || this.asking()) return;
-    const act = this.shortcutActOf(asked);
-    if (act) return act(spoken ? 'spoken' : 'typed');
+    if (act) return act(how);
     this.carriedCut = spoken && this.cutSpeech;
-    void this.converse(asked, this.open(asked, spoken ? 'spoken' : 'typed'));
+    void this.converse(asked, this.open(asked, how));
   }
 
   /** Starts a new conversation: Jev forgets what was said so far. The replies stay on show. */
@@ -212,7 +215,7 @@ export class AskFeed implements AskChannel {
   private startWaiting(entryId: number): void {
     this.actions.cancelJump();
     this.question.close();
-    for (const shortcut of this.shortcuts) shortcut.passOver();
+    for (const shortcut of this.shortcuts) shortcut.passOver?.();
     this.cutSpeech = this.speech.stop() || this.carriedCut;
     this.carriedCut = false;
     this.log.setActions(entryId, []);

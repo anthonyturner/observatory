@@ -31,7 +31,7 @@ import { firstPick, jobViews, runDetailOf } from '../run-detail/run-detail-view'
 import { RunList } from '../run-list/run-list';
 import { outcomeColour } from '../run-sky/run-look';
 import { RunSky } from '../run-sky/run-sky';
-import { actionsStamp, emptyMessage, stateMessage } from './actions-page-words';
+import { actionsStamp, emptyMessage, quietWorkflowsNote, stateMessage } from './actions-page-words';
 
 export type ActionsView = 'sky' | 'list';
 
@@ -139,6 +139,10 @@ export class ActionsPage {
     const report = this.report();
     const empty = report ? emptyMessage(report, this.runs().length) : null;
     return stateMessage(this.feed.state()) ?? empty;
+  });
+  protected readonly quietNote = computed(() => {
+    const report = this.report();
+    return report ? quietWorkflowsNote(report) : null;
   });
   protected readonly stamp = computed(() =>
     actionsStamp(this.repo(), this.report(), this.runs().length),

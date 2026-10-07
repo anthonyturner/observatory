@@ -15,6 +15,9 @@
         [selected]="selected()"
         (picked)="pick($event)"
       />
+      @if (quietNote(); as note) {
+        <p class="quiet">{{ note }}</p>
+      }
     </div>
   }
 }

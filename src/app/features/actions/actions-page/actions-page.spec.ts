@@ -9,7 +9,7 @@ import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
 import { ActionsPage } from './actions-page';
 import { ciHealthWords } from '../actions-words';
-import { actionsStamp, emptyMessage } from './actions-page-words';
+import { actionsStamp, emptyMessage, quietWorkflowsNote } from './actions-page-words';
 import {
   ACTIONS_NOW,
   actionsReport,
@@ -143,5 +143,21 @@ describe('Actions page words', () => {
       'main has no runs yet',
     );
     expect(ACTIONS_NOW).toBe(report.generatedAt);
+  });
+
+  it('names the workflows switched on that have no recent run', () => {
+    const workflow = (id: number, name: string, isActive = true) => ({
+      id,
+      name,
+      isActive,
+      url: 'https://github.com/me/app/actions',
+    });
+    const report = {
+      ...actionsReport([actionsRun(1, 5)]),
+      workflows: [workflow(9, 'CI'), workflow(10, 'Nightly'), workflow(11, 'Old', false)],
+    };
+
+    expect(quietWorkflowsNote(report)).toBe('No recent runs: Nightly');
+    expect(quietWorkflowsNote(actionsReport([actionsRun(1, 5)]))).toBeNull();
   });
 });

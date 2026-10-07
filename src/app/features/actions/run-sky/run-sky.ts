@@ -91,10 +91,6 @@ export class RunSky {
       this.scene?.setLayout(layout);
       this.loop?.kick();
     });
-    effect(() => {
-      this.runs();
-      this.shownAt = null;
-    });
     effect(() => this.resize(this.size()));
     effect(() => this.preparePortraits(this.painter(), this.layout()));
     effect(() => {

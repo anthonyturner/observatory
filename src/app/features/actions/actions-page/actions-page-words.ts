@@ -31,6 +31,15 @@ export function emptyMessage(report: ActionsReport, shown: number): PageMessage 
   return shown ? null : { headline: 'No runs match', detail: 'Clear a filter to see more.' };
 }
 
+/** "No recent runs: Nightly, Release", for workflows switched on with none of the runs read; null when every one has. */
+export function quietWorkflowsNote(report: ActionsReport): string | null {
+  const ran = new Set(report.runs.map((run) => run.workflowId));
+  const quiet = report.workflows.filter((workflow) => workflow.isActive && !ran.has(workflow.id));
+  return quiet.length
+    ? `No recent runs: ${quiet.map((workflow) => workflow.name).join(', ')}`
+    : null;
+}
+
 /** "me/app · 24 of 100 runs". */
 export function actionsStamp(repo: string, report: ActionsReport | null, shown: number): string {
   if (!report) return repo;

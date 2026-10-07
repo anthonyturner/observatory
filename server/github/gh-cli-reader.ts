@@ -1,10 +1,12 @@
 import { comparePath, comparisonFrom } from './compare-reader.ts';
 import { gh, ghJson } from './gh-cli.ts';
 import { DIFF_MEDIA_TYPE } from './github-rest.ts';
+import { readChangelog } from './changelog-reader.ts';
 import { readCheckHistory } from './check-history.ts';
 import { ghCliRerunner, ghCliWriter } from './gh-cli-writer.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
+import { readMergedPulls } from './merged-pull-reader.ts';
 import type { GitHub } from './github.ts';
 import {
   PULL_REQUEST_FIELDS,
@@ -22,6 +24,8 @@ import {
 } from './issue-reader.ts';
 import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
+import { readReleases, readTags } from './release-reader.ts';
+import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
 
@@ -37,12 +41,19 @@ const LABEL_LIMIT = '200';
 /** A repository with issues switched off answers `gh issue list` with this. */
 const ISSUES_DISABLED = /has disabled issues/i;
 
+/** One REST path through `gh api`, as JSON. */
+const getJson: JsonGet = (path) => ghJson<unknown>(['api', path]);
+
 /** GitHub through the `gh` CLI, as the account this machine signed it in with. */
 export function ghCliReader(): GitHub {
   return {
     ...ghCliWriter(),
     ...ghCliRerunner(),
-    checkHistory: (repo) => readCheckHistory((path) => ghJson<unknown>(['api', path]), repo),
+    checkHistory: (repo) => readCheckHistory(getJson, repo),
+    releases: (repo, limit) => readReleases(getJson, repo, limit),
+    tags: (repo, limit) => readTags(getJson, repo, limit),
+    changelog: (repo) => readChangelog(getJson, repo),
+    mergedPulls: (repo) => readMergedPulls(getJson, repo),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([

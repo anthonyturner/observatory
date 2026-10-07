@@ -1,0 +1,44 @@
+@let release = detail();
+<header>
+  <p class="kind">{{ release.kind }}</p>
+  <h2>{{ release.title }}</h2>
+  <p class="meta">{{ release.meta }}</p>
+  @if (release.url) {
+    <a class="out" [href]="release.url" target="_blank" rel="noopener noreferrer"
+      >View on GitHub <span aria-hidden="true">↗</span></a
+    >
+  }
+</header>
+
+@if (release.notes; as notes) {
+  <section aria-labelledby="release-notes-heading">
+    <h3 id="release-notes-heading">{{ release.notesHeading }}</h3>
+    <app-sheet-markdown [source]="notes.markdown" />
+  </section>
+}
+
+<section aria-labelledby="release-pulls-heading">
+  <h3 id="release-pulls-heading">Merged pull requests</h3>
+  @for (group of release.groups; track group.key) {
+    @if (group.heading) {
+      <h4>{{ group.heading }}</h4>
+    }
+    <ul>
+      @for (pull of group.rows; track pull.number) {
+        <li>
+          <a [href]="pull.url" target="_blank" rel="noopener noreferrer"
+            ><b>#{{ pull.number }}</b> {{ pull.title }}</a
+          >
+          <span class="when"
+            >{{ pull.merged }}
+            @if (pull.author) {
+              · {{ pull.author }}
+            }
+          </span>
+        </li>
+      }
+    </ul>
+  } @empty {
+    <p class="none">None merged in this stretch.</p>
+  }
+</section>

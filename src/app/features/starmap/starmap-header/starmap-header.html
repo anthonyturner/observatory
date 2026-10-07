@@ -1,4 +1,7 @@
-<app-up-link to="/orrery" label="All projects" />
+<div class="way">
+  <app-up-link to="/orrery" label="All projects" />
+  <app-project-tabs [repo]="repo()" current="queue" />
+</div>
 <div class="brand">
   <h1>{{ title() }}</h1>
   <span class="stamp" [class.replaying]="replaying()">{{ stamp() }}</span>

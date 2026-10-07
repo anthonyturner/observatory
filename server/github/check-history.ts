@@ -1,3 +1,5 @@
+import { type Json, type JsonGet, isJson, isText } from './rest-json.ts';
+
 /** One finished attempt of a check at one commit. */
 export interface CheckAttempt {
   readonly name: string;
@@ -13,20 +15,12 @@ export interface CheckHistoryReader {
   checkHistory(repo: string): Promise<CheckAttempt[]>;
 }
 
-/** Reads one GitHub REST path, from below the API's root, as JSON. */
-export type JsonGet = (path: string) => Promise<unknown>;
-
 /** The most recent workflow runs looked through, across every branch and pull request. */
 const RUN_LIMIT = 100;
 /** Each rerun costs one more request, so only the latest few are read. */
 const RERUN_LIMIT = 20;
 const JOB_LIMIT = 100;
 
-type Json = Readonly<Record<string, unknown>>;
-
-const isJson = (value: unknown): value is Json =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-const isText = (value: unknown): value is string => typeof value === 'string' && value !== '';
 const listIn = (body: unknown, key: string): Json[] => {
   const list = isJson(body) ? body[key] : null;
   return Array.isArray(list) ? list.filter(isJson) : [];

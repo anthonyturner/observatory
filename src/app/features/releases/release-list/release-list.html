@@ -1,0 +1,18 @@
+<ol aria-label="Releases, newest first">
+  @for (row of rows(); track row.key) {
+    <li>
+      <button
+        type="button"
+        [attr.aria-pressed]="row.key === selected()"
+        [attr.data-ink]="row.ink"
+        (click)="picked.emit(row.key)"
+      >
+        <span class="dot" aria-hidden="true"></span>
+        <b>{{ row.title }}</b>
+        <span class="kind">{{ row.kind }}</span>
+        <span class="when">{{ row.when }}</span>
+        <span class="count">{{ row.count }}</span>
+      </button>
+    </li>
+  }
+</ol>

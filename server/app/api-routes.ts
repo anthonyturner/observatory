@@ -41,6 +41,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       '/api/collisions': (query) => reads.collisions(repoOf(query)),
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/ledger': (query) => reads.ledger(repoOf(query)),
+      '/api/releases': (query) => reads.releases(repoOf(query)),
       '/api/issues': (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetIssues(repo);

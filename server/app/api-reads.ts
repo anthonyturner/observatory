@@ -6,6 +6,8 @@ import type { RawLabel } from '../github/pull-reader.ts';
 import type { Frame } from '../history/frames.ts';
 import type { HistoryStore } from '../history/history-store.ts';
 import { type Ledger, ledgerReport } from '../history/ledger.ts';
+import type { ReleasesReport } from '../releases/release-types.ts';
+import { releasesReport } from '../releases/releases-report.ts';
 import { recordFrame } from '../history/record-frame.ts';
 import { type IssueDetail, issueDetail } from '../issues/issue-detail.ts';
 import { type IssuesReport, issuesReport } from '../issues/issues-report.ts';
@@ -43,6 +45,8 @@ const LOGS_TTL_MS = 5 * 60_000;
 const AGENTS_TTL_MS = 5 * 60_000;
 /** The ledger moves a day at a time; ten minutes is fresh enough. */
 const LEDGER_TTL_MS = 10 * 60_000;
+/** Releases are cut rarely and merges land a few times a day: ten minutes is fresh enough. */
+const RELEASES_TTL_MS = 10 * 60_000;
 
 /** The projects report's one key in its cache. */
 const ALL_PROJECTS = 'all';
@@ -101,6 +105,8 @@ export interface ApiReads {
   history(repo: string): Promise<HistoryReport>;
   /** Openings, merges and closures a day for sixty days, rebuilt from GitHub. */
   ledger(repo: string): Promise<Ledger>;
+  /** Releases or tags, each with its notes and the merged pull requests it shipped. */
+  releases(repo: string): Promise<ReleasesReport>;
   usage(): Promise<UsageReport | null>;
   agentUsage(): Promise<AgentUsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
@@ -192,6 +198,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),
     history: async (repo) => ({ repo, frames: await history.read(repo) }),
     ledger: cachedByKey((repo) => ledgerReport(github, repo), LEDGER_TTL_MS),
+    releases: cachedByKey((repo) => releasesReport(github, repo), RELEASES_TTL_MS),
     usage: sources.usage,
     agentUsage: sources.agentUsage,
     logs: cachedByKey(sources.logs, LOGS_TTL_MS),

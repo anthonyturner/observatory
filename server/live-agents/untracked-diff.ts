@@ -20,14 +20,6 @@ export const UNTRACKED_FILES_CAP = 200;
 const READ_CONCURRENCY = 8;
 const EXECUTABLE_BITS = 0o111;
 
-export const DIFF_OPTIONS = [
-  '--no-color',
-  '--no-ext-diff',
-  '--no-textconv',
-  '--src-prefix=a/',
-  '--dst-prefix=b/',
-];
-
 /** The files git neither tracks nor ignores. A nested repository shows as a folder, and is left out. */
 async function untrackedIn(git: Git, top: string): Promise<string[]> {
   const answer = await git(top, ['ls-files', '--others', '--exclude-standard', '-z']);

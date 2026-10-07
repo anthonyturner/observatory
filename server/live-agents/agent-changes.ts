@@ -26,7 +26,7 @@ import type { AgentKey } from './live-agent-types.ts';
 import { type Git, GitTimedOut, readOnlyGit } from './read-only-git.ts';
 import { transcriptOf } from './transcript-files.ts';
 import { tailLines } from './transcript-window.ts';
-import { DIFF_OPTIONS, untrackedDiff } from './untracked-diff.ts';
+import { untrackedDiff } from './untracked-diff.ts';
 
 /** What reading an agent's changes needs from the machine; a test gives its own. */
 export interface ChangesSources {
@@ -50,6 +50,15 @@ const DEFAULT_SOURCES: ChangesSources = {
 export interface ChangesSource {
   changes(key: AgentKey): Promise<AgentChangesAnswer>;
 }
+
+/** A diff as the page splits it: plain, git's own, with `a/` and `b/` names whatever the config says. */
+const DIFF_OPTIONS = [
+  '--no-color',
+  '--no-ext-diff',
+  '--no-textconv',
+  '--src-prefix=a/',
+  '--dst-prefix=b/',
+];
 
 interface Diffed {
   readonly diff: string;
@@ -75,7 +84,7 @@ async function isFolder(path: string): Promise<boolean> {
   }
 }
 
-/** Tracked files' changes since `from`: to the working tree, or to `to`. */
+/** Tracked files' changes from the first of `revs` to the working tree, or to the second. */
 async function trackedDiff(git: Git, top: string, revs: readonly string[]): Promise<Diffed> {
   const answer = await git(top, ['diff', ...DIFF_OPTIONS, ...revs, '--']);
   if (answer.code !== 0) throw new ChangesFailure('git-failed');

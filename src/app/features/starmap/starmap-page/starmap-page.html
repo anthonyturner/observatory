@@ -1,5 +1,7 @@
+<app-video-sky dimmed />
 <app-starmap-sky
   #sky
+  [seeThrough]="video.isShown()"
   [chart]="skyChart()"
   [items]="skyItems()"
   [logLayout]="logs.layout()"
@@ -42,7 +44,7 @@
 @if (view() === 'list' && chart() === 'logs') {
   <app-log-list [layout]="logs.layout()" [filter]="logs.filter()" (picked)="goToLog($event)" />
 } @else if (view() === 'list') {
-  <div class="listview">
+  <div class="listview" [class.listview--see-through]="video.isShown()">
     <div class="listwrap">
       @switch (chart()) {
         @case ('prs') {

@@ -2,6 +2,15 @@
   display: contents;
 }
 
+/* Both skies, the 3D one and the 2D one over it, screen onto the video as one layer:
+   black space shows the video, and light only ever adds to it. */
+:host(.see-through) {
+  display: block;
+  position: fixed;
+  inset: 0;
+  mix-blend-mode: screen;
+}
+
 canvas {
   position: fixed;
   inset: 0;

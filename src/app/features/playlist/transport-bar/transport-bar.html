@@ -166,81 +166,79 @@
             />
           </div>
         </div>
-        @if (sky.isShown()) {
+        @if (videoBackground.hasBackdrop()) {
           <div class="group group--sky" role="group" aria-label="Sky">
             <button
               type="button"
               class="video"
               [attr.aria-pressed]="videoBackground.isOn()"
-              [title]="
-                videoBackground.isOn()
-                  ? 'Back to the Milkdrop visuals behind the page'
-                  : 'Play the video full screen behind the page instead of Milkdrop'
-              "
+              [title]="videoHint()"
               (click)="videoBackground.toggle()"
             >
               Video
             </button>
-            <label
-              class="visual"
-              title="Pick the Milkdrop visual, or Auto to change it with the music"
-              ><span aria-hidden="true">Visual</span
-              ><select
-                aria-label="Milkdrop visual"
-                [disabled]="videoBackground.isOn()"
-                (change)="onMilkdropPreset($event)"
+            @if (sky.isShown()) {
+              <label
+                class="visual"
+                title="Pick the Milkdrop visual, or Auto to change it with the music"
+                ><span aria-hidden="true">Visual</span
+                ><select
+                  aria-label="Milkdrop visual"
+                  [disabled]="videoBackground.isOn()"
+                  (change)="onMilkdropPreset($event)"
+                >
+                  <option value="" [selected]="milkdrop.preset() === null">Auto</option>
+                  @for (preset of milkdrop.presets; track preset) {
+                    <option [value]="preset" [selected]="milkdrop.preset() === preset">
+                      {{ preset }}
+                    </option>
+                  }
+                </select></label
               >
-                <option value="" [selected]="milkdrop.preset() === null">Auto</option>
-                @for (preset of milkdrop.presets; track preset) {
-                  <option [value]="preset" [selected]="milkdrop.preset() === preset">
-                    {{ preset }}
-                  </option>
-                }
-              </select></label
-            >
-            <label class="opacity" title="How strongly the Milkdrop visuals show over the sky"
-              ><span aria-hidden="true">Sky</span
-              ><input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                aria-label="Milkdrop visuals opacity"
-                [value]="milkdropOpacity.level()"
-                [disabled]="videoBackground.isOn()"
-                (input)="onMilkdropOpacity($event)"
-            /></label>
-            <!-- Where the browser can hear no source none of these shows: with no
-                 sync there are no beats to soften. -->
-            @if (sync(); as syncLabel) {
-              <label class="opacity" title="How hard each beat hits the sky round the core"
-                ><span aria-hidden="true">Beat</span
+              <label class="opacity" title="How strongly the Milkdrop visuals show over the sky"
+                ><span aria-hidden="true">Sky</span
                 ><input
                   type="range"
                   min="0"
                   max="1"
                   step="0.05"
-                  aria-label="Beat strength"
-                  [value]="beatStrength.level()"
-                  (input)="onBeatStrength($event)"
+                  aria-label="Milkdrop visuals opacity"
+                  [value]="milkdropOpacity.level()"
+                  [disabled]="videoBackground.isOn()"
+                  (input)="onMilkdropOpacity($event)"
               /></label>
-              <button
-                type="button"
-                class="sync"
-                [attr.aria-pressed]="syncLabel.isOn"
-                [disabled]="syncLabel.isUnavailable"
-                [title]="syncLabel.hint"
-                (click)="toggleSync()"
-              >
-                {{ syncLabel.text }}
-              </button>
-              @if (soundSources.hasChoice()) {
-                <app-sound-source-picker
-                  [menu]="soundSources.menu()"
-                  [selected]="soundSources.selected()"
-                  [isBusy]="pulse.isAsking()"
-                  (picked)="pulse.switchTo($event)"
-                />
+              <!-- Where the browser can hear no source none of these shows: with no
+                   sync there are no beats to soften. -->
+              @if (sync(); as syncLabel) {
+                <label class="opacity" title="How hard each beat hits the sky round the core"
+                  ><span aria-hidden="true">Beat</span
+                  ><input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    aria-label="Beat strength"
+                    [value]="beatStrength.level()"
+                    (input)="onBeatStrength($event)"
+                /></label>
+                <button
+                  type="button"
+                  class="sync"
+                  [attr.aria-pressed]="syncLabel.isOn"
+                  [disabled]="syncLabel.isUnavailable"
+                  [title]="syncLabel.hint"
+                  (click)="toggleSync()"
+                >
+                  {{ syncLabel.text }}
+                </button>
+                @if (soundSources.hasChoice()) {
+                  <app-sound-source-picker
+                    [menu]="soundSources.menu()"
+                    [selected]="soundSources.selected()"
+                    [isBusy]="pulse.isAsking()"
+                    (picked)="pulse.switchTo($event)"
+                  />
+                }
               }
             }
           </div>

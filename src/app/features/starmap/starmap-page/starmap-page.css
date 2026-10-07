@@ -47,6 +47,10 @@
   z-index: 4;
 }
 
+.listview--see-through {
+  background: color-mix(in srgb, var(--queue-sky) 84%, transparent);
+}
+
 .listwrap {
   max-width: 920px;
   margin: 0 auto;

@@ -30,6 +30,14 @@ describe('VideoSky', () => {
     expect(attach).toHaveBeenCalledWith(element.querySelector('.screen'));
   });
 
+  it('darkens only when asked, for stars drawn over it', () => {
+    const { fixture, element } = render();
+    expect(element.classList).not.toContain('dimmed');
+    fixture.componentRef.setInput('dimmed', true);
+    fixture.detectChanges();
+    expect(element.classList).toContain('dimmed');
+  });
+
   it('keeps out of the way of the pointer, the keyboard and screen readers', () => {
     const { element } = render();
     expect(element.hasAttribute('inert')).toBe(true);

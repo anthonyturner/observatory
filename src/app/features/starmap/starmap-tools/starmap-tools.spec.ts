@@ -1,4 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { LIVE_AGENTS_API } from '../../../core/live-agents/live-agents-api';
+import { fakeLiveAgentsApi } from '../../../core/live-agents/testing/live-agent-fixture';
 import { STARMAP_SCORE } from '../sound/starmap-sound';
 import { HelpState } from '../../../shared/help/help-state';
 import { Chart } from '../starmap-view';
@@ -9,6 +12,8 @@ import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
 function render(chart: Chart = 'prs') {
   TestBed.configureTestingModule({
     providers: [
+      provideRouter([]),
+      { provide: LIVE_AGENTS_API, useValue: fakeLiveAgentsApi() },
       {
         provide: STARMAP_SCORE,
         useValue: () => ({

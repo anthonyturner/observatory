@@ -124,6 +124,9 @@
       </button>
     </div>
   }
+  @if (!queueHidden()) {
+    <app-live-agents-link class="tool" label="Agent sessions" [repo]="repo()" />
+  }
   <div class="toolgroup">
     <button
       type="button"

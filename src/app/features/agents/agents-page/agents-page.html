@@ -1,0 +1,78 @@
+@let status = feed.state().status;
+<header class="head">
+  <app-up-link to="/" label="Home" />
+  <div class="brand">
+    <h1>Agents</h1>
+    @if (status === 'ready') {
+      <span class="stamp">{{ count().running }} running</span>
+    }
+  </div>
+</header>
+
+<main class="body">
+  @switch (status) {
+    @case ('reading') {
+      <p class="note">Reading sessions…</p>
+    }
+    @case ('local-only') {
+      <app-local-only-note />
+    }
+    @case ('unreachable') {
+      <p class="note warn">
+        Observatory's API did not answer, so the sessions could not be read.
+        <button type="button" class="abtn" (click)="feed.retry()">Try again</button>
+      </p>
+    }
+    @case ('ready') {
+      @if (rows().length) {
+        <ul class="rows">
+          @for (row of rows(); track row.id) {
+            <li>
+              <a class="row" [routerLink]="row.link" [attr.aria-labelledby]="row.labelledBy">
+                <span class="line top">
+                  <span class="title" [attr.id]="row.ids.title">
+                    @if (row.kicker) {
+                      <span class="kicker">{{ row.kicker }} ·</span>
+                    }
+                    {{ row.title }}
+                  </span>
+                  <app-agent-state-chip
+                    [attr.id]="row.ids.state"
+                    [state]="row.state"
+                    [text]="row.stateText"
+                  />
+                </span>
+                <span class="line">
+                  <span class="project" [attr.id]="row.ids.project">{{ row.project }}</span>
+                  <span class="folder" [title]="row.folder">{{ row.shortFolder }}</span>
+                  <app-time-ago class="ago" [attr.id]="row.ids.ago" [at]="row.lastActiveAt" />
+                </span>
+                @if (row.branch) {
+                  <span class="line"
+                    ><code class="branch">{{ row.branch }}</code></span
+                  >
+                }
+                @if (row.lastTool || row.isHeadless) {
+                  <span class="line">
+                    @if (row.lastTool) {
+                      <span class="tool" [title]="row.lastTool">&gt; {{ row.lastTool }}</span>
+                    }
+                    @if (row.isHeadless) {
+                      <span class="tag">headless (claude -p)</span>
+                    }
+                  </span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="note">
+          No Claude Code sessions are running on this machine.
+          <a routerLink="/">Back to Home</a>
+        </p>
+      }
+    }
+  }
+  <p class="visually-hidden" role="status">{{ summary() }}</p>
+</main>

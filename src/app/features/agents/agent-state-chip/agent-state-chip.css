@@ -1,0 +1,38 @@
+/* The run dock's state style (run-dock.css), in the agents' colours. */
+.state {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.state::before {
+  content: '\25CF';
+  margin-right: 7px;
+}
+
+.state[data-state='working'] {
+  color: var(--flow);
+}
+
+.state[data-state='working']::before {
+  animation: work-dot 1.6s ease-in-out infinite;
+}
+
+.state[data-state='waiting'] {
+  color: var(--meh);
+}
+
+/* Still under reduced motion too: MotionPreference follows the system setting. */
+:host(.still) .state::before {
+  animation: none;
+}
+
+@keyframes work-dot {
+  50% {
+    opacity: 0.35;
+  }
+}

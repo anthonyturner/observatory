@@ -1,5 +1,6 @@
 import { CrewContext, crewTaskOf, crewViewOf } from '../../../core/crew/crew-roster';
 import { QueueItem } from '../../../core/queue/queue-report';
+import { LandedBase } from '../../../core/queue/stacks';
 import { standingOf } from '../next-star';
 import { skyItemOf } from '../sky-items';
 import { lowerFirst } from './queue-top';
@@ -16,24 +17,32 @@ export type CrewVerdict =
 /** How the crews stand for one pull request, as Send crew reads them. */
 export type CrewStanding = Omit<CrewContext, 'task'>;
 
+/** The pull request a crew is asked for, as the queue and the ledger read it. */
+export interface CrewTarget {
+  readonly item: QueueItem;
+  /** The merge of the base it was stacked on, once that has merged. */
+  readonly landed: LandedBase | null;
+}
+
 /**
- * What Jev does about sending a crew to `item`, named `name`, by Send crew's
- * own rules: a failing or conflicted pull request, one crew at a time, and
- * one task on the runner at a time. A merged stacked base is not read here,
- * so only those two buckets qualify.
+ * What Jev does about sending a crew to `target`, named `name`, by Send
+ * crew's own rules: a failing or conflicted pull request, or one stacked on a
+ * base that has merged; one crew at a time, and one task on the runner at a
+ * time. `target` is undefined once the pull request is no longer open.
  */
 export function crewVerdictOf(
   name: string,
-  item: QueueItem | undefined,
+  target: CrewTarget | undefined,
   standing: CrewStanding,
 ): CrewVerdict {
-  if (!item) return { kind: 'say', text: `That one isn’t open any more: ${name}.` };
-  const send = crewViewOf({ ...standing, task: crewTaskOf(item.bucket, null) })?.send ?? null;
+  if (!target) return { kind: 'say', text: `That one isn’t open any more: ${name}.` };
+  const task = crewTaskOf(target.item.bucket, target.landed);
+  const send = crewViewOf({ ...standing, task })?.send ?? null;
   if (!send) {
-    const stands = lowerFirst(standingOf(skyItemOf(item)));
+    const stands = lowerFirst(standingOf(skyItemOf(target.item)));
     return {
       kind: 'open',
-      question: `A crew only takes a failing or conflicted pull request, and this one isn’t: ${stands}. Want me to open ${name} instead?`,
+      question: `A crew only takes a pull request that is failing, conflicted or stacked on a base that has merged, and this one isn’t: ${stands}. Want me to open ${name} instead?`,
     };
   }
   if (send.isDisabled) return { kind: 'say', text: send.hint };

@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars and the Releases sky
+# Sky visuals: Orrery worlds, Review Queue stars, and the Releases and Actions skies
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -8,7 +8,7 @@ line; this page says how it works.
 The Orrery and Review Queue sections describe the WebGL renderer. Each of those
 skies also has a Canvas 2D fallback for when WebGL can't start or a shader
 won't compile; the fallback keeps the older, simpler marks unless a section
-says otherwise. The Releases sky is Canvas 2D only.
+says otherwise. The Releases and Actions skies are Canvas 2D only.
 
 ## Principle: meaning versus scenery
 
@@ -36,6 +36,11 @@ TypeScript and the shader only draws it.
 | Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseStarType`    |
 | Releases     | Ring specks      | Merged PRs it shipped      | `ringSpeck`                    |
 | Releases     | Comet tail knots | Unreleased PRs by week     | `weeksOf`, `tailSpeck`         |
+| Actions      | Place on lane    | Run order, newest's age    | `frontDepth`, `layoutLanes`    |
+| Actions      | Star size        | How long the run took      | `runRadius`                    |
+| Actions      | Star type, flare | How the run went           | `runStarType`, `flareReach`    |
+| Actions      | Pulse ring       | A run queued or running    | `pulsePhase`                   |
+| Actions      | Amber ring       | Passed only on a rerun     | `isFlaky` (server)             |
 
 ## Orrery worlds
 
@@ -350,6 +355,39 @@ the tail, older ones wider, named with its date and count; its specks stream
 back through the knot and fade at its ends (`tailSpeck`). A fine ion tail
 points from the head toward the middle of the dust tail. Everything that moves
 runs on the frame loop's scene time, so it holds still when motion is off.
+
+## The Actions sky
+
+Code: `features/actions/run-sky/`. Like the Releases sky it is Canvas 2D only:
+the Orrery's night (`paintBackground`, `paintField`, vignette and grain), each
+run's star painted once by the shared portrait painter through `SunPortraits`
+(`shared/planets/sun-portraits.ts`, shared with the Releases sky), a flat glow
+until it loads. Each star is a real button over the canvas, and the List view
+gives the same runs.
+
+### Lanes (data: workflows and run order)
+
+`layoutLanes` gives each workflow a lane, A to Z, from the present (a dashed
+upright line labelled _now_, with each lane's name to its right) back toward a
+vanishing point off the left of the stage. A lane's newest run sits at depth
+`frontDepth`: 1 if it started just now, falling on a log scale of hours to 0.6
+for a month or more, so an idle workflow starts further back. The runs behind
+it follow at even steps of 30 px at the present, shrinking with depth, so a day
+with dozens of runs never piles up; a lane that would run past depth 0.16 is
+squeezed evenly back into it. A lane whose newest run failed is tinted red.
+
+### Stars (data: how each run went)
+
+Size is `runRadius`: `5 + 2.2 × √minutes` px, at most 18, and 8 for a run still
+going, times its depth, never under 2 px. A failure is a giant in
+`--actions-failed` with a red bloom and two crossed spikes on the diagonals,
+breathing up to 35% larger on its own phase (`flareReach`). A running run is a
+bright star in `--actions-running` that sends out a ring every 2.4 s; a queued
+one pulses every 4.8 s (`pulsePhase`). Passed runs are calm, cancelled and
+skipped ones veiled. A run whose job failed and then passed on a rerun at the
+same commit (the queue's flaky-check history) carries a turning dashed amber
+ring with a small tag. Everything that moves reads the frame loop's scene time,
+so it holds still when motion is off.
 
 ## Changing a visual
 

@@ -1,0 +1,46 @@
+/* Sits in a project card's row of links, so it takes the same share and look as its neighbours. */
+:host {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+a {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+a:hover {
+  color: var(--ink);
+  background: var(--flow-tint);
+}
+
+a:focus-visible {
+  outline-offset: -2px;
+}
+
+.dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 7px 1px var(--dot);
+}
+
+@media (max-width: 720px) {
+  a {
+    min-height: 44px;
+  }
+}

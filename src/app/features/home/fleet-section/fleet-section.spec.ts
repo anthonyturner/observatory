@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -24,7 +26,12 @@ const ready = (projects: readonly ProjectSnapshot[]): ProjectsState => ({
 
 function render(state: ProjectsState): HTMLElement {
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: PROJECTS_STATE, useValue: signal(state) }],
+    providers: [
+      provideRouter([]),
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: PROJECTS_STATE, useValue: signal(state) },
+    ],
   });
   const fixture = TestBed.createComponent(FleetSection);
   fixture.detectChanges();
@@ -71,6 +78,8 @@ describe('FleetSection', () => {
       TestBed.configureTestingModule({
         providers: [
           provideRouter([]),
+          provideHttpClient(),
+          provideHttpClientTesting(),
           { provide: PROJECTS_STATE, useValue: signal(ready([project('calm')])) },
           { provide: BROWSER_NOTICES, useValue: notices },
         ],
@@ -176,6 +185,8 @@ describe('FleetSection', () => {
     const state = signal<ProjectsState>({ status: 'reading' });
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: PROJECTS_STATE, useValue: state },
         {
           provide: ActivatedRoute,

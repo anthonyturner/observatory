@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize, switchMap } from 'rxjs';
+import { Observable, catchError, defer, finalize, map, of, switchMap, tap } from 'rxjs';
 import { RunDock } from '../runs/run-dock';
 import { RUNNER_BUSY, messageOf, statusOf } from '../runs/runs-api';
 import { RunsStore } from '../runs/runs-store';
@@ -16,6 +16,7 @@ interface Refusal {
 }
 
 const BUSY_TEXT = 'Another task started first. Send the crew once it ends.';
+export const NO_RUNNER_TEXT = 'No crew can launch from here: this site has no task runner.';
 
 /**
  * Crews sent to fix a conflicted or failing pull request. A crew is a run on
@@ -60,6 +61,14 @@ export class CrewDispatch {
     });
   }
 
+  /** Whether a crew can be sent from here, asking the API if it has not said
+   *  yet: a dispatch made just now has not heard back. */
+  availability(): Observable<boolean> {
+    if (!this.store.isAvailable()) return of(false);
+    if (this.hasRunner()) return of(true);
+    return this.api.isAvailable().pipe(tap((isAvailable) => this.hasRunner.set(isAvailable)));
+  }
+
   isSending(repo: string, number: number): boolean {
     return this.sendingKey() === crewKey(repo, number);
   }
@@ -72,18 +81,28 @@ export class CrewDispatch {
   /** Sends a crew to pull request `number`: the API writes its instructions,
    *  and the runner starts them as it starts any confirmed task. */
   send(repo: string, number: number): void {
-    if (!this.isAvailable() || this.sendingKey() || this.store.isLive()) return;
-    const key = crewKey(repo, number);
-    this.sendingKey.set(key);
-    this.refusal.set(null);
-    this.api
-      .propose(repo, number)
-      .pipe(
+    this.launch(repo, number).pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
+
+  /** As `send`, once subscribed, for a caller that says how it went: emits
+   *  null once the runner has the crew, or why it did not launch. */
+  launch(repo: string, number: number): Observable<string | null> {
+    return defer(() => {
+      if (!this.isAvailable()) return of(NO_RUNNER_TEXT);
+      if (this.sendingKey() || this.store.isLive()) return of(BUSY_TEXT);
+      const key = crewKey(repo, number);
+      this.sendingKey.set(key);
+      this.refusal.set(null);
+      return this.api.propose(repo, number).pipe(
         switchMap((request) => this.store.start(request)),
+        map(() => null),
+        catchError((error: unknown) => {
+          this.refuse(key, error);
+          return of(this.refusalFor(repo, number));
+        }),
         finalize(() => this.sendingKey.set(null)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({ error: (error: unknown) => this.refuse(key, error) });
+      );
+    });
   }
 
   /** Puts crew `crew`'s run in Home's task panel, for its log. */

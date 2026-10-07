@@ -1,0 +1,15 @@
+<div class="rerun" role="group" aria-label="Rerun this run">
+  <button type="button" class="rerun__send" [disabled]="isDisabled()" (click)="rerun()">
+    {{ label() }}
+  </button>
+  @if (status(); as status) {
+    <p
+      class="rerun__status"
+      role="status"
+      [class.rerun__status--ok]="status.tone === 'ok'"
+      [class.rerun__status--bad]="status.tone === 'bad'"
+    >
+      {{ status.text }}
+    </p>
+  }
+</div>

@@ -8,14 +8,15 @@ import { ASK_FEED_CHANNEL, AskFeed } from '../../../core/assistant/ask-feed';
 import { ASSISTANT_API, AssistantApi } from '../../../core/assistant/assistant-api';
 import { AssistantInfo } from '../../../core/assistant/assistant-info';
 import { RouteReply, RouteRequest } from '../../../core/assistant/assistant.types';
-import { QUESTION_MS, TIMED_OUT_NOTE } from '../../../core/assistant/open-question';
+import { OpenQuestion, QUESTION_MS, TIMED_OUT_NOTE } from '../../../core/assistant/open-question';
 import { GRACE_MS } from '../../../core/assistant/page-jump';
 import { ReplyLog } from '../../../core/assistant/reply-log';
 import { ProjectSnapshot } from '../../../core/projects/project.types';
 import { ProjectsState } from '../../../core/projects/projects-feed';
 import { PROJECTS_STATE } from '../../../core/projects/projects-source';
 import { REPLY_VOICE, ReplyVoice } from '../../../core/voice/reply-voice';
-import { OUT_OF_REACH, QUEUE_CHIP, QUEUE_TRIAGE_SHORTCUT } from './queue-triage-voice';
+import { OUT_OF_REACH, QUEUE_CHIP } from './queue-reply';
+import { REVIEW_QUEUE_SHORTCUTS } from './review-queue-shortcuts';
 
 /** A Wednesday, so “till Monday” is five days. */
 const WEDNESDAY = new Date(2026, 9, 7, 10, 0);
@@ -64,7 +65,7 @@ function setUp(
       provideHttpClient(),
       provideHttpClientTesting(),
       ASK_FEED_CHANNEL,
-      QUEUE_TRIAGE_SHORTCUT,
+      REVIEW_QUEUE_SHORTCUTS,
       { provide: ASSISTANT_API, useValue: api },
       { provide: REPLY_VOICE, useValue: voice },
       { provide: PROJECTS_STATE, useValue: state.asReadonly() },
@@ -80,6 +81,7 @@ function setUp(
     latest: () => log.entries()[0],
     entry: (id: number) => log.find(id),
     feed: TestBed.inject(AskFeed),
+    question: TestBed.inject(OpenQuestion),
     info: TestBed.inject(AssistantInfo),
     route,
     voice,
@@ -121,6 +123,54 @@ describe('the Review Queue by voice or typing', () => {
     expect(latest().said.text).toBe(BLOCKING_LINE);
     expect(voice.speak).toHaveBeenCalledWith(BLOCKING_LINE, 1);
     expect(route).not.toHaveBeenCalled();
+  });
+
+  describe('with Home’s Ask panel on screen', () => {
+    const OFFER = 'Want to work on one? I can open it or send a crew.';
+
+    it('ends the list with an offer, keeping the three as the question’s items', () => {
+      const { type, latest, flushQueues, question, voice } = setUp();
+      question.panelArrived();
+
+      type('what’s blocking?');
+      flushQueues();
+
+      expect(latest().said.text).toBe(`${BLOCKING_LINE} ${OFFER}`);
+      expect(voice.speak).toHaveBeenCalledWith(`${BLOCKING_LINE} ${OFFER}`, 1);
+      expect(question.question()?.words).toBe(OFFER);
+      expect(question.question()?.items.map(({ repo, number }) => `${repo}#${number}`)).toEqual([
+        'me/beta#3',
+        'me/alpha#12',
+        'me/alpha#13',
+      ]);
+    });
+
+    it('opens one named in a typed reply, as a spoken one would', async () => {
+      const { type, latest, flushQueues, question, navigate } = setUp();
+      question.panelArrived();
+      type('what’s blocking?');
+      flushQueues();
+
+      type('open the alpha one about change 13');
+
+      expect(latest().how).toBe('typed');
+      expect(latest().said.text).toBe('Opening pull request 13 in alpha…');
+      await vi.advanceTimersByTimeAsync(GRACE_MS);
+      expect(navigate).toHaveBeenCalledExactlyOnceWith('/p/me/alpha?pr=13');
+    });
+
+    it('offers nothing when nothing is waiting', () => {
+      const { type, latest, http, question } = setUp([project('beta', [3])]);
+      question.panelArrived();
+
+      type('what’s blocking?');
+      http
+        .expectOne('/api/queue?repo=me/beta')
+        .flush({ generatedAt: 'x', repo: 'me/beta', items: [] });
+
+      expect(latest().said.text).toMatch(/^Nothing is waiting/);
+      expect(question.question()).toBeNull();
+    });
   });
 
   it('answers spoken words exactly as typed ones', () => {

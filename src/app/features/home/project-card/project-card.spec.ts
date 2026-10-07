@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ProjectJump } from '../../../core/projects/project-jump';
@@ -20,7 +22,11 @@ function render(project: ProjectSnapshot): HTMLElement {
 }
 
 describe('ProjectCard', () => {
-  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
+  beforeEach(() =>
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    }),
+  );
 
   it('shows the worst problem, the counts and the way in', () => {
     const card = render(blocked);
@@ -28,6 +34,9 @@ describe('ProjectCard', () => {
     expect(card.querySelector('.kind')?.textContent).toBe('Blocked');
     expect(card.querySelector('.name a')?.getAttribute('href')).toBe('/p/me/pr-starmap');
     expect(card.querySelectorAll('.count').length).toBe(2);
+    expect(card.querySelector('app-ci-mark a')?.getAttribute('href')).toBe(
+      '/p/me/pr-starmap/actions',
+    );
     expect(card.querySelector('.github')?.getAttribute('href')).toBe(
       'https://github.com/me/pr-starmap',
     );

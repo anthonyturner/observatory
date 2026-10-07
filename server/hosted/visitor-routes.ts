@@ -1,3 +1,4 @@
+import { runIdFrom } from '../actions/actions-rerun.ts';
 import type { ApiReads } from '../app/api-reads.ts';
 import {
   Forbidden,
@@ -88,6 +89,10 @@ export function visitorRoutes(
       '/api/history': async (query) => reads.history(await visibleRepo(query)),
       '/api/ledger': async (query) => reads.ledger(await visibleRepo(query)),
       '/api/releases': async (query) => reads.releases(await visibleRepo(query)),
+      '/api/actions': async (query) => reads.actions(await visibleRepo(query)),
+      '/api/actions/run': async (query) =>
+        reads.runJobs(await visibleRepo(query), runIdFrom(query.get('run'))),
+      '/api/ci-health': async (query) => reads.ciHealth(await visibleRepo(query)),
       '/api/issues': async (query) => reads.issues(await visibleRepo(query)),
       '/api/issue': async (query) =>
         reads.issue(await visibleRepo(query), issueNumberFrom(query.get('number'))),

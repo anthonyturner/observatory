@@ -12,6 +12,9 @@ export interface ProjectTab {
 /** The Actions screen, which Home's project cards also link to. */
 export const ACTIONS_TAB: ProjectTab = { id: 'actions', label: 'Actions', path: 'actions' };
 
+/** The Library screen: the project's wiki, or its README and docs. */
+export const LIBRARY_TAB: ProjectTab = { id: 'library', label: 'Library', path: 'library' };
+
 /**
  * Every per-project screen, in the order the strip shows them. A new screen
  * adds its entry here and its route in `app.routes.ts`, and passes its `id`
@@ -21,6 +24,7 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
   { id: 'queue', label: 'Queue', path: '' },
   { id: 'releases', label: 'Releases', path: 'releases' },
   ACTIONS_TAB,
+  LIBRARY_TAB,
 ];
 
 /** Where a tab lives for one repository, `owner/name`. */

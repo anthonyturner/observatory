@@ -61,6 +61,7 @@ const reads = {
   forgetPull: (repo: string, number: number) => forgotten.push(`${repo}#${number}`),
   labels: async () => [{ name: 'bug', color: 'd73a4a' }],
   releases: async (repo: string) => ({ repo, source: 'none', releases: [] }),
+  library: async (repo: string) => ({ repo, source: 'docs', pages: [] }),
   actions: async (repo: string) => ({ repo, runs: [] }),
   forgetActions: (repo: string) => forgotten.push(`actions ${repo}`),
   runJobs: async (repo: string, runId: number) => ({ repo, runId, jobs: [] }),
@@ -125,6 +126,14 @@ describe('ownerRoutes', () => {
       repo: 'me/app',
       source: 'none',
       releases: [],
+    });
+  });
+
+  it('reads a repository’s library', async () => {
+    assert.deepEqual(await get('/api/library?repo=me/app'), {
+      repo: 'me/app',
+      source: 'docs',
+      pages: [],
     });
   });
 

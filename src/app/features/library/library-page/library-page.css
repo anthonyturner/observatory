@@ -1,0 +1,100 @@
+/* The Releases page's header and messages, shared; the Library lays its own
+   header in the flow so the room below starts wherever the header ends. */
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--queue-sky);
+}
+
+.hud {
+  position: static;
+  flex: none;
+  padding-bottom: 14px;
+}
+
+.note a {
+  margin-left: 6px;
+  color: var(--flow);
+  text-decoration: none;
+}
+
+.note a:hover {
+  text-decoration: underline;
+}
+
+.note a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.room {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+  border-top: 1px solid var(--edge-soft);
+}
+
+.fold {
+  display: none;
+}
+
+/* The index rests on a faint scatter of stars: scenery, the same on every page. */
+.index {
+  overflow-y: auto;
+  padding: 16px 16px calc(40px + var(--playlist-clear-bottom, 0px)) 20px;
+  border-right: 1px solid var(--edge-soft);
+  background:
+    radial-gradient(1px 1px at 18% 22%, var(--tick), transparent),
+    radial-gradient(1px 1px at 72% 8%, var(--tick), transparent),
+    radial-gradient(1px 1px at 46% 64%, var(--tick), transparent),
+    radial-gradient(1px 1px at 88% 82%, var(--tick), transparent), var(--panel-soft);
+  background-size: 180px 220px;
+}
+
+.reading {
+  container-type: inline-size;
+  overflow-y: auto;
+  padding: 28px 44px calc(96px + var(--playlist-clear-bottom, 0px));
+  background: var(--panel);
+}
+
+.reading:focus {
+  outline: none;
+}
+
+@media (max-width: 860px) {
+  .room {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fold {
+    display: block;
+    align-self: flex-start;
+    margin: 10px 16px;
+  }
+
+  .fold:focus-visible {
+    outline: 2px solid var(--flow);
+    outline-offset: 2px;
+  }
+
+  .index {
+    display: none;
+    max-height: 46dvh;
+    padding-bottom: 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--edge-soft);
+  }
+
+  .index.open {
+    display: block;
+  }
+
+  .reading {
+    flex: 1;
+    min-height: 0;
+    padding: 20px 18px calc(96px + var(--playlist-clear-bottom, 0px));
+  }
+}

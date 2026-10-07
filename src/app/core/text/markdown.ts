@@ -46,7 +46,7 @@ const CHECKED = '☑ ';
 const UNCHECKED = '☐ ';
 
 /** `text` split by `pattern`: the gaps through `plain`, each match through `matched`. */
-function splitBy<T>(
+export function splitBy<T>(
   text: string,
   pattern: RegExp,
   plain: (gap: string) => T[],

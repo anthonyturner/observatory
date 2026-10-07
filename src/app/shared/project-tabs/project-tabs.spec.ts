@@ -25,7 +25,13 @@ describe('ProjectTabs', () => {
       ['Queue', '/p/me/app'],
       ['Releases', '/p/me/app/releases'],
       ['Actions', '/p/me/app/actions'],
+      ['Library', '/p/me/app/library'],
     ]);
-    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([null, 'page', null]);
+    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([
+      null,
+      'page',
+      null,
+      null,
+    ]);
   });
 });

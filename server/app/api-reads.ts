@@ -8,6 +8,8 @@ import type { RawLabel } from '../github/pull-reader.ts';
 import type { Frame } from '../history/frames.ts';
 import type { HistoryStore } from '../history/history-store.ts';
 import { type Ledger, ledgerReport } from '../history/ledger.ts';
+import { libraryReport } from '../library/library-report.ts';
+import type { LibraryReport } from '../library/library-types.ts';
 import type { ReleasesReport } from '../releases/release-types.ts';
 import { releasesReport } from '../releases/releases-report.ts';
 import { recordFrame } from '../history/record-frame.ts';
@@ -49,6 +51,8 @@ const AGENTS_TTL_MS = 5 * 60_000;
 const LEDGER_TTL_MS = 10 * 60_000;
 /** Releases are cut rarely and merges land a few times a day: ten minutes is fresh enough. */
 const RELEASES_TTL_MS = 10 * 60_000;
+/** A wiki or docs folder changes a few times a day at most; each read costs a request per page. */
+const LIBRARY_TTL_MS = 10 * 60_000;
 /** Runs start and end every few minutes while work is going on. */
 const ACTIONS_TTL_MS = 2 * 60_000;
 /** A run's jobs, while it is open on screen; a finished one changes only on a rerun. */
@@ -115,6 +119,8 @@ export interface ApiReads {
   ledger(repo: string): Promise<Ledger>;
   /** Releases or tags, each with its notes and the merged pull requests it shipped. */
   releases(repo: string): Promise<ReleasesReport>;
+  /** The wiki's pages, or the README and docs where there is no wiki. */
+  library(repo: string): Promise<LibraryReport>;
   /** Workflows and their newest runs, with flaky runs tagged and the default branch's health. */
   actions(repo: string): Promise<ActionsReport>;
   /** The next read of these runs, and of the branch's health, goes to GitHub. */
@@ -221,6 +227,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     history: async (repo) => ({ repo, frames: await history.read(repo) }),
     ledger: cachedByKey((repo) => ledgerReport(github, repo), LEDGER_TTL_MS),
     releases: cachedByKey((repo) => releasesReport(github, repo), RELEASES_TTL_MS),
+    library: cachedByKey((repo) => libraryReport(github, repo), LIBRARY_TTL_MS),
     actions: (repo) => actionsOf.read(repo),
     forgetActions: (repo) => {
       actionsOf.forget(repo);

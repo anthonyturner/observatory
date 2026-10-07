@@ -1,0 +1,46 @@
+<div class="search" role="search">
+  <label for="library-search">Search pages</label>
+  <input
+    id="library-search"
+    type="search"
+    autocomplete="off"
+    placeholder="Title or text"
+    [value]="query()"
+    (input)="search($event)"
+  />
+</div>
+<p class="result" role="status">{{ resultLine() }}</p>
+
+<nav aria-label="Pages">
+  @for (shelf of shelves(); track shelf.name) {
+    <section class="shelf">
+      <h2>{{ shelf.name }}</h2>
+      <ol class="chart">
+        @for (entry of shelf.entries; track entry.slug) {
+          <li>
+            <a
+              data-page
+              [routerLink]="entry.link"
+              [attr.aria-current]="entry.isCurrent ? 'page' : null"
+              (keydown)="walk($event)"
+            >
+              <span class="star" aria-hidden="true"
+                ><span
+                  class="dot"
+                  [style.width.px]="entry.diameter"
+                  [style.height.px]="entry.diameter"
+                ></span
+              ></span>
+              <span class="words">
+                <span class="title">{{ entry.title }}</span>
+                @if (entry.snippet) {
+                  <span class="snippet">{{ entry.snippet }}</span>
+                }
+              </span>
+            </a>
+          </li>
+        }
+      </ol>
+    </section>
+  }
+</nav>

@@ -1,0 +1,39 @@
+@let page = article();
+@let turn = neighbours();
+<header class="head">
+  <p class="origin">{{ page.origin }}</p>
+  <h1 tabindex="-1">{{ page.title }}</h1>
+  <a class="out" [href]="page.url" target="_blank" rel="noopener noreferrer"
+    >View on GitHub <span aria-hidden="true">↗</span></a
+  >
+</header>
+
+@if (page.outline.length > 1) {
+  <nav class="outline" aria-labelledby="library-outline-heading">
+    <h2 id="library-outline-heading">On this page</h2>
+    <ol>
+      @for (entry of page.outline; track entry.id) {
+        <li [class.sub]="entry.level === 3">
+          <a [routerLink]="[]" [fragment]="entry.id">{{ entry.text }}</a>
+        </li>
+      }
+    </ol>
+  </nav>
+}
+
+<app-doc-blocks class="body" [blocks]="page.blocks" />
+
+@if (turn.previous || turn.next) {
+  <nav class="turn" aria-label="Previous and next pages">
+    @if (turn.previous; as previous) {
+      <a class="previous" [routerLink]="previous.link"
+        ><span class="way"><span aria-hidden="true">←</span> Previous</span> {{ previous.title }}</a
+      >
+    }
+    @if (turn.next; as next) {
+      <a class="next" [routerLink]="next.link"
+        ><span class="way">Next <span aria-hidden="true">→</span></span> {{ next.title }}</a
+      >
+    }
+  </nav>
+}

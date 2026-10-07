@@ -27,6 +27,10 @@ const MAIN_PAGES: readonly WikiPage[] = [
 const DECISION_FILE = /^(?!0000-)(\d{4})-[a-z0-9-]+\.md$/;
 const HEADING = /^#\s+(.+?)\s*$/m;
 
+/** A markdown file's first top-level heading, or null when it has none. */
+export const firstHeading = (markdown: string): string | null =>
+  HEADING.exec(markdown)?.[1] ?? null;
+
 /** One decision file read from disk: its name in the decisions folder and its text. */
 export interface DecisionFile {
   readonly fileName: string;
@@ -47,7 +51,7 @@ function decisionPage({ fileName, markdown }: DecisionFile): WikiPage {
   return {
     source: `${DECISIONS_FOLDER}/${fileName}`,
     name: `ADR-${stem}`,
-    title: HEADING.exec(markdown)?.[1] ?? `ADR-${stem}`,
+    title: firstHeading(markdown) ?? `ADR-${stem}`,
     parent: DECISIONS_PAGE,
   };
 }

@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { Observable, of } from 'rxjs';
 import { AGENT_FEED_API } from '../../../core/live-agents/agent-feed-api';
 import { AgentFeedRead } from '../../../core/live-agents/agent-feed.types';
+import { AGENT_CHANGES_API } from '../../../core/live-agents/agent-changes-api';
 import { LIVE_AGENTS_API } from '../../../core/live-agents/live-agents-api';
 import { LiveAgentKey, OneAgentState } from '../../../core/live-agents/live-agents.types';
 import {
@@ -10,6 +11,7 @@ import {
   fakeLiveAgentsApi,
   liveAgent,
 } from '../../../core/live-agents/testing/live-agent-fixture';
+import { fakeAgentChangesApi } from '../../../core/live-agents/testing/agent-changes-fixture';
 import { AgentDetailPage } from './agent-detail-page';
 
 const NO_ACTIVITY: AgentFeedRead = {
@@ -39,6 +41,7 @@ function render(
       },
       { provide: AGENT_FEED_API, useValue: { feed: () => feed } },
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(params)) } },
+      { provide: AGENT_CHANGES_API, useValue: fakeAgentChangesApi() },
     ],
   });
   const fixture = TestBed.createComponent(AgentDetailPage);
@@ -46,7 +49,7 @@ function render(
   fixture.detectChanges();
   TestBed.tick();
   fixture.detectChanges();
-  return { page: fixture.nativeElement as HTMLElement, asked };
+  return { page: fixture.nativeElement as HTMLElement, asked, fixture };
 }
 
 const textOf = (element: Element | null | undefined): string =>
@@ -66,6 +69,20 @@ describe('AgentDetailPage', () => {
     expect(textOf(page.querySelector('.state'))).toBe('Working');
     expect(textOf(page.querySelector('.route code'))).toBe('feat/490-agents');
     expect(page.querySelector('.banner')).toBeNull();
+  });
+
+  it('shows the agent’s changes under the Changes tab', () => {
+    const { page, fixture } = render({ status: 'ready', agent: liveAgent() });
+    const tab = [...page.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find(
+      (each) => textOf(each) === 'Changes',
+    );
+
+    tab?.click();
+    fixture.detectChanges();
+
+    expect(tab?.getAttribute('aria-selected')).toBe('true');
+    expect(page.querySelector('[role="tabpanel"] app-agent-changes-panel')).not.toBeNull();
+    expect(page.querySelector('[role="tabpanel"] app-agent-activity-panel')).toBeNull();
   });
 
   it('opens an agent that has stopped, saying it is not running', () => {

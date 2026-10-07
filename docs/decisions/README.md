@@ -54,3 +54,4 @@ ADR when the project decides differently.
 | [0006](0006-keep-the-assistant-on-the-local-site-only.md) | Keep the assistant on the local site only | Accepted |
 | [0007](0007-squash-merge-pull-requests.md) | Squash-merge pull requests | Accepted |
 | [0008](0008-let-send-crew-start-a-run.md) | Let Send crew start a run from instructions the server writes | Accepted |
+| [0009](0009-run-read-only-git-in-folders-named-by-transcripts.md) | Run read-only git in folders named by session transcripts | Accepted |

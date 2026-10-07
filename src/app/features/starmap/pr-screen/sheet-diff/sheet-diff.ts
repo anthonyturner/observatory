@@ -11,6 +11,19 @@ import { SeenFile, ViewedFiles, seenFileOf } from '../../../../core/queue/viewed
 
 const BYTES_PER_KB = 1024;
 
+/** What the notes say about a diff too large to carry, or cut to fit: where the rest is. */
+export interface SheetDiffWording {
+  /** After "This diff is too large to carry here (N KB)." */
+  readonly tooLarge: string;
+  readonly cutShort: string;
+}
+
+/** A pull request's: GitHub has the whole diff. */
+export const GITHUB_DIFF_WORDING: SheetDiffWording = {
+  tooLarge: 'Open it on GitHub.',
+  cutShort: 'Shortened to fit — the full diff is on GitHub. Files near the end may be missing.',
+};
+
 interface FileEntry {
   readonly file: DiffFile;
   readonly seen: SeenFile;
@@ -32,6 +45,7 @@ export class SheetDiff {
   readonly viewedKey = input.required<string>();
   /** The preview withholds a private repository's code. */
   readonly codeHidden = input(false);
+  readonly wording = input<SheetDiffWording>(GITHUB_DIFF_WORDING);
 
   private readonly viewedFiles = inject(ViewedFiles);
 

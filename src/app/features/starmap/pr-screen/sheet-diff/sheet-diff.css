@@ -85,6 +85,11 @@
   overflow-wrap: anywhere;
 }
 
+.bin {
+  color: var(--muted);
+  font-style: italic;
+}
+
 pre {
   margin: 0;
   padding: 8px 0;

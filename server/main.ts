@@ -62,6 +62,8 @@ import { liveAgentReader } from './live-agents/live-agents.ts';
 import { withLiveAgentsRoutes } from './live-agents/live-agents-routes.ts';
 import { agentFeedReader } from './live-agents/feed-reader.ts';
 import { withLiveAgentFeedRoute } from './live-agents/feed-routes.ts';
+import { agentChangesReader } from './live-agents/agent-changes.ts';
+import { withAgentChangesRoutes } from './live-agents/changes-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -156,6 +158,9 @@ const ownerAndFeedRoutes = withLiveAgentFeedRoute(
   agentFeedReader(),
 );
 
+// Only this server runs git in an agent's folder; the hosted API has no such route.
+const ownerTable = withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader());
+
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it
 // with no Origin, so it checks the Host and its own session token instead.
 const server = createApiServer(
@@ -174,7 +179,7 @@ const server = createApiServer(
                           withArchitectureRoutes(
                             withAgentSpeechRoutes(
                               withRiskRoutes(
-                                withLiveAgentsRoutes(ownerAndFeedRoutes, liveAgentsSource),
+                                withLiveAgentsRoutes(ownerTable, liveAgentsSource),
                                 reads.pull,
                                 summaries,
                               ),

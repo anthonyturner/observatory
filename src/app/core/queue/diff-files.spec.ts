@@ -27,6 +27,20 @@ describe('diffFilesOf', () => {
     ]);
   });
 
+  it('marks a file git sent as binary, and only that one', () => {
+    const binary = [
+      'diff --git a/logo.png b/logo.png',
+      'new file mode 100644',
+      'Binary files /dev/null and b/logo.png differ',
+    ].join('\n');
+
+    expect(diffFilesOf(`${DIFF}\n${binary}`).map((file) => file.isBinary)).toEqual([
+      false,
+      false,
+      true,
+    ]);
+  });
+
   it('finds no files in an empty diff', () => {
     expect(diffFilesOf('')).toEqual([]);
   });

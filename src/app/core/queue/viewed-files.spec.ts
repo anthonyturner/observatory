@@ -12,6 +12,7 @@ const fileOf = (path: string, lines: string[]): DiffFile => ({
   path,
   additions: 0,
   deletions: 0,
+  isBinary: false,
   lines,
 });
 

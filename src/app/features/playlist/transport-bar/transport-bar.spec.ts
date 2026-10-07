@@ -78,7 +78,11 @@ function render({ hasSky = true, canShare = true, hasComputer = true, onPhone = 
       { provide: FILE_SAVER, useValue: saver },
     ],
   });
-  const leaveSky = hasSky ? TestBed.inject(MusicSkyPresence).hold() : () => undefined;
+  // Home holds both: its music sky, and the backdrop the video can fill.
+  const leaves = hasSky
+    ? [TestBed.inject(MusicSkyPresence).hold(), TestBed.inject(VideoBackground).holdBackdrop()]
+    : [];
+  const leaveSky = (): void => leaves.forEach((leave) => leave());
   const fixture = TestBed.createComponent(TransportBar);
   fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
@@ -173,18 +177,26 @@ describe('TransportBar', () => {
   });
 
   it('keeps the video in its card on a page with no backdrop to fill', async () => {
-    const { fixture, element, button } = render();
+    const { fixture, element, button } = render({ hasSky: false });
+    TestBed.inject(VideoBackground).toggle();
     button('Play')?.click();
     await fixture.whenStable();
-    button('Video')?.click();
     fixture.detectChanges();
-    expect(button('Video')?.getAttribute('aria-pressed')).toBe('true');
     expect(element.querySelector('.card--live')).not.toBeNull();
+  });
+
+  it('offers Video alone where the page has a backdrop but no music sky', () => {
+    const { fixture, element, button } = render({ hasSky: false });
+    TestBed.inject(VideoBackground).holdBackdrop();
+    fixture.detectChanges();
+    expect(button('Video')?.title).toBe('Play the video full screen behind the stars');
+    expect(element.querySelector('.sync')).toBeNull();
+    expect(element.querySelector('select[aria-label="Milkdrop visual"]')).toBeNull();
+    expect(element.querySelector('input[aria-label="Milkdrop visuals opacity"]')).toBeNull();
   });
 
   it('moves the video behind the page from the Video switch, and back', async () => {
     const { fixture, element, button, make } = render();
-    TestBed.inject(VideoBackground).holdBackdrop();
     button('Play')?.click();
     await fixture.whenStable();
     fixture.detectChanges();

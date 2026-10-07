@@ -70,7 +70,8 @@ export class TransportBar {
   protected readonly beatStrength = inject(BeatStrength);
   protected readonly videoBackground = inject(VideoBackground);
   protected readonly videoSize = inject(VideoCardSize);
-  /** Sync, Video, Visual and Sky only do something on a page with a music sky. */
+  /** Sync, Visual and Sky only do something on a page with a music sky; Video on any
+   *  page with a backdrop for it. */
   protected readonly sky = inject(MusicSkyPresence);
   protected readonly fold = inject(PlaylistBarFold);
   /** Null where no source can be heard, so Sync is left out. */
@@ -94,6 +95,17 @@ export class TransportBar {
     () => `${spokenClockOf(this.shownElapsed())} of ${spokenClockOf(this.player.duration())}`,
   );
   protected readonly hasStarted = computed(() => this.player.state() !== 'idle');
+  /** On Home the video takes Milkdrop's place; elsewhere it goes beneath the stars. */
+  protected readonly videoHint = computed(() => {
+    if (this.sky.isShown()) {
+      return this.videoBackground.isOn()
+        ? 'Back to the Milkdrop visuals behind the page'
+        : 'Play the video full screen behind the page instead of Milkdrop';
+    }
+    return this.videoBackground.isOn()
+      ? 'Back to the video window by the bar'
+      : 'Play the video full screen behind the stars';
+  });
   /** The card shows the video unless it is filling the page's background instead. */
   protected readonly isCardShown = computed(
     () => this.hasStarted() && !this.videoBackground.isShown(),

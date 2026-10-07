@@ -137,6 +137,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- Asking Jev to send a crew to a stacked pull request whose base has merged now offers the crew, as its card’s Send crew does, instead of offering to open it ([#502](https://github.com/anthonyturner/observatory/pull/502)).
 - On a phone held sideways the playlist keeps the bottom-right corner at no more than half the screen, folded by default with its controls stacked as on an upright phone, and each page's tool bars sit beside it in the bottom-left instead of stacking above it. The Review Queue's **Since the previous refresh** panel scrolls there rather than run behind the playlist ([#472](https://github.com/anthonyturner/observatory/pull/472)).
 - On a phone the unfolded playlist bar stays on the screen, Sync included, even when something on the page is wider than the screen; on a screen too short for it, the bar scrolls within itself ([#446](https://github.com/anthonyturner/observatory/pull/446)).
 - On the Review Queue, opening Done now moves the sky clear of the list, as Merge plan and Agents do, and a lit light's label opens toward the middle of the clear sky instead of under the list ([#415](https://github.com/anthonyturner/observatory/pull/415)).

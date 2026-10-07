@@ -24,6 +24,8 @@ const WEDNESDAY = new Date(2026, 9, 7, 10, 0);
 const HELLO: RouteReply = { tier: 2, text: 'Hi', ask: [], commands: [], sources: [] };
 const FIX_CHECKS =
   'A crew reads the failed checks, fixes them and pushes to this branch. It never merges the pull request.';
+const UPDATE_STACK =
+  'The pull request this one was stacked on has merged. A crew merges that work into this branch, points the pull request where it landed and pushes. It never merges the pull request.';
 const UPDATE_BRANCH =
   'A crew merges the base into this branch, resolves the conflicts and pushes. It never merges the pull request.';
 
@@ -36,7 +38,7 @@ const project = (name: string, pulls: readonly number[]): ProjectSnapshot => ({
   openPulls: pulls.map((number) => ({ number, title: `Change ${number}`, closes: [] })),
 });
 
-const queueItem = (number: number, bucket: string, idleDays = 2) => ({
+const queueItem = (number: number, bucket: string, idleDays = 2, base = 'main') => ({
   number,
   title: `Change ${number}`,
   url: `https://github.com/me/x/pull/${number}`,
@@ -44,9 +46,13 @@ const queueItem = (number: number, bucket: string, idleDays = 2) => ({
   idleDays,
   additions: 400,
   deletions: 0,
+  branch: `change-${number}`,
+  base,
 });
 
-const ALPHA_ITEMS = [queueItem(12, 'failing'), queueItem(13, 'unreviewed', 9)];
+/** Alpha 13 is stacked on the branch of pull request 11, which the ledger can say has merged. */
+const ALPHA_ITEMS = [queueItem(12, 'failing'), queueItem(13, 'unreviewed', 9, 'change-11')];
+const BASE_MERGED = [{ number: 11, head: 'change-11', base: 'main' }];
 const BETA_ITEMS = [queueItem(3, 'conflicted')];
 
 /** Send crew as Home has it, with its launch recorded rather than run. */
@@ -119,10 +125,17 @@ function setUp(canSendCrew = true) {
     navigate,
     http,
     launch,
-    /** Answers the queue read a crew's check makes, once Send crew has loaded. */
-    async checked(repo: 'alpha' | 'beta'): Promise<void> {
+    /** Answers a queue read made once its feature has loaded. */
+    async read(repo: 'alpha' | 'beta'): Promise<void> {
       const read = await vi.waitFor(() => http.expectOne(`/api/queue?repo=me/${repo}`));
       read.flush(reply(repo));
+    },
+    /** Answers the queue and ledger reads a crew's check makes, once Send crew has loaded. */
+    async checked(repo: 'alpha' | 'beta', mergedBranches: readonly object[] = []): Promise<void> {
+      const read = await vi.waitFor(() => http.expectOne(`/api/queue?repo=me/${repo}`));
+      read.flush(reply(repo));
+      const ledger = { generatedAt: 'x', rows: [], titles: {}, finished: [], mergedBranches };
+      http.expectOne(`/api/ledger?repo=me/${repo}`).flush(ledger);
     },
     /** "What's blocking?", read: beta 3 conflicted, alpha 12 failing, alpha 13 waiting. */
     listBlocking(): void {
@@ -206,7 +219,7 @@ describe('sending a crew by voice or typing', () => {
     type('send a crew to the third one');
     await checked('alpha');
     expect(latest().said.text).toBe(
-      'A crew only takes a failing or conflicted pull request, and this one isn’t: waiting on you, idle 9 days. Want me to open alpha pull request 13, “Change 13” instead?',
+      'A crew only takes a pull request that is failing, conflicted or stacked on a base that has merged, and this one isn’t: waiting on you, idle 9 days. Want me to open alpha pull request 13, “Change 13” instead?',
     );
 
     type('yes');
@@ -214,6 +227,21 @@ describe('sending a crew by voice or typing', () => {
 
     expect(launch).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/p/me/alpha?pr=13');
+  });
+
+  it('sends one to a pull request whose stacked base has merged, as the star card does', async () => {
+    const { listBlocking, type, latest, checked, launch } = setUp();
+    listBlocking();
+
+    type('send a crew to the third one');
+    await checked('alpha', BASE_MERGED);
+    expect(latest().said.text).toBe(
+      `Send a crew to alpha pull request 13, “Change 13”? ${UPDATE_STACK}`,
+    );
+
+    type('yes');
+
+    expect(launch).toHaveBeenCalledExactlyOnceWith('me/alpha', 13);
   });
 
   it('asks which, naming them, and takes the next reply as the crew’s pick', async () => {
@@ -246,9 +274,9 @@ describe('sending a crew by voice or typing', () => {
   });
 
   it('takes a no to “which one?” as a no, even with one to choose from', async () => {
-    const { type, say, latest, checked, http, question } = setUp();
+    const { type, say, latest, read, http, question } = setUp();
     type('what’s blocking in beta');
-    await checked('beta');
+    await read('beta');
     say('send a crew to number 999');
     expect(latest().said.text).toBe(
       'I can’t tell which one that is. Is it beta pull request 3 (“Change 3”)?',

@@ -208,6 +208,26 @@ describe('sending a crew by voice or typing', () => {
     expect(launch).not.toHaveBeenCalled();
   });
 
+  it('checks and asks before a crew Jev chose, sending nothing without a yes', async () => {
+    const { type, latest, checked, route, launch } = setUp();
+    route.mockResolvedValueOnce({
+      via: 'agent',
+      tier: 1,
+      queue: { kind: 'crew', repo: 'me/alpha', pr: 12 },
+      ask: [],
+      commands: [],
+    });
+
+    await type('could you have someone sort out the failing checks on twelve');
+    await vi.waitFor(() => expect(latest().said.text).toBe('Checking it…'));
+    await checked('alpha');
+
+    expect(latest().said.text).toBe(
+      `Send a crew to alpha pull request 12, “Change 12”? ${FIX_CHECKS}`,
+    );
+    expect(launch).not.toHaveBeenCalled();
+  });
+
   it('works on its own, with no list first', async () => {
     const { type, latest, checked } = setUp();
 

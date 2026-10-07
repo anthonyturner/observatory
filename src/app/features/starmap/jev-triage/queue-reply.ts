@@ -15,6 +15,10 @@ export const QUEUE_CHIP: ReplyChip = {
 export const NOT_READ_YET = 'The projects aren’t read yet. Try again in a moment.';
 export const OUT_OF_REACH = 'The queues are out of reach. Is the API running?';
 
+/** "Pull request 412 isn’t open in alpha." */
+export const notOpenWords = (pr: number, where: string): string =>
+  `Pull request ${pr} isn’t open in ${where}.`;
+
 /** Queue commands are app actions. */
 const ACTION_TIER = 1;
 

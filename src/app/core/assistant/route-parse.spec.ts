@@ -137,4 +137,48 @@ describe('parseRouteReply', () => {
       { title: 'https://example.org/b', url: 'https://example.org/b' },
     ]);
   });
+
+  it('reads a Review Queue command Jev chose, whole', () => {
+    const queueOf = (queue: unknown) => parseRouteReply({ tier: 1, queue })?.queue;
+
+    expect(queueOf({ kind: 'blocking', repo: null })).toEqual({ kind: 'blocking', repo: null });
+    expect(queueOf({ kind: 'blocking', repo: 'me/app' })).toEqual({
+      kind: 'blocking',
+      repo: 'me/app',
+    });
+    for (const kind of ['open', 'dismiss', 'crew']) {
+      expect(queueOf({ kind, repo: 'me/app', pr: 412 })).toEqual({ kind, repo: 'me/app', pr: 412 });
+    }
+    expect(
+      queueOf({
+        kind: 'snooze',
+        repo: 'me/app',
+        pr: 412,
+        days: 5,
+        words: 'till Monday 12 October',
+      }),
+    ).toEqual({
+      kind: 'snooze',
+      repo: 'me/app',
+      pr: 412,
+      days: 5,
+      words: 'till Monday 12 October',
+    });
+  });
+
+  it('leaves out a Review Queue command missing any part', () => {
+    for (const queue of [
+      'dismiss',
+      { kind: 'merge', repo: 'me/app', pr: 412 },
+      { kind: 'dismiss', repo: 'me/app' },
+      { kind: 'dismiss', repo: 'me/app', pr: 0 },
+      { kind: 'crew', repo: '', pr: 412 },
+      { kind: 'open', repo: 'me/app', pr: 4.5 },
+      { kind: 'snooze', repo: 'me/app', pr: 412, words: 'till Monday' },
+      { kind: 'snooze', repo: 'me/app', pr: 412, days: 5 },
+      { kind: 'blocking' },
+    ]) {
+      expect(parseRouteReply({ tier: 1, queue })?.queue).toBeUndefined();
+    }
+  });
 });

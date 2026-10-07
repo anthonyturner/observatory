@@ -42,7 +42,7 @@ export interface PullTriage {
 }
 
 const DAY_MS = 86_400_000;
-const MAX_SNOOZE_DAYS = 90;
+export const MAX_SNOOZE_DAYS = 90;
 
 const without = (record: Readonly<Record<string, string>>, key: string): Record<string, string> => {
   const copy = { ...record };

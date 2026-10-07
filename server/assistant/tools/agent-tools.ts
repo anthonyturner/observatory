@@ -8,6 +8,7 @@ import { refreshTool, showHelpTool } from './page-op.ts';
 import { projectIssuesTool } from './project-issues.ts';
 import { projectPullRequestsTool } from './project-pull-requests.ts';
 import { proposeTaskTool } from './propose-task.ts';
+import { queueTools } from './queue-tools.ts';
 import { usageSummaryTool } from './usage-summary.ts';
 import { webSearchTool } from './web-search.ts';
 
@@ -30,5 +31,6 @@ export function agentTools({ reads, search, proposals }: AgentToolSources): Agen
     refreshTool,
     showHelpTool,
     proposeTaskTool(proposals),
+    ...queueTools((repo) => reads.queue(repo)),
   ];
 }

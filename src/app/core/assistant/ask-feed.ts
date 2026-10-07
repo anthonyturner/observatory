@@ -8,10 +8,11 @@ import { ASK_SHORTCUTS, ShortcutAct } from './ask-shortcut';
 import { ASSISTANT_API, AssistantAbsent } from './assistant-api';
 import { AssistantInfo } from './assistant-info';
 import { Conversation } from './conversation';
-import { RoutePick, RouteReply, RouteRequest, Skill, Source } from './assistant.types';
+import { QueueAct, RoutePick, RouteReply, RouteRequest, Skill, Source } from './assistant.types';
 import { OpenQuestion } from './open-question';
 import { PageJump } from './page-jump';
 import { Proposal, ProposalSlot, RunProposal, commandProposalOf, runProposalOf } from './proposal';
+import { QUEUE_ACTS } from './queue-acts';
 import { NO_ANSWER_CHIP, WAITING_CHIP, chipOf } from './reply-chip';
 import { AskedHow, EntryAction, answering, noting, saying } from './reply-entry';
 import { ReplyLog } from './reply-log';
@@ -21,6 +22,7 @@ import { TierOneActions } from './tier-one-actions';
 import { Clock } from '../time/clock';
 
 const PROPOSED = 'Proposed a task: see above.';
+const NO_QUEUE = 'The Review Queue’s commands aren’t on this page.';
 const ACTION_TIER = 1;
 
 /** The same request with a pressed option's pick. A pick is settled, so it
@@ -52,6 +54,7 @@ export class AskFeed implements AskChannel {
   private readonly clock = inject(Clock);
   private readonly conversation = inject(Conversation);
   private readonly shortcuts = inject(ASK_SHORTCUTS, { optional: true }) ?? [];
+  private readonly queueActs = inject(QUEUE_ACTS, { optional: true });
   private readonly asking = signal(false);
   private readonly skillAsking = signal<string | null>(null);
   private readonly ended = new Subject<AskOutcome>();
@@ -225,7 +228,8 @@ export class AskFeed implements AskChannel {
 
   private show(entryId: number, reply: RouteReply, request: RouteRequest, ms: number): void {
     this.log.setChip(entryId, chipOf(reply, ms));
-    if (reply.tier === 1) this.showAction(entryId, reply);
+    if (reply.queue) this.showQueueAct(entryId, reply.queue);
+    else if (reply.tier === 1) this.showAction(entryId, reply);
     else if (reply.tier === 2) this.showAnswer(entryId, reply.text ?? '', reply.sources ?? []);
     // A task that comes with options is asking which project to run it in.
     else if (reply.tier === 3 && !reply.ask.length) this.showProposal(entryId, reply);
@@ -236,6 +240,12 @@ export class AskFeed implements AskChannel {
   private showAction(entryId: number, reply: RouteReply): void {
     this.actions.carryOut(entryId, reply, this.cutSpeech);
     if (reply.op !== 'stop') this.speakAction(entryId);
+  }
+
+  /** Jev's Review Queue command goes where the typed one would, which speaks for itself. */
+  private showQueueAct(entryId: number, act: QueueAct): void {
+    if (this.queueActs) this.queueActs.carryOut(entryId, act);
+    else this.log.say(entryId, noting(NO_QUEUE));
   }
 
   /** Only the words are read aloud; a web answer's sources are listed, not spoken. */

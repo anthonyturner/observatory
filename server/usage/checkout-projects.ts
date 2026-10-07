@@ -48,6 +48,15 @@ function checkoutOf(dir: string): Checkout | null {
   }
 }
 
+/** The top of the working tree `path` is in, a checkout or one of its worktrees, or null for none. */
+export function worktreeRootOf(path: string): string | null {
+  if (!isAbsolute(path)) return null;
+  for (let at = resolve(path); ; at = dirname(at)) {
+    if (existsSync(join(at, '.git'))) return at;
+    if (dirname(at) === at) return null;
+  }
+}
+
 function repoOf(checkout: Checkout): string | null {
   try {
     const url = originUrlOf(readFileSync(join(checkout.gitDir, 'config'), 'utf8'));
@@ -72,6 +81,12 @@ function formerWorktreeOf(cwd: string): Checkout | null {
   const sibling = join(dirname(cwd), folderName(cwd));
   if (sibling !== cwd && existsSync(join(sibling, '.git'))) return checkoutOf(sibling);
   return checkoutOf(nearestExisting(cwd));
+}
+
+/** The primary checkout `cwd` is in, or was in once it is a removed worktree; null for none. */
+export function checkoutFolderOf(cwd: string): string | null {
+  if (!isAbsolute(cwd)) return null;
+  return (existsSync(cwd) ? checkoutOf(cwd) : formerWorktreeOf(cwd))?.dir ?? null;
 }
 
 /** "owner/name" is named by its name, as the star map names it. */

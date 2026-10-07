@@ -15,7 +15,7 @@ const HTTP_NOT_FOUND = 404;
 
 /** Only this machine's server has the route, so the hosted site answers 404:
  *  that is not a failure, it is where the page is being read. */
-const failed = (error: unknown): LiveAgentsGap =>
+export const failed = (error: unknown): LiveAgentsGap =>
   error instanceof HttpErrorResponse && error.status === HTTP_NOT_FOUND
     ? { status: 'local-only' }
     : { status: 'unreachable' };

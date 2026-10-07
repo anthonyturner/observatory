@@ -3,6 +3,8 @@ export interface DiffFile {
   readonly path: string;
   readonly additions: number;
   readonly deletions: number;
+  /** Git named the file binary and sent none of it. */
+  readonly isBinary: boolean;
   readonly lines: readonly string[];
 }
 
@@ -21,6 +23,8 @@ const FILE_HEADER = 'diff --git';
 const PATH = /^diff --git a\/(.+?) b\//;
 const UNNAMED = 'file';
 const HUNK = '@@';
+/** How git marks a binary file in a diff: `Binary files a/x and b/x differ`, or a binary patch. */
+const BINARY = /^(Binary files .* differ|GIT binary patch)$/;
 /** An empty line still takes a line's height: its missing sign is drawn as a space. */
 const BLANK = ' ';
 
@@ -38,6 +42,8 @@ export function diffFilesOf(diff: string): DiffFile[] {
         path: part.match(PATH)?.[1] ?? UNNAMED,
         additions: lines.filter(isAdded).length,
         deletions: lines.filter(isRemoved).length,
+        isBinary:
+          !lines.some((line) => line.startsWith(HUNK)) && lines.some((line) => BINARY.test(line)),
         lines,
       };
     });

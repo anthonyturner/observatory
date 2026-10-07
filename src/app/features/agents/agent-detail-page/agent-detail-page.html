@@ -32,6 +32,9 @@
             @case ('activity') {
               <app-agent-activity-panel [agent]="agent" />
             }
+            @case ('changes') {
+              <app-agent-changes-panel [agent]="agent" />
+            }
           }
         </section>
       } @else {

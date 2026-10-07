@@ -4,14 +4,12 @@
   </p>
 } @else if (!diff()) {
   <p class="note warn">
-    This diff is too large to carry here{{ diffBytes() ? ' (' + sizeKb() + ' KB)' : '' }}. Open it
-    on GitHub.
+    This diff is too large to carry here{{ diffBytes() ? ' (' + sizeKb() + ' KB)' : '' }}.
+    {{ wording().tooLarge }}
   </p>
 } @else {
   @if (truncated()) {
-    <p class="note warn">
-      Shortened to fit — the full diff is on GitHub. Files near the end may be missing.
-    </p>
+    <p class="note warn">{{ wording().cutShort }}</p>
   }
   @if (views().length) {
     <p class="note tally" aria-live="polite">{{ viewedCount() }} / {{ views().length }} viewed</p>
@@ -21,8 +19,12 @@
       <div class="head">
         <button type="button" [attr.aria-expanded]="view.expanded" (click)="toggle(view)">
           <span class="p">{{ view.file.path }}</span>
-          <span>+{{ view.file.additions }}</span>
-          <span>−{{ view.file.deletions }}</span>
+          @if (view.file.isBinary) {
+            <span class="bin">binary, not shown</span>
+          } @else {
+            <span>+{{ view.file.additions }}</span>
+            <span>−{{ view.file.deletions }}</span>
+          }
         </button>
         <label class="mark">
           <input

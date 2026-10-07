@@ -2,6 +2,7 @@ import { keyScrubber } from '../util/key-scrub.ts';
 import { isTimeout, pause } from '../util/outbound.ts';
 import { complaintOf } from './eleven-labs-complaint.ts';
 import { ElevenLabsError, voiceReasonOf } from './eleven-labs-error.ts';
+import { scribeKeyterms } from './scribe-keyterms.ts';
 
 /** One voice on the ElevenLabs account. */
 export interface Voice {
@@ -25,6 +26,8 @@ export interface Speech {
 export interface Clip {
   readonly audio: Uint8Array<ArrayBuffer>;
   readonly contentType: string;
+  /** Words Scribe should expect, most needed first. */
+  readonly keyterms: readonly string[];
 }
 
 /** The ElevenLabs account one key pays for. */
@@ -67,7 +70,9 @@ const ELEVENLABS = {
   },
   hearing: {
     path: '/speech-to-text',
-    model: 'scribe_v1',
+    // Keyterms need Scribe v2.
+    model: 'scribe_v2',
+    language: 'en',
     // A recording of up to 30 s takes a few seconds to turn round.
     timeoutMs: 20000,
   },
@@ -192,6 +197,8 @@ export function elevenLabs(options: ElevenLabsOptions): ElevenLabs {
     const { hearing } = ELEVENLABS;
     const form = new FormData();
     form.append('model_id', hearing.model);
+    form.append('language_code', hearing.language);
+    for (const term of scribeKeyterms(clip.keyterms)) form.append('keyterms', term);
     form.append('file', new Blob([clip.audio], { type: clip.contentType }), 'clip');
     const response = await request({
       path: hearing.path,

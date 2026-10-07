@@ -59,6 +59,8 @@ import { SoundCardCapture } from './sound-card/sound-card-capture.ts';
 import { withSoundCardRoutes } from './sound-card/sound-card-routes.ts';
 import { liveAgentReader } from './live-agents/live-agents.ts';
 import { withLiveAgentsRoutes } from './live-agents/live-agents-routes.ts';
+import { agentChangesReader } from './live-agents/agent-changes.ts';
+import { withAgentChangesRoutes } from './live-agents/changes-routes.ts';
 
 /** The port `ng serve` proxies `/api` to (proxy.conf.json). */
 const DEFAULT_PORT = 4319;
@@ -145,6 +147,12 @@ const soundCard = {
 
 const liveAgentsSource = liveAgentReader();
 
+// Only this server runs git in an agent's folder; the hosted API has no such route.
+const ownerTable = withAgentChangesRoutes(
+  withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+  agentChangesReader(),
+);
+
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it
 // with no Origin, so it checks the Host and its own session token instead.
 const server = createApiServer(
@@ -163,10 +171,7 @@ const server = createApiServer(
                           withArchitectureRoutes(
                             withAgentSpeechRoutes(
                               withRiskRoutes(
-                                withLiveAgentsRoutes(
-                                  withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
-                                  liveAgentsSource,
-                                ),
+                                withLiveAgentsRoutes(ownerTable, liveAgentsSource),
                                 reads.pull,
                                 summaries,
                               ),

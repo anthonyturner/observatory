@@ -74,6 +74,12 @@ function formerWorktreeOf(cwd: string): Checkout | null {
   return checkoutOf(nearestExisting(cwd));
 }
 
+/** The primary checkout `cwd` is in, or was in once it is a removed worktree; null for none. */
+export function checkoutFolderOf(cwd: string): string | null {
+  if (!isAbsolute(cwd)) return null;
+  return (existsSync(cwd) ? checkoutOf(cwd) : formerWorktreeOf(cwd))?.dir ?? null;
+}
+
 /** "owner/name" is named by its name, as the star map names it. */
 const nameOf = (repo: string): string => repo.slice(repo.indexOf('/') + 1);
 

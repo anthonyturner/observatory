@@ -90,7 +90,11 @@ const PANS: Readonly<Record<string, readonly [number, number]>> = {
   ></canvas>`,
   styleUrl: './starmap-sky.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown)': 'onKey($event)', '(document:pointermove)': 'onDrag()' },
+  host: {
+    '(document:keydown)': 'onKey($event)',
+    '(document:pointermove)': 'onDrag()',
+    '[class.see-through]': 'seeThrough()',
+  },
 })
 export class StarmapSky {
   /** Which sky: the review queue, the Log Sky, or the issues' nursery. */
@@ -131,6 +135,8 @@ export class StarmapSky {
   /** 0 clear to 1 full. */
   readonly fog = input(0);
   readonly hidden = input(false);
+  /** Whether a video plays beneath: deep space lets it through, and the stars glow over it. */
+  readonly seeThrough = input(false);
   readonly insets = input<SkyInsets>(DEFAULT_INSETS);
   /** Finished pull requests and issues, for the Spiral of Done. */
   readonly done = input<readonly DoneItem[]>([]);

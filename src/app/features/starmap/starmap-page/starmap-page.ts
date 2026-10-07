@@ -17,6 +17,8 @@ import { ageWords, fogLevel } from '../../../core/projects/data-age';
 import { CollisionsFeed } from '../../../core/queue/collisions-feed';
 import { HistoryFeed } from '../../../core/queue/history-feed';
 import { LedgerFeed } from '../../../core/queue/ledger-feed';
+import { VideoBackground } from '../../../core/playlist/video-background';
+import { VideoSky } from '../../playlist/video-sky/video-sky';
 import { QueueItem, shownBucket } from '../../../core/queue/queue-report';
 import { QueueFeed } from '../../../core/queue/queue-feed';
 import { Stacks, stacksOf } from '../../../core/queue/stacks';
@@ -152,6 +154,7 @@ export interface SkyState {
 @Component({
   selector: 'app-starmap-page',
   imports: [
+    VideoSky,
     StarmapSky,
     StarmapHeader,
     StarmapSearch,
@@ -218,6 +221,7 @@ export class StarmapPage {
   private readonly crew = inject(CrewDispatch);
   protected readonly sprint = inject(ReviewSprint);
   protected readonly motion = inject(MotionPreference);
+  protected readonly video = inject(VideoBackground);
   private readonly blackHole = inject(BlackHoleSetting);
   private readonly wipLimit = inject(WipLimitSetting);
   private readonly route = inject(ActivatedRoute);

@@ -10,6 +10,7 @@ import { PrScreen } from '../pr-screen/pr-screen';
 import { StarmapSound } from '../sound/starmap-sound';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
+import { VideoBackground } from '../../../core/playlist/video-background';
 import { StarmapPage } from './starmap-page';
 
 const pull = (number: number, bucket: string, extra: Record<string, unknown> = {}) => ({
@@ -119,6 +120,18 @@ describe('StarmapPage', () => {
     expect(element.querySelector('h1')?.textContent).toBe('Review Queue');
     expect(element.querySelector('.stamp')?.textContent).toContain('me/a · 2 open · refreshed');
     expect(element.querySelector('.lg')?.textContent).toContain('0 cannot merge');
+  });
+
+  it('lets the playlist video through beneath the stars while Video is on', () => {
+    const { fixture, element } = render();
+    const sky = element.querySelector('app-starmap-sky');
+    const video = element.querySelector('app-video-sky');
+    expect(video?.classList).toContain('dimmed');
+    expect(sky?.classList).not.toContain('see-through');
+
+    TestBed.inject(VideoBackground).toggle();
+    fixture.detectChanges();
+    expect(sky?.classList).toContain('see-through');
   });
 
   it('counts the unclaimed issues in the legend, and shows or hides their comets', () => {

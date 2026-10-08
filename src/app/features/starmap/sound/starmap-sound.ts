@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { MergeCue } from '../memory/merge-supernova';
 import { StarmapScore, WebAudioStarmapScore } from './starmap-score';
 
 /** Makes the score; a test provides one that needs no audio device. */
@@ -93,6 +94,11 @@ export class StarmapSound {
   /** A soft tone when a star is chosen: lower when it is stuck. */
   ping(stuck: boolean, pr = 0): void {
     if (this.isOn()) this.score?.ping(stuck, pr);
+  }
+
+  /** A boom for a pull request that merged, only while the sound is on. */
+  merged(cue: MergeCue): void {
+    if (this.isOn()) this.score?.merge(cue);
   }
 
   private play(): void {

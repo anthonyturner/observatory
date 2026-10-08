@@ -36,7 +36,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['Thread', 'The dotted silver line runs through the groups in the order to work them.'],
       [
         'Changes',
-        'What changed since you last looked. A shockwave marks a pull request that became blocked, a white flash a new one, falling green rings one that was unblocked; merged and closed ones cross the sky as shooting stars. The panel lists them; Got it clears the marks.',
+        'What changed since you last looked. A shockwave marks a pull request that became blocked, a white flash a new one, falling green rings one that was unblocked; a closed one crosses the sky as a shooting star. A merged one goes out as a supernova: a white-gold flash and one ring of dust where its star stood, then it streaks away, and with the sound on a deep boom and a fading shimmer play from that side of the screen. With motion off only a brief flash plays. The panel lists them; Got it clears the marks.',
       ],
       [
         'Collide',

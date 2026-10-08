@@ -385,13 +385,19 @@ export class SkyEngine {
         this.host.failed?.(error);
       }
     }
-    // A frozen sky still eases the camera, so panning and zooming stay smooth.
-    if (this.host.frozen() && this.camera.settled()) {
+    // A frozen sky still eases the camera, so panning and zooming stay smooth, and
+    // draws a flash that is still to play.
+    if (this.host.frozen() && this.camera.settled() && !this.animating()) {
       this.looping = false;
       return;
     }
     document.defaultView?.requestAnimationFrame(this.loop);
   };
+
+  private animating(): boolean {
+    const wall = performance.now() / 1000;
+    return this.layers.some((layer) => layer.animating?.(wall));
+  }
 
   private draw(): void {
     const wall = performance.now() / 1000;

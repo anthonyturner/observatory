@@ -2,6 +2,7 @@ import { Frame } from '../../../core/queue/history-report';
 import { Ledger } from '../../../core/queue/ledger';
 import { rnd } from '../engine/rnd';
 import { BucketId, SkyCluster, WORLD } from '../engine/sky-model';
+import { MERGE_SPAN_S } from './merge-supernova';
 
 /* pr-starmap's memory, kept apart as it kept it: `diffItems` only compares,
    EFFECTS only says how each kind of change looks, and the panel, the timeline
@@ -46,6 +47,8 @@ export interface Effect {
   readonly span: number;
   /** The dash of the ring that lingers until the news is seen, if it lingers. */
   readonly mark: readonly number[] | null;
+  /** Whether a brief flash still plays when motion is off; every other burst is skipped. */
+  readonly flashesStill: boolean;
 }
 
 export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
@@ -57,6 +60,7 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     onStar: true,
     span: 2.6,
     mark: [6, 5],
+    flashesStill: false,
   },
   opened: {
     rank: 1,
@@ -66,6 +70,7 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     onStar: true,
     span: 1.4,
     mark: [2, 6],
+    flashesStill: false,
   },
   merged: {
     rank: 2,
@@ -73,8 +78,9 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     tag: 'merged',
     colour: '#5fe3a1',
     onStar: false,
-    span: 2.0,
+    span: MERGE_SPAN_S,
     mark: null,
+    flashesStill: true,
   },
   unblocked: {
     rank: 3,
@@ -84,6 +90,7 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     onStar: true,
     span: 1.8,
     mark: [1, 7],
+    flashesStill: false,
   },
   closed: {
     rank: 4,
@@ -93,6 +100,7 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     onStar: false,
     span: 2.0,
     mark: null,
+    flashesStill: false,
   },
   left: {
     rank: 5,
@@ -102,6 +110,7 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     onStar: false,
     span: 2.0,
     mark: null,
+    flashesStill: false,
   },
 };
 

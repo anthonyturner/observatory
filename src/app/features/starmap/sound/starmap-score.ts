@@ -1,11 +1,12 @@
+import { noiseBurst, pluck, thump } from '../../../core/sound/instruments';
+import { Rig } from '../../../core/sound/sound-rig';
+import { MergeCue } from '../memory/merge-supernova';
+import { crackleOf } from './meteor-crackle';
+
 /* pr-starmap's star map score, generated live rather than played from a
    recording: a drone, a shimmer, a far engine room, pings on an echo line, and
    a tension voice that rises with the number of blocked pull requests, so a
    backlog sounds uneasy and clearing it lets the sky settle. */
-
-import { noiseBurst } from '../../../core/sound/instruments';
-import { Rig } from '../../../core/sound/sound-rig';
-import { crackleOf } from './meteor-crackle';
 
 /** The score as the page drives it; behind an interface so tests need no audio device. */
 export interface StarmapScore {
@@ -19,6 +20,8 @@ export interface StarmapScore {
   ping(stuck: boolean, pr: number): void;
   /** A short quiet crackle for a meteor landing; `pan` is −1 (left) to 1 (right). */
   crackle(pan: number, strength: number, seed: number): void;
+  /** A deep boom and a fading shimmer for a merge, after the cue's delay, panned by it. */
+  merge(cue: MergeCue): void;
 }
 
 /** Loudness is heard as the square of the slider, so the gain follows it. */
@@ -30,14 +33,24 @@ export const tensionGainFor = (blocked: number): number => (Math.min(blocked, 12
 /** A major pentatonic has no semitone clashes, so random notes from it never sound wrong. */
 export const SCALE = [440, 493.88, 554.37, 659.25, 739.99, 880, 987.77] as const;
 
+/** The boom's levels, set against the drone's 0.14. */
+const BOOM = { thump: 0.4, rumble: 0.14 } as const;
+
+/** An A major arpeggio climbing from A5, each note softer than the last. */
+const SHIMMER = [
+  { midi: 81, lag: 0.16, level: 0.05 },
+  { midi: 85, lag: 0.3, level: 0.04 },
+  { midi: 88, lag: 0.46, level: 0.03 },
+  { midi: 93, lag: 0.64, level: 0.02 },
+] as const;
+
 interface Parts {
   readonly master: GainNode;
   readonly out: GainNode;
   readonly bus: GainNode;
   readonly delay: DelayNode;
   readonly tensionGain: GainNode;
-  /** The graph the shared instruments play into. */
-  readonly rig: Rig;
+  readonly noise: AudioBuffer;
 }
 
 export class WebAudioStarmapScore implements StarmapScore {
@@ -93,12 +106,14 @@ export class WebAudioStarmapScore implements StarmapScore {
     );
   }
 
+  /** A few ticks of high-passed noise, each softer than the last: embers dying. */
   crackle(pan: number, strength: number, seed: number): void {
     const { ac, parts } = this;
     if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
     const now = ac.currentTime;
     for (const pop of crackleOf(strength, seed)) {
-      noiseBurst(parts.rig, {
+      noiseBurst(rig, {
         at: now + pop.at,
         type: 'highpass',
         freq: pop.freq,
@@ -108,6 +123,31 @@ export class WebAudioStarmapScore implements StarmapScore {
         pan,
       });
     }
+  }
+
+  /** A low thump and a rumble, then a few bright notes of the key falling away. */
+  merge({ delayS, pan }: MergeCue): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
+    const at = ac.currentTime + delayS;
+    thump(rig, at, BOOM.thump, pan);
+    noiseBurst(rig, { at, type: 'lowpass', freq: 140, level: BOOM.rumble, decay: 1.1, pan });
+    SHIMMER.forEach(({ midi, lag, level }) =>
+      pluck(rig, { at: at + lag, midi, severity: 'clear', pan, level }),
+    );
+  }
+
+  /** The graph the shared instruments play into. */
+  private rigOf(ac: AudioContext, parts: Parts): Rig {
+    return {
+      context: ac,
+      master: parts.master,
+      bus: parts.bus,
+      echo: parts.delay,
+      noise: parts.noise,
+      out: parts.out,
+    };
   }
 
   /** A room made of decaying noise: five seconds of it reads as space. */
@@ -228,12 +268,11 @@ export class WebAudioStarmapScore implements StarmapScore {
     delay.connect(airy).connect(feedback).connect(delay);
     delay.connect(bus);
 
-    const hiss = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
-    const hissData = hiss.getChannelData(0);
-    for (let i = 0; i < hissData.length; i++) hissData[i] = Math.random() * 2 - 1;
-    const rig: Rig = { context: ac, master, bus, echo: delay, noise: hiss, out };
+    const whiteNoise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const wd = whiteNoise.getChannelData(0);
+    for (let i = 0; i < wd.length; i++) wd[i] = Math.random() * 2 - 1;
 
-    this.parts = { master, out, bus, delay, tensionGain, rig };
+    this.parts = { master, out, bus, delay, tensionGain, noise: whiteNoise };
     this.applyTension();
   }
 

@@ -309,7 +309,7 @@ export class StarmapPage {
   });
   protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
   /** Pull requests with new commits since you looked, in the live queue; a replayed refresh has none. */
-  protected readonly meteors = computed((): readonly Meteor[] =>
+  protected readonly commitMeteors = computed((): readonly Meteor[] =>
     this.memory.replay() ? [] : meteorsOf(this.repo(), this.items()),
   );
   /** Stacked pull requests, snoozed and dismissed ones included, as the crew's API reads them:

@@ -33,6 +33,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Meteor           | Commits since you looked   | `meteorsOf`, `meteorLook`      |
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
+| Review Queue | Merge supernova  | A merged PR in the news    | `novaProgress`, `mergeCues`    |
 | Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
 | Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseStarType`    |
@@ -338,6 +339,28 @@ Past the limit (8, set per browser with **wip** in the tools, `WipLimitSetting`,
 (`FADED_ALPHA`) and the page shows a note under the search. It is a nudge only:
 a faded comet still takes hover and clicks, and getting back within the limit,
 by a refresh or a raised limit, brightens them again.
+
+### Merge supernova (data: a merged pull request)
+
+Code: `features/starmap/memory/merge-supernova.ts` holds the rule; `news-layer.ts`
+draws it in Canvas and `engine/news-3d.ts` (`merging`) in WebGL.
+
+A pull request that merged between two queues (a `merged` news event) goes out
+in two parts: for 0.7 s a white-gold flash and one ring of dust spread from where
+its star stood, then the usual 2 s streak leaves. There is no debris and no red,
+so it never reads as `blocked`'s shockwave. `novaProgress` and
+`streakProgress` split an event's progress between the two.
+
+With sound on, the star map's score (`WebAudioStarmapScore.merge`) plays a low
+boom and rumble, then four notes of an A major arpeggio fading away, built from
+`core/sound` (`thump`, `noiseBurst`, `pluck`). `mergeCues` decides when and
+where: the delay until the supernova starts and a pan from the departure point's
+screen x, kept within 0.8 either side. A cue exists only for a merge the news diff
+found, never on a timer, and at most four booms per refresh.
+
+Reduced motion: only the brief flash plays (no ring, no streak), and the sound
+still does. `Effect.flashesStill` marks the one burst a still sky keeps, and
+`SkyLayer.animating` keeps the loop drawing until it has played.
 
 ### Weather (data: design red flags in the added lines)
 

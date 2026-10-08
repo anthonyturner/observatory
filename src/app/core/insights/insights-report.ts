@@ -112,11 +112,12 @@ function parseSeries(value: unknown): TrafficSeries | null {
   };
 }
 
-/** The report, checked field by field, or null when the answer is not one. */
+/** The report, checked field by field, or null when the answer is not one or spans no weeks. */
 export function parseInsightsReport(body: unknown): InsightsReport | null {
   if (!isObject(body) || !isText(body['repo'])) return null;
   const generatedAt = timeOf(body['generatedAt']);
-  if (generatedAt === null) return null;
+  const weeks = countOf(body['weeks']);
+  if (generatedAt === null || !weeks) return null;
   const commits = partOf(body['commits']);
   const contributors = partOf(body['contributors']);
   const pulls = partOf(body['pulls']);
@@ -124,7 +125,7 @@ export function parseInsightsReport(body: unknown): InsightsReport | null {
   return {
     generatedAt,
     repo: body['repo'],
-    weeks: countOf(body['weeks']),
+    weeks,
     commits: { ...stateOf(commits), weeks: listOf(commits['weeks'], parseWeek) },
     contributors: {
       ...stateOf(contributors),

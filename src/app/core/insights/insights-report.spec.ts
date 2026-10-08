@@ -50,6 +50,8 @@ describe('parseInsightsReport', () => {
 
   it('reads anything but a report as none', () => {
     expect(parseInsightsReport({ repo: 'me/a' })).toBeNull();
+    expect(parseInsightsReport({ ...BODY, weeks: 0 })).toBeNull();
+    expect(parseInsightsReport({ ...BODY, weeks: undefined })).toBeNull();
     expect(parseInsightsReport('nope')).toBeNull();
   });
 });

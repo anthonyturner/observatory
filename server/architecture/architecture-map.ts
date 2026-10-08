@@ -1,7 +1,10 @@
 import { type AreaRule, placeOf } from './area-rules.ts';
 import {
+  type ArchitectureEdge,
   type ArchitectureMap,
   type ArchitectureNode,
+  type ArchitectureRuntime,
+  FLOW_EDGE_KINDS,
   MAP_SCHEMA,
   type NodeKind,
 } from './architecture-types.ts';
@@ -19,6 +22,14 @@ export interface MapInputs {
   readonly files: readonly ScannedFile[];
   readonly aliases: readonly PathAlias[];
 }
+
+/** The one runtime this scanner reads so far: the Angular app. */
+const BROWSER: ArchitectureRuntime = {
+  id: 'browser',
+  label: 'Browser app',
+  kind: 'browser',
+  root: 'src/app',
+};
 
 const HANDLER_NAME = /Handler/;
 const STORE_NAME = /Store/;
@@ -57,10 +68,30 @@ function nodesOf({ files, rules }: MapInputs): ArchitectureNode[] {
         ...place,
         providedIn,
         windows: [],
+        parent: null,
+        members: [],
+        endpoint: null,
+        loc: 0,
+        metrics: { fanIn: 0, fanOut: 0, churn: 0 },
+        marks: [],
       });
     }
   }
   return [...nodes.values()];
+}
+
+/** Each node's code edges in and out, by its id. */
+function fansOf(
+  edges: readonly ArchitectureEdge[],
+): (id: string) => Pick<ArchitectureNode['metrics'], 'fanIn' | 'fanOut'> {
+  const code = edges.filter(({ kind }) => !FLOW_EDGE_KINDS.includes(kind));
+  const tally = (end: 'from' | 'to') => {
+    const counts = new Map<string, number>();
+    for (const edge of code) counts.set(edge[end], (counts.get(edge[end]) ?? 0) + 1);
+    return counts;
+  };
+  const [ins, outs] = [tally('to'), tally('from')];
+  return (id) => ({ fanIn: ins.get(id) ?? 0, fanOut: outs.get(id) ?? 0 });
 }
 
 /** The map of a scanned project: its declarations as nodes, and each dependency between two of them. */
@@ -74,13 +105,26 @@ export function architectureMap(inputs: MapInputs): ArchitectureMap {
   const ids = new Set(unhosted.map(({ id }) => id));
   const edges = edgesOf({ files: inputs.files, ids, resolver });
   const hosts = windowsByNode({ windows: inputs.windows, files: inputs.files, edges, resolver });
+  const fans = fansOf(edges);
   return {
     schema: MAP_SCHEMA,
     project: inputs.project,
     scannedAt: inputs.scannedAt,
-    areas: inputs.rules.map(({ id, label }) => ({ id, label })),
+    churnDays: 0,
+    runtimes: [BROWSER],
+    areas: inputs.rules.map(({ id, label, root }) => ({
+      id,
+      label,
+      runtime: BROWSER.id,
+      folder: root,
+    })),
     windows: inputs.windows,
-    nodes: unhosted.map((node) => ({ ...node, windows: hosts.get(node.id) ?? [] })),
+    nodes: unhosted.map((node) => ({
+      ...node,
+      windows: hosts.get(node.id) ?? [],
+      metrics: { ...node.metrics, ...fans(node.id) },
+    })),
     edges,
+    cycles: [],
   };
 }

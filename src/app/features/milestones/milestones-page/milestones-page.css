@@ -1,0 +1,41 @@
+/* Added to the Releases page's layout, which this page shares. */
+
+.legend li::before {
+  background: var(--dot);
+  box-shadow: 0 0 8px 1px var(--dot);
+}
+
+.tools .abtn {
+  min-height: 30px;
+}
+
+.listview app-milestone-list {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* The message over an empty sky keeps clear of the discussions' column. */
+.state.beside {
+  right: 410px;
+}
+
+/* A plain note in place of the discussions needs no more than its own height. */
+.panel.compact {
+  bottom: auto;
+}
+
+/* On a narrow screen the discussions follow the milestones in the list. */
+.listview .discussions {
+  max-width: 720px;
+  margin: 28px auto 0;
+  padding: 16px 18px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+@media (max-width: 720px) {
+  .listview {
+    padding-bottom: 130px;
+  }
+}

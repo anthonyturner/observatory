@@ -1,0 +1,47 @@
+@let milestone = row();
+<article [attr.aria-labelledby]="'milestone-' + milestone.key">
+  <header>
+    <h3 [id]="'milestone-' + milestone.key">
+      <a [href]="milestone.url" target="_blank" rel="noopener">{{ milestone.title }}</a>
+    </h3>
+    <span class="when"
+      ><span class="dot" aria-hidden="true"></span>{{ milestone.when }}
+      <span class="standing">· {{ milestone.standing }}</span></span
+    >
+  </header>
+  <div class="progress">
+    <span class="bar" aria-hidden="true"><span [style.width.%]="milestone.percent"></span></span>
+    <span class="words"
+      >{{ milestone.progress }} · {{ milestone.percent }}% · {{ milestone.counts }}</span
+    >
+  </div>
+  @if (milestone.description) {
+    <p class="about">{{ milestone.description }}</p>
+  }
+  @if (milestone.items.length) {
+    <details>
+      <summary>{{ milestone.itemCount }}</summary>
+      <ul>
+        @for (item of milestone.items; track item.key) {
+          <li [class.done]="item.isDone">
+            <span class="state">{{ item.state }}</span>
+            <a [href]="item.url" target="_blank" rel="noopener"
+              >{{ item.number }} {{ item.title
+              }}<span class="visually-hidden">, {{ item.kind }}</span></a
+            >
+            @if (item.isPull) {
+              <span class="kind" aria-hidden="true">PR</span>
+            }
+          </li>
+        }
+      </ul>
+      @if (milestone.unlisted) {
+        <p class="more">
+          <a [href]="milestone.url" target="_blank" rel="noopener"
+            >{{ milestone.unlisted }} more on GitHub</a
+          >
+        </p>
+      }
+    </details>
+  }
+</article>

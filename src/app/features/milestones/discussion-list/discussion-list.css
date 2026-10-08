@@ -1,0 +1,94 @@
+:host {
+  display: grid;
+  gap: 14px;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 22px;
+}
+
+.count,
+h3 {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h3 {
+  margin: 0 0 6px;
+}
+
+ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  display: grid;
+  gap: 2px;
+  font-size: 13.5px;
+}
+
+a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.meta {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* Said in words as well as colour: an open question is warm, a settled one cool. */
+.answer {
+  color: var(--meh);
+}
+
+.answer.answered {
+  color: var(--actions-passed);
+}
+
+.none {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.all {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.all a {
+  color: var(--flow);
+}

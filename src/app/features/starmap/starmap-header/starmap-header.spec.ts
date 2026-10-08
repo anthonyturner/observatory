@@ -1,9 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { QUIET_TABS } from '../../../shared/project-tabs/quiet-tabs';
 import { StarmapHeader } from './starmap-header';
 
 function render() {
-  TestBed.configureTestingModule({ providers: [provideRouter([])] });
+  TestBed.configureTestingModule({
+    providers: [provideRouter([]), { provide: QUIET_TABS, useValue: [] }],
+  });
   const fixture = TestBed.createComponent(StarmapHeader);
   fixture.componentRef.setInput('repo', 'me/a');
   fixture.componentRef.setInput('title', 'Review Queue');

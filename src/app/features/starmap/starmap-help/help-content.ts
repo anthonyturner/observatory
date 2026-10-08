@@ -83,6 +83,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'On your own machine, the card and screen of a conflicted or failing pull request, or of one whose stacked base has merged, offer Send crew: a Claude Code task merges the base into a conflicted branch, fixes failing checks, or updates a branch whose base merged, and pushes to the pull request’s branch. It never merges the pull request. A small ship circles the star while the crew works (parked beside it when motion is off), then flies off, leaving a green tick or a red cross. One task runs at a time; the card shows how the crew stands and links to its log on Home.',
       ],
       [
+        'Satellites',
+        'On your own machine, each Claude Code agent running in this repository orbits as a small satellite with a blinking light: round the star of the pull request whose branch it is working on, or along the top of the sky when none matches. Green and quick means working, amber means waiting for you, grey and slow means quiet; hover one to see its name and state. With sound on, each gives a soft Sputnik beep, faster while working, panned by where it is on screen and never more than a few a second in all. Motion off parks them and holds the light steady. A crew’s run is its ship instead.',
+      ],
+      [
         'Plan',
         'Merge plan numbers the stars in the order that needs the fewest rebases and lights the path through them; the list says what each merge will force to rebase. Stacked branches follow their base, and branches that already conflict go last.',
       ],

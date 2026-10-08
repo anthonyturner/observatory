@@ -8,6 +8,10 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ## [Unreleased]
 
+### Removed
+
+- The Review Queue's sound no longer plays a continuous background drone. Space is silent, so with sound on the sky stays quiet until something happens on it: a star's ping, a meteor's crackle, a satellite's beep, a merge's boom. The off-key tone that grew with blocked pull requests went with it ([#553](https://github.com/anthonyturner/observatory/issues/553)).
+
 ### Added
 
 - On the Review Queue, a meteor streaks in and lands on each star whose pull request has new commits since you last looked, so you can see at a glance where new work landed. More commits make a brighter, longer streak; a pull request whose branch was rewritten gets one too, and at most twelve fall, the biggest changes first, once the sky has arrived. With sound on, each landing crackles softly on the side of the screen the star is on. With motion off there is no streak, only a brief glint on the star ([#541](https://github.com/anthonyturner/observatory/pull/541)).

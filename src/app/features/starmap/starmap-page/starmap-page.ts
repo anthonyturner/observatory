@@ -125,7 +125,7 @@ const NO_FLAKY_CHECKS: readonly string[] = [];
 /** How long Next star leaves its star lit, card open, before opening its PR screen. */
 const NEXT_STAR_HOLD_MS = 900;
 
-/** Blocked buckets: the tension voice counts them. */
+/** Blocked buckets: a chosen blocked star pings low. */
 const BLOCKED: ReadonlySet<string> = new Set(['conflicted', 'failing']);
 
 /** A past refresh on screen shows no stacks: they are the queue as it is. */
@@ -687,18 +687,6 @@ export class StarmapPage {
       const fragment = this.issues.fragment();
       if (this.chart() !== 'issues') return;
       untracked(() => this.navigateTo(fragment));
-    });
-    // The drone measures the sky on show: blocked pull requests, or faults still
-    // burning; the issues leave it where it was.
-    effect(() => {
-      const chart = this.chart();
-      const blocked =
-        chart === 'prs'
-          ? this.skyItems().filter((item) => BLOCKED.has(item.bucket)).length
-          : chart === 'logs'
-            ? this.logs.layout().stars.filter((star) => star.urgent).length
-            : null;
-      if (blocked !== null) untracked(() => this.sound.setTension(blocked));
     });
     // A refresh lays the Log Sky out again; the card and threads follow their fault.
     effect(() => {

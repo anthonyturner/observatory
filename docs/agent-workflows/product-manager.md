@@ -109,8 +109,16 @@ a person files by hand has the same shape as one an agent files.
 
 - Use a sentence-case, imperative title.
 - Include `Overview`, `User story`, `Context`, `Acceptance criteria`,
-  `Technical notes`, and `Out of scope` sections, plus `Open questions` when
-  refinement left anything open.
+  `Alternatives considered`, `Technical notes`, and `Out of scope` sections,
+  plus `Open questions` when refinement left anything open.
+- `Alternatives considered` is required, per **Design it twice** in
+  [../design-principles.md](../design-principles.md): the chosen approach in
+  one line, then at least one genuinely different approach that was rejected,
+  each with the reason it lost — or, for the rare change with one sensible
+  shape, why there is none. Take them from refinement's **Approach
+  options**; when refinement was skipped, the caller supplies them with the
+  draft. For a defect, the alternatives are other remedies for the confirmed
+  cause.
 - Write two to six independently testable acceptance criteria.
 - Keep implementation choices in `Technical notes`; do not disguise a design
   decision as a product requirement.

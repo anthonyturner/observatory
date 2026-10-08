@@ -5,6 +5,7 @@ import type { WebAnswer } from '../web-answer.ts';
 import { listProjectsTool } from './list-projects.ts';
 import { openPageTool } from './open-page.ts';
 import { refreshTool, showHelpTool } from './page-op.ts';
+import { principleOfDayTool } from './principle-tool.ts';
 import { projectIssuesTool } from './project-issues.ts';
 import { projectPullRequestsTool } from './project-pull-requests.ts';
 import { proposeTaskTool } from './propose-task.ts';
@@ -32,5 +33,6 @@ export function agentTools({ reads, search, proposals }: AgentToolSources): Agen
     showHelpTool,
     proposeTaskTool(proposals),
     ...queueTools((repo) => reads.queue(repo)),
+    principleOfDayTool(),
   ];
 }

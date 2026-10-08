@@ -47,6 +47,7 @@ import { withVoiceRoutes } from './voice/voice-routes.ts';
 import { fetchPage } from './reader/page-fetch.ts';
 import { withReaderRoutes } from './reader/reader-routes.ts';
 import { cachedNews, withNewsRoutes } from './news/news-routes.ts';
+import { withPrincipleRoutes } from './principles/principle-routes.ts';
 import { fileArchitecture } from './architecture/architecture-file.ts';
 import { withArchitectureRoutes } from './architecture/architecture-routes.ts';
 import { imapInbox } from './mail/imap-inbox.ts';
@@ -159,7 +160,9 @@ const ownerAndFeedRoutes = withLiveAgentFeedRoute(
 );
 
 // Only this server runs git in an agent's folder; the hosted API has no such route.
-const ownerTable = withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader());
+const ownerTable = withPrincipleRoutes(
+  withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader()),
+);
 
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it
 // with no Origin, so it checks the Host and its own session token instead.

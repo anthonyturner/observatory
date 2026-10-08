@@ -19,7 +19,6 @@ function render(chart: Chart = 'prs') {
         useValue: () => ({
           start: async () => undefined,
           stop: () => undefined,
-          setTension: () => undefined,
           setVolume: () => undefined,
           ping: () => undefined,
         }),

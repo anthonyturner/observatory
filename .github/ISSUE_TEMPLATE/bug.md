@@ -39,6 +39,15 @@ verifiable even if the diagnosis turns out to be wrong. -->
 - [ ] Following the steps above no longer produces the reported behavior.
 - [ ]
 
+## Alternatives considered
+
+<!-- Required: see "Design it twice" in docs/design-principles.md. Once the
+cause is confirmed: the chosen remedy in one line, then at least one genuinely
+different remedy that was rejected, with why it lost. -->
+
+- **Chosen:**
+- **Rejected:**
+
 ## Technical notes
 
 <!-- The root cause, only once an engineer has confirmed it in the code, with

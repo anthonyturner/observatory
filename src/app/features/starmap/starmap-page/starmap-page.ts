@@ -24,6 +24,7 @@ import { QueueFeed } from '../../../core/queue/queue-feed';
 import { Stacks, stacksOf } from '../../../core/queue/stacks';
 import { queueFog } from '../../../core/queue/queue-fog';
 import { SNOOZE_DAYS, TriageChoice, TriageClient } from '../../../core/queue/triage-client';
+import { WeatherFeed } from '../../../core/queue/weather-feed';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { MotionPreference } from '../../../core/motion/motion-preference';
@@ -37,6 +38,7 @@ import { IssueWindow } from '../../issues/issue-window/issue-window';
 import { IssuesPanel } from '../../issues/issues-panel/issues-panel';
 import { IssuesScreen } from '../../issues/issues-screen';
 import { nurseryInputOf } from '../nursery/nursery-layout';
+import { Meteor, MeteorLanding, meteorsOf } from '../engine/meteor-layer';
 import { ChangesPanel } from '../memory/changes-panel/changes-panel';
 import { MemoryView } from '../memory/memory-view';
 import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
@@ -47,6 +49,8 @@ import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StarCard } from '../star-card/star-card';
 import { CrewDispatch } from '../../../core/crew/crew-dispatch';
 import { crewMarksOf } from '../../../core/crew/crew-roster';
+import { LiveAgentsFeed } from '../../../core/live-agents/live-agents-feed';
+import { satellitesOf } from '../../../core/live-agents/satellites';
 import { CometCard } from '../comet-card/comet-card';
 import { StarmapSound } from '../sound/starmap-sound';
 import { mergePlan } from '../merge-plan';
@@ -121,7 +125,7 @@ const NO_FLAKY_CHECKS: readonly string[] = [];
 /** How long Next star leaves its star lit, card open, before opening its PR screen. */
 const NEXT_STAR_HOLD_MS = 900;
 
-/** Blocked buckets: the tension voice counts them. */
+/** Blocked buckets: a chosen blocked star pings low. */
 const BLOCKED: ReadonlySet<string> = new Set(['conflicted', 'failing']);
 
 /** A past refresh on screen shows no stacks: they are the queue as it is. */
@@ -190,6 +194,7 @@ export interface SkyState {
     QueueFeed,
     HistoryFeed,
     LedgerFeed,
+    WeatherFeed,
     AgentsFeed,
     CollisionsFeed,
     LogsFeed,
@@ -209,6 +214,8 @@ export class StarmapPage {
   private readonly history = inject(HistoryFeed);
   protected readonly collisions = inject(CollisionsFeed);
   private readonly ledger = inject(LedgerFeed);
+  /** Each open pull request's design red flags, drawn as weather round its star. */
+  protected readonly weather = inject(WeatherFeed);
   protected readonly memory = inject(MemoryView);
   protected readonly agents = inject(AgentsFeed);
   private readonly sound = inject(StarmapSound);
@@ -219,6 +226,7 @@ export class StarmapPage {
   protected readonly issues = inject(IssuesScreen);
   private readonly router = inject(Router);
   private readonly crew = inject(CrewDispatch);
+  private readonly liveAgents = inject(LiveAgentsFeed);
   protected readonly sprint = inject(ReviewSprint);
   protected readonly motion = inject(MotionPreference);
   protected readonly video = inject(VideoBackground);
@@ -303,6 +311,10 @@ export class StarmapPage {
     return replay ? replay.items.map((i) => this.replayed(i)) : this.items();
   });
   protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
+  /** Pull requests with new commits since you looked, in the live queue; a replayed refresh has none. */
+  protected readonly commitMeteors = computed((): readonly Meteor[] =>
+    this.memory.replay() ? [] : meteorsOf(this.repo(), this.items()),
+  );
   /** Stacked pull requests, snoozed and dismissed ones included, as the crew's API reads them:
    *  what each is stacked on, what is stacked on it, and a merged base. */
   protected readonly stacks = computed((): Stacks => {
@@ -559,6 +571,15 @@ export class StarmapPage {
   );
   /** The crews out in this repository, drawn as ships by their stars. */
   protected readonly crewMarks = computed(() => crewMarksOf(this.crew.crews(), this.repo()));
+  /** The live coding agents in this repository, as satellites; a crew's run is its ship instead. */
+  protected readonly satellites = computed(() =>
+    satellitesOf({
+      agents: this.liveAgents.agents(),
+      repo: this.repo(),
+      pulls: this.items(),
+      crewed: new Set(this.crewMarks().map((mark) => mark.pr)),
+    }),
+  );
   /** The open issues, for the search; it finds closed ones on the Done list. */
   private readonly searchIssues = computed(
     (): readonly SearchedIssue[] => this.issues.report()?.open ?? [],
@@ -572,6 +593,12 @@ export class StarmapPage {
   protected readonly ringedIssue = computed(
     () => this.issues.windowIssue() ?? this.issues.picked()?.issue?.number ?? null,
   );
+  /** The selected pull request's red flags; a past refresh on screen says nothing of the code now. */
+  protected readonly cardWeather = computed(() => {
+    const number = this.openPull();
+    if (number === null || this.memory.replay()) return undefined;
+    return this.weather.weather().get(number);
+  });
   /** What the rest of the sky says about the selected pull request, for its card. */
   protected readonly cardContext = computed((): CardContext => {
     const number = this.openPull();
@@ -661,18 +688,6 @@ export class StarmapPage {
       if (this.chart() !== 'issues') return;
       untracked(() => this.navigateTo(fragment));
     });
-    // The drone measures the sky on show: blocked pull requests, or faults still
-    // burning; the issues leave it where it was.
-    effect(() => {
-      const chart = this.chart();
-      const blocked =
-        chart === 'prs'
-          ? this.skyItems().filter((item) => BLOCKED.has(item.bucket)).length
-          : chart === 'logs'
-            ? this.logs.layout().stars.filter((star) => star.urgent).length
-            : null;
-      if (blocked !== null) untracked(() => this.sound.setTension(blocked));
-    });
     // A refresh lays the Log Sky out again; the card and threads follow their fault.
     effect(() => {
       this.logs.layout();
@@ -695,6 +710,7 @@ export class StarmapPage {
       untracked(() => {
         this.history.load(this.repo());
         this.ledger.load(this.repo());
+        this.weather.load(this.repo());
         this.collisions.load(this.repo());
         this.agents.load(this.repo());
         this.refreshing.set(false);
@@ -760,6 +776,11 @@ export class StarmapPage {
   }
 
   /** Flies to a star from the list, and opens it. */
+  /** A meteor landed on its star: a quiet crackle, panned to where the star sits and shifted by its fall. */
+  protected meteorLanded({ pan, strength, pr, doppler }: MeteorLanding): void {
+    this.sound.crackle(pan, strength, pr, doppler);
+  }
+
   /** A click on the sky: a star opens its pull request's screen; empty sky closes its card. */
   protected pick(number: number | null): void {
     this.selectedComet.set(null);

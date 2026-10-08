@@ -101,7 +101,7 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
     }
   }
 
-  it('stacks the HUD sections in reading order: core, ask, vitals, skills', () => {
+  it('stacks the HUD sections in reading order: core, ask, vitals, skills, principle', () => {
     const order = Array.from(render().querySelectorAll('.hud-body > *')).map((el) =>
       el.tagName.toLowerCase(),
     );
@@ -111,6 +111,7 @@ describe('HomePage', { timeout: COLD_FIRST_RENDER_MS }, () => {
       'app-ask-panel',
       'app-vitals-panel',
       'app-skills-panel',
+      'app-principle-card',
     ]);
   });
 

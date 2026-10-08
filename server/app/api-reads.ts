@@ -22,6 +22,12 @@ import type { ProjectsReport } from '../projects/project-types.ts';
 import { projectsReport } from '../projects/projects-report.ts';
 import { type CommitDiff, commitDiffOf } from '../queue/commit-diff.ts';
 import { type PullDetail, pullDetailOf } from '../queue/pull-detail.ts';
+import {
+  type PullWeather,
+  type WeatherReport,
+  pullWeatherOf,
+  weatherReport,
+} from '../queue/pull-weather.ts';
 import { type QueueReport, queueReport } from '../queue/queue-report.ts';
 import {
   type SinceLook,
@@ -39,6 +45,10 @@ const PROJECTS_TTL_MS = 5 * 60_000;
 const QUEUE_TTL_MS = 2 * 60_000;
 /** One pull request is read when it is opened, and again a minute later at most. */
 const PULL_TTL_MS = 60_000;
+/** A pull request's red flags are read at its head commit, so they hold until a push; the limit
+ *  only lets a moved base show. One that could not be read is asked again sooner. */
+const WEATHER_TTL_MS = 30 * 60_000;
+const UNSCANNED_TTL_MS = 10 * 60_000;
 /** A commit never changes; the limit only keeps the cache from holding every one ever opened. */
 const COMMIT_TTL_MS = 10 * 60_000;
 /** A repository's labels change rarely; the Edit tab offers them. */
@@ -109,6 +119,8 @@ export interface ApiReads {
   pull(repo: string, number: number): Promise<PullDetail>;
   /** The next read of this pull request goes to GitHub, not the cache. */
   forgetPull(repo: string, number: number): void;
+  /** Every open pull request's design red flags, each diff read once per head commit. */
+  weather(repo: string): Promise<WeatherReport>;
   /** One commit's diff, for the PR screen's Commits tab. */
   commit(repo: string, sha: string): Promise<CommitDiff>;
   /** What changed on a pull request between the head looked at and the head now. */
@@ -171,6 +183,20 @@ export function cachedReads(sources: ReadSources): ApiReads {
     ]);
     return pullDetailOf(raw, { diff, fetchedAt: new Date().toISOString() });
   }, PULL_TTL_MS);
+  const weatherAt = keyedCache(
+    async (key): Promise<PullWeather> => {
+      const [pull, sha] = key.split('@');
+      const [repo, number] = pull.split('#');
+      return pullWeatherOf(Number(number), sha, (each) =>
+        github.pullDiff(repo, each).catch((error: unknown) => {
+          // Too large for GitHub to give, most often: the star is shown as not scanned.
+          console.error(`Could not read ${repo}#${each}'s diff for its weather:`, error);
+          return null;
+        }),
+      );
+    },
+    (weather) => (weather.scanned ? WEATHER_TTL_MS : UNSCANNED_TTL_MS),
+  );
   const commitKey = (repo: string, sha: string): string => `${repo}@${sha}`;
   const commitOf = keyedCache(async (key) => {
     const [repo, sha] = key.split('@');
@@ -225,6 +251,10 @@ export function cachedReads(sources: ReadSources): ApiReads {
     forgetIssue: (repo, number) => issueOf.forget(numberKey(repo, number)),
     pull: (repo, number) => pullOf.read(numberKey(repo, number)),
     forgetPull: (repo, number) => pullOf.forget(numberKey(repo, number)),
+    weather: async (repo) =>
+      weatherReport(await queueOf.read(repo), (number, sha) =>
+        weatherAt.read(`${numberKey(repo, number)}@${sha}`),
+      ),
     commit: (repo, sha) => commitOf.read(commitKey(repo, sha)),
     sinceLook: (repo, base, head) => sinceLookOfHeads.read(headsKey(repo, base, head)),
     sinceLookDiff: (repo, base, head) => sinceLookDiffOfHeads.read(headsKey(repo, base, head)),

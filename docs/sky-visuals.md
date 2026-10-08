@@ -30,8 +30,13 @@ TypeScript and the shader only draws it.
 | Review Queue | Size             | Idle days                  | `mag` in `layoutQueue`         |
 | Review Queue | Fall to the hole | Idle days past a threshold | `fallOf`, `placeByHole`        |
 | Review Queue | Crew ship        | A crew run on the PR       | `crewPose(mark, clock)`        |
+| Review Queue | Meteor           | Commits since you looked   | `meteorsOf`, `meteorLook`      |
+| Review Queue | Satellite        | A live agent, its state    | `satellitesOf`, `isLit`        |
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
+| Review Queue | Merge supernova  | A merged PR in the news    | `novaProgress`, `mergeCues`    |
+| Review Queue | Doppler shift    | How a sound's source moves | `dopplerOf`, `dopplerFactor`   |
+| Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
 | Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseStarType`    |
 | Releases     | Ring specks      | Merged PRs it shipped      | `ringSpeck`                    |
@@ -286,6 +291,63 @@ run ends the ship flies off over 4 s and a green tick (done) or red cross (any
 other ending) stays by the star for 10 minutes. There is no 3D model: the ship
 stays a few pixels long at every zoom so it reads as a marker.
 
+### Meteors (data: new commits since you looked)
+
+`engine/meteor-layer.ts` draws one meteor for each pull request whose head has
+moved since it was last looked at, flat over both renderers. It reads the same
+`sinceLook` the card's "N new commits since you looked" does, which the queue
+already carries for every item (`/api/queue`), so no extra request is made. A
+rewritten branch (`newCommits: null`) gets one too. `meteorsOf` keeps at most 12,
+the biggest changes first; a replayed refresh has none.
+
+`MeteorShow` plays them in order once the sky has finished arriving: each
+waits for its star, starts 0.45 s after the one before, falls for 1.1 s, then
+glints for 1 s. A pull request is shown again only when its count changes. The
+streak comes from above (`meteorHeading`, fixed per pull request), speeds up
+as it falls and stops at the star's rim (`headDistance`), so it never covers the
+star. `meteorLook` lengthens the tail (70 to 200 px) and brightens it with the
+commit count, topping out at 15; a rewritten branch looks like 3. The landing is a
+glow added over the star, a spreading ring and a few sparks. It runs on the
+scene's `time`; with motion off there is no streak, only the glow fading over the
+star, driven by wall time with a short redraw timer, since a still sky doesn't
+redraw itself. These are not the shooting stars of a merged pull request in the
+Changes: those cross the sky and land on nothing.
+
+With sound on, each landing plays a quiet crackle (`crackleOf`: a few
+high-passed noise pops through `noiseBurst`), panned by the star's screen x
+(`panOf`) and pitched by the Doppler shift of the fall (see **Doppler shift**
+below). Nothing plays with sound off, or for a star panned far off screen.
+
+### Satellites (data: live coding agents)
+
+`engine/satellite-layer.ts` draws a small satellite (a body, two solar panels
+and a light) for each Claude Code agent running in the queue's repository, flat
+over both renderers. `satellitesOf` (`core/live-agents/satellites.ts`) reads
+`LiveAgentsFeed`: an agent that is running (working, waiting or quiet) in the
+repository becomes one, and the pull request whose head branch is its branch
+(`headsOf`, the same rule as the chain) is the star it orbits. With no match, or
+when that star is not in the sky, it parks on a slim ellipse across the top of
+the free sky (`parkingPoint`). A headless run on a branch with a crew ship is
+that crew, so it gets none.
+
+It circles at 5.6 × `starRadius` (26 to 96 px, outside the crew ship's orbit and
+tilted the other way); several at one star spread round it and fly a little
+wider (`lanesOf`, `orbitOffset`). The light blinks at the rate
+`SATELLITE_RHYTHM` gives its state, `isLit`: 0.6 s working, 1.4 s waiting,
+3 s quiet, each on its own phase, green, amber and grey. Motion off parks the
+satellites and holds the light steady. Hover names the agent and its state.
+
+With sound on, `SatelliteBeeper` (`sound/satellite-beeper.ts`) beeps for each at
+its state's period (1.5 s, 4 s, 9 s) through `StarmapScore.beep`: a brief,
+band-passed triangle tone at low gain, higher while working, panned by the
+satellite's screen x. `nextBeep` lets only one beep through every 350 ms, so
+any number of agents stays under three a second; the beeper only runs while
+sound is on and the queue sky is shown. Beeps follow the agent's real state
+even when motion is off. Each beep is also shifted by the satellite's Doppler
+factor, read by `SatelliteLayer.heardOf` from how far it moved between its last
+two drawn frames: a little higher on the side of the orbit coming toward the
+viewer, lower going away.
+
 ### Chain (data: stacked pull requests)
 
 `stacksOf` (`core/queue/stacks.ts`) links a pull request to the open one whose
@@ -313,6 +375,110 @@ Past the limit (8, set per browser with **wip** in the tools, `WipLimitSetting`,
 (`FADED_ALPHA`) and the page shows a note under the search. It is a nudge only:
 a faded comet still takes hover and clicks, and getting back within the limit,
 by a refresh or a raised limit, brightens them again.
+
+### Merge supernova (data: a merged pull request)
+
+Code: `features/starmap/memory/merge-supernova.ts` holds the rule; `news-layer.ts`
+draws it in Canvas and `engine/news-3d.ts` (`merging`) in WebGL.
+
+A pull request that merged between two queues (a `merged` news event) goes out
+in two parts: for 0.7 s a white-gold flash and one ring of dust spread from where
+its star stood, then the usual 2 s streak leaves. There is no debris and no red,
+so it never reads as `blocked`'s shockwave. `novaProgress` and
+`streakProgress` split an event's progress between the two.
+
+With sound on, the star map's score (`WebAudioStarmapScore.merge`) plays a low
+boom and rumble, then four notes of an A major arpeggio fading away, built from
+`core/sound` (`thump`, `noiseBurst`, `pluck`). `mergeCues` decides when and
+where: the delay until the supernova starts and a pan from the departure point's
+screen x, kept within 0.8 either side. A cue exists only for a merge the news diff
+found, never on a timer, and at most four booms per refresh.
+
+After the boom, the streak gets a short whoosh (`whoosh` in `core/sound`):
+noise through a band-pass filter that glides, with the pan, along eight stretches
+of the streak's own path. `mergeCues` samples the head with the same
+`streakHead` the 3D sky draws and projects each point through the active
+renderer, so the pan and Doppler factor of each stretch come from the positions
+the picture uses. Where the sky is flat the head gains no depth, as drawn.
+
+Reduced motion: only the brief flash plays (no ring, no streak), and the boom
+still does; the whoosh does not, since nothing moves. `Effect.flashesStill`
+marks the one burst a still sky keeps, and `SkyLayer.animating` keeps the loop
+drawing until it has played.
+
+### Doppler shift (data: how a moving sound's source moves)
+
+Code: `features/starmap/sound/doppler.ts`. One pure rule for every sound whose
+source moves: the merge streak's whoosh, the meteor landing's crackle and the
+satellites' beeps. `closingSpeed(from, to, seconds, listener)` is how fast the
+source drew nearer to the listener between two drawn places, in pixels a second;
+`dopplerFactor` turns it into a playback-rate factor, 3 semitones either way at
+600 px/s and beyond, 1 when it did not move. `listenerOf` puts the listener at
+the middle of the screen's bottom edge, half a screen in front of it, looking up
+at the sky, so what falls comes toward them and what rises goes away.
+
+Each layer reads positions it already draws; the score methods only take the
+factor (`crackle(pan, strength, seed, doppler)`, `beep(pan, hz, doppler)`, the
+cue's `whoosh` path) and multiply it into a pitch. Nothing is invented:
+
+| Sound   | Positions the factor is read from                                   |
+| ------- | ------------------------------------------------------------------- |
+| Whoosh  | `streakHead` at each step of the streak, projected, with its depth  |
+| Crackle | `headAt` the last 50 ms of the fall onto the star (`MeteorLanding`) |
+| Beep    | Where the satellite was drawn last frame and this one (`heardOf`)   |
+
+Reduced motion: nothing moves, so the factor is 1 and nothing shifts. A frame
+after a stall (more than 0.25 s) measures no motion either. With sound off
+nothing plays. The first frame a satellite is drawn has nothing to compare, so
+its beep is unshifted. Tests drive these with a fake `AudioContext`.
+
+### Weather (data: design red flags in the added lines)
+
+Tactical weather, after John Ousterhout's "tactical tornado": a pull request
+whose added lines carry the red flags of
+[design-principles.md](design-principles.md) gathers a storm.
+
+**Detection (server).** `designFlagsOf(diff)` in `server/queue/design-flags.ts`
+reads a unified diff and returns flags; that is its whole interface. It scans
+only added lines of TypeScript and JavaScript, skipping tests, fixtures, docs,
+`.d.ts` and `.min.js`, and reads code with strings and comments masked
+(`code-mask.ts`) so a brace or keyword in a string never counts. The heuristics
+are tuned to miss a flag rather than raise a false one. Each kind and its
+weight:
+
+- **`swallowed-error` (3):** a `catch` block or `.catch(…)` handler is empty (or
+  gives back `undefined` or `null`), or names its error and never uses it. A
+  bare `catch { … }` with a body is taken as a choice.
+- **`pass-through` (2):** a method, function or arrow whose whole body is
+  `return other.name(sameArgs)`: another object's method of the same name, the
+  same arguments in the same order. `this.name` alone (binding a callback) and
+  a call to a differently named method (an adapter) pass.
+- **`silenced-check` (2):** `eslint-disable…` with no `-- reason`,
+  `@ts-ignore`, `@ts-nocheck`.
+- **`untracked-todo` (1):** `TODO`, `FIXME`, `HACK` or `XXX` in a comment with
+  no `#n`, issues link or tracker key on its line.
+
+A block whose end lies outside the hunk's context is passed over. Special-case
+`if`s, the other red flag, are not detected: they cannot be told from ordinary
+branching by pattern. `GET /api/weather?repo=` gives every open pull request's
+flags (`server/queue/pull-weather.ts`), each diff read once per head commit
+(kept 30 minutes; 10 for one GitHub would not give) and four at a time. A diff
+that cannot be read is `scanned: false`, which draws nothing rather than clear
+or stormy. A visitor to the hosted preview gets no flags for a private
+repository.
+
+**The mark.** `stormOf(weather)` in `engine/weather-layer.ts` sums the weights:
+none means clear. Strength is `min(1, weight / 12)`: a **haze** below a third
+(one cloud arm), a **squall** below two thirds (two), a **storm** above that
+(three, with a lightning fork every 3.2 s). Reach is `2.2 + 2.6 × strength` ×
+`starRadius` (14 to 130 px), past the planets at full strength; debris is two
+specks per weight, at most 28, placed by the pull request's number. The layer
+draws flat over both renderers in cool grey with dusty debris, so it never
+reads as a severity colour, and its eye stays clear of the star. It turns with
+the scene's `time`, holds still with no lightning when motion is off, dims with
+the filter, and steps aside during replay, since it describes the code as it is
+now. The star card lists the flags, each with its file and line and the
+principle it breaks.
 
 ## The Releases sky
 

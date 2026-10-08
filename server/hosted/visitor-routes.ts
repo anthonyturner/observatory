@@ -10,10 +10,12 @@ import {
 } from '../http/api-handler.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
 import { NEWS_PATH } from '../news/news-routes.ts';
+import { PRINCIPLES_PATH } from '../principles/principle-routes.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
+import { WEATHER_PATH } from '../queue/pull-weather.ts';
 import { RISK_PATH, riskGlanceOf } from '../queue/risk-routes.ts';
 import { withoutAlerts } from '../security/security-report.ts';
 import { EMPTY_TRIAGE } from '../triage/triage.ts';
@@ -33,6 +35,8 @@ export type VisibleRepos = () => Promise<ReadonlySet<string>>;
 
 export const PREVIEW_ONLY = 'This is a preview. Sign in to change anything.';
 const LOGS_PATH = '/api/logs';
+/** The same for everyone: public headlines and the principle of the day. */
+const SHARED_PATHS = [NEWS_PATH, PRINCIPLES_PATH];
 
 const refuse = async (): Promise<never> => {
   throw new Forbidden(PREVIEW_ONLY);
@@ -71,9 +75,12 @@ export function visitorRoutes(
     return repo;
   };
   const ownerLogs = owner.get[LOGS_PATH];
-  const ownerNews = owner.get[NEWS_PATH];
-  // Public headlines, the same for everyone.
-  const news: Routes = ownerNews ? { [NEWS_PATH]: ownerNews } : {};
+  const shared: Routes = Object.fromEntries(
+    SHARED_PATHS.flatMap((path) => {
+      const route = owner.get[path];
+      return route ? [[path, route] as const] : [];
+    }),
+  );
   const logs: Routes =
     policy.logs && ownerLogs ? { [LOGS_PATH]: redactedLogs(ownerLogs, visible) } : {};
   return {
@@ -107,13 +114,14 @@ export function visitorRoutes(
         reads.pullState(await visibleRepo(query), pullNumberFrom(query.get('number'))),
       '/api/commit': async (query) =>
         reads.commit(await visibleRepo(query), commitShaFrom(query.get('sha'))),
+      [WEATHER_PATH]: async (query) => reads.weather(await visibleRepo(query)),
       [RISK_PATH]: async (query) =>
         riskGlanceOf(
           await reads.pull(await visibleRepo(query), pullNumberFrom(query.get('number'))),
           false,
         ),
       ...logs,
-      ...news,
+      ...shared,
     },
     post: refusingAll(owner.post),
   };

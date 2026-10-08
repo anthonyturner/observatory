@@ -10,6 +10,7 @@ const owner: RouteTable = {
     '/api/logs': async () => ({ faults: [{ text: 'mail bob@example.com bounced' }] }),
     '/api/something-new': async () => ({ owner: 'only' }),
     '/api/news': async () => ({ ai: [], engineering: [] }),
+    '/api/principles': async () => ({ principles: [], today: 0 }),
   },
   post: { '/api/triage': async () => ({}), '/api/another-write': async () => ({}) },
 };
@@ -78,6 +79,13 @@ describe('visitorRoutes', () => {
 
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { ai: [], engineering: [] });
+  });
+
+  it('shows the principle of the day, which is the same for everyone', async () => {
+    const response = await get(visitor(false), '/api/principles');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { principles: [], today: 0 });
   });
 
   it('refuses every write', async () => {

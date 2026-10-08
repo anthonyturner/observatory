@@ -1,6 +1,7 @@
 import { type ApiReads, cachedReads } from '../app/api-reads.ts';
 import { ownerRoutes } from '../app/api-routes.ts';
 import { cachedNews, withNewsRoutes } from '../news/news-routes.ts';
+import { withPrincipleRoutes } from '../principles/principle-routes.ts';
 import { uncheckedCollisions } from '../collisions/collisions-report.ts';
 import type { GitHub } from '../github/github.ts';
 import type { RepoRef } from '../github/github-reader.ts';
@@ -10,6 +11,7 @@ import { githubApiReader } from '../github/github-api-reader.ts';
 import { storeHistoryStore } from '../history/history-store.ts';
 import { type ApiHandler, createApiHandler, json } from '../http/api-handler.ts';
 import { withoutCode } from '../queue/pull-detail.ts';
+import { hiddenWeather } from '../queue/pull-weather.ts';
 import { withRerunRoute } from '../queue/rerun-routes.ts';
 import { withActionsRerunRoute } from '../actions/actions-rerun.ts';
 import { withRiskRoutes } from '../queue/risk-routes.ts';
@@ -79,7 +81,8 @@ function pushedReads(live: ApiReads, store: Store): ApiReads {
 }
 
 /** What a visitor reads: a private repository's pull requests and commits without
- *  their code. One whose privacy is not known counts as private. */
+ *  their code, and its pull requests without the red flags read from it. One
+ *  whose privacy is not known counts as private. */
 function visitorReads(reads: ApiReads, repos: () => Promise<RepoRef[]>): ApiReads {
   const isPublic = async (repo: string): Promise<boolean> =>
     (await repos()).some(
@@ -95,6 +98,8 @@ function visitorReads(reads: ApiReads, repos: () => Promise<RepoRef[]>): ApiRead
       const commit = await reads.commit(repo, sha);
       return (await isPublic(repo)) ? commit : withoutCode(commit);
     },
+    weather: async (repo) =>
+      (await isPublic(repo)) ? reads.weather(repo) : hiddenWeather(await reads.queue(repo)),
   };
 }
 
@@ -131,17 +136,19 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
   // No assistant and no voice here, for anyone: Jev reads the owner's projects
   // and proposes work in them, so it answers only on the owner's own machine
   // (ADR-0006). Keys set on the hosted site are never read.
-  const owner = withNewsRoutes(
-    withRiskRoutes(
-      withActionsRerunRoute(
-        withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
-        reads,
-        github,
+  const owner = withPrincipleRoutes(
+    withNewsRoutes(
+      withRiskRoutes(
+        withActionsRerunRoute(
+          withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+          reads,
+          github,
+        ),
+        reads.pull,
+        NO_SUMMARIES,
       ),
-      reads.pull,
-      NO_SUMMARIES,
+      cachedNews(),
     ),
-    cachedNews(),
   );
   const machines = machineRoutes({
     reads,

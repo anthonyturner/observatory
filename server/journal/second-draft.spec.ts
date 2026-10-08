@@ -109,6 +109,34 @@ Changed: nor this.
     assert.equal(drafts[0].change, 'C.');
   });
 
+  it('does not read a section quoted inside a code fence as a lesson', () => {
+    const quoted = [
+      '## Self-review',
+      '',
+      'The format is:',
+      '',
+      '```markdown',
+      '## Second draft',
+      '- **First version:** A.',
+      '- **Feedback:** B.',
+      '- **Changed and why:** C.',
+      '```',
+      '',
+      '## Second draft',
+      'First version: Real.',
+      'Feedback: Really.',
+      '```',
+      '## Not a heading',
+      '```',
+      'Changed: Truly.',
+    ].join('\n');
+
+    assert.deepEqual(
+      secondDraftsIn(quoted).map((draft) => draft.firstVersion),
+      ['Real.'],
+    );
+  });
+
   it('reads Windows line endings', () => {
     const drafts = secondDraftsIn(
       '## Second draft\r\nFirst version: A.\r\nFeedback: B.\r\nChanged: C.\r\n',

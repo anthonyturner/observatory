@@ -36,12 +36,13 @@ describe('pullCommentsOf', () => {
       comment(3, { author_association: undefined }),
       comment(4, { body: '' }),
       comment(5, { issue_url: 'https://api.github.com/repos/me/app/issues/x' }),
-      comment(6),
+      comment(6, { created_at: 'last Tuesday' }),
+      comment(7),
     ]);
 
     assert.deepEqual(
       kept.map((each) => each.pull),
-      [6],
+      [7],
     );
   });
 

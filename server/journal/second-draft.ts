@@ -37,11 +37,23 @@ const ID_TOKEN = /[a-z][a-z0-9-]*/g;
 
 type Fields = Partial<Record<Field, string>>;
 
-/** The lines under each `Second draft` heading, up to the next heading as high or higher. */
+const CODE_FENCE = /^\s*(```|~~~)/;
+
+/**
+ * The lines under each `Second draft` heading, up to the next heading as high
+ * or higher. Fenced code is skipped whole: a review quoting the format in a
+ * fence is explaining it, not recording a lesson.
+ */
 function sectionLines(markdown: string): string[] {
   const lines: string[] = [];
   let headingLevel = 0;
+  let isFenced = false;
   for (const line of markdown.split(/\r?\n/)) {
+    if (CODE_FENCE.test(line)) {
+      isFenced = !isFenced;
+      continue;
+    }
+    if (isFenced) continue;
     const heading = HEADING.exec(line);
     if (heading) {
       const level = heading[1].length;

@@ -35,7 +35,8 @@ function pullCommentOf(comment: Json): PullComment | null {
   if (!isText(issueUrl) || !isText(url) || !isText(postedAt) || !isText(body)) return null;
   const number = ISSUE_URL_NUMBER.exec(issueUrl)?.[1];
   const isTeam = TEAM_ASSOCIATIONS.has(String(comment['author_association']));
-  if (number === undefined || !PULL_PAGE.test(url) || !isTeam) return null;
+  const isDated = Number.isFinite(Date.parse(postedAt));
+  if (number === undefined || !PULL_PAGE.test(url) || !isTeam || !isDated) return null;
   return { pull: Number(number), url, postedAt, body };
 }
 

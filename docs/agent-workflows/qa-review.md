@@ -82,6 +82,8 @@ The parser (`server/journal/second-draft.ts`) reads it like this:
 - Each field is a line starting with its label and a colon, case and bold
   ignored: `First version`, `Feedback`, `Changed and why` (`Changed` also
   works) and `Principles`. Text on the lines after a label belongs to it.
+- Text inside a fenced code block is skipped, so a review can quote the format
+  without recording a lesson.
 - One `First version` line starts one entry, so a review that taught several
   lessons repeats the four fields for each.
 - An entry missing its first version, feedback or change is left out of the

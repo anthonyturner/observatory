@@ -308,7 +308,7 @@ Changes: those cross the sky and land on nothing.
 
 With sound on, each landing plays a quiet crackle (`crackleOf`: a few
 high-passed noise pops through `noiseBurst`), panned by the star's screen x
-(`panOf`). Nothing plays with sound off.
+(`panOf`). Nothing plays with sound off, or for a star panned far off screen.
 
 ### Chain (data: stacked pull requests)
 

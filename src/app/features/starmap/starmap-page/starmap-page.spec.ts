@@ -413,8 +413,8 @@ describe('StarmapPage', () => {
       .componentInstance as StarmapSky;
 
     expect(sky.meteors()).toEqual([
-      { pr: 7, commits: 3 },
-      { pr: 9, commits: null },
+      { repo: 'me/a', pr: 7, commits: 3 },
+      { repo: 'me/a', pr: 9, commits: null },
     ]);
   });
 

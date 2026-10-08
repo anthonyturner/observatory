@@ -306,7 +306,7 @@ export class StarmapPage {
   protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
   /** The queue as it is now has changed since you looked; a replayed refresh has not. */
   protected readonly meteors = computed((): readonly Meteor[] =>
-    this.memory.replay() ? [] : meteorsOf(this.items()),
+    this.memory.replay() ? [] : meteorsOf(this.repo(), this.items()),
   );
   /** Stacked pull requests, snoozed and dismissed ones included, as the crew's API reads them:
    *  what each is stacked on, what is stacked on it, and a merged base. */

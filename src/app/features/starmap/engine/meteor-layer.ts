@@ -4,6 +4,8 @@ import { SkyFrame, SkyLayer } from './sky-frame';
 
 /** A pull request whose head has new commits since it was last looked at. */
 export interface Meteor {
+  /** The page stays up as the viewer moves between projects, so a number alone does not name it. */
+  readonly repo: string;
   readonly pr: number;
   /** How many commits, or null when the branch was rewritten and they cannot be counted. */
   readonly commits: number | null;
@@ -29,17 +31,18 @@ export function strengthOf(commits: number | null): number {
 
 /** One meteor for each pull request with new commits since you looked; when
  *  there are more than the sky should carry, the biggest changes keep theirs. */
-export function meteorsOf(items: readonly Looked[], cap = METEOR_CAP): Meteor[] {
+export function meteorsOf(repo: string, items: readonly Looked[], cap = METEOR_CAP): Meteor[] {
   return items
     .flatMap(({ number, sinceLook }) =>
-      sinceLook ? [{ pr: number, commits: sinceLook.newCommits }] : [],
+      sinceLook ? [{ repo, pr: number, commits: sinceLook.newCommits }] : [],
     )
     .sort((a, b) => strengthOf(b.commits) - strengthOf(a.commits) || a.pr - b.pr)
     .slice(0, cap);
 }
 
 /** What a landing already shown is told apart by, so a refresh never replays it. */
-export const meteorKey = ({ pr, commits }: Meteor): string => `${pr}:${commits ?? 'rewritten'}`;
+export const meteorKey = ({ repo, pr, commits }: Meteor): string =>
+  `${repo}#${pr}:${commits ?? 'rewritten'}`;
 
 /** How a meteor looks: more commits, a longer and brighter streak. */
 export function meteorLook(commits: number | null): {
@@ -107,8 +110,11 @@ export class MeteorShow {
     return this.entries.length > 0;
   }
 
-  /** Queues the meteors not already shown. */
+  /** Makes these the meteors wanted: queues those not already shown, and drops any
+   *  waiting or in flight that no longer are, as when the viewer moves to another project. */
   set(meteors: readonly Meteor[]): void {
+    const wanted = new Set(meteors.map(meteorKey));
+    this.entries = this.entries.filter((entry) => wanted.has(meteorKey(entry.meteor)));
     for (const meteor of meteors) {
       const key = meteorKey(meteor);
       if (this.seen.has(key)) continue;
@@ -160,6 +166,14 @@ export interface MeteorLanding {
 /** The speakers' share of a screen x, kept short of the extremes so a landing never sits in one ear. */
 export const panOf = (x: number, width: number): number =>
   width > 0 ? Math.max(-1, Math.min(1, (x / width) * 2 - 1)) * 0.8 : 0;
+
+/** A star this far off screen is out of sight, and its landing out of earshot. */
+const OFF_SCREEN_PX = 300;
+const isNear = (f: SkyFrame, x: number, y: number): boolean =>
+  x > -OFF_SCREEN_PX &&
+  y > -OFF_SCREEN_PX &&
+  x < f.width + OFF_SCREEN_PX &&
+  y < f.height + OFF_SCREEN_PX;
 
 const HEAD = '255, 244, 214';
 const EMBER = '255, 170, 90';
@@ -223,7 +237,8 @@ export class MeteorLayer implements SkyLayer {
   private announce(f: SkyFrame, meteor: Meteor): void {
     const star = f.stars.find((each) => each.item?.pr === meteor.pr);
     if (!star) return;
-    const [x] = f.toScreen(star.ax, star.ay, star.az);
+    const [x, y] = f.toScreen(star.ax, star.ay, star.az);
+    if (!isNear(f, x, y)) return;
     this.landed({ pr: meteor.pr, pan: panOf(x, f.width), strength: strengthOf(meteor.commits) });
   }
 
@@ -239,7 +254,7 @@ export class MeteorLayer implements SkyLayer {
     const star = f.stars.find((each) => each.item?.pr === meteor.pr);
     if (!star) return;
     const [x, y] = f.toScreen(star.ax, star.ay, star.az);
-    if (x < -300 || y < -300 || x > f.width + 300 || y > f.height + 300) return;
+    if (!isNear(f, x, y)) return;
     const { tailPx, brightness } = meteorLook(meteor.commits);
     const alpha = brightness * f.dim(star);
     const radius = starRadius(f, star, 1);

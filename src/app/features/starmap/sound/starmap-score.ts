@@ -1,6 +1,7 @@
 import { noiseBurst, pluck, thump } from '../../../core/sound/instruments';
 import { Rig } from '../../../core/sound/sound-rig';
 import { MergeCue } from '../memory/merge-supernova';
+import { crackleOf } from './meteor-crackle';
 
 /* pr-starmap's star map score, generated live rather than played from a
    recording: a drone, a shimmer, a far engine room, pings on an echo line, and
@@ -17,9 +18,10 @@ export interface StarmapScore {
   setVolume(volume: number): void;
   /** A soft tone for a chosen star: lower and darker when it is stuck. */
   ping(stuck: boolean, pr: number): void;
+  /** A short quiet crackle for a meteor landing; `pan` is −1 (left) to 1 (right). */
+  crackle(pan: number, strength: number, seed: number): void;
   /** A short, soft satellite beep at `hz`, panned -1 (left) to 1 (right). */
   beep(pan: number, hz: number): void;
-
   /** A deep boom and a fading shimmer for a merge, after the cue's delay, panned by it. */
   merge(cue: MergeCue): void;
 }
@@ -110,6 +112,25 @@ export class WebAudioStarmapScore implements StarmapScore {
     );
   }
 
+  /** A few ticks of high-passed noise, each softer than the last: embers dying. */
+  crackle(pan: number, strength: number, seed: number): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
+    const now = ac.currentTime;
+    for (const pop of crackleOf(strength, seed)) {
+      noiseBurst(rig, {
+        at: now + pop.at,
+        type: 'highpass',
+        freq: pop.freq,
+        q: 1.2,
+        level: pop.level,
+        decay: pop.decay,
+        pan,
+      });
+    }
+  }
+
   beep(pan: number, hz: number): void {
     const { ac, parts } = this;
     if (!this.on || !ac || !parts) return;
@@ -137,7 +158,18 @@ export class WebAudioStarmapScore implements StarmapScore {
   merge({ delayS, pan }: MergeCue): void {
     const { ac, parts } = this;
     if (!this.on || !ac || !parts) return;
-    const rig: Rig = {
+    const rig = this.rigOf(ac, parts);
+    const at = ac.currentTime + delayS;
+    thump(rig, at, BOOM.thump, pan);
+    noiseBurst(rig, { at, type: 'lowpass', freq: 140, level: BOOM.rumble, decay: 1.1, pan });
+    SHIMMER.forEach(({ midi, lag, level }) =>
+      pluck(rig, { at: at + lag, midi, severity: 'clear', pan, level }),
+    );
+  }
+
+  /** The graph the shared instruments play into. */
+  private rigOf(ac: AudioContext, parts: Parts): Rig {
+    return {
       context: ac,
       master: parts.master,
       bus: parts.bus,
@@ -145,12 +177,6 @@ export class WebAudioStarmapScore implements StarmapScore {
       noise: parts.noise,
       out: parts.out,
     };
-    const at = ac.currentTime + delayS;
-    thump(rig, at, BOOM.thump, pan);
-    noiseBurst(rig, { at, type: 'lowpass', freq: 140, level: BOOM.rumble, decay: 1.1, pan });
-    SHIMMER.forEach(({ midi, lag, level }) =>
-      pluck(rig, { at: at + lag, midi, severity: 'clear', pan, level }),
-    );
   }
 
   /** A room made of decaying noise: five seconds of it reads as space. */

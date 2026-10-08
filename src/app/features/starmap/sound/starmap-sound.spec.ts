@@ -10,6 +10,7 @@ function fakeScore() {
     setTension: (n) => void calls.push(`tension ${n}`),
     setVolume: (v) => void calls.push(`volume ${v}`),
     ping: (stuck, pr) => void calls.push(`ping ${stuck} ${pr}`),
+    crackle: (pan, strength, seed) => void calls.push(`crackle ${pan} ${strength} ${seed}`),
     beep: (pan, hz) => void calls.push(`beep ${pan} ${hz}`),
     merge: ({ delayS, pan }) => void calls.push(`merge ${delayS} ${pan}`),
   };
@@ -46,6 +47,17 @@ describe('StarmapSound', () => {
     sound.ping(false, 195);
 
     expect(calls.filter((c) => c.startsWith('ping'))).toEqual(['ping false 195']);
+  });
+
+  it('crackles for a landing meteor only while it plays', () => {
+    const { sound, calls } = setUp();
+    sound.crackle(-0.4, 0.5, 412);
+    sound.toggle();
+    sound.crackle(0.6, 1, 7);
+    sound.toggle();
+    sound.crackle(0.1, 1, 8);
+
+    expect(calls.filter((c) => c.startsWith('crackle'))).toEqual(['crackle 0.6 1 7']);
   });
 
   it('beeps a satellite at its state’s pitch, only while it plays', () => {

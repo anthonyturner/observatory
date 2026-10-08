@@ -95,3 +95,37 @@ describe('WebAudioStarmapScore.merge', () => {
     expect(starts.length).toBe(after);
   });
 });
+
+describe('WebAudioStarmapScore.crackle', () => {
+  it('plays a quiet burst of noise pops once started, after the landing time, panned', async () => {
+    const { context, starts, pans } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+    pans.length = 0;
+
+    score.crackle(0.5, 1, 412);
+
+    const played = starts.slice(before);
+    expect(played.length).toBeGreaterThanOrEqual(3);
+    expect(played.every((at) => at >= 10)).toBe(true);
+    expect(pans.length).toBe(played.length);
+    expect(pans.every((pan) => pan === 0.5)).toBe(true);
+    score.stop();
+  });
+
+  it('plays nothing before it starts, or after it stops', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+
+    score.crackle(0, 1, 1);
+    expect(starts).toEqual([]);
+
+    await score.start();
+    score.stop();
+    const after = starts.length;
+    score.crackle(0, 1, 1);
+
+    expect(starts.length).toBe(after);
+  });
+});

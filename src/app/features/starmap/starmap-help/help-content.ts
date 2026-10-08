@@ -51,6 +51,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Zoom in to see a small planet orbiting a star for each issue its pull request closes, up to four. A star with none closes no issue.',
       ],
       [
+        'Meteor',
+        'A meteor streaks in and lands on a star when its pull request has new commits since you last looked, the same change its card calls “new commits since you looked”; one whose branch was rewritten gets one too. More commits make a brighter, longer streak, and with sound on each landing crackles softly, on the side of the screen the star is on. They land once the sky has arrived, at most twelve, the biggest changes first. With motion off there is no streak, only a brief glint on the star.',
+      ],
+      [
         'Done',
         'The spiral galaxy is what you finished in the last 60 days, newest at its arm tips, older winding in to the core: blue-white for a merged pull request, an ember for one closed unmerged, gold for a closed issue, grey for one dropped. Rest the pointer on a light for what it was; click it to open it. Done lists them by day; press merged, closed, issue done or dropped there to show only that kind. The search box finds them too.',
       ],

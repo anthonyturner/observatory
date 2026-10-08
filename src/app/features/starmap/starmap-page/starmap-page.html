@@ -38,6 +38,8 @@
   [crews]="crewMarks()"
   [satellites]="satellites()"
   [stacks]="stacks()"
+  [meteors]="commitMeteors()"
+  (meteorLanded)="meteorLanded($event)"
   [weather]="weather.weather()"
   (pickedDone)="openDone($event)"
   (pickedIssue)="pickIssue($event)"

@@ -104,6 +104,11 @@ export class StarmapSound {
     if (this.isOn()) this.score?.ping(stuck, pr);
   }
 
+  /** A short crackle when a meteor lands, only while sound is on. */
+  crackle(pan: number, strength: number, seed: number): void {
+    if (this.isOn()) this.score?.crackle(pan, strength, seed);
+  }
+
   /** A satellite's beep, at its state's pitch and panned by where it is on screen. */
   beep(pan: number, state: SatelliteState): void {
     if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state]);

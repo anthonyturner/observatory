@@ -8,6 +8,7 @@ import {
 import { gh, ghJson } from './gh-cli.ts';
 import { DIFF_MEDIA_TYPE } from './github-rest.ts';
 import { readChangelog } from './changelog-reader.ts';
+import { readPullComments } from './comment-reader.ts';
 import { readCheckHistory } from './check-history.ts';
 import { ghCliRerunner, ghCliWriter } from './gh-cli-writer.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
@@ -61,6 +62,7 @@ export function ghCliReader(): GitHub {
     releases: (repo, limit) => readReleases(getJson, repo, limit),
     tags: (repo, limit) => readTags(getJson, repo, limit),
     changelog: (repo) => readChangelog(getJson, repo),
+    pullComments: (repo) => readPullComments(getJson, repo),
     mergedPulls: (repo) => readMergedPulls(getJson, repo),
     workflowRuns: (repo, branch) => readWorkflowRuns(getJson, repo, branch),
     workflows: (repo) => readWorkflows(getJson, repo),

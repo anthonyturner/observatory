@@ -44,6 +44,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/ledger': (query) => reads.ledger(repoOf(query)),
       '/api/releases': (query) => reads.releases(repoOf(query)),
+      '/api/journal': (query) => reads.journal(repoOf(query)),
       '/api/library': (query) => reads.library(repoOf(query)),
       '/api/actions': (query) => {
         const repo = repoOf(query);

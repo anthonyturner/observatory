@@ -62,6 +62,7 @@ const reads = {
   weather: async (repo: string) => ({ repo, hidden: false, pulls: [] }),
   labels: async () => [{ name: 'bug', color: 'd73a4a' }],
   releases: async (repo: string) => ({ repo, source: 'none', releases: [] }),
+  journal: async (repo: string) => ({ repo, entries: [] }),
   library: async (repo: string) => ({ repo, source: 'docs', pages: [] }),
   actions: async (repo: string) => ({ repo, runs: [] }),
   forgetActions: (repo: string) => forgotten.push(`actions ${repo}`),
@@ -136,6 +137,10 @@ describe('ownerRoutes', () => {
       source: 'none',
       releases: [],
     });
+  });
+
+  it('reads a repository’s journal', async () => {
+    assert.deepEqual(await get('/api/journal?repo=me/app'), { repo: 'me/app', entries: [] });
   });
 
   it('reads a repository’s library', async () => {

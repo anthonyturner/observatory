@@ -71,6 +71,8 @@ const reads = {
   deployments: async (repo: string) => ({ repo, environments: [] }),
   forgetDeployments: (repo: string) => forgotten.push(`deployments ${repo}`),
   pullPreview: async (repo: string, sha: string) => ({ repo, sha, deployments: [] }),
+  milestones: async (repo: string) => ({ repo, milestones: { open: [] } }),
+  forgetMilestones: (repo: string) => forgotten.push(`milestones ${repo}`),
   logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
   agentUsage: async () => ({
     generatedAt: 'x',
@@ -181,6 +183,16 @@ describe('ownerRoutes', () => {
       sha: sha.toLowerCase(),
       deployments: [],
     });
+  });
+
+  it('reads a repository’s milestones and discussions, afresh when asked', async () => {
+    assert.deepEqual(await get('/api/milestones?repo=me/app'), {
+      repo: 'me/app',
+      milestones: { open: [] },
+    });
+    forgotten.length = 0;
+    await get('/api/milestones?repo=me/app&fresh=1');
+    assert.deepEqual(forgotten, ['milestones me/app']);
   });
 
   it('reads one issue by repository and number, and refuses a bad number', async () => {

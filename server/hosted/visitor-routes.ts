@@ -113,6 +113,7 @@ export function visitorRoutes(
       '/api/deployments': async (query) => reads.deployments(await visibleRepo(query)),
       [PREVIEW_PATH]: async (query) =>
         reads.pullPreview(await visibleRepo(query), commitShaFrom(query.get('sha'))),
+      '/api/milestones': async (query) => reads.milestones(await visibleRepo(query)),
       '/api/issues': async (query) => reads.issues(await visibleRepo(query)),
       '/api/issue': async (query) =>
         reads.issue(await visibleRepo(query), issueNumberFrom(query.get('number'))),

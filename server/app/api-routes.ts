@@ -65,6 +65,11 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
         return reads.deployments(repo);
       },
       [PREVIEW_PATH]: (query) => reads.pullPreview(repoOf(query), commitShaFrom(query.get('sha'))),
+      '/api/milestones': (query) => {
+        const repo = repoOf(query);
+        if (isFresh(query)) reads.forgetMilestones(repo);
+        return reads.milestones(repo);
+      },
       '/api/issues': (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetIssues(repo);

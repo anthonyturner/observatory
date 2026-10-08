@@ -4,6 +4,12 @@ export type GraphQl = (
   variables?: Readonly<Record<string, unknown>>,
 ) => Promise<unknown>;
 
+/** `owner/name` as GraphQL variables; the route has already checked the name. */
+export function repoVariables(repo: string): { owner: string; name: string } {
+  const [owner, name] = repo.split('/');
+  return { owner, name };
+}
+
 export interface GraphQlConfig {
   /** A token the server holds; it is sent to GitHub and nowhere else. */
   readonly token: string;

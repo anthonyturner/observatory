@@ -12,7 +12,12 @@ import { readChangelog } from './changelog-reader.ts';
 import { readPullComments } from './comment-reader.ts';
 import { readCheckHistory } from './check-history.ts';
 import { githubApiInboxMarker, githubApiRerunner, githubApiWriter } from './github-api-writer.ts';
-import { type GraphQl, type GraphQlConfig, githubGraphQl } from './github-graphql.ts';
+import {
+  type GraphQl,
+  type GraphQlConfig,
+  githubGraphQl,
+  repoVariables,
+} from './github-graphql.ts';
 import { DIFF_MEDIA_TYPE, githubRest } from './github-rest.ts';
 import { ISSUE_GRAPHQL, PULL_GRAPHQL, nodesOf, selectionOf } from './graphql-fields.ts';
 import {
@@ -34,6 +39,8 @@ import { securityReader } from './security-reader.ts';
 import { notificationReader } from './notification-reader.ts';
 import { insightsReader } from './insights-reader.ts';
 import { deploymentReader } from './deployment-reader.ts';
+import { discussionReader } from './discussion-reader.ts';
+import { milestoneReader } from './milestone-reader.ts';
 import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -53,12 +60,6 @@ type Node = Readonly<Record<string, unknown>>;
 
 const asNode = (value: unknown): Node =>
   typeof value === 'object' && value !== null ? (value as Node) : {};
-
-/** `owner/name` as GraphQL variables; the route has already checked the name. */
-function repoVariables(repo: string): { owner: string; name: string } {
-  const [owner, name] = repo.split('/');
-  return { owner, name };
-}
 
 /**
  * Nodes shaped by the field table into the `gh --json` shape `T` names. The
@@ -250,6 +251,8 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     ...notificationReader(getJson),
     ...insightsReader(getJson),
     ...deploymentReader(getJson),
+    ...milestoneReader(graphql),
+    ...discussionReader(graphql),
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),

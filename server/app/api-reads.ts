@@ -20,6 +20,8 @@ import {
 } from '../deployments/deployments-report.ts';
 import type { DeploymentsReport, PullPreview } from '../deployments/deployments-types.ts';
 import { insightsReport, isCounting } from '../insights/insights-report.ts';
+import { milestonesReport } from '../milestones/milestones-report.ts';
+import type { MilestonesReport } from '../milestones/milestones-types.ts';
 import type { InsightsReport } from '../insights/insights-types.ts';
 import type { InboxReport } from '../inbox/inbox-types.ts';
 import type { ReleasesReport } from '../releases/release-types.ts';
@@ -96,6 +98,9 @@ const COUNTING_TTL_MS = 20_000;
  *  turns green or red on screen within a poll or two of finishing. */
 const DEPLOYMENTS_TTL_MS = 2 * 60_000;
 const BUILDING_TTL_MS = 20_000;
+/** Milestones and discussions move a few times a day. Every project's tab strip asks whether
+ *  there are any, so it is kept as long as the projects. */
+const MILESTONES_TTL_MS = 5 * 60_000;
 /** GitHub asks that notifications be polled no more than once a minute (`X-Poll-Interval`). */
 const INBOX_TTL_MS = 60_000;
 
@@ -186,6 +191,10 @@ export interface ApiReads {
   forgetDeployments(repo: string): void;
   /** What one commit, a pull request's head, was deployed as. */
   pullPreview(repo: string, sha: string): Promise<PullPreview>;
+  /** Open and lately closed milestones with their progress, and the latest discussions. */
+  milestones(repo: string): Promise<MilestonesReport>;
+  /** The next read of these milestones and discussions goes to GitHub, not the cache. */
+  forgetMilestones(repo: string): void;
   /** The account's unread GitHub notifications across every repository. */
   inbox(): Promise<InboxReport>;
   /** The next read of the inbox goes to GitHub, not the cache. */
@@ -292,6 +301,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     },
     (preview) => (isPreviewUnsettled(preview) ? BUILDING_TTL_MS : DEPLOYMENTS_TTL_MS),
   );
+  const milestonesOf = keyedCache((repo) => milestonesReport(github, repo), MILESTONES_TTL_MS);
   const inboxOf = keyedCache(() => inboxReport(github, new Date()), INBOX_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
@@ -337,6 +347,8 @@ export function cachedReads(sources: ReadSources): ApiReads {
     deployments: (repo) => deploymentsOf.read(repo),
     forgetDeployments: (repo) => deploymentsOf.forget(repo),
     pullPreview: (repo, sha) => previewOf.read(commitKey(repo, sha)),
+    milestones: (repo) => milestonesOf.read(repo),
+    forgetMilestones: (repo) => milestonesOf.forget(repo),
     inbox: () => inboxOf.read(ONE_INBOX),
     forgetInbox: () => inboxOf.forget(ONE_INBOX),
     usage: sources.usage,

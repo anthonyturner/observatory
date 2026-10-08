@@ -7,6 +7,7 @@ import type { PullCommentReader } from './comment-reader.ts';
 import type { CommitReader } from './commit-reader.ts';
 import type { CompareReader } from './compare-reader.ts';
 import type { DeploymentReader } from './deployment-reader.ts';
+import type { DiscussionReader } from './discussion-reader.ts';
 import type { DocsReader } from './docs-reader.ts';
 import type { FateReader } from './fate-reader.ts';
 import type { GitHubReader } from './github-reader.ts';
@@ -16,6 +17,7 @@ import type { AgentReader } from '../agents/agents-report.ts';
 import type { LedgerReader } from '../history/ledger.ts';
 import type { IssueDetailReader, IssueReader } from './issue-reader.ts';
 import type { MergedPullReader } from './merged-pull-reader.ts';
+import type { MilestoneReader } from './milestone-reader.ts';
 import type { NotificationReader } from './notification-reader.ts';
 import type { PullReader } from './pull-reader.ts';
 import type { PullWriter } from './pull-writer.ts';
@@ -50,4 +52,6 @@ export type GitHub = GitHubReader &
   NotificationReader &
   InsightsReader &
   DeploymentReader &
+  MilestoneReader &
+  DiscussionReader &
   InboxMarker;

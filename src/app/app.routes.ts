@@ -80,6 +80,12 @@ export const routes: Routes = [
       import('./features/security/security-page/security-page').then((m) => m.SecurityPage),
   },
   {
+    path: 'p/:owner/:repo/insights',
+    title: 'Insights · Observatory',
+    loadComponent: () =>
+      import('./features/insights/insights-page/insights-page').then((m) => m.InsightsPage),
+  },
+  {
     matcher: libraryMatcher,
     title: 'Library · Observatory',
     loadComponent: () =>

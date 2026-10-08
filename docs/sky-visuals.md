@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security and Depth skies, the Library and the Inbox
+# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security and Depth skies, the Library, the Inbox and Insights
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -57,6 +57,7 @@ TypeScript and the shader only draws it.
 | Security     | World's air      | The worst open grade       | `worstSeverity`                |
 | Inbox        | Beacon colour    | Why the notification came  | `reasonWords(reason).tone`     |
 | Inbox        | Beacon pulse     | It asks something of you   | tone `asks`                    |
+| Insights     | Star size        | A week's commits           | `starRadius`, `commitStars`    |
 
 ## Orrery worlds
 
@@ -682,6 +683,18 @@ and `--muted` for news (threads you opened, commented on or watch). Only the
 `asks` beacons pulse, so what waits on you keeps signalling; they hold still
 when motion is off. The rows are ordinary links and buttons, so there is no
 separate list alternative to keep.
+
+## The Insights constellation
+
+Code: `features/insights/commit-stars/`. The Insights screen is charts first;
+its only sky is a small SVG constellation under the title, one star a week for
+the screen's twelve weeks, oldest at the left, joined by one faint line.
+`starRadius` sizes a star from 1 px to 5 px so its _area_ follows the week's
+commits against the busiest week's; a week with none is a faint grey point the
+line still runs through. How far each star sits above or below the middle is
+scenery, the same on every load. Nothing moves, so there is no motion to
+switch off. The constellation is hidden from screen readers: the Commits
+chart below it and its **Table view** carry the same numbers.
 
 ## Changing a visual
 

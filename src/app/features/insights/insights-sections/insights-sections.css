@@ -1,0 +1,31 @@
+:host {
+  display: block;
+}
+
+.lead {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+h4 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0 6px;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+h4:first-child {
+  margin-top: 0;
+}
+
+h4 span {
+  color: var(--faint);
+}

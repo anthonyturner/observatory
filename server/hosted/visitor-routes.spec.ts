@@ -29,6 +29,11 @@ const reads = {
     alerts: [{ kind: 'secret-scanning', number: 1, title: 'GitHub Personal Access Token' }],
     isWithheld: false,
   }),
+  insights: async (repo: string) => ({
+    repo,
+    commits: { status: 'read', note: null, weeks: [] },
+    traffic: { status: 'read', note: null, views: { count: 46 }, clones: { count: 8 } },
+  }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
   commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
@@ -123,6 +128,21 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/ci-health?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/ci-health?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/security?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/insights?repo=me/secret')).status, 404);
+  });
+
+  it('gives a visitor a repository’s insights without its traffic', async () => {
+    const response = await get(visitor(false), '/api/insights?repo=me/app');
+
+    assert.equal(response.status, 200);
+    const report = (await response.json()) as {
+      commits: { status: string };
+      traffic: { status: string; views: unknown; clones: unknown };
+    };
+    assert.equal(report.commits.status, 'read');
+    assert.equal(report.traffic.status, 'withheld');
+    assert.equal(report.traffic.views, null);
+    assert.equal(report.traffic.clones, null);
   });
 
   it('gives a visitor a repository’s alert counts and never the alerts', async () => {

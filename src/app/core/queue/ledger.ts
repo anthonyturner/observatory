@@ -56,7 +56,7 @@ function parseRow(value: unknown): LedgerRow | null {
 const timeOf = (value: unknown): number => (typeof value === 'string' ? Date.parse(value) : NaN);
 
 /** One finished pull request, or null if it is not one or finished before it opened. */
-function parseFinished(value: unknown): FinishedPull | null {
+export function parseFinished(value: unknown): FinishedPull | null {
   if (!isObject(value)) return null;
   const { number, fate } = value;
   const openedAt = timeOf(value['openedAt']);

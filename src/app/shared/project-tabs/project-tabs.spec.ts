@@ -31,10 +31,12 @@ describe('ProjectTabs', () => {
       ['Library', '/p/me/app/library'],
       ['Depth', '/p/me/app/depth'],
       ['Security', '/p/me/app/security'],
+      ['Insights', '/p/me/app/insights'],
     ]);
     expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([
       null,
       'page',
+      null,
       null,
       null,
       null,
@@ -59,7 +61,7 @@ describe('ProjectTabs', () => {
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
-    const security = () => [...host.querySelectorAll('a')].at(-1);
+    const security = () => host.querySelector('a[href$="/security"]');
     expect(security()?.querySelector('.badge')?.textContent).toBe('3');
     expect(security()?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Security 3, 3 open alerts');
 

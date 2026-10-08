@@ -35,6 +35,7 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
   LIBRARY_TAB,
   { id: 'depth', label: 'Depth', path: 'depth' },
   SECURITY_TAB,
+  { id: 'insights', label: 'Insights', path: 'insights' },
 ];
 
 /** Where a tab lives for one repository, `owner/name`. */

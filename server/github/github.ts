@@ -10,6 +10,7 @@ import type { DocsReader } from './docs-reader.ts';
 import type { FateReader } from './fate-reader.ts';
 import type { GitHubReader } from './github-reader.ts';
 import type { InboxMarker } from './inbox-marker.ts';
+import type { InsightsReader } from './insights-reader.ts';
 import type { AgentReader } from '../agents/agents-report.ts';
 import type { LedgerReader } from '../history/ledger.ts';
 import type { IssueDetailReader, IssueReader } from './issue-reader.ts';
@@ -46,4 +47,5 @@ export type GitHub = GitHubReader &
   WikiReader &
   SecurityReader &
   NotificationReader &
+  InsightsReader &
   InboxMarker;

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { AreaRule } from './area-rules.ts';
 import { architectureMap } from './architecture-map.ts';
-import type { EdgeKind } from './architecture-types.ts';
+import { type EdgeKind, MAP_SCHEMA } from './architecture-types.ts';
+import { mapProblems } from './map-problems.ts';
 import type {
   ScannedDeclaration,
   ScannedFile,
@@ -11,8 +12,8 @@ import type {
 } from './scanned-source.ts';
 
 const RULES: readonly AreaRule[] = [
-  { id: 'core', label: 'Core', root: 'core' },
-  { id: 'ui', label: 'Interface', root: '' },
+  { id: 'core', label: 'Core', root: 'src/app/core' },
+  { id: 'ui', label: 'Interface', root: 'src/app' },
 ];
 
 const ref = (
@@ -80,7 +81,7 @@ describe('architectureMap: nodes', () => {
   it('names each kind from the declaration and the class name', () => {
     const map = mapOf(
       {},
-      file('core/all.ts', [
+      file('src/app/core/all.ts', [
         decl('AlarmHandler'),
         decl('TickStore'),
         decl('ClockService'),
@@ -105,41 +106,45 @@ describe('architectureMap: nodes', () => {
   });
 
   it('places each node by its file and keys it by file and name', () => {
-    const map = mapOf({}, file('core/time/clock.ts', [decl('ClockService')]));
+    const map = mapOf({}, file('src/app/core/time/clock.ts', [decl('ClockService')]));
     const [clock] = map.nodes;
     assert.deepEqual(
       [clock?.id, clock?.area, clock?.group, clock?.file],
-      ['core/time/clock.ts#ClockService', 'core', 'time', 'core/time/clock.ts'],
+      ['src/app/core/time/clock.ts#ClockService', 'core', 'time', 'src/app/core/time/clock.ts'],
     );
   });
 
   it('keeps two classes of one name in different files apart', () => {
     const map = mapOf(
       {},
-      file('core/a.ts', [decl('ClockService')]),
-      file('ui/b.ts', [decl('ClockService')]),
+      file('src/app/core/a.ts', [decl('ClockService')]),
+      file('src/app/ui/b.ts', [decl('ClockService')]),
     );
     assert.deepEqual(
       map.nodes.map(({ id }) => id),
-      ['core/a.ts#ClockService', 'ui/b.ts#ClockService'],
+      ['src/app/core/a.ts#ClockService', 'src/app/ui/b.ts#ClockService'],
     );
   });
 
   it('skips files that no rule holds', () => {
     const map = mapOf(
-      { rules: [{ id: 'core', label: 'Core', root: 'core' }] },
-      file('elsewhere/a.ts', [decl('ClockService')]),
+      { rules: [{ id: 'core', label: 'Core', root: 'src/app/core' }] },
+      file('src/app/elsewhere/a.ts', [decl('ClockService')]),
     );
     assert.deepEqual(map.nodes, []);
   });
 
-  it('lists the areas without their roots and stamps the schema', () => {
+  it('lists the areas in the browser runtime with their folders, and stamps the schema', () => {
     const map = mapOf({});
     assert.deepEqual(map.areas, [
-      { id: 'core', label: 'Core' },
-      { id: 'ui', label: 'Interface' },
+      { id: 'core', label: 'Core', runtime: 'browser', folder: 'src/app/core' },
+      { id: 'ui', label: 'Interface', runtime: 'browser', folder: 'src/app' },
     ]);
-    assert.equal(map.schema, 2);
+    assert.deepEqual(
+      map.runtimes.map(({ id }) => id),
+      ['browser'],
+    );
+    assert.equal(map.schema, MAP_SCHEMA);
   });
 });
 
@@ -147,7 +152,7 @@ describe('architectureMap: edges', () => {
   it('drops references to unknown targets and to the declaration itself', () => {
     const map = mapOf(
       {},
-      file('core/a.ts', [decl('ClockService', [ref('ClockService'), ref('Router')])]),
+      file('src/app/core/a.ts', [decl('ClockService', [ref('ClockService'), ref('Router')])]),
     );
     assert.deepEqual(map.edges, []);
   });
@@ -155,7 +160,7 @@ describe('architectureMap: edges', () => {
   it('keeps one edge per target and kind, merging members however often it is injected', () => {
     const map = mapOf(
       {},
-      file('core/a.ts', [
+      file('src/app/core/a.ts', [
         decl('AlarmHandler', [
           ref('ClockService', 'injects', ['now', 'zone']),
           ref('ClockService', 'injects', ['now', 'alarm']),
@@ -164,20 +169,23 @@ describe('architectureMap: edges', () => {
         decl('ClockService'),
       ]),
     );
+    assert.deepEqual(mapProblems(map), [], 'counts its fans from the edges');
     assert.deepEqual(map.edges, [
       {
-        from: 'core/a.ts#AlarmHandler',
-        to: 'core/a.ts#ClockService',
+        from: 'src/app/core/a.ts#AlarmHandler',
+        to: 'src/app/core/a.ts#ClockService',
         kind: 'injects',
         how: 'inject',
         members: ['alarm', 'now', 'zone'],
+        marks: [],
       },
       {
-        from: 'core/a.ts#AlarmHandler',
-        to: 'core/a.ts#ClockService',
+        from: 'src/app/core/a.ts#AlarmHandler',
+        to: 'src/app/core/a.ts#ClockService',
         kind: 'provides',
         how: null,
         members: [],
+        marks: [],
       },
     ]);
   });
@@ -185,36 +193,41 @@ describe('architectureMap: edges', () => {
   it('resolves a shared name through the file’s import, relative or aliased', () => {
     const map = mapOf(
       {},
-      file('core/a.ts', [decl('ClockService')]),
-      file('ui/b.ts', [decl('ClockService')]),
-      file('ui/alarm.ts', [decl('AlarmHandler', [ref('ClockService')])], {
+      file('src/app/core/a.ts', [decl('ClockService')]),
+      file('src/app/ui/b.ts', [decl('ClockService')]),
+      file('src/app/ui/alarm.ts', [decl('AlarmHandler', [ref('ClockService')])], {
         imports: [{ local: 'ClockService', imported: 'ClockService', module: '../core/a' }],
       }),
-      file('ui/bell.ts', [decl('BellHandler', [ref('Clock')])], {
+      file('src/app/ui/bell.ts', [decl('BellHandler', [ref('Clock')])], {
         imports: [{ local: 'Clock', imported: 'ClockService', module: '@/app/ui/b' }],
       }),
     );
     assert.deepEqual(linksOf(map), [
-      'ui/alarm.ts#AlarmHandler injects core/a.ts#ClockService',
-      'ui/bell.ts#BellHandler injects ui/b.ts#ClockService',
+      'src/app/ui/alarm.ts#AlarmHandler injects src/app/core/a.ts#ClockService',
+      'src/app/ui/bell.ts#BellHandler injects src/app/ui/b.ts#ClockService',
     ]);
   });
 
   it('prefers a declaration in the same file, and leaves a shared name it cannot place unlinked', () => {
     const map = mapOf(
       {},
-      file('core/a.ts', [decl('ClockService'), decl('AlarmHandler', [ref('ClockService')])]),
-      file('ui/b.ts', [decl('ClockService')]),
-      file('ui/c.ts', [decl('BellHandler', [ref('ClockService')])]),
+      file('src/app/core/a.ts', [
+        decl('ClockService'),
+        decl('AlarmHandler', [ref('ClockService')]),
+      ]),
+      file('src/app/ui/b.ts', [decl('ClockService')]),
+      file('src/app/ui/c.ts', [decl('BellHandler', [ref('ClockService')])]),
     );
-    assert.deepEqual(linksOf(map), ['core/a.ts#AlarmHandler injects core/a.ts#ClockService']);
+    assert.deepEqual(linksOf(map), [
+      'src/app/core/a.ts#AlarmHandler injects src/app/core/a.ts#ClockService',
+    ]);
   });
 
   it('never links a name imported from a package to a project class sharing it', () => {
     const map = mapOf(
       {},
-      file('core/router.ts', [decl('Router')]),
-      file('ui/a.ts', [decl('AlarmHandler', [ref('Router')])], {
+      file('src/app/core/router.ts', [decl('Router')]),
+      file('src/app/ui/a.ts', [decl('AlarmHandler', [ref('Router')])], {
         imports: [{ local: 'Router', imported: 'Router', module: '@angular/router' }],
       }),
     );
@@ -225,43 +238,47 @@ describe('architectureMap: edges', () => {
     const map = mapOf(
       {},
       file(
-        'core/a.ts',
+        'src/app/core/a.ts',
         [decl('CLOCK_SOURCE', [], { sort: 'InjectionToken' }), decl('QuartzSource')],
         {
           bindings: [{ token: 'CLOCK_SOURCE', target: 'QuartzSource' }],
         },
       ),
     );
-    assert.deepEqual(linksOf(map), ['core/a.ts#CLOCK_SOURCE provides core/a.ts#QuartzSource']);
+    assert.deepEqual(linksOf(map), [
+      'src/app/core/a.ts#CLOCK_SOURCE provides src/app/core/a.ts#QuartzSource',
+    ]);
   });
 
   it('links a template tag to the one component whose selector claims it', () => {
     const map = mapOf(
       {},
-      file('ui/face.ts', [component('FaceComponent', { tags: ['app-dial', 'app-twin'] })]),
-      file('ui/dial.ts', [component('DialComponent', { element: 'app-dial' })]),
-      file('ui/twin-a.ts', [component('TwinA', { element: 'app-twin' })]),
-      file('ui/twin-b.ts', [component('TwinB', { element: 'app-twin' })]),
+      file('src/app/ui/face.ts', [component('FaceComponent', { tags: ['app-dial', 'app-twin'] })]),
+      file('src/app/ui/dial.ts', [component('DialComponent', { element: 'app-dial' })]),
+      file('src/app/ui/twin-a.ts', [component('TwinA', { element: 'app-twin' })]),
+      file('src/app/ui/twin-b.ts', [component('TwinB', { element: 'app-twin' })]),
     );
-    assert.deepEqual(linksOf(map), ['ui/face.ts#FaceComponent uses ui/dial.ts#DialComponent']);
+    assert.deepEqual(linksOf(map), [
+      'src/app/ui/face.ts#FaceComponent uses src/app/ui/dial.ts#DialComponent',
+    ]);
   });
 });
 
 describe('architectureMap: windows', () => {
-  const shell = file('app.ts', [component('ShellComponent')], {
+  const shell = file('src/app/app.ts', [component('ShellComponent')], {
     caseRoutes: [
       { label: 'wall', path: 'face' },
       { label: 'pocket', path: 'alarms' },
       { label: 'not-a-window', path: 'face' },
     ],
   });
-  const routes = file('app.routes.ts', [], {
+  const routes = file('src/app/app.routes.ts', [], {
     routes: [
       { path: 'face', component: { name: 'FaceComponent', module: './ui/face' }, children: null },
       { path: 'alarms', component: null, children: './alarms/alarm.routes' },
     ],
   });
-  const alarmRoutes = file('alarms/alarm.routes.ts', [], {
+  const alarmRoutes = file('src/app/alarms/alarm.routes.ts', [], {
     routes: [{ path: '', component: { name: 'AlarmList', module: null }, children: null }],
     imports: [{ local: 'AlarmList', imported: 'AlarmList', module: './alarm-list' }],
   });
@@ -270,10 +287,13 @@ describe('architectureMap: windows', () => {
     shell,
     routes,
     alarmRoutes,
-    file('alarms/alarm-list.ts', [component('AlarmList', { tags: ['app-dial'] })]),
-    file('ui/face.ts', [component('FaceComponent', { tags: ['app-dial'] })]),
-    file('ui/dial.ts', [component('DialComponent', { element: 'app-dial' }), decl('Lonely')]),
-    file('core/clock.ts', [decl('ClockService')]),
+    file('src/app/alarms/alarm-list.ts', [component('AlarmList', { tags: ['app-dial'] })]),
+    file('src/app/ui/face.ts', [component('FaceComponent', { tags: ['app-dial'] })]),
+    file('src/app/ui/dial.ts', [
+      component('DialComponent', { element: 'app-dial' }),
+      decl('Lonely'),
+    ]),
+    file('src/app/core/clock.ts', [decl('ClockService')]),
   );
   const windowsOf = (name: string) => map.nodes.find((node) => node.name === name)?.windows;
 

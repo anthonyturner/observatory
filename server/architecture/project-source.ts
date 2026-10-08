@@ -6,7 +6,8 @@ import type { ScannedDeclaration, ScannedFile } from './scanned-source.ts';
 import { scanSource } from './source-scan.ts';
 import { tagsIn } from './template-tags.ts';
 
-const APP_FOLDER = join('src', 'app');
+/** Where an Angular app's source lives, relative to the project root. */
+const APP_FOLDER = 'src/app';
 const MANIFEST_FILE = 'manifest.json';
 const TSCONFIG_FILE = 'tsconfig.json';
 const WILDCARD = '*';
@@ -39,13 +40,13 @@ async function withTemplate(
   return { ...declaration, tags: [...new Set([...declaration.tags, ...tagsIn(template)])] };
 }
 
-/** Every source file under the project's `src/app`, scanned; nothing in the project is written. */
+/** Every source file under the project's `src/app`, scanned, by its path from the project root; nothing in the project is written. */
 export async function scannedFiles(projectRoot: string): Promise<ScannedFile[]> {
   const appRoot = join(projectRoot, APP_FOLDER);
   const names = (await readdir(appRoot, { recursive: true })).filter(isSource).sort();
   return Promise.all(
     names.map(async (name) => {
-      const file = name.replaceAll('\\', '/');
+      const file = posix.join(APP_FOLDER, name.replaceAll('\\', '/'));
       const scanned = scanSource(file, await readFile(join(appRoot, name), 'utf8'));
       const folder = dirname(join(appRoot, name));
       const declarations = await Promise.all(

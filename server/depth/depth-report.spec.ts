@@ -64,6 +64,23 @@ describe('depthAnalyser', () => {
     );
   });
 
+  it('measures a file again when it comes back after being deleted, not from a stale memory', async () => {
+    const files: Record<string, string> = { 'a.ts': DEEP };
+    const measured: string[] = [];
+    const analyse = depthAnalyser(memoryTree(files), (name, text) => {
+      measured.push(name);
+      return measureModule(name, text);
+    });
+
+    await analyse();
+    delete files['a.ts'];
+    await analyse();
+    files['a.ts'] = DEEP;
+    await analyse();
+
+    assert.deepEqual(measured, ['a.ts', 'a.ts']);
+  });
+
   it('measures only the files whose text changed since the last read', async () => {
     const files: Record<string, string> = { 'a.ts': DEEP, 'b.ts': SHALLOW };
     const measured: string[] = [];

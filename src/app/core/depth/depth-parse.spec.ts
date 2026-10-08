@@ -48,6 +48,20 @@ describe('parseDepthReport', () => {
     expect(report?.modules).toEqual([MODULE]);
   });
 
+  it('drops a module whose sizes are not counts: a negative one would break the layout', () => {
+    const report = parseDepthReport({
+      ...REPORT,
+      modules: [
+        MODULE,
+        { ...MODULE, file: 'negative.ts', implementation: -1 },
+        { ...MODULE, file: 'fraction.ts', interfaceSize: 2.5 },
+        { ...MODULE, file: 'depth.ts', depth: -3 },
+      ],
+    });
+
+    expect(report?.modules.map(({ file }) => file)).toEqual(['src/a.ts']);
+  });
+
   it('is nothing when the body is not a report', () => {
     for (const body of [
       null,

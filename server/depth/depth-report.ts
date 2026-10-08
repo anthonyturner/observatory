@@ -56,6 +56,10 @@ export function depthAnalyser(
 
   return async () => {
     const paths = (await tree.files()).filter(isCandidate).sort();
+    const listed = new Set(paths);
+    for (const path of known.keys()) {
+      if (!listed.has(path)) known.delete(path);
+    }
     const modules = await mapWithLimit(paths, READS_AT_ONCE, moduleAt);
     return modules.filter((module) => module !== null);
   };

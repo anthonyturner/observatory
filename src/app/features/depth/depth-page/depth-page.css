@@ -107,11 +107,23 @@
 }
 
 @media (max-width: 899px) {
+  .panel {
+    max-height: 36dvh;
+  }
+
   .map {
-    padding-bottom: calc(44dvh + 16px);
+    padding-bottom: calc(36dvh + 28px + var(--playlist-clear-bottom, 0px));
   }
 
   .listview {
-    padding-bottom: calc(46dvh + 24px);
+    padding-bottom: calc(38dvh + 40px + var(--playlist-clear-bottom, 0px));
+  }
+}
+
+/* On a phone the header wraps to about 300px: the sky and the list start below it. */
+@media (max-width: 720px) {
+  .map,
+  .listview {
+    padding-top: calc(310px + env(safe-area-inset-top, 0px));
   }
 }

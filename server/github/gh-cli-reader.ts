@@ -9,7 +9,7 @@ import { gh, ghJson } from './gh-cli.ts';
 import { DIFF_MEDIA_TYPE } from './github-rest.ts';
 import { readChangelog } from './changelog-reader.ts';
 import { readCheckHistory } from './check-history.ts';
-import { ghCliRerunner, ghCliWriter } from './gh-cli-writer.ts';
+import { ghCliInboxMarker, ghCliRerunner, ghCliWriter } from './gh-cli-writer.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import { readMergedPulls } from './merged-pull-reader.ts';
@@ -34,6 +34,7 @@ import { readReleases, readTags } from './release-reader.ts';
 import { readFilePaths, readFileText } from './docs-reader.ts';
 import { rawWikiReader } from './wiki-reader.ts';
 import { securityReader } from './security-reader.ts';
+import { notificationReader } from './notification-reader.ts';
 import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -58,6 +59,7 @@ export function ghCliReader(): GitHub {
   return {
     ...ghCliWriter(),
     ...ghCliRerunner(),
+    ...ghCliInboxMarker(),
     checkHistory: (repo) => readCheckHistory(getJson, repo),
     releases: (repo, limit) => readReleases(getJson, repo, limit),
     tags: (repo, limit) => readTags(getJson, repo, limit),
@@ -71,6 +73,7 @@ export function ghCliReader(): GitHub {
     fileText: (repo, path, ref) => readFileText(getJson, repo, path, ref),
     ...rawWikiReader(),
     ...securityReader(getJson),
+    ...notificationReader(getJson),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([

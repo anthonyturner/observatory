@@ -18,7 +18,7 @@ import type { ApiReads } from './api-reads.ts';
 const repoOf = (query: URLSearchParams): string => repoNameFrom(query.get('repo'));
 const numberOf = (query: URLSearchParams): number => pullNumberFrom(query.get('number'));
 /** A Refresh button asks for GitHub's answer now, not one the cache kept. */
-const isFresh = (query: URLSearchParams): boolean => query.get('fresh') === '1';
+export const isFresh = (query: URLSearchParams): boolean => query.get('fresh') === '1';
 
 /** A description may be up to 65,536 characters, and JSON can take several bytes for each. */
 const EDIT_BODY_LIMIT_BYTES = 512 * 1024;

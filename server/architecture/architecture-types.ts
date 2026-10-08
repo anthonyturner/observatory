@@ -50,6 +50,10 @@ export type EdgeKind = (typeof EDGE_KINDS)[number];
 /** The edges that carry a request at run time; every other kind is a code dependency. */
 export const FLOW_EDGE_KINDS: readonly EdgeKind[] = ['requests', 'handles', 'reaches', 'spawns'];
 
+/** Whether an edge is a code dependency, which fan-in, fan-out and cycles count, rather than a flow. */
+export const isCodeEdge = ({ kind }: { readonly kind: EdgeKind }): boolean =>
+  !FLOW_EDGE_KINDS.includes(kind);
+
 /** The shape this scanner writes; a page reading an older one asks for a rescan. */
 export const MAP_SCHEMA = 3;
 

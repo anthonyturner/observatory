@@ -4,7 +4,7 @@ import {
   type ArchitectureMap,
   type ArchitectureNode,
   type ArchitectureRuntime,
-  FLOW_EDGE_KINDS,
+  isCodeEdge,
   MAP_SCHEMA,
   type NodeKind,
 } from './architecture-types.ts';
@@ -84,7 +84,7 @@ function nodesOf({ files, rules }: MapInputs): ArchitectureNode[] {
 function fansOf(
   edges: readonly ArchitectureEdge[],
 ): (id: string) => Pick<ArchitectureNode['metrics'], 'fanIn' | 'fanOut'> {
-  const code = edges.filter(({ kind }) => !FLOW_EDGE_KINDS.includes(kind));
+  const code = edges.filter(isCodeEdge);
   const tally = (end: 'from' | 'to') => {
     const counts = new Map<string, number>();
     for (const edge of code) counts.set(edge[end], (counts.get(edge[end]) ?? 0) + 1);

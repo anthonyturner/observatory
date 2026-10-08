@@ -2,10 +2,8 @@ import {
   type ArchitectureEdge,
   type ArchitectureMap,
   type ArchitectureNode,
-  FLOW_EDGE_KINDS,
+  isCodeEdge,
 } from './architecture-types.ts';
-
-const isCode = ({ kind }: ArchitectureEdge): boolean => !FLOW_EDGE_KINDS.includes(kind);
 
 const count = (edges: readonly ArchitectureEdge[], end: 'from' | 'to', id: string): number =>
   edges.filter((edge) => edge[end] === id).length;
@@ -57,7 +55,7 @@ function nodeProblems(
 export function mapProblems(map: ArchitectureMap): string[] {
   const ids = new Map(map.nodes.map((node) => [node.id, node]));
   const runtimes = new Set(map.runtimes.map(({ id }) => id));
-  const code = map.edges.filter(isCode);
+  const code = map.edges.filter(isCodeEdge);
   return [
     ...map.areas
       .filter(({ runtime }) => !runtimes.has(runtime))

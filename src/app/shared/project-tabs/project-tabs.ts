@@ -1,5 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { Observable, combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import { plural } from '../text/plural';
+import { TAB_BADGES, TabBadge } from './tab-badge';
 
 /** One screen of a project, reached at `/p/:owner/:repo/<path>`. */
 export interface ProjectTab {
@@ -15,6 +19,9 @@ export const ACTIONS_TAB: ProjectTab = { id: 'actions', label: 'Actions', path: 
 /** The Library screen: the project's wiki, or its README and docs. */
 export const LIBRARY_TAB: ProjectTab = { id: 'library', label: 'Library', path: 'library' };
 
+/** The Security screen: open Dependabot, code-scanning and secret-scanning alerts. */
+export const SECURITY_TAB: ProjectTab = { id: 'security', label: 'Security', path: 'security' };
+
 /**
  * Every per-project screen, in the order the strip shows them. A new screen
  * adds its entry here and its route in `app.routes.ts`, and passes its `id`
@@ -25,17 +32,52 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
   { id: 'releases', label: 'Releases', path: 'releases' },
   ACTIONS_TAB,
   LIBRARY_TAB,
+  SECURITY_TAB,
 ];
 
 /** Where a tab lives for one repository, `owner/name`. */
 export const projectTabLink = (repo: string, tab: ProjectTab): string =>
   tab.path ? `/p/${repo}/${tab.path}` : `/p/${repo}`;
 
+interface BadgeView {
+  readonly shown: string;
+  /** Read after the tab's name: "3 open alerts". */
+  readonly spoken: string;
+}
+
 interface TabLink {
   readonly id: string;
   readonly label: string;
   readonly link: string;
   readonly isCurrent: boolean;
+  readonly badge: BadgeView | null;
+}
+
+type BadgeCounts = ReadonlyMap<string, BadgeView>;
+
+const NO_BADGES: BadgeCounts = new Map();
+
+/** Each badge's count for `repo`, as views by tab id; a count of none shows no badge. */
+function badgeViews(badges: readonly TabBadge[], repo: string): Observable<BadgeCounts> {
+  if (!badges.length || !repo) return of(NO_BADGES);
+  const each = badges.map((badge) =>
+    badge.count(repo).pipe(
+      startWith(null),
+      map((count) => ({ badge, count })),
+    ),
+  );
+  return combineLatest(each).pipe(
+    map(
+      (counts) =>
+        new Map(
+          counts.flatMap(({ badge, count }) =>
+            count
+              ? [[badge.tabId, { shown: String(count), spoken: plural(count, badge.noun) }]]
+              : [],
+          ),
+        ),
+    ),
+  );
 }
 
 /** The row of a project's screens, on every one of them: links, the current one marked as the page. */
@@ -47,10 +89,17 @@ interface TabLink {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProjectTabs {
+  private readonly badges = inject(TAB_BADGES);
+
   /** `owner/name`. */
   readonly repo = input.required<string>();
   /** The id of the screen this strip sits on. */
   readonly current = input.required<string>();
+
+  private readonly counts = toSignal(
+    toObservable(this.repo).pipe(switchMap((repo) => badgeViews(this.badges, repo))),
+    { initialValue: NO_BADGES },
+  );
 
   protected readonly links = computed((): readonly TabLink[] =>
     PROJECT_TABS.map((tab) => ({
@@ -58,6 +107,7 @@ export class ProjectTabs {
       label: tab.label,
       link: projectTabLink(this.repo(), tab),
       isCurrent: tab.id === this.current(),
+      badge: this.counts().get(tab.id) ?? null,
     })),
   );
 }

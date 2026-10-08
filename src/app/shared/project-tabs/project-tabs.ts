@@ -31,8 +31,12 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
   { id: 'queue', label: 'Queue', path: '' },
   { id: 'releases', label: 'Releases', path: 'releases' },
   ACTIONS_TAB,
+  { id: 'journal', label: 'Journal', path: 'journal' },
   LIBRARY_TAB,
+  { id: 'depth', label: 'Depth', path: 'depth' },
   SECURITY_TAB,
+  { id: 'insights', label: 'Insights', path: 'insights' },
+  { id: 'deployments', label: 'Deployments', path: 'deployments' },
 ];
 
 /** Where a tab lives for one repository, `owner/name`. */

@@ -406,7 +406,9 @@ stand, so it is not optional and not shortened for small changes.
 4. **Fix the real findings.** Every blocking finding is fixed with a new
    commit on the branch. A non-blocking suggestion is fixed when you agree with
    it; when you do not, reply on the pull request saying why. Push without
-   force, then re-review the new diff and post that review too.
+   force, then re-review the new diff and post that review too. When a fix
+   changed what was built, that comment also carries the `## Second draft`
+   section described in **The second draft** in [qa-review.md](qa-review.md).
 5. **Merge when it is clean**, with a squash merge
    ([ADR-0007](../decisions/0007-squash-merge-pull-requests.md)):
 

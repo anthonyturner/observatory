@@ -13,7 +13,8 @@ const TSCONFIG_FILE = 'tsconfig.json';
 const WILDCARD = '*';
 const SKIPPED_SUFFIXES = ['.spec.ts', '.d.ts', '.testing.ts'];
 
-const isSource = (file: string): boolean =>
+/** Whether a path is production TypeScript: not a spec, a declaration file or a test helper. */
+export const isSource = (file: string): boolean =>
   file.endsWith('.ts') && !SKIPPED_SUFFIXES.some((suffix) => file.endsWith(suffix));
 
 export const isMissingFile = (error: unknown): boolean =>

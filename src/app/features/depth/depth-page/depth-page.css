@@ -1,0 +1,129 @@
+/* The header, messages and panel come from the Releases page's stylesheet; this
+   adds the filter, the verdict colours and the sky's room under the header. */
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.filter input {
+  box-sizing: border-box;
+  width: 190px;
+  padding: 6px 11px;
+  border: 1px solid var(--edge);
+  border-radius: 9px;
+  background: var(--well);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.filter input::placeholder {
+  color: var(--faint);
+}
+
+.filter input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 1px;
+}
+
+.legend [data-ink='deep']::before {
+  background: var(--depth-deep);
+  box-shadow: 0 0 8px 1px var(--depth-deep);
+}
+
+.legend [data-ink='balanced']::before {
+  background: var(--depth-balanced);
+  box-shadow: 0 0 8px 1px var(--depth-balanced);
+}
+
+.legend [data-ink='shallow']::before {
+  width: 7px;
+  height: 7px;
+  border: 2px solid var(--depth-shallow);
+  background: transparent;
+  box-shadow: none;
+}
+
+.map {
+  position: fixed;
+  inset: 0;
+  padding: calc(190px + env(safe-area-inset-top, 0px)) 20px
+    calc(60px + var(--playlist-clear-bottom, 0px));
+}
+
+.map app-depth-map {
+  width: 100%;
+  height: 100%;
+}
+
+.listview {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--queue-sky);
+  padding: calc(190px + env(safe-area-inset-top, 0px)) 20px 120px;
+  z-index: 4;
+}
+
+.listview app-depth-list {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Wide: the module in view takes a column down the right; narrow, it is a sheet at the foot. */
+@media (min-width: 900px) {
+  .panel {
+    left: auto;
+    top: calc(190px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    right: 20px;
+    width: 380px;
+    max-height: calc(100dvh - 190px - 90px);
+  }
+
+  .map {
+    padding-right: 420px;
+  }
+
+  .listview {
+    right: 410px;
+  }
+}
+
+@media (max-width: 899px) {
+  .panel {
+    max-height: 36dvh;
+  }
+
+  .map {
+    padding-bottom: calc(36dvh + 28px + var(--playlist-clear-bottom, 0px));
+  }
+
+  .listview {
+    padding-bottom: calc(38dvh + 40px + var(--playlist-clear-bottom, 0px));
+  }
+}
+
+/* On a phone the header wraps to about 300px: the sky and the list start below it. */
+@media (max-width: 720px) {
+  .map,
+  .listview {
+    padding-top: calc(310px + env(safe-area-inset-top, 0px));
+  }
+}

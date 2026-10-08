@@ -1,0 +1,72 @@
+@let commitsView = commits();
+<app-insights-part
+  heading="Commits"
+  [small]="'a week, ' + weeks()"
+  [note]="commitsView.note"
+  [table]="commitsView.table"
+>
+  @if (commitsView.chart; as chart) {
+    <app-usage-column-chart [chart]="chart" label="Commits to the default branch, week by week" />
+  }
+</app-insights-part>
+
+@let cycleView = cycle();
+<app-insights-part
+  heading="Cycle time"
+  [small]="'median open to merge, ' + weeks()"
+  [note]="cycleView.note"
+  [table]="cycleView.table"
+>
+  @if (cycleView.chart; as chart) {
+    <app-usage-column-chart [chart]="chart" label="Median time from open to merge, week by week" />
+  }
+</app-insights-part>
+
+@let contributorsView = contributors();
+<app-insights-part
+  heading="Contributors"
+  [small]="'commits, ' + weeks()"
+  [note]="contributorsView.note"
+  [table]="contributorsView.table"
+>
+  @if (contributorsView.chart; as chart) {
+    <app-usage-bar-chart [chart]="chart" label="Commits to the default branch by contributor" />
+  }
+</app-insights-part>
+
+@let agentsView = agentRows();
+<app-insights-part
+  heading="Agents"
+  [small]="'merged pull requests, ' + weeks()"
+  [note]="agentsView.note"
+  [table]="agentsView.table"
+>
+  @if (agentsView.chart; as chart) {
+    <p class="lead">
+      As the Agents report cards attribute them. Hover a bar for closes and the median time to
+      merge.
+    </p>
+    <app-usage-bar-chart [chart]="chart" label="Pull requests merged by agent" />
+  }
+</app-insights-part>
+
+@let trafficView = traffic();
+<app-insights-part
+  heading="Traffic"
+  small="last 14 days"
+  [note]="trafficView.note"
+  [table]="trafficView.table"
+>
+  @if (trafficView.chart; as charts) {
+    <h4>
+      Views <span>{{ charts.views.total }}</span>
+    </h4>
+    <app-usage-column-chart [chart]="charts.views.chart" label="Page views a day" />
+    <h4>
+      Clones <span>{{ charts.clones.total }}</span>
+    </h4>
+    <app-usage-column-chart [chart]="charts.clones.chart" label="Clones a day" />
+  }
+</app-insights-part>
+
+<app-usage-tip [tip]="tip()" />

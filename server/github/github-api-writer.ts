@@ -1,6 +1,7 @@
 import { type CheckRerunner, rerunFailedJobsPath } from './check-rerunner.ts';
 import type { GraphQl } from './github-graphql.ts';
 import type { Rest } from './github-rest.ts';
+import { type InboxMarker, NOTIFICATIONS_PATH, threadPath } from './inbox-marker.ts';
 import type { LivePull, PullChanges, PullWriter } from './pull-writer.ts';
 
 type Node = Readonly<Record<string, unknown>>;
@@ -107,6 +108,22 @@ export function githubApiRerunner(rest: Rest): CheckRerunner {
   return {
     rerunFailedJobs: async (repo, runId) => {
       await rest({ method: 'POST', path: `/${rerunFailedJobsPath(repo, runId)}` });
+    },
+  };
+}
+
+/** Marks notifications read through GitHub's REST API with the server's token. */
+export function githubApiInboxMarker(rest: Rest): InboxMarker {
+  return {
+    markThreadRead: async (threadId) => {
+      await rest({ method: 'PATCH', path: `/${threadPath(threadId)}` });
+    },
+    markAllRead: async (lastReadAt) => {
+      await rest({
+        method: 'PUT',
+        path: `/${NOTIFICATIONS_PATH}`,
+        body: { last_read_at: lastReadAt, read: true },
+      });
     },
   };
 }

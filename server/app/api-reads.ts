@@ -8,8 +8,20 @@ import type { RawLabel } from '../github/pull-reader.ts';
 import type { Frame } from '../history/frames.ts';
 import type { HistoryStore } from '../history/history-store.ts';
 import { type Ledger, ledgerReport } from '../history/ledger.ts';
+import { type JournalReport, journalReport } from '../journal/journal-report.ts';
 import { libraryReport } from '../library/library-report.ts';
 import type { LibraryReport } from '../library/library-types.ts';
+import { inboxReport } from '../inbox/inbox-report.ts';
+import {
+  deploymentsReport,
+  isPreviewUnsettled,
+  isReportBuilding,
+  pullPreview,
+} from '../deployments/deployments-report.ts';
+import type { DeploymentsReport, PullPreview } from '../deployments/deployments-types.ts';
+import { insightsReport, isCounting } from '../insights/insights-report.ts';
+import type { InsightsReport } from '../insights/insights-types.ts';
+import type { InboxReport } from '../inbox/inbox-types.ts';
 import type { ReleasesReport } from '../releases/release-types.ts';
 import { releasesReport } from '../releases/releases-report.ts';
 import { securityReport } from '../security/security-report.ts';
@@ -63,6 +75,8 @@ const AGENTS_TTL_MS = 5 * 60_000;
 const LEDGER_TTL_MS = 10 * 60_000;
 /** Releases are cut rarely and merges land a few times a day: ten minutes is fresh enough. */
 const RELEASES_TTL_MS = 10 * 60_000;
+/** A self-review is posted a few times a day at most; reading the journal costs ten requests. */
+const JOURNAL_TTL_MS = 10 * 60_000;
 /** A wiki or docs folder changes a few times a day at most; each read costs a request per page. */
 const LIBRARY_TTL_MS = 10 * 60_000;
 /** Runs start and end every few minutes while work is going on. */
@@ -74,9 +88,21 @@ const CI_HEALTH_TTL_MS = 5 * 60_000;
 /** Alerts open and close as dependencies and code change: a few times a day at most. Every
  *  project's tab strip asks for the count, so it is kept as long as the projects. */
 const SECURITY_TTL_MS = 5 * 60_000;
+/** Commit counts move a few times a day and traffic once a day. While GitHub is still counting
+ *  a repository's statistics it is asked again soon, so the screen fills in when they are ready. */
+const INSIGHTS_TTL_MS = 10 * 60_000;
+const COUNTING_TTL_MS = 20_000;
+/** Deploys land a few times a day; one still building is asked about again soon, so it
+ *  turns green or red on screen within a poll or two of finishing. */
+const DEPLOYMENTS_TTL_MS = 2 * 60_000;
+const BUILDING_TTL_MS = 20_000;
+/** GitHub asks that notifications be polled no more than once a minute (`X-Poll-Interval`). */
+const INBOX_TTL_MS = 60_000;
 
 /** The projects report's one key in its cache. */
 const ALL_PROJECTS = 'all';
+/** The inbox's one key in its cache: there is one account's. */
+const ONE_INBOX = 'inbox';
 
 /** Where the reports come from: the same code here and hosted, with different sources. */
 export interface ReadSources {
@@ -136,6 +162,8 @@ export interface ApiReads {
   ledger(repo: string): Promise<Ledger>;
   /** Releases or tags, each with its notes and the merged pull requests it shipped. */
   releases(repo: string): Promise<ReleasesReport>;
+  /** What each self-review taught: the Second draft sections of the pull requests' review comments. */
+  journal(repo: string): Promise<JournalReport>;
   /** The wiki's pages, or the README and docs where there is no wiki. */
   library(repo: string): Promise<LibraryReport>;
   /** Workflows and their newest runs, with flaky runs tagged and the default branch's health. */
@@ -148,6 +176,20 @@ export interface ApiReads {
   ciHealth(repo: string): Promise<CiHealth>;
   /** Open Dependabot, code-scanning and secret-scanning alerts, most severe first. */
   security(repo: string): Promise<SecurityReport>;
+  /** Weekly commits, contributors, finished pull requests and traffic over the last twelve weeks. */
+  insights(repo: string): Promise<InsightsReport>;
+  /** The next read of these insights goes to GitHub, not the cache. */
+  forgetInsights(repo: string): void;
+  /** Each environment with its latest deployments and how they went. */
+  deployments(repo: string): Promise<DeploymentsReport>;
+  /** The next read of these deployments goes to GitHub, not the cache. */
+  forgetDeployments(repo: string): void;
+  /** What one commit, a pull request's head, was deployed as. */
+  pullPreview(repo: string, sha: string): Promise<PullPreview>;
+  /** The account's unread GitHub notifications across every repository. */
+  inbox(): Promise<InboxReport>;
+  /** The next read of the inbox goes to GitHub, not the cache. */
+  forgetInbox(): void;
   usage(): Promise<UsageReport | null>;
   agentUsage(): Promise<AgentUsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
@@ -235,6 +277,22 @@ export function cachedReads(sources: ReadSources): ApiReads {
     const [repo, runId] = key.split('#');
     return runJobsReport(github, repo, Number(runId));
   }, RUN_JOBS_TTL_MS);
+  const insightsOf = keyedCache(
+    (repo) => insightsReport(github, repo),
+    (report) => (isCounting(report) ? COUNTING_TTL_MS : INSIGHTS_TTL_MS),
+  );
+  const deploymentsOf = keyedCache(
+    (repo) => deploymentsReport(github, repo),
+    (report) => (isReportBuilding(report) ? BUILDING_TTL_MS : DEPLOYMENTS_TTL_MS),
+  );
+  const previewOf = keyedCache(
+    async (key) => {
+      const [repo, sha] = key.split('@');
+      return pullPreview(github, repo, sha);
+    },
+    (preview) => (isPreviewUnsettled(preview) ? BUILDING_TTL_MS : DEPLOYMENTS_TTL_MS),
+  );
+  const inboxOf = keyedCache(() => inboxReport(github, new Date()), INBOX_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
     return github.pullState(repo, Number(number));
@@ -264,6 +322,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     history: async (repo) => ({ repo, frames: await history.read(repo) }),
     ledger: cachedByKey((repo) => ledgerReport(github, repo), LEDGER_TTL_MS),
     releases: cachedByKey((repo) => releasesReport(github, repo), RELEASES_TTL_MS),
+    journal: cachedByKey((repo) => journalReport(github, repo), JOURNAL_TTL_MS),
     library: cachedByKey((repo) => libraryReport(github, repo), LIBRARY_TTL_MS),
     actions: (repo) => actionsOf.read(repo),
     forgetActions: (repo) => {
@@ -273,6 +332,13 @@ export function cachedReads(sources: ReadSources): ApiReads {
     runJobs: (repo, runId) => runJobsOf.read(numberKey(repo, runId)),
     ciHealth: (repo) => ciHealthOf.read(repo),
     security: cachedByKey((repo) => securityReport(github, repo), SECURITY_TTL_MS),
+    insights: (repo) => insightsOf.read(repo),
+    forgetInsights: (repo) => insightsOf.forget(repo),
+    deployments: (repo) => deploymentsOf.read(repo),
+    forgetDeployments: (repo) => deploymentsOf.forget(repo),
+    pullPreview: (repo, sha) => previewOf.read(commitKey(repo, sha)),
+    inbox: () => inboxOf.read(ONE_INBOX),
+    forgetInbox: () => inboxOf.forget(ONE_INBOX),
     usage: sources.usage,
     agentUsage: sources.agentUsage,
     logs: cachedByKey(sources.logs, LOGS_TTL_MS),

@@ -1,0 +1,25 @@
+:host {
+  display: block;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.line {
+  fill: none;
+  stroke: var(--edge-soft);
+  stroke-width: 1;
+}
+
+.star {
+  fill: var(--ink);
+  filter: drop-shadow(0 0 3px var(--flow));
+}
+
+.star.dark {
+  fill: var(--faint);
+  filter: none;
+}

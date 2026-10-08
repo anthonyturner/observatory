@@ -1,0 +1,40 @@
+<article>
+  <header>
+    <a [href]="card().url" target="_blank" rel="noopener noreferrer"
+      >Pull request #{{ card().pull }} <span aria-hidden="true">↗</span></a
+    >
+    <span class="when">{{ card().date }}</span>
+  </header>
+
+  <dl>
+    <div>
+      <dt>First version</dt>
+      <dd>{{ card().firstVersion }}</dd>
+    </div>
+    <div>
+      <dt>Feedback</dt>
+      <dd>{{ card().feedback }}</dd>
+    </div>
+    <div class="change">
+      <dt>Changed, and why</dt>
+      <dd>{{ card().change }}</dd>
+    </div>
+  </dl>
+
+  @if (card().principles.length) {
+    <ul class="taught" aria-label="Principles it taught">
+      @for (principle of card().principles; track principle.id) {
+        <li>
+          <button
+            type="button"
+            class="chip"
+            [attr.aria-pressed]="principle.id === picked()"
+            (click)="taught.emit(principle.id)"
+          >
+            {{ principle.label }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</article>

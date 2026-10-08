@@ -1,0 +1,63 @@
+<header class="hud">
+  <div class="way">
+    <app-up-link to="/orrery" label="All projects" />
+    <app-project-tabs [repo]="repo()" current="journal" />
+  </div>
+  <div class="brand">
+    <h1>Journal</h1>
+    <span class="stamp">{{ stamp() }}</span>
+  </div>
+  <p class="note">
+    What each self-review taught: the first version, the feedback, and what changed on the redo.
+  </p>
+</header>
+
+@if (entries().length) {
+  <main class="log" tabindex="-1">
+    <section class="filter" aria-labelledby="journal-filter">
+      <h2 id="journal-filter">Principles taught</h2>
+      <ul class="chips">
+        @for (chip of chips(); track chip.id) {
+          <li>
+            <button
+              type="button"
+              class="chip"
+              [attr.aria-pressed]="chip.id === picked()"
+              (click)="toggle(chip.id)"
+            >
+              {{ chip.label }} <span class="count">{{ chip.count }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+      <div class="picked" role="status">
+        @if (pickedPrinciple(); as principle) {
+          <strong>{{ principle.line }}</strong>
+          @if (principle.idea) {
+            <span>{{ principle.idea }}</span>
+          }
+        }
+      </div>
+    </section>
+
+    <section aria-labelledby="journal-lessons">
+      <h2 id="journal-lessons" class="visually-hidden">Lessons, newest first</h2>
+      <ol class="entries">
+        @for (card of cards(); track card.key) {
+          <li>
+            <app-journal-entry [card]="card" [picked]="picked()" (taught)="toggle($event)" />
+          </li>
+        }
+      </ol>
+    </section>
+  </main>
+}
+
+@if (message(); as message) {
+  <div class="state" role="status">
+    <strong>{{ message.headline }}</strong>
+    @if (message.detail) {
+      <span>{{ message.detail }}</span>
+    }
+  </div>
+}

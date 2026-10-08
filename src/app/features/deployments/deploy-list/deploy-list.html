@@ -1,0 +1,56 @@
+@for (section of sections(); track section.name; let index = $index) {
+  <section class="env" [attr.aria-labelledby]="'deploy-env-' + index">
+    <header>
+      <h2 [id]="'deploy-env-' + index">
+        {{ section.name }}
+        @if (section.isProduction) {
+          <span class="tag">production</span>
+        }
+      </h2>
+      <a class="history" [href]="section.url" target="_blank" rel="noopener"
+        >History on GitHub<span class="visually-hidden"> for {{ section.name }}</span></a
+      >
+    </header>
+    @if (section.rows.length) {
+      <ol [attr.aria-label]="section.name + ' deployments, newest first'">
+        @for (row of section.rows; track row.key; let first = $first) {
+          <li [class.latest]="first" [style.--dot]="row.colour">
+            <span class="dot" aria-hidden="true"></span>
+            <span class="outcome">
+              @if (first) {
+                <span class="label">Latest</span>
+              }
+              <b>{{ row.outcome }}</b>
+              @if (row.description) {
+                <span class="said"> · {{ row.description }}</span>
+              }
+            </span>
+            <span class="meta">
+              commit <a [href]="row.commitUrl" target="_blank" rel="noopener">{{ row.commit }}</a> ·
+              {{ row.when }}
+              @if (row.creator) {
+                · by {{ row.creator }}
+              }
+            </span>
+            <span class="links">
+              @if (row.siteUrl) {
+                <a [href]="row.siteUrl" target="_blank" rel="noopener"
+                  >Open site<span class="visually-hidden"
+                    >, {{ section.name }} {{ row.commit }}</span
+                  ></a
+                >
+              }
+              @if (row.logUrl) {
+                <a [href]="row.logUrl" target="_blank" rel="noopener"
+                  >Log<span class="visually-hidden">, {{ section.name }} {{ row.commit }}</span></a
+                >
+              }
+            </span>
+          </li>
+        }
+      </ol>
+    } @else {
+      <p class="none">No deployments yet.</p>
+    }
+  </section>
+}

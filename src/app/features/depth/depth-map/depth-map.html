@@ -1,0 +1,54 @@
+<svg
+  class="sky"
+  role="group"
+  aria-label="Modules as planets: a core for the work each hides, a ring for its interface. Arrow keys move between planets."
+  preserveAspectRatio="xMidYMid meet"
+  [attr.viewBox]="viewBox()"
+  (keydown)="walk($event)"
+>
+  <defs>
+    <radialGradient id="depth-core-deep" cx="35%" cy="32%" r="75%">
+      <stop offset="0" stop-color="#fff6e0" />
+      <stop offset="0.45" style="stop-color: var(--depth-deep)" />
+      <stop offset="1" stop-color="#7a4a10" />
+    </radialGradient>
+    <radialGradient id="depth-core-balanced" cx="35%" cy="32%" r="75%">
+      <stop offset="0" stop-color="#eef1ff" />
+      <stop offset="0.45" style="stop-color: var(--depth-balanced)" />
+      <stop offset="1" stop-color="#242f66" />
+    </radialGradient>
+    <radialGradient id="depth-core-shallow" cx="35%" cy="32%" r="75%">
+      <stop offset="0" stop-color="#ffe8f0" />
+      <stop offset="0.45" style="stop-color: var(--depth-shallow)" />
+      <stop offset="1" stop-color="#6b2a40" />
+    </radialGradient>
+  </defs>
+
+  @for (system of systems(); track system.folder) {
+    <g class="system" aria-hidden="true">
+      <circle [attr.cx]="system.x" [attr.cy]="system.y" [attr.r]="system.r" />
+      @if (system.isLabelled) {
+        <text [attr.x]="system.x" [attr.y]="system.labelY">{{ system.name }}</text>
+      }
+    </g>
+  }
+
+  @for (planet of planets(); track planet.module.file; let i = $index) {
+    <g
+      class="planet"
+      data-planet
+      role="img"
+      [attr.data-verdict]="planet.verdict"
+      [attr.transform]="planet.transform"
+      [attr.tabindex]="i === tabbable() ? 0 : -1"
+      [attr.aria-label]="planet.label"
+      [class.active]="planet.module.file === active()"
+      (pointerenter)="activate.emit(planet.module)"
+      (focus)="focused(i, planet.module)"
+    >
+      <circle class="halo" [attr.r]="planet.halo" />
+      <circle class="shell" [attr.r]="planet.shell" />
+      <circle class="core" [attr.r]="planet.core" />
+    </g>
+  }
+</svg>

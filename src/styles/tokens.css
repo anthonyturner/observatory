@@ -320,6 +320,14 @@
   --release-comet-head: var(--orrery-comet-head);
   --release-speck: #f4f8ff;
 
+  /* The Depth sky: a planet's colour says how deep its module runs. The shape
+     says it too (a solid core, or a hollow ring), so colour is never alone. */
+  --depth-deep: #ffc46b;
+  --depth-balanced: #8ea2ff;
+  --depth-shallow: #ff8fb4;
+  --depth-system: rgba(120, 150, 220, 0.16);
+  --depth-system-label: var(--faint);
+
   /* The Actions sky: a run's colour says how it went; a flaky one is ringed
      in amber. The CI mark on a project card uses the same colours. */
   --actions-failed: #ff5a4a;

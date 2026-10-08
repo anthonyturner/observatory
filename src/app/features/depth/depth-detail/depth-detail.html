@@ -1,0 +1,29 @@
+<header [attr.data-verdict]="module().verdict">
+  <h2>{{ path().name }}</h2>
+  @if (path().folder) {
+    <p class="folder">{{ path().folder }}</p>
+  }
+  <p class="verdict">{{ verdict() }}</p>
+</header>
+
+<dl class="numbers">
+  <div>
+    <dt>Implementation</dt>
+    <dd>{{ module().implementation }}<span> statements of work it hides</span></dd>
+  </div>
+  <div>
+    <dt>Interface</dt>
+    <dd>{{ module().interfaceSize }}<span> things a caller must learn</span></dd>
+  </div>
+  <div>
+    <dt>Depth</dt>
+    <dd>{{ depth() }}<span> work for each thing learned</span></dd>
+  </div>
+</dl>
+
+@if (principle(); as idea) {
+  <section class="principle" aria-label="Design principle">
+    <h3>{{ idea.title }}</h3>
+    <p>{{ idea.idea }}</p>
+  </section>
+}

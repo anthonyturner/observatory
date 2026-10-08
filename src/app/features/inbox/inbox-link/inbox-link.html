@@ -1,0 +1,8 @@
+@if (isShown()) {
+  <a routerLink="/inbox" [attr.aria-label]="name()" [title]="name()">
+    Inbox
+    @if (count(); as count) {
+      <span class="count" aria-hidden="true">{{ count }}</span>
+    }
+  </a>
+}

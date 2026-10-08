@@ -18,6 +18,7 @@ const owner: RouteTable = {
 const reads = {
   history: async (repo: string) => ({ repo, frames: [] }),
   releases: async (repo: string) => ({ repo, releases: [] }),
+  journal: async (repo: string) => ({ repo, entries: [] }),
   library: async (repo: string) => ({ repo, pages: [] }),
   actions: async (repo: string) => ({ repo, runs: [] }),
   runJobs: async (repo: string, runId: number) => ({ repo, runId, jobs: [] }),
@@ -28,6 +29,13 @@ const reads = {
     alerts: [{ kind: 'secret-scanning', number: 1, title: 'GitHub Personal Access Token' }],
     isWithheld: false,
   }),
+  insights: async (repo: string) => ({
+    repo,
+    commits: { status: 'read', note: null, weeks: [] },
+    traffic: { status: 'read', note: null, views: { count: 46 }, clones: { count: 8 } },
+  }),
+  deployments: async (repo: string) => ({ repo, environments: [] }),
+  pullPreview: async (repo: string, sha: string) => ({ repo, sha, deployments: [] }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
   commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
@@ -111,6 +119,8 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/issue?repo=me/secret&number=3')).status, 404);
     assert.equal((await get(handle, '/api/releases?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/releases?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/journal?repo=me/app')).status, 200);
+    assert.equal((await get(handle, '/api/journal?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/library?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/library?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/actions?repo=me/app')).status, 200);
@@ -120,6 +130,33 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/ci-health?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/ci-health?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/security?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/insights?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/deployments?repo=me/app')).status, 200);
+    assert.equal((await get(handle, '/api/deployments?repo=me/secret')).status, 404);
+    const sha = 'a'.repeat(40);
+    assert.equal(
+      (await get(handle, `/api/deployments/preview?repo=me/app&sha=${sha}`)).status,
+      200,
+    );
+    assert.equal(
+      (await get(handle, `/api/deployments/preview?repo=me/secret&sha=${sha}`)).status,
+      404,
+    );
+    assert.equal((await get(handle, '/api/deployments/preview?repo=me/app&sha=nope')).status, 400);
+  });
+
+  it('gives a visitor a repository’s insights without its traffic', async () => {
+    const response = await get(visitor(false), '/api/insights?repo=me/app');
+
+    assert.equal(response.status, 200);
+    const report = (await response.json()) as {
+      commits: { status: string };
+      traffic: { status: string; views: unknown; clones: unknown };
+    };
+    assert.equal(report.commits.status, 'read');
+    assert.equal(report.traffic.status, 'withheld');
+    assert.equal(report.traffic.views, null);
+    assert.equal(report.traffic.clones, null);
   });
 
   it('gives a visitor a repository’s alert counts and never the alerts', async () => {

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, InjectionToken, Signal, computed, inject, linkedSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Observable, catchError, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, scan, switchMap } from 'rxjs';
 import { Clock } from '../time/clock';
 import { localDayKey } from '../usage/usage-format';
 import { Principle, PrinciplesState } from './principle.types';
@@ -39,8 +39,8 @@ export interface ShownPrinciple {
 
 /**
  * The software-design principle of the day, read again when the local day
- * turns, and a way to step through the rest. Yesterday's stays on show until
- * the new day's is read, and stepping starts again from it.
+ * turns, and a way to step through the rest. A failed read keeps the one on
+ * show, and a new day's read starts the stepping again from it.
  */
 @Injectable({ providedIn: 'root' })
 export class PrincipleOfDay {
@@ -49,7 +49,10 @@ export class PrincipleOfDay {
   private readonly today = computed(() => localDayKey(this.clock.now().getTime()));
 
   readonly state: Signal<PrinciplesState> = toSignal(
-    toObservable(this.today).pipe(switchMap((day) => this.read(day))),
+    toObservable(this.today).pipe(
+      switchMap((day) => this.read(day)),
+      scan((shown, next) => (next.status === 'ready' ? next : shown)),
+    ),
     { initialValue: { status: 'reading' } },
   );
 

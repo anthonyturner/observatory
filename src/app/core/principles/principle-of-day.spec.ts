@@ -77,6 +77,17 @@ describe('PrincipleOfDay', () => {
     expect(service.shown()).toEqual(expect.objectContaining({ place: 2, isToday: true }));
   });
 
+  it('keeps the principle on show when a later read fails', () => {
+    const { service, now, answers } = setUp();
+    answers.next(ready(1));
+
+    now.set(new Date(2026, 9, 9, 0, 0));
+    TestBed.tick();
+    answers.next({ status: 'unreachable' });
+
+    expect(service.shown()?.principle).toBe(DECK[1]);
+  });
+
   it('shows nothing when the site could not be reached', () => {
     const { service, answers } = setUp();
 

@@ -3,6 +3,8 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Observable, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { plural } from '../text/plural';
+import { QuietTab } from './quiet-tab';
+import { QUIET_TABS } from './quiet-tabs';
 import { TAB_BADGES, TabBadge } from './tab-badge';
 
 /** One screen of a project, reached at `/p/:owner/:repo/<path>`. */
@@ -22,6 +24,13 @@ export const LIBRARY_TAB: ProjectTab = { id: 'library', label: 'Library', path: 
 /** The Security screen: open Dependabot, code-scanning and secret-scanning alerts. */
 export const SECURITY_TAB: ProjectTab = { id: 'security', label: 'Security', path: 'security' };
 
+/** The Milestones screen, with the project's Discussions beside them. Last, as many have neither. */
+export const MILESTONES_TAB: ProjectTab = {
+  id: 'milestones',
+  label: 'Milestones',
+  path: 'milestones',
+};
+
 /**
  * Every per-project screen, in the order the strip shows them. A new screen
  * adds its entry here and its route in `app.routes.ts`, and passes its `id`
@@ -37,6 +46,7 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
   SECURITY_TAB,
   { id: 'insights', label: 'Insights', path: 'insights' },
   { id: 'deployments', label: 'Deployments', path: 'deployments' },
+  MILESTONES_TAB,
 ];
 
 /** Where a tab lives for one repository, `owner/name`. */
@@ -55,11 +65,14 @@ interface TabLink {
   readonly link: string;
   readonly isCurrent: boolean;
   readonly badge: BadgeView | null;
+  /** The project has nothing on this screen, so the tab recedes. */
+  readonly isQuiet: boolean;
 }
 
 type BadgeCounts = ReadonlyMap<string, BadgeView>;
 
 const NO_BADGES: BadgeCounts = new Map();
+const NONE_QUIET: ReadonlySet<string> = new Set();
 
 /** Each badge's count for `repo`, as views by tab id; a count of none shows no badge. */
 function badgeViews(badges: readonly TabBadge[], repo: string): Observable<BadgeCounts> {
@@ -84,6 +97,20 @@ function badgeViews(badges: readonly TabBadge[], repo: string): Observable<Badge
   );
 }
 
+/** The ids of the tabs `repo` has nothing on. */
+function quietIds(tabs: readonly QuietTab[], repo: string): Observable<ReadonlySet<string>> {
+  if (!tabs.length || !repo) return of(NONE_QUIET);
+  const each = tabs.map((tab) =>
+    tab.isEmpty(repo).pipe(
+      startWith(false),
+      map((isEmpty) => (isEmpty ? tab.tabId : null)),
+    ),
+  );
+  return combineLatest(each).pipe(
+    map((ids) => new Set(ids.filter((id): id is string => id !== null))),
+  );
+}
+
 /** The row of a project's screens, on every one of them: links, the current one marked as the page. */
 @Component({
   selector: 'app-project-tabs',
@@ -94,6 +121,7 @@ function badgeViews(badges: readonly TabBadge[], repo: string): Observable<Badge
 })
 export class ProjectTabs {
   private readonly badges = inject(TAB_BADGES);
+  private readonly quietTabs = inject(QUIET_TABS);
 
   /** `owner/name`. */
   readonly repo = input.required<string>();
@@ -104,6 +132,10 @@ export class ProjectTabs {
     toObservable(this.repo).pipe(switchMap((repo) => badgeViews(this.badges, repo))),
     { initialValue: NO_BADGES },
   );
+  private readonly quiet = toSignal(
+    toObservable(this.repo).pipe(switchMap((repo) => quietIds(this.quietTabs, repo))),
+    { initialValue: NONE_QUIET },
+  );
 
   protected readonly links = computed((): readonly TabLink[] =>
     PROJECT_TABS.map((tab) => ({
@@ -112,6 +144,7 @@ export class ProjectTabs {
       link: projectTabLink(this.repo(), tab),
       isCurrent: tab.id === this.current(),
       badge: this.counts().get(tab.id) ?? null,
+      isQuiet: this.quiet().has(tab.id),
     })),
   );
 }

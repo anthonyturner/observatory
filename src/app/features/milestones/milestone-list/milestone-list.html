@@ -1,0 +1,21 @@
+@if (note(); as note) {
+  <p class="none">{{ note }}</p>
+}
+
+<section aria-labelledby="milestones-open">
+  <h2 id="milestones-open">Open</h2>
+  @for (row of openRows(); track row.key) {
+    <app-milestone-card [row]="row" />
+  } @empty {
+    <p class="none">No open milestones.</p>
+  }
+</section>
+
+@if (closedRows().length) {
+  <section aria-labelledby="milestones-closed">
+    <h2 id="milestones-closed">Closed lately</h2>
+    @for (row of closedRows(); track row.key) {
+      <app-milestone-card [row]="row" />
+    }
+  </section>
+}

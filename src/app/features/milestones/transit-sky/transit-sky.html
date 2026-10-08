@@ -1,0 +1,35 @@
+<canvas #canvas aria-hidden="true"></canvas>
+
+@for (lane of marks().lanes; track lane.key) {
+  <span class="words start" aria-hidden="true" [style.left.px]="lane.startX" [style.top.px]="lane.y"
+    ><span class="line"
+      ><b>{{ lane.title }}</b
+      ><small>{{ lane.progress }}</small></span
+    ><span class="due" [style.--dot]="lane.colour">{{ lane.due }}</span></span
+  >
+  <span
+    class="words end"
+    aria-hidden="true"
+    [style.--dot]="lane.colour"
+    [style.left.px]="lane.endX"
+    [style.top.px]="lane.y"
+    >{{ lane.due }}</span
+  >
+}
+
+<div class="bodies" role="group" aria-label="Open milestones, soonest due first">
+  @for (planet of marks().planets; track planet.key) {
+    <a
+      class="body"
+      [href]="planet.href"
+      target="_blank"
+      rel="noopener"
+      [style.left.px]="planet.x"
+      [style.top.px]="planet.y"
+      [style.--hit.px]="planet.hit"
+      [attr.aria-label]="planet.spoken"
+    >
+      <span class="tip" aria-hidden="true">{{ planet.tip }}</span>
+    </a>
+  }
+</div>

@@ -43,6 +43,23 @@ a:focus-visible {
   outline-offset: -2px;
 }
 
+/* A screen this project has nothing on: dimmed, but kept above the contrast floor for text. */
+a.quiet {
+  padding-inline: 9px;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+a.quiet:hover,
+a.quiet:focus-visible,
+a.quiet[aria-current='page'] {
+  opacity: 1;
+}
+
+a.quiet[aria-current='page'] {
+  font-style: normal;
+}
+
 a[aria-current='page'] {
   color: var(--ink);
   background: var(--starmap-press);

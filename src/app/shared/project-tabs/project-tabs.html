@@ -1,10 +1,16 @@
 <nav aria-label="Project screens">
   @for (tab of links(); track tab.id) {
-    <a [routerLink]="tab.link" [attr.aria-current]="tab.isCurrent ? 'page' : null"
+    <a
+      [routerLink]="tab.link"
+      [attr.aria-current]="tab.isCurrent ? 'page' : null"
+      [class.quiet]="tab.isQuiet"
       >{{ tab.label }}
       @if (tab.badge; as badge) {
         <span class="badge" aria-hidden="true">{{ badge.shown }}</span
         ><span class="visually-hidden">, {{ badge.spoken }}</span>
+      }
+      @if (tab.isQuiet) {
+        <span class="visually-hidden">, nothing here yet</span>
       }
     </a>
   }

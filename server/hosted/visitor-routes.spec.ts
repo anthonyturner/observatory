@@ -36,6 +36,7 @@ const reads = {
   }),
   deployments: async (repo: string) => ({ repo, environments: [] }),
   pullPreview: async (repo: string, sha: string) => ({ repo, sha, deployments: [] }),
+  milestones: async (repo: string) => ({ repo, milestones: { open: [] } }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
   commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
@@ -143,6 +144,8 @@ describe('visitorRoutes', () => {
       404,
     );
     assert.equal((await get(handle, '/api/deployments/preview?repo=me/app&sha=nope')).status, 400);
+    assert.equal((await get(handle, '/api/milestones?repo=me/app')).status, 200);
+    assert.equal((await get(handle, '/api/milestones?repo=me/secret')).status, 404);
   });
 
   it('gives a visitor a repository’s insights without its traffic', async () => {

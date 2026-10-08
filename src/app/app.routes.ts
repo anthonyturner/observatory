@@ -94,6 +94,12 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'p/:owner/:repo/milestones',
+    title: 'Milestones · Observatory',
+    loadComponent: () =>
+      import('./features/milestones/milestones-page/milestones-page').then((m) => m.MilestonesPage),
+  },
+  {
     matcher: libraryMatcher,
     title: 'Library · Observatory',
     loadComponent: () =>

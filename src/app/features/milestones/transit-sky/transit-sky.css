@@ -1,0 +1,140 @@
+:host {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+}
+
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Each planet's link is centred on it and as large as its glow, at least a fingertip. */
+.body {
+  position: absolute;
+  width: var(--hit);
+  height: var(--hit);
+  margin: calc(var(--hit) / -2) 0 0 calc(var(--hit) / -2);
+  border-radius: 50%;
+  color: inherit;
+}
+
+.body:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 4px;
+}
+
+/* Shown on hover and on keyboard focus, so a milestone's facts never need the pointer. */
+.tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  padding: 6px 10px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--tip-glass);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+  z-index: 2;
+}
+
+.body:hover .tip,
+.body:focus-visible .tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.words {
+  position: absolute;
+  max-width: 44%;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  text-shadow: 0 0 6px var(--void);
+  pointer-events: none;
+}
+
+.line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.words b {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.words small {
+  flex: none;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The date sits under the arrival's ring, its dot in the planet's colour; on a narrow
+   screen there is no room beside the title, so it goes under it instead. */
+.words.end,
+.due {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.words.end {
+  max-width: none;
+  transform: translateX(-100%);
+}
+
+.start .due {
+  display: none;
+  margin-top: 3px;
+}
+
+.words.end::before,
+.due::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 8px 1px var(--dot);
+}
+
+@media (max-width: 720px) {
+  .words {
+    max-width: calc(100% - 60px);
+  }
+
+  .words.end {
+    display: none;
+  }
+
+  .start .due {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tip {
+    transition: none;
+  }
+}

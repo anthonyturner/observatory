@@ -1,0 +1,32 @@
+<header>
+  <h2 id="discussions-title">Discussions</h2>
+  @if (!note()) {
+    <span class="count">{{ count() }}</span>
+  }
+</header>
+
+@if (note(); as note) {
+  <p class="none">{{ note }}</p>
+} @else {
+  @for (group of groups(); track group.name; let index = $index) {
+    <section [attr.aria-labelledby]="'discussion-category-' + index">
+      <h3 [id]="'discussion-category-' + index">{{ group.name }}</h3>
+      <ul>
+        @for (row of group.rows; track row.key) {
+          <li>
+            <a [href]="row.url" target="_blank" rel="noopener">{{ row.title }}</a>
+            <span class="meta">
+              @if (row.answer) {
+                <span class="answer" [class.answered]="row.isAnswered">{{ row.answer }}</span> ·
+              }
+              {{ row.meta }}
+            </span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+  <p class="all">
+    <a [href]="href()" target="_blank" rel="noopener">All discussions on GitHub</a>
+  </p>
+}

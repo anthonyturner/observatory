@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security, Depth and Deployments skies, the Library, the Inbox and Insights
+# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security, Depth, Deployments and Milestones skies, the Library, the Inbox and Insights
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -8,8 +8,8 @@ line; this page says how it works.
 The Orrery and Review Queue sections describe the WebGL renderer. Each of those
 skies also has a Canvas 2D fallback for when WebGL can't start or a shader
 won't compile; the fallback keeps the older, simpler marks unless a section
-says otherwise. The Releases, Actions, Security and Deployments skies are Canvas
-2D only; the Depth sky is SVG.
+says otherwise. The Releases, Actions, Security, Deployments and Milestones skies
+are Canvas 2D only; the Depth sky is SVG.
 
 ## Principle: meaning versus scenery
 
@@ -61,6 +61,9 @@ TypeScript and the shader only draws it.
 | Deployments  | Pad, place       | An environment             | `layoutPads`                   |
 | Deployments  | Colour, star     | How a deployment went      | `outcomeOf` (server)           |
 | Deployments  | Trail            | Earlier deployments        | `trailRadius`, `trailAlpha`    |
+| Milestones   | Place on lane    | Share of its items done    | `progressOf`, `pointAlong`     |
+| Milestones   | Planet size      | Issues and PRs on it       | `planetRadius`                 |
+| Milestones   | Air, red bloom   | How it stands to its date  | `dueStateOf`, `DUE_TOKEN`      |
 
 ## Orrery worlds
 
@@ -699,6 +702,51 @@ Actions sky's tokens, reused so nothing is added to the start-up stylesheet. A
 latest one still building sends out a ring every 2.4 s (`beaconPulse`); a latest
 one that failed breathes a red bloom (`flareReach`). Both read the frame loop's
 scene time, so they hold still when motion is off.
+
+## The Milestones sky
+
+Code: `features/milestones/transit-sky/`. Like the Deployments sky it is Canvas
+2D only: the Orrery's night (`paintBackground`, `paintField`, vignette and
+grain), each planet painted once by the shared portrait painter as the Security
+sky paints its world (`planetLook`, seeded by the repository and the
+milestone's number), a flat disc lit from the upper left until it loads. Each
+planet is a real link over the canvas to the milestone on GitHub, so hover and
+keyboard focus show it; the **List** view gives every milestone with its
+issues and pull requests, and the lately closed ones.
+
+### Lanes (data: progress toward a date)
+
+`layoutTransit` gives each open milestone, soonest due first and those with no
+date last, a lane of its own: a gentle arc from its launch on the left to a
+dashed ring, its arrival, on the right, at most 1100 px wide and centred, the
+lanes at most 130 px apart. At most eight are drawn (`MAX_LANES`); the header
+says when the list holds more. The planet sits `progressOf` along its lane:
+its closed issues and merged or closed pull requests over all of them, as
+GitHub counts a milestone's progress, so one with nothing done waits at launch
+and one with nothing left open has arrived. The stretch flown is lit in the
+planet's colour with a soft wake; the rest of the lane stays faintly dashed.
+
+### Planets (data: size and standing)
+
+Size is `planetRadius`: `6 + 2.2 × √items` px, at most 20 and at most 0.3 of the
+gap between lanes. Air is the colour of `dueStateOf`, reddening as the date
+nears: `--flow` with time to spare, `--meh` when due within a week,
+`--actions-failed` once its due day is over, `--actions-passed` when nothing is
+left open, and `--muted` with no due date. These are other skies' tokens,
+reused so nothing is added to the start-up stylesheet. An overdue planet's
+arrival ring turns red too, and it breathes a red bloom (`flareReach`, on its
+own phase) that reads the frame loop's scene time, so it holds still when
+motion is off.
+
+### Discussions
+
+The project's latest discussions sit beside the sky as a quiet list, not a
+sky: grouped by category, the most lately active first, each with its answer
+state where its category takes one (_Answered_ in `--actions-passed`,
+_Unanswered_ in `--meh`, the word always said), its comments and when it last
+moved. On a narrow screen they follow the milestones in the **List** view, so
+the sky keeps its height for the lanes. The Milestones tab recedes, dimmed and
+in italics, for a project with no milestones and Discussions off or empty.
 
 ## The Library's star chart
 

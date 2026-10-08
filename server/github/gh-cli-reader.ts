@@ -38,6 +38,9 @@ import { securityReader } from './security-reader.ts';
 import { notificationReader } from './notification-reader.ts';
 import { insightsReader } from './insights-reader.ts';
 import { deploymentReader } from './deployment-reader.ts';
+import { discussionReader } from './discussion-reader.ts';
+import { ghGraphQl } from './gh-graphql.ts';
+import { milestoneReader } from './milestone-reader.ts';
 import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -56,6 +59,8 @@ const ISSUES_DISABLED = /has disabled issues/i;
 
 /** One REST path through `gh api`, as JSON. */
 const getJson: JsonGet = (path) => ghJson<unknown>(['api', path]);
+/** GraphQL through `gh api graphql`, for what GitHub's REST API does not give, such as discussions. */
+const graphQl = ghGraphQl((args) => ghJson<unknown>(args));
 
 /** GitHub through the `gh` CLI, as the account this machine signed it in with. */
 export function ghCliReader(): GitHub {
@@ -80,6 +85,8 @@ export function ghCliReader(): GitHub {
     ...notificationReader(getJson),
     ...insightsReader(getJson),
     ...deploymentReader(getJson),
+    ...milestoneReader(graphQl),
+    ...discussionReader(graphQl),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([

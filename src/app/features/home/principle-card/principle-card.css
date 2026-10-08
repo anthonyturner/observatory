@@ -1,0 +1,76 @@
+:host {
+  display: block;
+  padding: 12px 14px 14px;
+}
+
+.principle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.idea {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* The question is the part to carry into the day, so it sits on its own rule. */
+.question {
+  margin: 2px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--flow);
+  font-size: 12.5px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.ask {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.steps {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.steps .abtn {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* Already on today's: pressing it changes nothing, so it steps back. */
+.steps .abtn[aria-disabled='true'] {
+  border-color: var(--edge-soft);
+  background: transparent;
+  cursor: default;
+}
+
+/* Next sits at the far end, where the eye goes on reading. */
+.steps .abtn:last-child {
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .steps .abtn {
+    min-height: 44px;
+  }
+}

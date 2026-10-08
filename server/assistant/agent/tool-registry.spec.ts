@@ -86,6 +86,7 @@ describe('toolRegistry', () => {
         'snooze_pull_request',
         'dismiss_pull_request',
         'send_crew',
+        'principle_of_the_day',
       ],
     );
   });

@@ -1,7 +1,7 @@
-import { isFresh } from '../app/api-routes.ts';
 import type { InboxMarker } from '../github/inbox-marker.ts';
 import { BadRequest, type RouteTable } from '../http/api-handler.ts';
 import { fieldsOf } from '../http/body-fields.ts';
+import { isFresh } from '../http/fresh-query.ts';
 import type { InboxReport } from './inbox-types.ts';
 
 export const INBOX_PATH = '/api/inbox';

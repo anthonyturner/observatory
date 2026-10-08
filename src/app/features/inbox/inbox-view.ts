@@ -67,7 +67,9 @@ function groupBy(items: readonly InboxItem[], keyOf: (item: InboxItem) => string
   const groups = new Map<string, InboxItem[]>();
   for (const item of items) {
     const key = keyOf(item);
-    groups.set(key, [...(groups.get(key) ?? []), item]);
+    const group = groups.get(key);
+    if (group) group.push(item);
+    else groups.set(key, [item]);
   }
   return [...groups];
 }

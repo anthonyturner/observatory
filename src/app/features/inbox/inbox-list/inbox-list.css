@@ -182,12 +182,12 @@ b {
   cursor: pointer;
 }
 
-.mark:hover:not(:disabled) {
+.mark:hover:not([aria-disabled]) {
   border-color: var(--flow);
   color: var(--ink);
 }
 
-.mark:disabled {
+.mark[aria-disabled] {
   opacity: 0.5;
   cursor: default;
 }

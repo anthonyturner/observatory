@@ -20,6 +20,12 @@ import { emptyMessage, inboxStamp, stateMessage } from '../inbox-words';
 
 const NO_PROJECTS: ReadonlySet<string> = new Set();
 
+/** What a mark says if GitHub refuses it, and what to undo once it is done either way. */
+interface MarkOutcome {
+  readonly refused: string;
+  readonly settle: () => void;
+}
+
 /**
  * The Inbox: the owner's unread GitHub notifications across every repository,
  * by repository and then reason, each opening its PR screen or issue window
@@ -72,23 +78,27 @@ export class InboxPage {
 
   protected markRead(threadId: string): void {
     this.marking.update((ids) => new Set([...ids, threadId]));
-    this.send(this.feed.markRead(threadId), () =>
-      this.marking.update((ids) => new Set([...ids].filter((id) => id !== threadId))),
-    );
+    this.send(this.feed.markRead(threadId), {
+      refused: 'Couldn’t mark it read',
+      settle: () => this.marking.update((ids) => new Set([...ids].filter((id) => id !== threadId))),
+    });
   }
 
   protected markAllRead(): void {
     this.isMarkingAll.set(true);
-    this.send(this.feed.markAllRead(), () => this.isMarkingAll.set(false));
+    this.send(this.feed.markAllRead(), {
+      refused: 'Couldn’t mark them read',
+      settle: () => this.isMarkingAll.set(false),
+    });
   }
 
-  /** Sends a mark, then `settle`s, saying why if GitHub refused it. */
-  private send(mark: Observable<void>, settle: () => void): void {
+  /** Sends a mark, then settles, saying why if GitHub refused it. */
+  private send(mark: Observable<void>, { refused, settle }: MarkOutcome): void {
     this.refusal.set(null);
     mark.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       complete: settle,
       error: (error: unknown) => {
-        this.refusal.set(`Couldn’t mark it read: ${messageOf(error)}.`);
+        this.refusal.set(`${refused}: ${messageOf(error)}.`);
         settle();
       },
     });

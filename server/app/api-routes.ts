@@ -4,6 +4,7 @@ import { routeRequestFrom } from '../assistant/route-request.ts';
 import { editRequestFrom, editTargetFrom } from '../edits/edit-request.ts';
 import type { PullEditor } from '../edits/pull-editor.ts';
 import type { RouteTable } from '../http/api-handler.ts';
+import { isFresh } from '../http/fresh-query.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
@@ -17,8 +18,6 @@ import type { ApiReads } from './api-reads.ts';
 
 const repoOf = (query: URLSearchParams): string => repoNameFrom(query.get('repo'));
 const numberOf = (query: URLSearchParams): number => pullNumberFrom(query.get('number'));
-/** A Refresh button asks for GitHub's answer now, not one the cache kept. */
-export const isFresh = (query: URLSearchParams): boolean => query.get('fresh') === '1';
 
 /** A description may be up to 65,536 characters, and JSON can take several bytes for each. */
 const EDIT_BODY_LIMIT_BYTES = 512 * 1024;

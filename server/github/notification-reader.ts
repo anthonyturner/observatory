@@ -38,7 +38,7 @@ function notificationOf(thread: Json): GitHubNotification | null {
   if (!isText(id) || !isText(repo) || !isText(updatedAt) || !isText(title)) return null;
   return {
     id,
-    reason: isText(reason) ? reason : 'subscribed',
+    reason: isText(reason) ? reason : '',
     repo,
     title,
     subjectType: isText(type) ? type : '',

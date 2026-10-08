@@ -87,6 +87,20 @@ describe('InboxPage', () => {
     expect(element.querySelector('.stamp')?.textContent).toBe('1 unread transmission');
   });
 
+  it('hands focus to the next row’s Mark read once one has gone, so the keyboard carries on', () => {
+    const { fixture, element } = render();
+    const [first] = Array.from(element.querySelectorAll<HTMLButtonElement>('button.mark'));
+
+    first.focus();
+    first.click();
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const [left] = Array.from(element.querySelectorAll<HTMLButtonElement>('button.mark'));
+    expect(left.getAttribute('aria-label')).toBe('Mark read: Thread 2');
+    expect(document.activeElement).toBe(left);
+  });
+
   it('marks all read, then says all is clear', () => {
     const { fixture, element, marked } = render();
     const markAll = Array.from(element.querySelectorAll<HTMLButtonElement>('.tools button')).find(

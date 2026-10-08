@@ -28,9 +28,10 @@
             <button
               type="button"
               class="mark"
+              [attr.data-id]="row.id"
               [attr.aria-label]="row.markLabel"
-              [disabled]="marking().has(row.id)"
-              (click)="markRead.emit(row.id)"
+              [attr.aria-disabled]="marking().has(row.id) || null"
+              (click)="mark(row.id)"
             >
               Mark read
             </button>

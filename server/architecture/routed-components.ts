@@ -20,9 +20,3 @@ export function componentOf({ file, route }: PlacedRoute, resolver: ReferenceRes
       : resolver.exported(file, target.module, target.name);
   return id === null ? [] : [id];
 }
-
-/** Every node some route shows: the ones the router creates, with nothing injecting them. */
-export const routedIds = (
-  files: readonly ScannedFile[],
-  resolver: ReferenceResolver,
-): Set<string> => new Set(placedRoutes(files).flatMap((placed) => componentOf(placed, resolver)));

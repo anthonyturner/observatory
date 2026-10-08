@@ -6,6 +6,7 @@ import {
   MAP_SCHEMA,
   RUNTIME_KINDS,
 } from './architecture-types.ts';
+import { entryIdsOf } from './entry-points.ts';
 import { importLinks } from './import-links.ts';
 import type { ImportGraph } from './import-graph.ts';
 import { analyse } from './map-analysis.ts';
@@ -14,7 +15,6 @@ import { fileNodes, placementsOf } from './map-nodes.ts';
 import type { PathAlias } from './module-resolution.ts';
 import { networkLinks } from './network-links.ts';
 import { referenceResolver } from './reference-resolver.ts';
-import { routedIds } from './routed-components.ts';
 import type { ScannedFile } from './scanned-source.ts';
 import { byText } from './sort-order.ts';
 import { windowsByNode } from './window-hosting.ts';
@@ -70,14 +70,6 @@ export function architectureMap(inputs: MapInputs): ArchitectureMap {
   const network = networkLinks({ files, nodesByFile, context, aliases });
   const imports = importLinks(inputs.graph, nodesByFile, [...links, ...network.edges]);
 
-  const entryIds = new Set([
-    ...routedIds(files, resolver),
-    ...files.flatMap(({ file, bootstrapped }) =>
-      bootstrapped.flatMap((name) => resolver.named(file, name) ?? []),
-    ),
-    ...inputs.entryFiles.flatMap((file) => (nodesByFile.get(file) ?? []).map(({ id }) => id)),
-  ]);
-
   const runtimes = [...inputs.runtimes, ...network.runtimes].sort(runtimeOrder);
   const areas = [...inProjectAreas, ...network.areas];
   const analysed = analyse({
@@ -87,7 +79,7 @@ export function architectureMap(inputs: MapInputs): ArchitectureMap {
       parent: parents.get(node.id) ?? null,
     })),
     edges: [...links, ...network.edges, ...imports.edges],
-    entryIds,
+    entryIds: entryIdsOf(files, inputs.entryFiles, nodesByFile, resolver),
     runtimeOfArea: new Map(areas.map(({ id, runtime }) => [id, runtime])),
     cycleFilePairs: imports.cycleFilePairs,
     cycleIds: new Set(imports.cycles.flat()),

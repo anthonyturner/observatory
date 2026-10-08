@@ -70,9 +70,7 @@ describe('JournalPage', () => {
       'https://github.com/me/app/pull/9#issuecomment-9',
       'https://github.com/me/app/pull/7#issuecomment-7',
     ]);
-    expect(element.querySelector('app-journal-entry dd')?.textContent).toBe(
-      'First version of 9',
-    );
+    expect(element.querySelector('app-journal-entry dd')?.textContent).toBe('First version of 9');
     expect(texts(element, '.chips .chip')).toEqual(['Design it twice 2', 'Make modules deep 1']);
     expect(element.querySelector('.state')).toBeNull();
   });

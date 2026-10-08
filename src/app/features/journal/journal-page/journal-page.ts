@@ -51,9 +51,7 @@ export class JournalPage {
   protected readonly message = computed(() => stateMessage(this.feed.state()));
   protected readonly stamp = computed(() => journalStamp(this.repo(), this.report()));
   protected readonly chips = computed(() => chipsOf(this.entries(), this.titles()));
-  protected readonly cards = computed(() =>
-    cardsOf(this.entries(), this.titles(), this.picked()),
-  );
+  protected readonly cards = computed(() => cardsOf(this.entries(), this.titles(), this.picked()));
   /** The picked principle's title and idea, and how many lessons it taught. */
   protected readonly pickedPrinciple = computed(() => {
     const id = this.picked();

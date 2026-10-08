@@ -32,7 +32,10 @@ describe('journalEntries', () => {
   });
 
   it('skips comments that carry no lesson, and shows none when no review has one', () => {
-    assert.deepEqual(journalEntries([comment(1, '2026-10-01T00:00:00Z', '## Self-review\nFine.')]), []);
+    assert.deepEqual(
+      journalEntries([comment(1, '2026-10-01T00:00:00Z', '## Self-review\nFine.')]),
+      [],
+    );
     assert.deepEqual(journalEntries([]), []);
   });
 });

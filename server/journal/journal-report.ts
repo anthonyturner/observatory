@@ -24,14 +24,12 @@ const byPostedNewestFirst = (a: PullComment, b: PullComment): number =>
 /** The lessons in `comments`, newest comment first. A comment with no Second draft section adds none. */
 export function journalEntries(comments: readonly PullComment[]): JournalEntry[] {
   return [...comments].sort(byPostedNewestFirst).flatMap((comment) =>
-    secondDraftsIn(comment.body).map(
-      (draft): JournalEntry => ({
-        ...draft,
-        pull: comment.pull,
-        url: comment.url,
-        postedAt: comment.postedAt,
-      }),
-    ),
+    secondDraftsIn(comment.body).map((draft): JournalEntry => ({
+      ...draft,
+      pull: comment.pull,
+      url: comment.url,
+      postedAt: comment.postedAt,
+    })),
   );
 }
 

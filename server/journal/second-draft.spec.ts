@@ -23,8 +23,7 @@ describe('secondDraftsIn', () => {
     assert.deepEqual(secondDraftsIn(REVIEW), [
       {
         firstVersion: 'The queue read every comment on every request.',
-        feedback:
-          'The review saw a request per pull request, which a busy repository would feel.',
+        feedback: 'The review saw a request per pull request, which a busy repository would feel.',
         change:
           "It pages the repository's comment list instead, so cost follows comments, not pulls.",
         principles: ['deep-modules', 'design-it-twice'],
@@ -76,17 +75,19 @@ Principles: deep-modules and deep-modules, not-a-principle, "shallow-modules".
 `);
 
     assert.deepEqual(draft.principles, ['deep-modules', 'shallow-modules']);
-    const [unnamed] = secondDraftsIn('## Second draft\nFirst version: A.\nFeedback: B.\nChanged: C.');
+    const [unnamed] = secondDraftsIn(
+      '## Second draft\nFirst version: A.\nFeedback: B.\nChanged: C.',
+    );
     assert.deepEqual(unnamed.principles, []);
   });
 
   it('leaves out an entry missing a field and reads comments without the section as none', () => {
+    assert.deepEqual(secondDraftsIn('## Second draft\nFirst version: A.\nFeedback: B.\n'), []);
+    assert.deepEqual(secondDraftsIn('## Second draft\nNothing changed.'), []);
     assert.deepEqual(
-      secondDraftsIn('## Second draft\nFirst version: A.\nFeedback: B.\n'),
+      secondDraftsIn('## Self-review\nFirst version: A.\nFeedback: B.\nChanged: C.'),
       [],
     );
-    assert.deepEqual(secondDraftsIn('## Second draft\nNothing changed.'), []);
-    assert.deepEqual(secondDraftsIn('## Self-review\nFirst version: A.\nFeedback: B.\nChanged: C.'), []);
     assert.deepEqual(secondDraftsIn(''), []);
   });
 
@@ -109,7 +110,9 @@ Changed: nor this.
   });
 
   it('reads Windows line endings', () => {
-    const drafts = secondDraftsIn('## Second draft\r\nFirst version: A.\r\nFeedback: B.\r\nChanged: C.\r\n');
+    const drafts = secondDraftsIn(
+      '## Second draft\r\nFirst version: A.\r\nFeedback: B.\r\nChanged: C.\r\n',
+    );
     assert.equal(drafts[0].feedback, 'B.');
   });
 });

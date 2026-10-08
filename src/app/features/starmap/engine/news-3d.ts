@@ -22,6 +22,7 @@ import {
   DEPARTED_MAG,
   NOVA_FLASH,
   NOVA_RING,
+  novaLook,
   novaProgress,
   streakProgress,
 } from '../memory/merge-supernova';
@@ -226,11 +227,12 @@ function merging(ctx: Context, request: NewsEffect3D): Effect3D {
       if (q !== null) {
         group.position.copy(vec(from.x, from.y, from.z));
         const r = worldRadius(DEPARTED_MAG, from.z, camera);
-        flash.scale.setScalar(r * (1.5 + q * 3));
-        flash.material.opacity = (1 - q) ** 2 * 0.9;
+        const look = novaLook(q);
+        flash.scale.setScalar(r * look.flashRadius);
+        flash.material.opacity = look.flashAlpha;
         ring.visible = !still;
-        ring.scale.setScalar(r * (1.5 + ease(q) * 16));
-        ring.material.uniforms['opacity'].value = (1 - q) * 0.85;
+        ring.scale.setScalar(r * look.ringRadius);
+        ring.material.uniforms['opacity'].value = look.ringAlpha;
       }
       const along = streakProgress(p);
       if (still || along <= 0) return;

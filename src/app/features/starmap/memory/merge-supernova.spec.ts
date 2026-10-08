@@ -1,4 +1,11 @@
-import { MERGE_SPAN_S, NOVA_S, mergeCues, novaProgress, streakProgress } from './merge-supernova';
+import {
+  MERGE_SPAN_S,
+  NOVA_S,
+  mergeCues,
+  novaLook,
+  novaProgress,
+  streakProgress,
+} from './merge-supernova';
 
 describe('the merge supernova', () => {
   it('goes off first, then hands over to the streak', () => {
@@ -10,6 +17,18 @@ describe('the merge supernova', () => {
     expect(streakProgress(handover / 2)).toBe(0);
     expect(streakProgress(handover)).toBeCloseTo(0);
     expect(streakProgress(1)).toBe(1);
+  });
+});
+
+describe('novaLook', () => {
+  it('flares bright and small, then spreads thin and fades', () => {
+    const start = novaLook(0);
+    const end = novaLook(1);
+
+    expect(start.flashAlpha).toBeGreaterThan(0.8);
+    expect(end.flashAlpha).toBe(0);
+    expect(end.ringAlpha).toBe(0);
+    expect(end.ringRadius).toBeGreaterThan(start.ringRadius * 5);
   });
 });
 

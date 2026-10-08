@@ -5,6 +5,7 @@ import {
   NOVA_FLASH,
   NOVA_RING,
   DEPARTED_MAG,
+  novaLook,
   novaProgress,
   streakProgress,
 } from './merge-supernova';
@@ -143,17 +144,18 @@ const burstMerged: Burst = (ev, star, p, c, at, r, f) => {
   if (q !== null) {
     const [x, y] = f.toScreen(ev.fromX ?? 0, ev.fromY ?? 0, ev.fromZ ?? 0);
     const size = DEPARTED_MAG * Math.max(f.camera.current.scale, 0.42);
-    c.globalAlpha = (1 - q) ** 2 * 0.9;
+    const look = novaLook(q);
+    c.globalAlpha = look.flashAlpha;
     c.fillStyle = NOVA_FLASH;
     c.beginPath();
-    c.arc(x, y, size * (1.5 + q * 3), 0, Math.PI * 2);
+    c.arc(x, y, size * look.flashRadius, 0, Math.PI * 2);
     c.fill();
     if (!f.frozen) {
-      c.globalAlpha = (1 - q) * 0.85;
+      c.globalAlpha = look.ringAlpha;
       c.strokeStyle = NOVA_RING;
       c.lineWidth = Math.max(size * 0.45 * (1 - q), 0.6);
       c.beginPath();
-      c.arc(x, y, size * (1.5 + ease(q) * 16), 0, Math.PI * 2);
+      c.arc(x, y, size * look.ringRadius, 0, Math.PI * 2);
       c.stroke();
     }
   }

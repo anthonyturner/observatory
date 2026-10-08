@@ -23,6 +23,21 @@ export function novaProgress(p: number): number | null {
   return q > 0 && q < 1 ? q : null;
 }
 
+/** The flash and the ring at `q` through the supernova: radii in star sizes, and opacities. */
+export function novaLook(q: number): {
+  readonly flashRadius: number;
+  readonly flashAlpha: number;
+  readonly ringRadius: number;
+  readonly ringAlpha: number;
+} {
+  return {
+    flashRadius: 1.5 + q * 3,
+    flashAlpha: (1 - q) ** 2 * 0.9,
+    ringRadius: 1.5 + (1 - (1 - q) ** 3) * 16,
+    ringAlpha: (1 - q) * 0.85,
+  };
+}
+
 /** How far through the streak a burst is: 0 until the supernova has gone. */
 export function streakProgress(p: number): number {
   return Math.min(1, Math.max(0, (p * MERGE_SPAN_S - NOVA_S) / STREAK_S));

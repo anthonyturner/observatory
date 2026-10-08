@@ -308,7 +308,7 @@ export class StarmapPage {
     return replay ? replay.items.map((i) => this.replayed(i)) : this.items();
   });
   protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
-  /** The queue as it is now has changed since you looked; a replayed refresh has not. */
+  /** Pull requests with new commits since you looked, in the live queue; a replayed refresh has none. */
   protected readonly meteors = computed((): readonly Meteor[] =>
     this.memory.replay() ? [] : meteorsOf(this.repo(), this.items()),
   );

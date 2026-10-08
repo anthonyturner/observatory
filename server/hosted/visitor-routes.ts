@@ -15,6 +15,7 @@ import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
+import { WEATHER_PATH } from '../queue/pull-weather.ts';
 import { RISK_PATH, riskGlanceOf } from '../queue/risk-routes.ts';
 import { EMPTY_TRIAGE } from '../triage/triage.ts';
 import { triagedQueue } from '../triage/triaged-queue.ts';
@@ -109,6 +110,7 @@ export function visitorRoutes(
         reads.pullState(await visibleRepo(query), pullNumberFrom(query.get('number'))),
       '/api/commit': async (query) =>
         reads.commit(await visibleRepo(query), commitShaFrom(query.get('sha'))),
+      [WEATHER_PATH]: async (query) => reads.weather(await visibleRepo(query)),
       [RISK_PATH]: async (query) =>
         riskGlanceOf(
           await reads.pull(await visibleRepo(query), pullNumberFrom(query.get('number'))),

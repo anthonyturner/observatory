@@ -33,6 +33,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 | Review Queue | Merge supernova  | A merged PR in the news    | `novaProgress`, `mergeCues`    |
+| Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
 | Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseStarType`    |
 | Releases     | Ring specks      | Merged PRs it shipped      | `ringSpeck`                    |
@@ -333,6 +334,54 @@ found, never on a timer, and at most four booms per refresh.
 Reduced motion: only the brief flash plays (no ring, no streak), and the sound
 still does. `Effect.flashesStill` marks the one burst a still sky keeps, and
 `SkyLayer.animating` keeps the loop drawing until it has played.
+
+### Weather (data: design red flags in the added lines)
+
+Tactical weather, after John Ousterhout's "tactical tornado": a pull request
+whose added lines carry the red flags of
+[design-principles.md](design-principles.md) gathers a storm.
+
+**Detection (server).** `designFlagsOf(diff)` in `server/queue/design-flags.ts`
+reads a unified diff and returns flags; that is its whole interface. It scans
+only added lines of TypeScript and JavaScript, skipping tests, fixtures, docs,
+`.d.ts` and `.min.js`, and reads code with strings and comments masked
+(`code-mask.ts`) so a brace or keyword in a string never counts. The heuristics
+are tuned to miss a flag rather than raise a false one. Each kind and its
+weight:
+
+- **`swallowed-error` (3):** a `catch` block or `.catch(…)` handler is empty (or
+  gives back `undefined` or `null`), or names its error and never uses it. A
+  bare `catch { … }` with a body is taken as a choice.
+- **`pass-through` (2):** a method, function or arrow whose whole body is
+  `return other.name(sameArgs)`: another object's method of the same name, the
+  same arguments in the same order. `this.name` alone (binding a callback) and
+  a call to a differently named method (an adapter) pass.
+- **`silenced-check` (2):** `eslint-disable…` with no `-- reason`,
+  `@ts-ignore`, `@ts-nocheck`.
+- **`untracked-todo` (1):** `TODO`, `FIXME`, `HACK` or `XXX` in a comment with
+  no `#n`, issues link or tracker key on its line.
+
+A block whose end lies outside the hunk's context is passed over. Special-case
+`if`s, the other red flag, are not detected: they cannot be told from ordinary
+branching by pattern. `GET /api/weather?repo=` gives every open pull request's
+flags (`server/queue/pull-weather.ts`), each diff read once per head commit
+(kept 30 minutes; 10 for one GitHub would not give) and four at a time. A diff
+that cannot be read is `scanned: false`, which draws nothing rather than clear
+or stormy. A visitor to the hosted preview gets no flags for a private
+repository.
+
+**The mark.** `stormOf(weather)` in `engine/weather-layer.ts` sums the weights:
+none means clear. Strength is `min(1, weight / 12)`: a **haze** below a third
+(one cloud arm), a **squall** below two thirds (two), a **storm** above that
+(three, with a lightning fork every 3.2 s). Reach is `2.2 + 2.6 × strength` ×
+`starRadius` (14 to 130 px), past the planets at full strength; debris is two
+specks per weight, at most 28, placed by the pull request's number. The layer
+draws flat over both renderers in cool grey with dusty debris, so it never
+reads as a severity colour, and its eye stays clear of the star. It turns with
+the scene's `time`, holds still with no lightning when motion is off, dims with
+the filter, and steps aside during replay, since it describes the code as it is
+now. The star card lists the flags, each with its file and line and the
+principle it breaks.
 
 ## The Releases sky
 

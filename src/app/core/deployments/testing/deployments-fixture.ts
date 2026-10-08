@@ -11,7 +11,6 @@ export const rawDeployment = (
   ref: null,
   creator: 'vercel[bot]',
   createdAt: '2026-10-08T12:00:00Z',
-  statusAt: '2026-10-08T12:01:00Z',
   outcome,
   description: 'Deployment has completed',
   url: `https://app-${id}.vercel.app`,
@@ -24,6 +23,7 @@ export const rawDeployment = (
 export const RAW_REPORT = {
   generatedAt: '2026-10-08T13:00:00Z',
   repo: 'me/app',
+  environmentCount: 2,
   environments: [
     {
       name: 'Production',

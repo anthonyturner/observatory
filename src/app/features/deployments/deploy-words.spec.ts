@@ -25,6 +25,9 @@ describe('Deployments words', () => {
   it('says what the header and an empty or unread page say', () => {
     expect(deploymentsStamp('me/app', report)).toBe('me/app · 2 environments');
     expect(deploymentsStamp('me/app', null)).toBe('me/app');
+    expect(deploymentsStamp('me/app', { ...report, environmentCount: 14 })).toBe(
+      'me/app · 2 of 14 environments',
+    );
     expect(emptyMessage(report)).toBeNull();
     expect(emptyMessage({ ...report, environments: [] })?.headline).toBe('No deployments yet');
     expect(stateMessage({ status: 'missing' })?.headline).toBe('No such project');

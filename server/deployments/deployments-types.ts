@@ -13,8 +13,6 @@ export interface DeploymentView {
   readonly ref: string | null;
   readonly creator: string | null;
   readonly createdAt: string;
-  /** When its newest status was posted; null with none. */
-  readonly statusAt: string | null;
   readonly outcome: DeployOutcome;
   /** The deployer's own words for it, such as "Deployment has completed". */
   readonly description: string | null;
@@ -39,6 +37,8 @@ export interface DeploymentsReport {
   readonly repo: string;
   /** Production first, then the most recently deployed. */
   readonly environments: readonly EnvironmentView[];
+  /** How many environments the repository has; past a limit only the first are read. */
+  readonly environmentCount: number;
 }
 
 /** What `GET /api/deployments/preview` returns: what one commit was deployed as. */

@@ -67,6 +67,10 @@ export const emptyMessage = (report: DeploymentsReport): PageMessage | null =>
         detail: 'Deployments appear here once something, such as Vercel, posts one to GitHub.',
       };
 
-/** "me/app · 2 environments". */
-export const deploymentsStamp = (repo: string, report: DeploymentsReport | null): string =>
-  report ? `${repo} · ${plural(report.environments.length, 'environment')}` : repo;
+/** "me/app · 2 environments", or "me/app · 6 of 14 environments" when only the first were read. */
+export function deploymentsStamp(repo: string, report: DeploymentsReport | null): string {
+  if (!report) return repo;
+  const total = plural(report.environmentCount, 'environment');
+  const shown = report.environments.length;
+  return shown < report.environmentCount ? `${repo} · ${shown} of ${total}` : `${repo} · ${total}`;
+}

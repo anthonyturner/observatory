@@ -33,7 +33,6 @@ export function deploymentView(
     ref: mark.ref === mark.sha ? null : mark.ref,
     creator: mark.creator,
     createdAt: mark.createdAt,
-    statusAt: status?.createdAt ?? null,
     outcome: outcomeOf(status),
     description: status?.description ?? null,
     url: status?.environmentUrl ?? null,

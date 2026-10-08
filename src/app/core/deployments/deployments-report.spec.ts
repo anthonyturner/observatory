@@ -25,6 +25,16 @@ describe('parseDeploymentsReport', () => {
     expect(report && isReportBuilding(report)).toBe(true);
   });
 
+  it('counts no fewer environments than it was given', () => {
+    const { environmentCount, ...without } = RAW_REPORT;
+
+    expect(environmentCount).toBe(2);
+    expect(parseDeploymentsReport(without)?.environmentCount).toBe(2);
+    expect(parseDeploymentsReport({ ...RAW_REPORT, environmentCount: 9 })?.environmentCount).toBe(
+      9,
+    );
+  });
+
   it('reads an answer that is not a report as none', () => {
     expect(parseDeploymentsReport({ repo: 'me/app' })).toBeNull();
     expect(parseDeploymentsReport('down')).toBeNull();

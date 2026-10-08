@@ -678,7 +678,10 @@ site, commit and log links.
 at 86% of its height, in columns at most 320 px apart, centred, production first
 (the server's `byProminence`, then the most recently deployed). A pad is a flat
 ellipse lit from above in its latest deployment's colour; production's carries a
-second, wider ring. Its name and count sit under it.
+second, wider ring. Its name and count sit under it. At most six environments
+are read (`ENVIRONMENT_LIMIT` on the server, since each costs nine requests):
+production, then the most recently deployed to, and the header says "6 of 14"
+when there are more.
 
 ### Beacon and trail (data: how each deployment went)
 

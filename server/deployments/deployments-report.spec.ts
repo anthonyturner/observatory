@@ -8,6 +8,7 @@ import type {
 } from '../github/deployment-reader.ts';
 import { deploymentView, outcomeOf } from './deployment-view.ts';
 import {
+  ENVIRONMENT_LIMIT,
   HISTORY_LENGTH,
   deploymentsReport,
   isPreviewUnsettled,
@@ -96,9 +97,29 @@ describe('deploymentsReport', () => {
     );
     assert.deepEqual(
       github.asked.map((query) => query.limit),
-      [HISTORY_LENGTH, HISTORY_LENGTH],
+      [100, HISTORY_LENGTH, HISTORY_LENGTH],
     );
+    assert.equal(report.environmentCount, 2);
     assert.equal(isReportBuilding(report), true);
+  });
+
+  it('reads production and the most recently deployed environments only, past the limit', async () => {
+    const reviewApps = Array.from({ length: 9 }, (_, index) =>
+      mark(index + 10, `pr-${index + 10}`, 59 - index),
+    );
+    const github = fakeReader({
+      environments: async () => ['Production', 'pr-1'],
+      marks: [...reviewApps, mark(1, 'Production', 1)],
+    });
+
+    const report = await deploymentsReport(github, 'me/app', NOW);
+
+    assert.equal(report.environmentCount, 11);
+    assert.deepEqual(
+      report.environments.map((environment) => environment.name),
+      ['Production', 'pr-10', 'pr-11', 'pr-12', 'pr-13', 'pr-14'],
+    );
+    assert.equal(report.environments.length, ENVIRONMENT_LIMIT);
   });
 
   it('names the environments from the deployments where GitHub keeps none', async () => {
@@ -196,7 +217,6 @@ describe('deploymentView', () => {
     assert.equal(view.commitUrl, `https://github.com/me/app/commit/${SHA}`);
     assert.equal(view.ref, 'main');
     assert.equal(view.url, null);
-    assert.equal(view.statusAt, null);
     assert.equal(deploymentView('me/app', mark(1, 'Preview', 40), null).ref, null);
   });
 

@@ -47,6 +47,8 @@ export interface DeploymentsReport {
   readonly repo: string;
   /** Production first, then the most recently deployed. */
   readonly environments: readonly DeployEnvironment[];
+  /** How many environments the repository has; past a limit only the first are read. */
+  readonly environmentCount: number;
 }
 
 /** What `GET /api/deployments/preview` returns: what one commit was deployed as. */
@@ -105,10 +107,13 @@ export function parseDeploymentsReport(body: unknown): DeploymentsReport | null 
   if (!isObject(body) || !isText(body['repo'])) return null;
   const generatedAt = timeOf(body['generatedAt']);
   if (generatedAt === null) return null;
+  const environments = listOf(body['environments'], parseEnvironment);
+  const count = body['environmentCount'];
   return {
     generatedAt,
     repo: body['repo'],
-    environments: listOf(body['environments'], parseEnvironment),
+    environments,
+    environmentCount: isNumber(count) ? Math.max(count, environments.length) : environments.length,
   };
 }
 

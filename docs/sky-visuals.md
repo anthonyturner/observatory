@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars, the Releases and Actions skies, and the Library
+# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions and Security skies, and the Library
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -8,7 +8,7 @@ line; this page says how it works.
 The Orrery and Review Queue sections describe the WebGL renderer. Each of those
 skies also has a Canvas 2D fallback for when WebGL can't start or a shader
 won't compile; the fallback keeps the older, simpler marks unless a section
-says otherwise. The Releases and Actions skies are Canvas 2D only.
+says otherwise. The Releases, Actions and Security skies are Canvas 2D only.
 
 ## Principle: meaning versus scenery
 
@@ -47,6 +47,9 @@ TypeScript and the shader only draws it.
 | Actions      | Pulse ring       | A run queued or running    | `pulsePhase`                   |
 | Actions      | Amber ring       | Passed only on a rerun     | `isFlaky` (server)             |
 | Library      | Star size        | How long the page is       | `starDiameterOf`               |
+| Security     | Belt, size, ink  | An alert's grade           | `layoutBelts`, `HAZARD_PX`     |
+| Security     | Shape            | Which list it came from    | `outlineOf`                    |
+| Security     | World's air      | The worst open grade       | `worstSeverity`                |
 
 ## Orrery worlds
 
@@ -555,6 +558,40 @@ skipped ones veiled. A run whose job failed and then passed on a rerun at the
 same commit (the queue's flaky-check history) carries a turning dashed amber
 ring with a small tag. Everything that moves reads the frame loop's scene time,
 so it holds still when motion is off.
+
+## The Security sky
+
+Code: `features/security/hazard-sky/`. The Security screen opens on its list,
+which is a triage list; **Sky** shows the same alerts. Like the Actions sky it
+is Canvas 2D only: the Orrery's night, and in the middle the project's world,
+painted once by the shared portrait painter as the Architecture page paints a
+planet (`planetLook`), a flat lit disc until it loads. Its air is the colour of
+the worst open alert's grade, or `--security-clear` when none is open. Each
+alert with details is a real link over the canvas, so hover and keyboard focus
+show it and a click opens it on GitHub.
+
+### Belts (data: grade)
+
+`layoutBelts` rings the world with four belts, one per grade, critical
+innermost at 1.75 world radii and low outermost at 92% of the stage, each an
+ellipse 0.36 as tall as it is wide. A grade's hazards are spread evenly along
+its belt from a starting turn seeded by the repository, with a little jitter
+along and across it, so a project's sky is the same on every load. A hazard on
+the far half is drawn behind the world, dimmer and at 80% of its size; one that
+would sit out of sight behind the world is mirrored onto the near half. A belt
+with alerts is drawn in its grade's colour, an empty one faintly. Sizes are
+`HAZARD_PX`: 9 px critical, 7 high, 5.5 medium, 4 low. At most 240 are
+drawn; the list holds every one.
+
+### Hazards (data: which list)
+
+`outlineOf` gives each list its own shape: a Dependabot alert is a lumpy rock,
+a code-scanning alert a sharp shard, a secret a four-pointed spark, each lit
+from the upper left and rimmed in its grade's colour (`--security-*`). Each
+tumbles at its own pace (`tumbleOf`), and a critical one throbs with a red glow
+(`throbOf`), both on the frame loop's scene time, so they hold still when
+motion is off. A preview visitor gets counts only, so their sky draws the same
+number of hazards in each belt with no links.
 
 ## The Library's star chart
 

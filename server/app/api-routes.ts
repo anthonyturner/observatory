@@ -52,6 +52,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       },
       '/api/actions/run': (query) => reads.runJobs(repoOf(query), runIdFrom(query.get('run'))),
       '/api/ci-health': (query) => reads.ciHealth(repoOf(query)),
+      '/api/security': (query) => reads.security(repoOf(query)),
       '/api/issues': (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetIssues(repo);

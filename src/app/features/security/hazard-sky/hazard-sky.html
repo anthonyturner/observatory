@@ -1,0 +1,18 @@
+<canvas #canvas aria-hidden="true"></canvas>
+
+<div class="bodies" role="group" aria-label="Open alerts, most severe first">
+  @for (hazard of marks(); track hazard.key) {
+    <a
+      class="body"
+      [href]="hazard.url"
+      target="_blank"
+      rel="noopener"
+      [style.left.px]="hazard.x"
+      [style.top.px]="hazard.y"
+      [style.--hit.px]="hazard.hit"
+      [attr.aria-label]="hazard.spoken"
+    >
+      <span class="tip" aria-hidden="true">{{ hazard.tip }}</span>
+    </a>
+  }
+</div>

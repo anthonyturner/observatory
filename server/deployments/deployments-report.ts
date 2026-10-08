@@ -82,9 +82,21 @@ export async function deploymentsReport(
   };
 }
 
-/** A deployment is still building somewhere, so the report is worth reading again soon. */
-export const isReportBuilding = (report: DeploymentsReport): boolean =>
-  report.environments.some((environment) => environment.deployments[0]?.outcome === 'building');
+/**
+ * A build is followed closely only this long. A deployer that dies leaves its
+ * deployment pending for good, which would keep six environments' worth of
+ * requests going every few seconds for as long as the screen is open.
+ */
+export const BUILD_WATCH_MS = 30 * 60_000;
+
+/** An environment's latest deployment is still building, and started lately enough to be live. */
+export function isReportBuilding(report: DeploymentsReport): boolean {
+  const since = Date.parse(report.generatedAt) - BUILD_WATCH_MS;
+  return report.environments.some(
+    ({ deployments: [latest] }) =>
+      latest?.outcome === 'building' && Date.parse(latest.createdAt) > since,
+  );
+}
 
 /** What one commit, a pull request's head, was deployed as: the newest to each environment. */
 export async function pullPreview(

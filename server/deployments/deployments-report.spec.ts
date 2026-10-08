@@ -8,6 +8,7 @@ import type {
 } from '../github/deployment-reader.ts';
 import { deploymentView, outcomeOf } from './deployment-view.ts';
 import {
+  BUILD_WATCH_MS,
   ENVIRONMENT_LIMIT,
   HISTORY_LENGTH,
   deploymentsReport,
@@ -101,6 +102,8 @@ describe('deploymentsReport', () => {
     );
     assert.equal(report.environmentCount, 2);
     assert.equal(isReportBuilding(report), true);
+    const muchLater = new Date(NOW + BUILD_WATCH_MS).toISOString();
+    assert.equal(isReportBuilding({ ...report, generatedAt: muchLater }), false);
   });
 
   it('reads production and the most recently deployed environments only, past the limit', async () => {

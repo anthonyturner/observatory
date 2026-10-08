@@ -22,7 +22,9 @@ describe('parseDeploymentsReport', () => {
     expect(building.url).toBeNull();
     expect(building.logUrl).toBe('https://vercel.com/me/app/4');
     expect(failed.createdAt).toBe(Date.parse('2026-10-08T10:00:00Z'));
-    expect(report && isReportBuilding(report)).toBe(true);
+    expect(report && isReportBuilding(report)).toBe(false);
+    const soonAfter = Date.parse('2026-10-08T12:10:00Z');
+    expect(report && isReportBuilding({ ...report, generatedAt: soonAfter })).toBe(true);
   });
 
   it('counts no fewer environments than it was given', () => {

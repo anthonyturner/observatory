@@ -127,9 +127,16 @@ export function parsePullPreview(body: unknown): PullPreview | null {
 export const isBuilding = (deployments: readonly Deployment[]): boolean =>
   deployments.some((deployment) => deployment.outcome === 'building');
 
-/** Each environment's latest deployment is still building somewhere. */
-export const isReportBuilding = (report: DeploymentsReport): boolean =>
-  report.environments.some((environment) => environment.deployments[0]?.outcome === 'building');
+/** A build is polled closely this long, as the API caches it; one left pending for good is not. */
+const BUILD_WATCH_MS = 30 * 60_000;
+
+/** An environment's latest deployment is still building, and started lately enough to be live. */
+export function isReportBuilding(report: DeploymentsReport): boolean {
+  const since = report.generatedAt - BUILD_WATCH_MS;
+  return report.environments.some(
+    ({ deployments: [latest] }) => latest?.outcome === 'building' && latest.createdAt > since,
+  );
+}
 
 /** "92b4594": a commit as GitHub abbreviates it. */
 export const shortSha = (sha: string): string => sha.slice(0, 7);

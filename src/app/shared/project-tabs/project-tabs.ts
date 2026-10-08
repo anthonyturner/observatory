@@ -33,6 +33,7 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
   ACTIONS_TAB,
   { id: 'journal', label: 'Journal', path: 'journal' },
   LIBRARY_TAB,
+  { id: 'depth', label: 'Depth', path: 'depth' },
   SECURITY_TAB,
 ];
 

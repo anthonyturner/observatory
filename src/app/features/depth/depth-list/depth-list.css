@@ -1,0 +1,107 @@
+:host {
+  display: block;
+}
+
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--edge-soft);
+  border-radius: 12px;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+  overflow: hidden;
+}
+
+li + li {
+  border-top: 1px solid var(--edge-soft);
+}
+
+button {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'dot name numbers'
+    'dot folder numbers';
+  align-items: center;
+  gap: 2px 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 7px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--list-row-ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--starmap-hover);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: -2px;
+}
+
+button[aria-pressed='true'] {
+  background: var(--starmap-press);
+  box-shadow: inset 3px 0 0 var(--flow);
+}
+
+b {
+  grid-area: name;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.folder {
+  grid-area: folder;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  overflow-wrap: anywhere;
+}
+
+.numbers {
+  grid-area: numbers;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.dot {
+  grid-area: dot;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--depth-balanced);
+  box-shadow: 0 0 8px 1px var(--depth-balanced);
+}
+
+[data-verdict='deep'] .dot {
+  background: var(--depth-deep);
+  box-shadow: 0 0 8px 1px var(--depth-deep);
+}
+
+/* The hollow ring of a shallow module, so the list agrees with the sky. */
+[data-verdict='shallow'] .dot {
+  background: transparent;
+  border: 2px solid var(--depth-shallow);
+  box-shadow: none;
+}
+
+@media (max-width: 720px) {
+  button {
+    grid-template-columns: 12px minmax(0, 1fr);
+    grid-template-areas:
+      'dot name'
+      'dot folder'
+      'dot numbers';
+  }
+}

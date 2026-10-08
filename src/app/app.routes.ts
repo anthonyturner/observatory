@@ -64,6 +64,11 @@ export const routes: Routes = [
       import('./features/journal/journal-page/journal-page').then((m) => m.JournalPage),
   },
   {
+    path: 'p/:owner/:repo/depth',
+    title: 'Depth · Observatory',
+    loadComponent: () => import('./features/depth/depth-page/depth-page').then((m) => m.DepthPage),
+  },
+  {
     path: 'p/:owner/:repo/security',
     title: 'Security · Observatory',
     loadComponent: () =>

@@ -1,3 +1,7 @@
+import { noiseBurst, pluck, thump } from '../../../core/sound/instruments';
+import { Rig } from '../../../core/sound/sound-rig';
+import { MergeCue } from '../memory/merge-supernova';
+
 /* pr-starmap's star map score, generated live rather than played from a
    recording: a drone, a shimmer, a far engine room, pings on an echo line, and
    a tension voice that rises with the number of blocked pull requests, so a
@@ -15,6 +19,9 @@ export interface StarmapScore {
   ping(stuck: boolean, pr: number): void;
   /** A short, soft satellite beep at `hz`, panned -1 (left) to 1 (right). */
   beep(pan: number, hz: number): void;
+
+  /** A deep boom and a fading shimmer for a merge, after the cue's delay, panned by it. */
+  merge(cue: MergeCue): void;
 }
 
 /** Loudness is heard as the square of the slider, so the gain follows it. */
@@ -30,12 +37,24 @@ export const SCALE = [440, 493.88, 554.37, 659.25, 739.99, 880, 987.77] as const
 const BEEP_LEVEL = 0.035;
 const BEEP_SECONDS = 0.09;
 
+/** The boom's levels, set against the drone's 0.14. */
+const BOOM = { thump: 0.4, rumble: 0.14 } as const;
+
+/** An A major arpeggio climbing from A5, each note softer than the last. */
+const SHIMMER = [
+  { midi: 81, lag: 0.16, level: 0.05 },
+  { midi: 85, lag: 0.3, level: 0.04 },
+  { midi: 88, lag: 0.46, level: 0.03 },
+  { midi: 93, lag: 0.64, level: 0.02 },
+] as const;
+
 interface Parts {
   readonly master: GainNode;
   readonly out: GainNode;
   readonly bus: GainNode;
   readonly delay: DelayNode;
   readonly tensionGain: GainNode;
+  readonly noise: AudioBuffer;
 }
 
 export class WebAudioStarmapScore implements StarmapScore {
@@ -112,6 +131,26 @@ export class WebAudioStarmapScore implements StarmapScore {
     o.connect(tone).connect(g).connect(panner).connect(parts.master);
     o.start(t);
     o.stop(t + BEEP_SECONDS + 0.05);
+  }
+
+  /** A low thump and a rumble, then a few bright notes of the key falling away. */
+  merge({ delayS, pan }: MergeCue): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig: Rig = {
+      context: ac,
+      master: parts.master,
+      bus: parts.bus,
+      echo: parts.delay,
+      noise: parts.noise,
+      out: parts.out,
+    };
+    const at = ac.currentTime + delayS;
+    thump(rig, at, BOOM.thump, pan);
+    noiseBurst(rig, { at, type: 'lowpass', freq: 140, level: BOOM.rumble, decay: 1.1, pan });
+    SHIMMER.forEach(({ midi, lag, level }) =>
+      pluck(rig, { at: at + lag, midi, severity: 'clear', pan, level }),
+    );
   }
 
   /** A room made of decaying noise: five seconds of it reads as space. */
@@ -232,7 +271,11 @@ export class WebAudioStarmapScore implements StarmapScore {
     delay.connect(airy).connect(feedback).connect(delay);
     delay.connect(bus);
 
-    this.parts = { master, out, bus, delay, tensionGain };
+    const whiteNoise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const wd = whiteNoise.getChannelData(0);
+    for (let i = 0; i < wd.length; i++) wd[i] = Math.random() * 2 - 1;
+
+    this.parts = { master, out, bus, delay, tensionGain, noise: whiteNoise };
     this.applyTension();
   }
 

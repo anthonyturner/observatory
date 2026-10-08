@@ -147,14 +147,16 @@ export function noiseBurst(rig: Rig, burst: NoiseBurst): void {
 }
 
 /** The sun's pulse: a falling sine, the heartbeat of the system. */
-export function thump(rig: Rig, at: number, level: number): void {
+export function thump(rig: Rig, at: number, level: number, pan = 0): void {
   const { context } = rig;
   const oscillator = context.createOscillator();
   oscillator.frequency.setValueAtTime(120, at);
   oscillator.frequency.exponentialRampToValueAtTime(42, at + 0.22);
   const gain = envelope(context, { at, attack: 0.004, level, end: at + 0.34 });
-  oscillator.connect(gain).connect(rig.master);
-  playFor([oscillator], [gain], { at, end: at + 0.4 });
+  const panner = context.createStereoPanner();
+  panner.pan.value = pan;
+  oscillator.connect(gain).connect(panner).connect(rig.master);
+  playFor([oscillator], [gain, panner], { at, end: at + 0.4 });
 }
 
 /** A short filtered saw on the chord's root, for the bass line. */

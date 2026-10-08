@@ -39,9 +39,11 @@ export interface SkyFrame {
  */
 export interface NewsEffect3D {
   readonly key: object;
-  readonly mode: 'nova' | 'supernova' | 'implode' | 'shooting';
+  readonly mode: 'nova' | 'supernova' | 'implode' | 'shooting' | 'merged';
   /** 0 to 1 through the burst. */
   readonly p: number;
+  /** Motion is off: play only what a still sky is meant to show. */
+  readonly still: boolean;
   readonly star: SkyStar | null;
   readonly colour: string;
   /** Seeds the debris, so a burst looks the same each time it plays. */
@@ -77,6 +79,8 @@ export interface SkyLayer {
   labels?(ctx: CanvasRenderingContext2D, frame: SkyFrame): void;
   /** Something of its own under a click that hit no star, as a comet. */
   pick?(sx: number, sy: number): unknown;
+  /** Whether something is still to play, so a still sky keeps drawing it. */
+  animating?(wall: number): boolean;
   /** Bursts for the 3D scene to play, where the 2D sky would draw them itself. */
   effects3D?(frame: SkyFrame): NewsEffect3D[];
   /** Log threads for the 3D scene to draw in depth, where the 2D sky draws them flat. */

@@ -11,6 +11,7 @@ function fakeScore() {
     setVolume: (v) => void calls.push(`volume ${v}`),
     ping: (stuck, pr) => void calls.push(`ping ${stuck} ${pr}`),
     beep: (pan, hz) => void calls.push(`beep ${pan} ${hz}`),
+    merge: ({ delayS, pan }) => void calls.push(`merge ${delayS} ${pan}`),
   };
   return { score, calls };
 }
@@ -55,6 +56,15 @@ describe('StarmapSound', () => {
     sound.beep(0, 'quiet');
 
     expect(calls.filter((c) => c.startsWith('beep'))).toEqual(['beep -0.25 1568', 'beep 0 988']);
+  });
+
+  it('booms for a merge only while it plays', () => {
+    const { sound, calls } = setUp();
+    sound.merged({ delayS: 1, pan: -0.5 });
+    sound.toggle();
+    sound.merged({ delayS: 0.5, pan: 0.25 });
+
+    expect(calls.filter((c) => c.startsWith('merge'))).toEqual(['merge 0.5 0.25']);
   });
 
   it('remembers the volume and fades out when turned off', () => {

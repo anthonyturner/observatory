@@ -8,6 +8,8 @@ import {
   signal,
 } from '@angular/core';
 import { SatelliteState } from '../../../core/live-agents/satellites';
+
+import { MergeCue } from '../memory/merge-supernova';
 import { StarmapScore, WebAudioStarmapScore } from './starmap-score';
 
 /** Makes the score; a test provides one that needs no audio device. */
@@ -105,6 +107,11 @@ export class StarmapSound {
   /** A satellite's beep, at its state's pitch and panned by where it is on screen. */
   beep(pan: number, state: SatelliteState): void {
     if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state]);
+  }
+
+  /** A boom for a pull request that merged, only while the sound is on. */
+  merged(cue: MergeCue): void {
+    if (this.isOn()) this.score?.merge(cue);
   }
 
   private play(): void {

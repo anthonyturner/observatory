@@ -26,6 +26,7 @@ import { PlanLayer, PlanMark } from '../engine/plan-layer';
 import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
+import { mergeCues } from '../memory/merge-supernova';
 import { News, NewsLayer } from '../memory/news-layer';
 import { LogSkyLayout, LogStar } from '../../../core/logs/log-layout';
 import { twinStars } from '../../../core/logs/log-trace';
@@ -42,12 +43,12 @@ import { CrewMark } from '../../../core/crew/crew.types';
 import { Satellite } from '../../../core/live-agents/satellites';
 import { SatelliteLayer } from '../engine/satellite-layer';
 import { SatelliteBeeper } from '../sound/satellite-beeper';
-import { StarmapSound } from '../sound/starmap-sound';
 import { PageVisibility } from '../../../core/presence/page-visibility';
 import { BlackHoleLayer } from '../engine/black-hole-layer';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StackLayer } from '../engine/stack-layer';
 import { Stacks } from '../../../core/queue/stacks';
+import { StarmapSound } from '../sound/starmap-sound';
 import { WeatherByPull } from '../../../core/queue/weather';
 import { WeatherLayer } from '../engine/weather-layer';
 
@@ -179,6 +180,7 @@ export class StarmapSky {
   private readonly document = inject(DOCUMENT);
   private readonly motion = inject(MotionPreference);
   private readonly blackHole = inject(BlackHoleSetting);
+  private readonly sound = inject(StarmapSound);
   private readonly errors = inject(ErrorHandler);
   private readonly collisions = new CollisionLayer();
   private readonly binaries = new BinaryLayer((star) => star.item?.issues ?? []);
@@ -192,7 +194,6 @@ export class StarmapSky {
   private readonly stackLayer = new StackLayer();
   private readonly weatherLayer = new WeatherLayer();
   private readonly crewLayer = new CrewLayer(Date.now, () => this.engine?.kick());
-  private readonly sound = inject(StarmapSound);
   private readonly visibility = inject(PageVisibility);
   private readonly satelliteLayer = new SatelliteLayer(() => ({
     side: this.insets().side,
@@ -361,12 +362,22 @@ export class StarmapSky {
   play(events: readonly NewsEvent[]): void {
     const engine = this.engine;
     if (!engine) return;
+    const now = performance.now() / 1000;
     play(events, engine.skyClusters, {
-      now: performance.now() / 1000,
+      now,
       entranceEnd: engine.entranceEnd(),
       frozen: engine.frozen,
     });
+    // A boom with no supernova to see (the list view, another sky) would be a ghost.
+    if (!this.hidden() && this.chart() === 'prs') this.boom(events, engine, now);
     engine.kick();
+  }
+
+  private boom(events: readonly NewsEvent[], engine: SkyEngine, now: number): void {
+    const width = this.document.defaultView?.innerWidth ?? 0;
+    const toScreen = (x: number, y: number, z: number): [number, number] =>
+      engine.toScreen(x, y, z);
+    for (const cue of mergeCues(events, { now, width, toScreen })) this.sound.merged(cue);
   }
 
   /** Flies to a fault's star, as a log list row does. */

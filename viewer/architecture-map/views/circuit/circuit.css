@@ -1,0 +1,557 @@
+/* The Circuit view. Sizes of chips and daughters are set in chip-metrics.ts; keep the two in step. */
+.board {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(111, 227, 255, 0.09) 1px, transparent 0) 0 0 / 18px 18px,
+    linear-gradient(180deg, #06111c, #040a12);
+  cursor: grab;
+  touch-action: none;
+}
+
+.board.is-dragging {
+  cursor: grabbing;
+}
+
+.board__world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.board__status {
+  position: absolute;
+  left: 14px;
+  top: 10px;
+  z-index: 6;
+  margin: 0;
+  color: var(--dim);
+  font: 11px var(--mono);
+  pointer-events: none;
+}
+
+.board__controls {
+  position: absolute;
+  right: 14px;
+  top: 10px;
+  z-index: 6;
+  display: flex;
+  gap: 4px;
+}
+
+.board__controls button {
+  min-width: 30px;
+  padding: 5px 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: 12px var(--mono);
+  cursor: pointer;
+}
+
+.board__controls button:hover {
+  border-color: var(--holo);
+}
+
+/* Rigs and bays */
+.rig,
+.bay {
+  position: absolute;
+  transition: opacity 0.25s;
+}
+
+.rig {
+  background: rgba(8, 20, 34, 0.86);
+  border: 1px solid rgba(111, 227, 255, 0.28);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(111, 227, 255, 0.12),
+    0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.rig.is-selected {
+  border-color: var(--holo);
+  box-shadow:
+    0 0 0 1px var(--holo),
+    0 0 26px rgba(111, 227, 255, 0.25);
+}
+
+.rig__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(111, 227, 255, 0.18);
+  background: linear-gradient(90deg, rgba(111, 227, 255, 0.1), transparent 70%);
+}
+
+.rig__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rig__title svg {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  color: var(--holo);
+}
+
+.rig__text {
+  display: grid;
+  min-width: 0;
+}
+
+.rig__name {
+  overflow: hidden;
+  font: 600 16px var(--display);
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rig__spec {
+  overflow: hidden;
+  color: var(--dim);
+  font: 11px var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rig__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--ok);
+  font: 10px var(--mono);
+  white-space: nowrap;
+}
+
+.rig__status[data-state='cycle'] {
+  color: #ff4dd2;
+}
+
+.rig__status[data-state='cycle'] .led {
+  --kind: #ff4dd2;
+}
+
+.rig__status .led {
+  animation: blink 2.4s infinite;
+}
+
+.bay {
+  border: 1px dashed rgba(143, 179, 217, 0.4);
+  border-radius: 4px;
+}
+
+.bay.is-selected {
+  border-color: var(--holo);
+  border-style: solid;
+}
+
+.bay__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 8px 0 12px;
+}
+
+.bay__title {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  min-width: 0;
+  max-height: 34px;
+  overflow: hidden;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--dim);
+  font: 11px var(--mono);
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.bay__title b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.bay__toggle {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: rgba(111, 227, 255, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font: 14px var(--mono);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bay__toggle:hover {
+  border-color: var(--holo);
+}
+
+.bay--closed {
+  background: rgba(15, 32, 54, 0.7);
+  border-style: solid;
+}
+
+.bay__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 4px 12px;
+  color: var(--dim);
+  font: 11px var(--mono);
+}
+
+/* Chips */
+.chip {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  background: linear-gradient(180deg, #0f2036, #0a1626);
+  border: 1px solid rgba(111, 227, 255, 0.35);
+  border-radius: 3px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    opacity 0.25s;
+}
+
+.chip::before,
+.chip::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(190, 210, 230, 0.55) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.chip::before {
+  left: 0;
+}
+
+.chip::after {
+  right: 0;
+}
+
+.chip:hover,
+.chip:focus-within {
+  border-color: var(--holo);
+}
+
+.chip.is-selected {
+  border-color: var(--holo);
+  box-shadow:
+    0 0 0 1px var(--holo),
+    0 0 22px rgba(111, 227, 255, 0.35);
+}
+
+.chip.is-holding,
+.chip.is-linked {
+  border-color: rgba(111, 227, 255, 0.75);
+}
+
+.chip[data-kind='external'] {
+  border-color: rgba(213, 155, 255, 0.45);
+}
+
+.chip[data-marks~='unused'] {
+  border-style: dashed;
+}
+
+.chip[data-marks~='cycle'] {
+  border-color: rgba(255, 77, 210, 0.6);
+}
+
+.chip[data-marks~='hot'] {
+  box-shadow: inset 0 0 14px rgba(255, 90, 90, 0.18);
+}
+
+.marks-off .chip[data-marks] {
+  box-shadow: none;
+}
+
+.marks-off .chip[data-marks~='cycle'],
+.marks-off .chip[data-marks~='unused'] {
+  border-style: solid;
+  border-color: rgba(111, 227, 255, 0.35);
+}
+
+.chip__main {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: block;
+  height: 72px;
+  padding: 10px 12px 0;
+  overflow: hidden;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chip__main:focus-visible {
+  outline-offset: -3px;
+}
+
+.chip__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  overflow: hidden;
+  color: var(--dim);
+  font: 10px var(--mono);
+  white-space: nowrap;
+}
+
+.chip__kind {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip__top .led {
+  flex: none;
+  margin-left: auto;
+}
+
+.chip__name {
+  display: block;
+  height: 26px;
+  overflow: hidden;
+  font: 600 15px/26px var(--display);
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip__file {
+  display: block;
+  height: 16px;
+  overflow: hidden;
+  color: var(--dim);
+  font: 11px/16px var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.daughter {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 6px;
+  overflow: hidden;
+  background: rgba(60, 45, 110, 0.35);
+  border: 1px solid rgba(201, 184, 255, 0.45);
+  border-radius: 2px;
+  color: #e5dcff;
+  font: 10.5px var(--mono);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.daughter:hover,
+.daughter.is-selected {
+  border-color: var(--holo);
+  color: var(--holo);
+}
+
+.daughter__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip__members {
+  position: absolute;
+  right: 10px;
+  left: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink);
+  font: 11px/15px var(--mono);
+}
+
+.chip__members li {
+  height: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member__sign {
+  display: inline-block;
+  width: 1.4ch;
+  color: var(--dim);
+}
+
+.member__kind {
+  margin-left: 8px;
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.member__more {
+  color: var(--dim);
+}
+
+.chip__pins {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 30px;
+  padding: 0 12px;
+  border-top: 1px solid rgba(111, 227, 255, 0.12);
+  color: var(--dim);
+  font: 10.5px var(--mono);
+  white-space: nowrap;
+}
+
+.chip__pins b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Dimming and selection */
+.rig.is-dim,
+.bay.is-dim {
+  opacity: 0.35;
+}
+
+.chip.is-dim {
+  opacity: 0.2;
+}
+
+.daughter.is-dim {
+  opacity: 0.35;
+}
+
+/* Traces */
+.board__traces {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.trace {
+  transition: opacity 0.25s;
+}
+
+.trace path {
+  fill: none;
+  stroke-linejoin: round;
+}
+
+.trace__line {
+  stroke-width: 1.5;
+  opacity: 0.65;
+}
+
+.trace__head {
+  opacity: 0.85;
+}
+
+.trace--flow .trace__line {
+  stroke-width: 3.2;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.35));
+}
+
+.trace[data-kind='imports'] .trace__line {
+  stroke-dasharray: 5 4;
+}
+
+.trace__glow {
+  stroke-width: 8;
+  opacity: 0.3;
+}
+
+.trace__badge rect {
+  fill: #07121f;
+  stroke-width: 1;
+}
+
+.trace__badge text {
+  font: 600 9.5px var(--mono);
+}
+
+.is-dense .trace__line {
+  opacity: 0.35;
+}
+
+.is-dense .trace--flow .trace__line {
+  stroke-width: 2;
+  opacity: 0.55;
+  filter: none;
+}
+
+.is-dense .trace__glow {
+  opacity: 0.15;
+}
+
+.trace.is-dim {
+  opacity: 0.07;
+}
+
+.trace.is-lit .trace__line {
+  stroke-width: 2.6;
+  opacity: 1;
+}
+
+.trace--flow.is-lit .trace__line {
+  stroke-width: 4;
+}
+
+.marks-off .trace__glow,
+.marks-off .trace__marks {
+  display: none;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trace__pulse {
+    display: none;
+  }
+}

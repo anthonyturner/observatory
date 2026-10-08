@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security and Depth skies, and the Library
+# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security and Depth skies, the Library and the Inbox
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -55,6 +55,8 @@ TypeScript and the shader only draws it.
 | Security     | Belt, size, ink  | An alert's grade           | `layoutBelts`, `HAZARD_PX`     |
 | Security     | Shape            | Which list it came from    | `outlineOf`                    |
 | Security     | World's air      | The worst open grade       | `worstSeverity`                |
+| Inbox        | Beacon colour    | Why the notification came  | `reasonWords(reason).tone`     |
+| Inbox        | Beacon pulse     | It asks something of you   | tone `asks`                    |
 
 ## Orrery worlds
 
@@ -667,6 +669,19 @@ of its length past 100 words, at most 13 px. The open page's star is lit gold
 and slowly breathes; it holds still when motion is off. The scatter of faint
 stars behind the index is scenery. The links themselves are the list
 alternative: Tab or the arrow keys walk them, and search narrows them.
+
+## The Inbox's transmissions
+
+Code: `features/inbox/`. The Inbox is a list first and only: unread GitHub
+notifications as incoming transmissions, one glass panel per repository, a
+heading per reason. Each row's beacon is coloured by how loudly its reason
+calls (`reasonWords`): `--warm` for what is asked of you (a review, an
+assignment, a deployment to approve), `--flow` for what is said to you (a
+mention, an invitation), `--bad-soft` for warnings (CI runs, security alerts)
+and `--muted` for news (threads you opened, commented on or watch). Only the
+`asks` beacons pulse, so what waits on you keeps signalling; they hold still
+when motion is off. The rows are ordinary links and buttons, so there is no
+separate list alternative to keep.
 
 ## Changing a visual
 

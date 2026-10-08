@@ -34,6 +34,7 @@ import { withRunsRoutes } from './runner/runs-routes.ts';
 import { withCrewRoutes } from './crew/crew-routes.ts';
 import { withRerunRoute } from './queue/rerun-routes.ts';
 import { withActionsRerunRoute } from './actions/actions-rerun.ts';
+import { withInboxRoutes } from './inbox/inbox-routes.ts';
 import { withRiskRoutes } from './queue/risk-routes.ts';
 import { riskSummaries } from './queue/risk-summary.ts';
 import { fileStore } from './store/file-store.ts';
@@ -153,8 +154,12 @@ const soundCard = {
 
 const liveAgentsSource = liveAgentReader();
 const ownerAndFeedRoutes = withLiveAgentFeedRoute(
-  withActionsRerunRoute(
-    withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+  withInboxRoutes(
+    withActionsRerunRoute(
+      withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+      reads,
+      github,
+    ),
     reads,
     github,
   ),

@@ -11,7 +11,7 @@ import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-re
 import { readChangelog } from './changelog-reader.ts';
 import { readPullComments } from './comment-reader.ts';
 import { readCheckHistory } from './check-history.ts';
-import { githubApiRerunner, githubApiWriter } from './github-api-writer.ts';
+import { githubApiInboxMarker, githubApiRerunner, githubApiWriter } from './github-api-writer.ts';
 import { type GraphQl, type GraphQlConfig, githubGraphQl } from './github-graphql.ts';
 import { DIFF_MEDIA_TYPE, githubRest } from './github-rest.ts';
 import { ISSUE_GRAPHQL, PULL_GRAPHQL, nodesOf, selectionOf } from './graphql-fields.ts';
@@ -31,6 +31,7 @@ import { readReleases, readTags } from './release-reader.ts';
 import { readFilePaths, readFileText } from './docs-reader.ts';
 import { rawWikiReader } from './wiki-reader.ts';
 import { securityReader } from './security-reader.ts';
+import { notificationReader } from './notification-reader.ts';
 import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -229,6 +230,7 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
   return {
     ...githubApiWriter(graphql, rest),
     ...githubApiRerunner(rest),
+    ...githubApiInboxMarker(rest),
     checkHistory: (repo) => readCheckHistory(getJson, repo),
     releases: (repo, limit) => readReleases(getJson, repo, limit),
     tags: (repo, limit) => readTags(getJson, repo, limit),
@@ -243,6 +245,7 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     fileText: (repo, path, ref) => readFileText(getJson, repo, path, ref),
     ...rawWikiReader(),
     ...securityReader(getJson),
+    ...notificationReader(getJson),
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),

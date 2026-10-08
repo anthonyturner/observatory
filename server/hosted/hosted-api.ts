@@ -14,6 +14,7 @@ import { withoutCode } from '../queue/pull-detail.ts';
 import { hiddenWeather } from '../queue/pull-weather.ts';
 import { withRerunRoute } from '../queue/rerun-routes.ts';
 import { withActionsRerunRoute } from '../actions/actions-rerun.ts';
+import { withInboxRoutes } from '../inbox/inbox-routes.ts';
 import { withRiskRoutes } from '../queue/risk-routes.ts';
 import { NO_SUMMARIES } from '../queue/risk-summary.ts';
 import type { Store } from '../store/store.ts';
@@ -135,12 +136,18 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
   });
   // No assistant and no voice here, for anyone: Jev reads the owner's projects
   // and proposes work in them, so it answers only on the owner's own machine
-  // (ADR-0006). Keys set on the hosted site are never read.
+  // (ADR-0006). Keys set on the hosted site are never read. The inbox is the
+  // token's own notifications: visitorRoutes refuses it, as every route it
+  // does not open, whatever PUBLIC_PREVIEW says.
   const owner = withPrincipleRoutes(
     withNewsRoutes(
       withRiskRoutes(
-        withActionsRerunRoute(
-          withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+        withInboxRoutes(
+          withActionsRerunRoute(
+            withRerunRoute(ownerRoutes(reads, triage, editor), reads, github),
+            reads,
+            github,
+          ),
           reads,
           github,
         ),

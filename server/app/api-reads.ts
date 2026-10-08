@@ -11,6 +11,8 @@ import { type Ledger, ledgerReport } from '../history/ledger.ts';
 import { type JournalReport, journalReport } from '../journal/journal-report.ts';
 import { libraryReport } from '../library/library-report.ts';
 import type { LibraryReport } from '../library/library-types.ts';
+import { inboxReport } from '../inbox/inbox-report.ts';
+import type { InboxReport } from '../inbox/inbox-types.ts';
 import type { ReleasesReport } from '../releases/release-types.ts';
 import { releasesReport } from '../releases/releases-report.ts';
 import { securityReport } from '../security/security-report.ts';
@@ -77,9 +79,13 @@ const CI_HEALTH_TTL_MS = 5 * 60_000;
 /** Alerts open and close as dependencies and code change: a few times a day at most. Every
  *  project's tab strip asks for the count, so it is kept as long as the projects. */
 const SECURITY_TTL_MS = 5 * 60_000;
+/** GitHub asks that notifications be polled no more than once a minute (`X-Poll-Interval`). */
+const INBOX_TTL_MS = 60_000;
 
 /** The projects report's one key in its cache. */
 const ALL_PROJECTS = 'all';
+/** The inbox's one key in its cache: there is one account's. */
+const ONE_INBOX = 'inbox';
 
 /** Where the reports come from: the same code here and hosted, with different sources. */
 export interface ReadSources {
@@ -153,6 +159,10 @@ export interface ApiReads {
   ciHealth(repo: string): Promise<CiHealth>;
   /** Open Dependabot, code-scanning and secret-scanning alerts, most severe first. */
   security(repo: string): Promise<SecurityReport>;
+  /** The account's unread GitHub notifications across every repository. */
+  inbox(): Promise<InboxReport>;
+  /** The next read of the inbox goes to GitHub, not the cache. */
+  forgetInbox(): void;
   usage(): Promise<UsageReport | null>;
   agentUsage(): Promise<AgentUsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
@@ -240,6 +250,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     const [repo, runId] = key.split('#');
     return runJobsReport(github, repo, Number(runId));
   }, RUN_JOBS_TTL_MS);
+  const inboxOf = keyedCache(() => inboxReport(github, new Date()), INBOX_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
     return github.pullState(repo, Number(number));
@@ -279,6 +290,8 @@ export function cachedReads(sources: ReadSources): ApiReads {
     runJobs: (repo, runId) => runJobsOf.read(numberKey(repo, runId)),
     ciHealth: (repo) => ciHealthOf.read(repo),
     security: cachedByKey((repo) => securityReport(github, repo), SECURITY_TTL_MS),
+    inbox: () => inboxOf.read(ONE_INBOX),
+    forgetInbox: () => inboxOf.forget(ONE_INBOX),
     usage: sources.usage,
     agentUsage: sources.agentUsage,
     logs: cachedByKey(sources.logs, LOGS_TTL_MS),

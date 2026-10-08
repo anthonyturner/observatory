@@ -34,6 +34,8 @@ const reads = {
     commits: { status: 'read', note: null, weeks: [] },
     traffic: { status: 'read', note: null, views: { count: 46 }, clones: { count: 8 } },
   }),
+  deployments: async (repo: string) => ({ repo, environments: [] }),
+  pullPreview: async (repo: string, sha: string) => ({ repo, sha, deployments: [] }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
   commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
@@ -129,6 +131,18 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/ci-health?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/security?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/insights?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/deployments?repo=me/app')).status, 200);
+    assert.equal((await get(handle, '/api/deployments?repo=me/secret')).status, 404);
+    const sha = 'a'.repeat(40);
+    assert.equal(
+      (await get(handle, `/api/deployments/preview?repo=me/app&sha=${sha}`)).status,
+      200,
+    );
+    assert.equal(
+      (await get(handle, `/api/deployments/preview?repo=me/secret&sha=${sha}`)).status,
+      404,
+    );
+    assert.equal((await get(handle, '/api/deployments/preview?repo=me/app&sha=nope')).status, 400);
   });
 
   it('gives a visitor a repository’s insights without its traffic', async () => {

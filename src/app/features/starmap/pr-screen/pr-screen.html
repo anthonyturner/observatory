@@ -24,6 +24,7 @@
       @if (detail(); as pull) {
         @switch (name) {
           @case ('overview') {
+            <app-sheet-preview [repo]="repo()" [sha]="pull.headOid" />
             <app-sheet-markdown [source]="pull.body" />
             @if (pull.bodyTruncated) {
               <p class="note warn">Description shortened to fit — the rest is on GitHub.</p>

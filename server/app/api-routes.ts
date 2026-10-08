@@ -6,6 +6,7 @@ import type { PullEditor } from '../edits/pull-editor.ts';
 import type { RouteTable } from '../http/api-handler.ts';
 import { isFresh } from '../http/fresh-query.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
+import { PREVIEW_PATH } from '../deployments/deployments-report.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
@@ -58,6 +59,12 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
         if (isFresh(query)) reads.forgetInsights(repo);
         return reads.insights(repo);
       },
+      '/api/deployments': (query) => {
+        const repo = repoOf(query);
+        if (isFresh(query)) reads.forgetDeployments(repo);
+        return reads.deployments(repo);
+      },
+      [PREVIEW_PATH]: (query) => reads.pullPreview(repoOf(query), commitShaFrom(query.get('sha'))),
       '/api/issues': (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetIssues(repo);

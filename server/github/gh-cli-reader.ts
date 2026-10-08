@@ -37,6 +37,7 @@ import { rawWikiReader } from './wiki-reader.ts';
 import { securityReader } from './security-reader.ts';
 import { notificationReader } from './notification-reader.ts';
 import { insightsReader } from './insights-reader.ts';
+import { deploymentReader } from './deployment-reader.ts';
 import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -78,6 +79,7 @@ export function ghCliReader(): GitHub {
     ...securityReader(getJson),
     ...notificationReader(getJson),
     ...insightsReader(getJson),
+    ...deploymentReader(getJson),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([

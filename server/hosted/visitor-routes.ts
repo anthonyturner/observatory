@@ -9,6 +9,7 @@ import {
   type Routes,
 } from '../http/api-handler.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
+import { PREVIEW_PATH } from '../deployments/deployments-report.ts';
 import { NEWS_PATH } from '../news/news-routes.ts';
 import { PRINCIPLES_PATH } from '../principles/principle-routes.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
@@ -109,6 +110,9 @@ export function visitorRoutes(
         withoutAlerts(await reads.security(await visibleRepo(query))),
       '/api/insights': async (query) =>
         withoutTraffic(await reads.insights(await visibleRepo(query))),
+      '/api/deployments': async (query) => reads.deployments(await visibleRepo(query)),
+      [PREVIEW_PATH]: async (query) =>
+        reads.pullPreview(await visibleRepo(query), commitShaFrom(query.get('sha'))),
       '/api/issues': async (query) => reads.issues(await visibleRepo(query)),
       '/api/issue': async (query) =>
         reads.issue(await visibleRepo(query), issueNumberFrom(query.get('number'))),

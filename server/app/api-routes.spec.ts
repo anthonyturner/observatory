@@ -68,6 +68,9 @@ const reads = {
   forgetActions: (repo: string) => forgotten.push(`actions ${repo}`),
   runJobs: async (repo: string, runId: number) => ({ repo, runId, jobs: [] }),
   ciHealth: async (repo: string) => ({ repo, state: 'passing' }),
+  deployments: async (repo: string) => ({ repo, environments: [] }),
+  forgetDeployments: (repo: string) => forgotten.push(`deployments ${repo}`),
+  pullPreview: async (repo: string, sha: string) => ({ repo, sha, deployments: [] }),
   logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
   agentUsage: async () => ({
     generatedAt: 'x',
@@ -162,6 +165,22 @@ describe('ownerRoutes', () => {
       jobs: [],
     });
     assert.deepEqual(await get('/api/ci-health?repo=me/app'), { repo: 'me/app', state: 'passing' });
+  });
+
+  it('reads a repository’s deployments, afresh when asked, and a commit’s preview', async () => {
+    assert.deepEqual(await get('/api/deployments?repo=me/app'), {
+      repo: 'me/app',
+      environments: [],
+    });
+    forgotten.length = 0;
+    await get('/api/deployments?repo=me/app&fresh=1');
+    assert.deepEqual(forgotten, ['deployments me/app']);
+    const sha = 'A'.repeat(40);
+    assert.deepEqual(await get(`/api/deployments/preview?repo=me/app&sha=${sha}`), {
+      repo: 'me/app',
+      sha: sha.toLowerCase(),
+      deployments: [],
+    });
   });
 
   it('reads one issue by repository and number, and refuses a bad number', async () => {

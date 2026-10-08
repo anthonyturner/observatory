@@ -59,6 +59,7 @@ const reads = {
   issue: async (repo: string, number: number) => ({ repo, issue: number }),
   forgetIssue: (repo: string, number: number) => forgotten.push(`issue ${repo}#${number}`),
   forgetPull: (repo: string, number: number) => forgotten.push(`${repo}#${number}`),
+  weather: async (repo: string) => ({ repo, hidden: false, pulls: [] }),
   labels: async () => [{ name: 'bug', color: 'd73a4a' }],
   releases: async (repo: string) => ({ repo, source: 'none', releases: [] }),
   library: async (repo: string) => ({ repo, source: 'docs', pages: [] }),
@@ -119,6 +120,14 @@ describe('ownerRoutes', () => {
 
   it('reads a pull request by repository and number', async () => {
     assert.deepEqual(await get('/api/pull?repo=me/app&number=7'), { repo: 'me/app', number: 7 });
+  });
+
+  it('reads a repository’s weather', async () => {
+    assert.deepEqual(await get('/api/weather?repo=me/app'), {
+      repo: 'me/app',
+      hidden: false,
+      pulls: [],
+    });
   });
 
   it('reads a repository’s releases', async () => {

@@ -24,6 +24,7 @@ import { QueueFeed } from '../../../core/queue/queue-feed';
 import { Stacks, stacksOf } from '../../../core/queue/stacks';
 import { queueFog } from '../../../core/queue/queue-fog';
 import { SNOOZE_DAYS, TriageChoice, TriageClient } from '../../../core/queue/triage-client';
+import { WeatherFeed } from '../../../core/queue/weather-feed';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { MotionPreference } from '../../../core/motion/motion-preference';
@@ -191,6 +192,7 @@ export interface SkyState {
     QueueFeed,
     HistoryFeed,
     LedgerFeed,
+    WeatherFeed,
     AgentsFeed,
     CollisionsFeed,
     LogsFeed,
@@ -210,6 +212,8 @@ export class StarmapPage {
   private readonly history = inject(HistoryFeed);
   protected readonly collisions = inject(CollisionsFeed);
   private readonly ledger = inject(LedgerFeed);
+  /** Each open pull request's design red flags, drawn as weather round its star. */
+  protected readonly weather = inject(WeatherFeed);
   protected readonly memory = inject(MemoryView);
   protected readonly agents = inject(AgentsFeed);
   private readonly sound = inject(StarmapSound);
@@ -577,6 +581,12 @@ export class StarmapPage {
   protected readonly ringedIssue = computed(
     () => this.issues.windowIssue() ?? this.issues.picked()?.issue?.number ?? null,
   );
+  /** The selected pull request's red flags; a past refresh on screen says nothing of the code now. */
+  protected readonly cardWeather = computed(() => {
+    const number = this.openPull();
+    if (number === null || this.memory.replay()) return undefined;
+    return this.weather.weather().get(number);
+  });
   /** What the rest of the sky says about the selected pull request, for its card. */
   protected readonly cardContext = computed((): CardContext => {
     const number = this.openPull();
@@ -700,6 +710,7 @@ export class StarmapPage {
       untracked(() => {
         this.history.load(this.repo());
         this.ledger.load(this.repo());
+        this.weather.load(this.repo());
         this.collisions.load(this.repo());
         this.agents.load(this.repo());
         this.refreshing.set(false);

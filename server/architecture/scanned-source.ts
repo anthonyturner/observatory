@@ -69,7 +69,7 @@ export interface ScannedSource {
   readonly caseRoutes: readonly CaseRoute[];
 }
 
-/** One scanned source file, by its path relative to `src/app`. */
+/** One scanned source file, by its path relative to the project root. */
 export interface ScannedFile extends ScannedSource {
   readonly file: string;
 }

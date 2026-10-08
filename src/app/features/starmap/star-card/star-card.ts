@@ -8,6 +8,8 @@ import { isPlainClick } from '../../issues/issue-list';
 import { BY_ID } from '../engine/sky-model';
 import { CardContext, cardFacts } from './card-facts';
 import { StarRisk } from './star-risk/star-risk';
+import { StarWeather } from './star-weather/star-weather';
+import { PullWeather } from '../../../core/queue/weather';
 
 /** Where the card is left, per viewer. */
 const CARD_PLACE_KEY = 'observatory.cardPos';
@@ -19,7 +21,7 @@ const CARD_PLACE_KEY = 'observatory.cardPos';
  */
 @Component({
   selector: 'app-star-card',
-  imports: [Draggable, CrewControl, RerunControl, StarRisk],
+  imports: [Draggable, CrewControl, RerunControl, StarRisk, StarWeather],
   templateUrl: './star-card.html',
   styleUrl: './star-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,6 +30,8 @@ export class StarCard {
   readonly repo = input.required<string>();
   readonly item = input.required<QueueItem>();
   readonly context = input.required<CardContext>();
+  /** Its design red flags, once read; none while a past refresh is on screen. */
+  readonly weather = input<PullWeather | undefined>(undefined);
   /** A visitor to the hosted preview cannot change anything. */
   readonly canWrite = input(true);
   readonly closed = output<void>();

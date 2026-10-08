@@ -39,6 +39,7 @@
   [stacks]="stacks()"
   [meteors]="meteors()"
   (meteorLanded)="meteorLanded($event)"
+  [weather]="weather.weather()"
   (pickedDone)="openDone($event)"
   (pickedIssue)="pickIssue($event)"
 />
@@ -213,6 +214,7 @@
     [repo]="repo()"
     [item]="item"
     [context]="cardContext()"
+    [weather]="cardWeather()"
     [canWrite]="session.canWrite()"
     (closed)="openPull.set(null)"
     (open)="openSheet($event)"

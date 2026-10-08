@@ -75,6 +75,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'A silver chain joins a stacked pull request to the one it is built on, the pull request whose branch it merges into; a glint runs along it toward that base. When the base merges, its children are left holding a broken gold chain marked BASE MERGED · UPDATE: open one and Send crew to update it, merging in the work where the base landed and pointing the pull request there.',
       ],
       [
+        'Weather',
+        'Grey cloud and debris swirling round a star are design red flags in the lines its pull request adds: a catch that discards the error, a method that only forwards to another, a lint or type check switched off, a TODO with no issue. The more there are, and the graver, the bigger the storm, from a thin haze to a storm with lightning; a clean pull request stays clear. Its card lists each one with its file and line and the principle it breaks. The scan reads patterns, so it can miss or mistake one, and a diff too large to read shows no weather.',
+      ],
+      [
         'Agents',
         'Agents opens a report card per agent: how many of its pull requests merged, are still open, conflict, or close no issue, and how long a merge takes. Each says whether its attribution is named, inferred or missing. Click a card to light only that agent’s stars.',
       ],

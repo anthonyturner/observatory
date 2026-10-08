@@ -43,6 +43,8 @@ import { BlackHoleLayer } from '../engine/black-hole-layer';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StackLayer } from '../engine/stack-layer';
 import { Stacks } from '../../../core/queue/stacks';
+import { WeatherByPull } from '../../../core/queue/weather';
+import { WeatherLayer } from '../engine/weather-layer';
 
 /** What the pointer can rest on over the queue: a star's pull request, or a comet. */
 type QueueHover = number | Comet;
@@ -153,6 +155,8 @@ export class StarmapSky {
   readonly meteors = input<readonly Meteor[]>([]);
   /** A meteor landed on its star: where, for the sound. */
   readonly meteorLanded = output<MeteorLanding>();
+  /** Each pull request's design red flags, drawn as weather round its star. */
+  readonly weather = input<WeatherByPull>(new Map());
   /** A star was clicked open, or empty sky (null). */
   readonly picked = output<number | null>();
   /** A star was rested on, or tapped once: show its card. */
@@ -183,6 +187,7 @@ export class StarmapSky {
   private readonly doneLayer = new DoneLayer();
   private readonly blackHoleLayer = new BlackHoleLayer();
   private readonly stackLayer = new StackLayer();
+  private readonly weatherLayer = new WeatherLayer();
   private readonly crewLayer = new CrewLayer(Date.now, () => this.engine?.kick());
   private readonly meteorLayer = new MeteorLayer(
     () => this.engine?.kick(),
@@ -271,6 +276,11 @@ export class StarmapSky {
     effect(() => {
       this.stackLayer.set(this.stacks());
       this.stackLayer.paused = this.replaying();
+      this.engine?.kick();
+    });
+    effect(() => {
+      this.weatherLayer.set(this.weather());
+      this.weatherLayer.paused = this.replaying();
       this.engine?.kick();
     });
     effect(() => {
@@ -436,6 +446,7 @@ export class StarmapSky {
     }
     this.engine.layers = [
       this.blackHoleLayer,
+      this.weatherLayer,
       this.cometLayer,
       this.collisions,
       this.binaries,

@@ -12,6 +12,13 @@ import { type JournalReport, journalReport } from '../journal/journal-report.ts'
 import { libraryReport } from '../library/library-report.ts';
 import type { LibraryReport } from '../library/library-types.ts';
 import { inboxReport } from '../inbox/inbox-report.ts';
+import {
+  deploymentsReport,
+  isPreviewUnsettled,
+  isReportBuilding,
+  pullPreview,
+} from '../deployments/deployments-report.ts';
+import type { DeploymentsReport, PullPreview } from '../deployments/deployments-types.ts';
 import { insightsReport, isCounting } from '../insights/insights-report.ts';
 import type { InsightsReport } from '../insights/insights-types.ts';
 import type { InboxReport } from '../inbox/inbox-types.ts';
@@ -85,6 +92,10 @@ const SECURITY_TTL_MS = 5 * 60_000;
  *  a repository's statistics it is asked again soon, so the screen fills in when they are ready. */
 const INSIGHTS_TTL_MS = 10 * 60_000;
 const COUNTING_TTL_MS = 20_000;
+/** Deploys land a few times a day; one still building is asked about again soon, so it
+ *  turns green or red on screen within a poll or two of finishing. */
+const DEPLOYMENTS_TTL_MS = 2 * 60_000;
+const BUILDING_TTL_MS = 20_000;
 /** GitHub asks that notifications be polled no more than once a minute (`X-Poll-Interval`). */
 const INBOX_TTL_MS = 60_000;
 
@@ -169,6 +180,12 @@ export interface ApiReads {
   insights(repo: string): Promise<InsightsReport>;
   /** The next read of these insights goes to GitHub, not the cache. */
   forgetInsights(repo: string): void;
+  /** Each environment with its latest deployments and how they went. */
+  deployments(repo: string): Promise<DeploymentsReport>;
+  /** The next read of these deployments goes to GitHub, not the cache. */
+  forgetDeployments(repo: string): void;
+  /** What one commit, a pull request's head, was deployed as. */
+  pullPreview(repo: string, sha: string): Promise<PullPreview>;
   /** The account's unread GitHub notifications across every repository. */
   inbox(): Promise<InboxReport>;
   /** The next read of the inbox goes to GitHub, not the cache. */
@@ -264,6 +281,17 @@ export function cachedReads(sources: ReadSources): ApiReads {
     (repo) => insightsReport(github, repo),
     (report) => (isCounting(report) ? COUNTING_TTL_MS : INSIGHTS_TTL_MS),
   );
+  const deploymentsOf = keyedCache(
+    (repo) => deploymentsReport(github, repo),
+    (report) => (isReportBuilding(report) ? BUILDING_TTL_MS : DEPLOYMENTS_TTL_MS),
+  );
+  const previewOf = keyedCache(
+    async (key) => {
+      const [repo, sha] = key.split('@');
+      return pullPreview(github, repo, sha);
+    },
+    (preview) => (isPreviewUnsettled(preview) ? BUILDING_TTL_MS : DEPLOYMENTS_TTL_MS),
+  );
   const inboxOf = keyedCache(() => inboxReport(github, new Date()), INBOX_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
@@ -306,6 +334,9 @@ export function cachedReads(sources: ReadSources): ApiReads {
     security: cachedByKey((repo) => securityReport(github, repo), SECURITY_TTL_MS),
     insights: (repo) => insightsOf.read(repo),
     forgetInsights: (repo) => insightsOf.forget(repo),
+    deployments: (repo) => deploymentsOf.read(repo),
+    forgetDeployments: (repo) => deploymentsOf.forget(repo),
+    pullPreview: (repo, sha) => previewOf.read(commitKey(repo, sha)),
     inbox: () => inboxOf.read(ONE_INBOX),
     forgetInbox: () => inboxOf.forget(ONE_INBOX),
     usage: sources.usage,

@@ -6,6 +6,7 @@ import type { CheckRerunner } from './check-rerunner.ts';
 import type { PullCommentReader } from './comment-reader.ts';
 import type { CommitReader } from './commit-reader.ts';
 import type { CompareReader } from './compare-reader.ts';
+import type { DeploymentReader } from './deployment-reader.ts';
 import type { DocsReader } from './docs-reader.ts';
 import type { FateReader } from './fate-reader.ts';
 import type { GitHubReader } from './github-reader.ts';
@@ -48,4 +49,5 @@ export type GitHub = GitHubReader &
   SecurityReader &
   NotificationReader &
   InsightsReader &
+  DeploymentReader &
   InboxMarker;

@@ -26,6 +26,15 @@ As a <type of user>, I want <goal> so that <outcome>.
 - [ ]
 - [ ]
 
+## Alternatives considered
+
+<!-- Required: see "Design it twice" in docs/design-principles.md. The chosen
+approach in one line, then at least one genuinely different approach that was
+rejected, with why it lost. -->
+
+- **Chosen:**
+- **Rejected:**
+
 ## Technical notes
 
 <!-- Implementation choices and anything refinement verified. Leave empty

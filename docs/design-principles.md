@@ -60,6 +60,32 @@ Never leave a hack in silently.
 - Defining an error away is not ignoring it. Never swallow an error that
   matters.
 
+## 4. Design it twice
+
+Your first idea is rarely your best. Before you build, sketch at least one
+other way to do it, compare the two, and keep the better one. It costs
+roughly 1–2% of the build time and often pays back far more.
+
+- **Make them genuinely different.** Two spellings of one idea do not count.
+  Ask: "if I were not allowed to build my first idea, what would I build?"
+- **Stay at the interface level.** Sketch what callers would see and do:
+  signatures, ownership, data flow. This is a few lines each, not a second
+  implementation.
+- **Think from the caller's side.** Judge each sketch by how simple it makes
+  the code that uses it, not by how easy it is to write.
+- **Even a deliberately bad alternative teaches something.** Comparing
+  against it shows why the winner wins, and sometimes the "bad" one turns out
+  simpler, or the best design combines the two.
+- **Record why the loser lost**, in a sentence or two, so the next reader
+  does not reopen the question.
+- **Keep it cheap.** Two or three options, compared once. This is not
+  analysis paralysis (endless weighing that never decides). When a change
+  truly has only one sensible shape, such as a typo fix, say so and why.
+
+Every filed issue records this in its **Alternatives considered** section;
+the format is in **Issue format** in
+[agent-workflows/product-manager.md](agent-workflows/product-manager.md).
+
 ## Red flags
 
 If you see one of these in your diff, stop and redesign:
@@ -79,3 +105,5 @@ If you see one of these in your diff, stop and redesign:
 - "Deep" is not "more abstract". Never add a layer or interface that hides
   nothing ([rule 9](rules.md)).
 - In review, a tactical shortcut is a finding, with the same weight as a bug.
+  So is a missing or token alternative (a straw man named only to fill the
+  section, with no real reason it lost).

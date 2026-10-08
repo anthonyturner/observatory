@@ -107,7 +107,9 @@ At least two viable approaches whenever more than one exists, each with:
 - what it forecloses.
 
 Recommend one and say why. A single-option assessment must justify why no
-alternative is viable.
+alternative is viable. The options you reject, with their reasons, become the
+issue's **Alternatives considered** section (see **Issue format** in
+[product-manager.md](product-manager.md)).
 
 ### Risk and blast radius
 

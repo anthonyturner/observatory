@@ -55,7 +55,10 @@ outcome, constraints, candidate acceptance criteria — and does **not** file ye
 require the full assessment: approach options, risk, unknowns, per-criterion
 testability, and a relative size with its reasoning. Skip the stage for a
 localized, well-understood change, and tell the Product Manager it was skipped
-so the issue can say so.
+so the issue can say so. A skipped refinement still owes the issue its
+alternatives: sketch them yourself, per **Design it twice** in
+[../design-principles.md](../design-principles.md), and hand them over with
+the draft.
 
 **3. Product Manager files — do not stop here.** The assessment goes to the
 Product Manager, not to the requester
@@ -65,6 +68,10 @@ the Product Manager to:
 
 - file the real issue against the assessment per [tracking.md](tracking.md),
   rewriting any acceptance criterion refinement found untestable;
+- fill the required **Alternatives considered** section from the rejected
+  approach options (see **Issue format** in
+  [product-manager.md](product-manager.md)). An issue without it is not ready
+  to implement;
 - carry every assumption and unknown the assessment left open onto the issue as
   an explicit **Open questions** section — nobody challenges them before work
   starts now, so absorbing them into the body would let a guess read as
@@ -102,6 +109,7 @@ Return, in the caller's own report:
 
 - the issue number and URL, its labels, and the parent issue if any;
 - the acceptance criteria;
+- the chosen approach and the alternatives it beat, one line each;
 - the refinement size and recommendation, or an explicit statement that
   refinement was skipped and why;
 - the refinement- and design-comment URLs, where those stages ran;

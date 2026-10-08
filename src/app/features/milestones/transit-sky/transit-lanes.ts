@@ -29,10 +29,8 @@ export interface PlacedMilestone {
 }
 
 export interface TransitLayout {
-  /** Soonest due at the top. */
+  /** Soonest due at the top; past the sky's room, the rest are left to the list. */
   readonly lanes: readonly PlacedMilestone[];
-  /** Open milestones past the sky's room, which only the list shows. */
-  readonly hidden: number;
 }
 
 /** Past this many lanes they crowd; the list holds the rest. */
@@ -52,7 +50,7 @@ const MAX_PLANET_PX = 20;
 /** A planet never takes more than this share of the gap to the next lane. */
 const PLANET_GAP_SHARE = 0.3;
 
-const EMPTY_TRANSIT: TransitLayout = { lanes: [], hidden: 0 };
+const EMPTY_TRANSIT: TransitLayout = { lanes: [] };
 
 /** A planet's radius for a milestone with `items` issues and pull requests on it. */
 export const planetRadius = (items: number): number =>
@@ -119,6 +117,5 @@ export function layoutTransit(
   const frame: LaneFrame = { span, gap, now };
   return {
     lanes: shown.map((milestone, index) => laneOf(milestone, top + gap * index, frame)),
-    hidden: open.length - shown.length,
   };
 }

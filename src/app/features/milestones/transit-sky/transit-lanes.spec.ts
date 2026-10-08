@@ -62,13 +62,14 @@ describe('layoutTransit', () => {
     expect((lane.from.x + lane.to.x) / 2).toBeCloseTo(1500);
   });
 
-  it('draws at most its lanes, and counts the rest for the list', () => {
+  it('draws at most its lanes, the soonest due, leaving the rest to the list', () => {
     const many = Array.from({ length: MAX_LANES + 3 }, (_, index) => milestone(index + 1));
 
     const layout = layoutTransit(many, STAGE, NOW);
 
-    expect(layout.lanes.length).toBe(MAX_LANES);
-    expect(layout.hidden).toBe(3);
+    expect(layout.lanes.map((lane) => lane.key)).toEqual(
+      many.slice(0, MAX_LANES).map((each) => String(each.number)),
+    );
   });
 
   it('draws nothing on a stage with no room', () => {

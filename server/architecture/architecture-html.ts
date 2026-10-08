@@ -79,6 +79,7 @@ export async function architectureHtml(map: ArchitectureMap): Promise<string> {
   const { script, styles } = await bundleViewer();
   return [
     '<!doctype html>',
+    '<!-- Boards are laid out by ELK.js (elkjs), EPL-2.0 OR GPL-3.0-or-later: https://github.com/kieler/elkjs -->',
     '<html lang="en">',
     '<head>',
     '<meta charset="utf-8">',

@@ -1,0 +1,42 @@
+@for (group of groups(); track group.repo) {
+  <section class="repo" [attr.aria-labelledby]="group.headingId">
+    <h2 [id]="group.headingId">
+      <span class="repo__name">{{ group.repo }}</span>
+      <span class="repo__count">{{ group.count }}</span>
+      @if (group.isTracked) {
+        <span class="repo__tracked">Charted</span>
+      }
+    </h2>
+    @for (reason of group.reasons; track reason.key) {
+      <h3 class="reason" [attr.data-tone]="reason.tone">{{ reason.label }}</h3>
+      <ul [attr.aria-label]="reason.listLabel" [attr.data-tone]="reason.tone">
+        @for (row of reason.rows; track row.id) {
+          <li>
+            <a
+              [href]="row.href"
+              [attr.target]="row.isInside ? null : '_blank'"
+              [attr.rel]="row.isInside ? null : 'noopener'"
+              (click)="follow($event, row)"
+            >
+              <span class="beacon" aria-hidden="true"></span>
+              <b>{{ row.title }}</b>
+              <span class="meta">{{ row.meta }}</span>
+              @if (!row.isInside) {
+                <span class="away">GitHub <span aria-hidden="true">↗</span></span>
+              }
+            </a>
+            <button
+              type="button"
+              class="mark"
+              [attr.aria-label]="row.markLabel"
+              [disabled]="marking().has(row.id)"
+              (click)="markRead.emit(row.id)"
+            >
+              Mark read
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

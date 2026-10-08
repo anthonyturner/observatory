@@ -25,6 +25,11 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'inbox',
+    title: 'Inbox · Observatory',
+    loadComponent: () => import('./features/inbox/inbox-page/inbox-page').then((m) => m.InboxPage),
+  },
+  {
     path: 'agents',
     children: [
       {

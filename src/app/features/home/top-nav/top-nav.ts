@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { MAIL_SHOWN } from '../../../core/mail/mail-inbox';
 import { LiveAgentsLink } from '../../agents/live-agents-link/live-agents-link';
+import { InboxLink } from '../../inbox/inbox-link/inbox-link';
 import { SectionJump } from '../../../shared/section-jump/section-jump';
 import { RunPill } from '../run-pill/run-pill';
 
@@ -24,12 +25,12 @@ const JUMPS: readonly Jump[] = [
   { id: 'agents', label: 'Agents', hint: 'Jump to what each agent you use costs' },
 ];
 
-/** A task's pill, jumps to Home's sections, the agents running now, and the
- *  way to the orrery. The page's tools sit along the foot of the screen
+/** A task's pill, jumps to Home's sections, the agents running now, the
+ *  inbox, and the way to the orrery. The page's tools sit along the foot of the screen
  *  instead, as on every screen. */
 @Component({
   selector: 'app-top-nav',
-  imports: [RouterLink, RunPill, LiveAgentsLink],
+  imports: [RouterLink, RunPill, LiveAgentsLink, InboxLink],
   templateUrl: './top-nav.html',
   styleUrl: './top-nav.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

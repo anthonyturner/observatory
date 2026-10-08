@@ -1,0 +1,43 @@
+<div class="listview">
+  <div class="column">
+    @if (refusal(); as refusal) {
+      <p class="refusal" role="status">{{ refusal }}</p>
+    }
+    @if (message(); as message) {
+      <div class="empty" role="status">
+        <strong>{{ message.headline }}</strong>
+        @if (message.detail) {
+          <span>{{ message.detail }}</span>
+        }
+      </div>
+    } @else {
+      <app-inbox-list
+        [groups]="groups()"
+        [marking]="marking()"
+        [isStill]="isStill()"
+        (markRead)="markRead($event)"
+      />
+    }
+    @if (report()?.isCapped) {
+      <p class="capped">Only the newest are listed. Mark some read to see the rest.</p>
+    }
+  </div>
+</div>
+
+<header class="hud">
+  <div class="way">
+    <app-up-link to="/" label="Home" />
+  </div>
+  <div class="brand">
+    <h1>Inbox</h1>
+    <span class="stamp">{{ stamp() }}</span>
+  </div>
+  @if (report()) {
+    <div class="tools">
+      <button type="button" class="abtn" (click)="refresh()">Refresh</button>
+      <button type="button" class="abtn" [disabled]="!canMarkAll()" (click)="markAllRead()">
+        {{ isMarkingAll() ? 'Marking…' : 'Mark all read' }}
+      </button>
+    </div>
+  }
+</header>

@@ -144,7 +144,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Sound',
-        'Ambient score, off until you press Sound; the slider beside it sets the volume. An off-key tone grows with the number of blocked pull requests, and settles as you clear them. Clicking a star plays a note, lower when it is stuck.',
+        'Off until you press Sound; the slider beside it sets the volume. Space is silent, so nothing plays in the background: only what happens on the sky makes a sound. Clicking a star plays a note, lower when it is stuck.',
       ],
       ['Move', 'Drag the sky to pan, scroll to zoom, Fit to see everything.'],
     ],
@@ -300,7 +300,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Strip',
         'Errors and warnings per day. Hover a day for its counts; a clicked star shades its lifetime.',
       ],
-      ['Sound', 'The same ambient score. Here the off-key tone follows the faults still burning.'],
+      ['Sound', 'The same sound as the Review Queue: quiet until something happens on the sky.'],
     ],
   },
   'logs-list': {

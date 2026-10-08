@@ -37,6 +37,7 @@ import { HoverDwell } from './hover-dwell';
 import { DoneItem, DoneKind } from '../../../core/queue/done-work';
 import { DoneLayer, isDoneHit } from '../engine/done-layer';
 import { CrewLayer } from '../engine/crew-layer';
+import { Meteor, MeteorLanding, MeteorLayer } from '../engine/meteor-layer';
 import { CrewMark } from '../../../core/crew/crew.types';
 import { BlackHoleLayer } from '../engine/black-hole-layer';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
@@ -148,6 +149,10 @@ export class StarmapSky {
   readonly crews = input<readonly CrewMark[]>([]);
   /** Stacked pull requests, drawn as chains, and those whose base has merged. */
   readonly stacks = input<Stacks>(new Map());
+  /** Pull requests with new commits since they were looked at, each a meteor that lands on its star. */
+  readonly meteors = input<readonly Meteor[]>([]);
+  /** A meteor landed on its star: where, for the sound. */
+  readonly meteorLanded = output<MeteorLanding>();
   /** A star was clicked open, or empty sky (null). */
   readonly picked = output<number | null>();
   /** A star was rested on, or tapped once: show its card. */
@@ -179,6 +184,10 @@ export class StarmapSky {
   private readonly blackHoleLayer = new BlackHoleLayer();
   private readonly stackLayer = new StackLayer();
   private readonly crewLayer = new CrewLayer(Date.now, () => this.engine?.kick());
+  private readonly meteorLayer = new MeteorLayer(
+    () => this.engine?.kick(),
+    (landing) => this.meteorLanded.emit(landing),
+  );
   private readonly tetherLayer = new TetherLayer(
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
     () => this.cometLayer.selectedAt(),
@@ -196,6 +205,7 @@ export class StarmapSky {
     inject(DestroyRef).onDestroy(() => {
       this.hover.cancel();
       this.crewLayer.dispose();
+      this.meteorLayer.dispose();
       this.engine?.dispose();
     });
     effect(() => {
@@ -257,6 +267,7 @@ export class StarmapSky {
       this.engine?.kick();
     });
     effect(() => this.crewLayer.set(this.crews()));
+    effect(() => this.meteorLayer.set(this.meteors()));
     effect(() => {
       this.stackLayer.set(this.stacks());
       this.stackLayer.paused = this.replaying();
@@ -436,6 +447,7 @@ export class StarmapSky {
       this.tetherLayer,
       this.doneLayer,
       this.crewLayer,
+      this.meteorLayer,
     ];
     this.engine.filter = filterFor(this.filter(), this.litPrs());
     this.engine.fog = this.fog();

@@ -95,6 +95,11 @@ export class StarmapSound {
     if (this.isOn()) this.score?.ping(stuck, pr);
   }
 
+  /** A short crackle when a meteor lands, only while sound is on. */
+  crackle(pan: number, strength: number, seed: number): void {
+    if (this.isOn()) this.score?.crackle(pan, strength, seed);
+  }
+
   private play(): void {
     this.score ??= this.makeScore();
     this.score.setVolume(this.volume());

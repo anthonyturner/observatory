@@ -37,6 +37,8 @@
   [doneOnly]="doneOnly()"
   [crews]="crewMarks()"
   [stacks]="stacks()"
+  [meteors]="meteors()"
+  (meteorLanded)="meteorLanded($event)"
   (pickedDone)="openDone($event)"
   (pickedIssue)="pickIssue($event)"
 />

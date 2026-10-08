@@ -30,6 +30,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Size             | Idle days                  | `mag` in `layoutQueue`         |
 | Review Queue | Fall to the hole | Idle days past a threshold | `fallOf`, `placeByHole`        |
 | Review Queue | Crew ship        | A crew run on the PR       | `crewPose(mark, clock)`        |
+| Review Queue | Meteor           | Commits since you looked   | `meteorsOf`, `meteorLook`      |
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
@@ -282,6 +283,32 @@ like the gas disc; with motion off it is parked up and to the right. When the
 run ends the ship flies off over 4 s and a green tick (done) or red cross (any
 other ending) stays by the star for 10 minutes. There is no 3D model: the ship
 stays a few pixels long at every zoom so it reads as a marker.
+
+### Meteors (data: new commits since you looked)
+
+`engine/meteor-layer.ts` draws one meteor for each pull request whose head has
+moved since it was last looked at, flat over both renderers. It reads the same
+`sinceLook` the card's "N new commits since you looked" does, which the queue
+already carries for every item (`/api/queue`), so no extra request is made. A
+rewritten branch (`newCommits: null`) gets one too. `meteorsOf` keeps at most 12,
+the biggest changes first; a replayed refresh has none.
+
+`MeteorShow` plays them in order once the sky has finished arriving: each
+waits for its star, starts 0.45 s after the one before, falls for 1.1 s, then
+glints for 1 s. A pull request is shown again only when its count changes. The
+streak comes from above (`meteorHeading`, fixed per pull request), speeds up
+as it falls and stops at the star's rim (`headDistance`), so it never covers the
+star. `meteorLook` lengthens the tail (70 to 200 px) and brightens it with the
+commit count, topping out at 15; a rewritten branch looks like 3. The landing is a
+glow added over the star, a spreading ring and a few sparks. It runs on the
+scene's `time`; with motion off there is no streak, only the glow fading over the
+star, driven by wall time with a short redraw timer, since a still sky doesn't
+redraw itself. These are not the shooting stars of a merged pull request in the
+Changes: those cross the sky and land on nothing.
+
+With sound on, each landing plays a quiet crackle (`crackleOf`: a few
+high-passed noise pops through `noiseBurst`), panned by the star's screen x
+(`panOf`). Nothing plays with sound off.
 
 ### Chain (data: stacked pull requests)
 

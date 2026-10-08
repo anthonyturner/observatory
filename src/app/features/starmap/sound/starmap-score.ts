@@ -3,6 +3,10 @@
    a tension voice that rises with the number of blocked pull requests, so a
    backlog sounds uneasy and clearing it lets the sky settle. */
 
+import { noiseBurst } from '../../../core/sound/instruments';
+import { Rig } from '../../../core/sound/sound-rig';
+import { crackleOf } from './meteor-crackle';
+
 /** The score as the page drives it; behind an interface so tests need no audio device. */
 export interface StarmapScore {
   start(): Promise<void>;
@@ -13,6 +17,8 @@ export interface StarmapScore {
   setVolume(volume: number): void;
   /** A soft tone for a chosen star: lower and darker when it is stuck. */
   ping(stuck: boolean, pr: number): void;
+  /** A short quiet crackle for a meteor landing; `pan` is −1 (left) to 1 (right). */
+  crackle(pan: number, strength: number, seed: number): void;
 }
 
 /** Loudness is heard as the square of the slider, so the gain follows it. */
@@ -30,6 +36,8 @@ interface Parts {
   readonly bus: GainNode;
   readonly delay: DelayNode;
   readonly tensionGain: GainNode;
+  /** The graph the shared instruments play into. */
+  readonly rig: Rig;
 }
 
 export class WebAudioStarmapScore implements StarmapScore {
@@ -83,6 +91,23 @@ export class WebAudioStarmapScore implements StarmapScore {
       stuck ? 0.05 : 0.04,
       stuck ? 1.4 : 1,
     );
+  }
+
+  crackle(pan: number, strength: number, seed: number): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const now = ac.currentTime;
+    for (const pop of crackleOf(strength, seed)) {
+      noiseBurst(parts.rig, {
+        at: now + pop.at,
+        type: 'highpass',
+        freq: pop.freq,
+        q: 1.2,
+        level: pop.level,
+        decay: pop.decay,
+        pan,
+      });
+    }
   }
 
   /** A room made of decaying noise: five seconds of it reads as space. */
@@ -203,7 +228,12 @@ export class WebAudioStarmapScore implements StarmapScore {
     delay.connect(airy).connect(feedback).connect(delay);
     delay.connect(bus);
 
-    this.parts = { master, out, bus, delay, tensionGain };
+    const hiss = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const hissData = hiss.getChannelData(0);
+    for (let i = 0; i < hissData.length; i++) hissData[i] = Math.random() * 2 - 1;
+    const rig: Rig = { context: ac, master, bus, echo: delay, noise: hiss, out };
+
+    this.parts = { master, out, bus, delay, tensionGain, rig };
     this.applyTension();
   }
 

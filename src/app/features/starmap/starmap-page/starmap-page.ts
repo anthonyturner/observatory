@@ -37,6 +37,7 @@ import { IssueWindow } from '../../issues/issue-window/issue-window';
 import { IssuesPanel } from '../../issues/issues-panel/issues-panel';
 import { IssuesScreen } from '../../issues/issues-screen';
 import { nurseryInputOf } from '../nursery/nursery-layout';
+import { Meteor, MeteorLanding, meteorsOf } from '../engine/meteor-layer';
 import { ChangesPanel } from '../memory/changes-panel/changes-panel';
 import { MemoryView } from '../memory/memory-view';
 import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
@@ -303,6 +304,10 @@ export class StarmapPage {
     return replay ? replay.items.map((i) => this.replayed(i)) : this.items();
   });
   protected readonly skyItems = computed(() => this.shownItems().map(skyItemOf));
+  /** The queue as it is now has changed since you looked; a replayed refresh has not. */
+  protected readonly meteors = computed((): readonly Meteor[] =>
+    this.memory.replay() ? [] : meteorsOf(this.items()),
+  );
   /** Stacked pull requests, snoozed and dismissed ones included, as the crew's API reads them:
    *  what each is stacked on, what is stacked on it, and a merged base. */
   protected readonly stacks = computed((): Stacks => {
@@ -760,6 +765,11 @@ export class StarmapPage {
   }
 
   /** Flies to a star from the list, and opens it. */
+  /** A meteor landed on its star: a quiet crackle, panned to where the star sits. */
+  protected meteorLanded({ pan, strength, pr }: MeteorLanding): void {
+    this.sound.crackle(pan, strength, pr);
+  }
+
   /** A click on the sky: a star opens its pull request's screen; empty sky closes its card. */
   protected pick(number: number | null): void {
     this.selectedComet.set(null);

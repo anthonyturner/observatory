@@ -400,6 +400,35 @@ describe('StarmapPage', () => {
     expect(element.querySelector('app-issue-window')).not.toBeNull();
   });
 
+  it('sends a meteor to each shown pull request with new commits since you looked', () => {
+    const changed = (number: number, newCommits: number | null, extra = {}) =>
+      pull(number, 'unreviewed', { lookedSha: 'abc', sinceLook: { newCommits }, ...extra });
+    const { fixture } = render(null, {}, [
+      changed(7, 3),
+      changed(9, null),
+      pull(11, 'unreviewed'),
+      changed(13, 2, { hidden: { reason: 'dismissed' } }),
+    ]);
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    expect(sky.meteors()).toEqual([
+      { pr: 7, commits: 3 },
+      { pr: 9, commits: null },
+    ]);
+  });
+
+  it('crackles, panned to the star, when a meteor lands', () => {
+    const { fixture } = render();
+    const crackle = vi.spyOn(TestBed.inject(StarmapSound), 'crackle');
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    sky.meteorLanded.emit({ pr: 7, pan: -0.4, strength: 0.5 });
+
+    expect(crackle).toHaveBeenCalledWith(-0.4, 0.5, 7);
+  });
+
   it('offers a visitor to the hosted preview no triage to change', () => {
     const { fixture, http, button } = render();
     http.expectOne('/api/session').flush({ access: 'visitor', signIn: '/api/auth/login' });

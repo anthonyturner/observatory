@@ -86,6 +86,14 @@ export const routes: Routes = [
       import('./features/insights/insights-page/insights-page').then((m) => m.InsightsPage),
   },
   {
+    path: 'p/:owner/:repo/deployments',
+    title: 'Deployments · Observatory',
+    loadComponent: () =>
+      import('./features/deployments/deployments-page/deployments-page').then(
+        (m) => m.DeploymentsPage,
+      ),
+  },
+  {
     matcher: libraryMatcher,
     title: 'Library · Observatory',
     loadComponent: () =>

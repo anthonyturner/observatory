@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security and Depth skies, the Library, the Inbox and Insights
+# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security, Depth and Deployments skies, the Library, the Inbox and Insights
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -8,8 +8,8 @@ line; this page says how it works.
 The Orrery and Review Queue sections describe the WebGL renderer. Each of those
 skies also has a Canvas 2D fallback for when WebGL can't start or a shader
 won't compile; the fallback keeps the older, simpler marks unless a section
-says otherwise. The Releases, Actions and Security skies are Canvas 2D only; the
-Depth sky is SVG.
+says otherwise. The Releases, Actions, Security and Deployments skies are Canvas
+2D only; the Depth sky is SVG.
 
 ## Principle: meaning versus scenery
 
@@ -58,6 +58,9 @@ TypeScript and the shader only draws it.
 | Inbox        | Beacon colour    | Why the notification came  | `reasonWords(reason).tone`     |
 | Inbox        | Beacon pulse     | It asks something of you   | tone `asks`                    |
 | Insights     | Star size        | A week's commits           | `starRadius`, `commitStars`    |
+| Deployments  | Pad, place       | An environment             | `layoutPads`                   |
+| Deployments  | Colour, star     | How a deployment went      | `outcomeOf` (server)           |
+| Deployments  | Trail            | Earlier deployments        | `trailRadius`, `trailAlpha`    |
 
 ## Orrery worlds
 
@@ -658,6 +661,41 @@ tumbles at its own pace (`tumbleOf`), and a critical one throbs with a red glow
 (`throbOf`), both on the frame loop's scene time, so they hold still when
 motion is off. A preview visitor gets counts only, so their sky draws the same
 number of hazards in each belt with no links.
+
+## The Deployments sky
+
+Code: `features/deployments/launch-sky/`. Like the Actions sky it is Canvas 2D
+only: the Orrery's night (`paintBackground`, `paintField`, vignette and grain),
+each light painted once by the shared portrait painter through `SunPortraits`,
+a flat glow until it loads. Each light is a real link over the canvas, to the
+deployed site, or to the commit on GitHub when there is none, so hover and
+keyboard focus show it; the List view gives the same deployments with their
+site, commit and log links.
+
+### Pads (data: environments)
+
+`layoutPads` stands each environment's launch pad along the foot of the stage,
+at 86% of its height, in columns at most 320 px apart, centred, production first
+(the server's `byProminence`, then the most recently deployed). A pad is a flat
+ellipse lit from above in its latest deployment's colour; production's carries a
+second, wider ring. Its name and count sit under it.
+
+### Beacon and trail (data: how each deployment went)
+
+The latest deployment is a beacon 11 px across on a beam rising from its pad,
+16% of the stage (at least 40 px) above it. The seven before it climb away from
+it in even steps of at most 64 px, each smaller (`trailRadius`: 6.5 px, shrinking
+by 0.84 a step, at least 2.4) and dimmer (`trailAlpha`: 0.09 less a step, at
+least 0.3), joined by a faint dashed line. How far the trail drifts sideways is
+scenery, seeded by the environment's name. A deployment's colour and star are
+its newest status (`outcomeOf` on the server): live (`success`) is a calm star
+in `--actions-passed`, building (`queued`, `pending`, `in_progress`) a bright
+one in `--meh`, failed (`error`, `failure`) a giant in `--actions-failed`, and
+replaced (`inactive`) or with no status yet a veiled one. The colours are the
+Actions sky's tokens, reused so nothing is added to the start-up stylesheet. A
+latest one still building sends out a ring every 2.4 s (`beaconPulse`); a latest
+one that failed breathes a red bloom (`flareReach`). Both read the frame loop's
+scene time, so they hold still when motion is off.
 
 ## The Library's star chart
 

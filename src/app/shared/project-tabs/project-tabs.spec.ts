@@ -32,10 +32,12 @@ describe('ProjectTabs', () => {
       ['Depth', '/p/me/app/depth'],
       ['Security', '/p/me/app/security'],
       ['Insights', '/p/me/app/insights'],
+      ['Deployments', '/p/me/app/deployments'],
     ]);
     expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([
       null,
       'page',
+      null,
       null,
       null,
       null,

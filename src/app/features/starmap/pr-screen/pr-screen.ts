@@ -20,6 +20,7 @@ import { SheetEditor } from './sheet-editor/sheet-editor';
 import { HeaderState, SheetHeader } from './sheet-header/sheet-header';
 import { MergeBox } from './merge-box/merge-box';
 import { SheetMarkdown } from './sheet-markdown/sheet-markdown';
+import { SheetPreview } from './sheet-preview/sheet-preview';
 import { SheetCommits } from './sheet-commits/sheet-commits';
 import { checkRows, fileRows } from './sheet-rows/sheet-row';
 import { SheetRows } from './sheet-rows/sheet-rows';
@@ -42,6 +43,7 @@ const TYPING = 'input, textarea, select';
     Draggable,
     SheetHeader,
     SheetMarkdown,
+    SheetPreview,
     SheetRows,
     SheetCommits,
     SheetDiffTab,

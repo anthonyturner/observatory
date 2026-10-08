@@ -1,0 +1,15 @@
+/* Added to the Releases page's layout, which this page shares. */
+
+.legend li::before {
+  background: var(--dot);
+  box-shadow: 0 0 8px 1px var(--dot);
+}
+
+.tools .abtn {
+  min-height: 30px;
+}
+
+.listview app-deploy-list {
+  max-width: 760px;
+  margin: 0 auto;
+}

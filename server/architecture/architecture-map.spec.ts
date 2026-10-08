@@ -82,7 +82,7 @@ const mapOf = (
     entryFiles,
     files,
     aliases: [{ prefix: '@/', target: 'src/' }],
-    graph: { imports: [], cycles: [] },
+    graph: { imports: [], cycles: [], orphans: [] },
     churn: new Map(),
     churnDays: 0,
   });
@@ -179,7 +179,7 @@ describe('architectureMap: nodes', () => {
         file('src/app/core/a.ts', [decl('ClockService', [], { members: [member] })], { loc: 12 }),
       ],
       aliases: [],
-      graph: { imports: [], cycles: [] },
+      graph: { imports: [], cycles: [], orphans: [] },
       churn: new Map([['src/app/core/a.ts', 3]]),
       churnDays: 90,
     });
@@ -204,6 +204,7 @@ describe('architectureMap: nodes', () => {
       graph: {
         imports: [],
         cycles: [['src/app/core/a.ts', 'src/app/core/b.ts']],
+        orphans: [],
       },
       churn: new Map(),
       churnDays: 0,

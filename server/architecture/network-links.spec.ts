@@ -26,7 +26,7 @@ const mapOf = (sources: Readonly<Record<string, string>>): ArchitectureMap => {
     entryFiles: [],
     files: Object.entries(sources).map(([file, text]) => ({ ...scanSource(file, text), file })),
     aliases: [],
-    graph: { imports: [], cycles: [] },
+    graph: { imports: [], cycles: [], orphans: [] },
     churn: new Map(),
     churnDays: 0,
   });

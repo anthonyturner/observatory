@@ -40,7 +40,10 @@ export async function scanProject(
     entryFiles: layout.entryFiles,
     files,
     aliases,
-    graph: importGraphOf(files, aliases),
+    graph: await importGraphOf(
+      projectRoot,
+      files.map(({ file }) => file),
+    ),
     churn: churn.commitsByFile,
     churnDays: churn.days,
   });

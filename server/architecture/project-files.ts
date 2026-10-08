@@ -2,7 +2,8 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, posix } from 'node:path';
 import ts from 'typescript';
 
-const SKIPPED_SUFFIXES = ['.spec.ts', '.d.ts', '.testing.ts'];
+/** The endings of files that are tests, declarations or test support, which the map leaves out. */
+export const SKIPPED_SUFFIXES = ['.spec.ts', '.d.ts', '.testing.ts'];
 const INSTALLED_PACKAGES = 'node_modules';
 
 /** Whether a file is source the map reads: TypeScript that is not a test, a declaration or a package. */

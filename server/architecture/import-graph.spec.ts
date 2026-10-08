@@ -1,22 +1,26 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { fixtureProject } from './fixture-project.testing.ts';
 import { importGraphOf } from './import-graph.ts';
-import { scanSource } from './source-scan.ts';
-import type { ScannedFile } from './scanned-source.ts';
-
-const files = (sources: Readonly<Record<string, string>>): ScannedFile[] =>
-  Object.entries(sources).map(([file, text]) => ({ ...scanSource(file, text), file }));
 
 const graphOf = (sources: Readonly<Record<string, string>>) =>
-  importGraphOf(files(sources), [{ prefix: '@/', target: 'src/' }]);
+  importGraphOf(
+    fixtureProject(sources),
+    Object.keys(sources).filter((file) => file.endsWith('.ts')),
+  );
+
+const TSCONFIG = JSON.stringify({
+  compilerOptions: { baseUrl: '.', paths: { '@/*': ['src/*'] } },
+});
 
 describe('importGraphOf: imports', () => {
-  it('links files by relative path, alias, folder index and explicit extension', () => {
-    const { imports } = graphOf({
+  it('links files by relative path, alias, folder index and explicit extension', async () => {
+    const { imports } = await graphOf({
+      'tsconfig.json': TSCONFIG,
       'src/a.ts': `import './b'; import { c } from '@/lib'; export * from './d.ts';`,
-      'src/b.ts': '',
-      'src/lib/index.ts': '',
-      'src/d.ts': '',
+      'src/b.ts': 'export const b = 1;',
+      'src/lib/index.ts': 'export const c = 1;',
+      'src/d.ts': 'export const d = 1;',
     });
     assert.deepEqual(imports, [
       { from: 'src/a.ts', to: 'src/b.ts' },
@@ -25,17 +29,18 @@ describe('importGraphOf: imports', () => {
     ]);
   });
 
-  it('leaves out packages, files that were not scanned, and a file importing itself', () => {
-    const { imports } = graphOf({
-      'src/a.ts': `import 'rxjs'; import './missing'; import './a';`,
+  it('leaves out packages, built-ins, missing files, tests and a file importing itself', async () => {
+    const { imports } = await graphOf({
+      'src/a.ts': `import 'rxjs'; import 'node:fs'; import './missing'; import './a'; import './a.spec';`,
+      'src/a.spec.ts': 'export const t = 1;',
     });
     assert.deepEqual(imports, []);
   });
 });
 
 describe('importGraphOf: cycles', () => {
-  it('finds a cycle once, starting from its smallest path', () => {
-    const { cycles } = graphOf({
+  it('finds a cycle once, starting from its smallest path', async () => {
+    const { cycles } = await graphOf({
       'src/b.ts': `import './c';`,
       'src/c.ts': `import './a';`,
       'src/a.ts': `import './b';`,
@@ -43,24 +48,31 @@ describe('importGraphOf: cycles', () => {
     assert.deepEqual(cycles, [['src/a.ts', 'src/b.ts', 'src/c.ts']]);
   });
 
-  it('gives each import on a cycle the shortest cycle through it', () => {
-    const { cycles } = graphOf({
-      'src/a.ts': `import './b'; import './c';`,
-      'src/b.ts': `import './a';`,
-      'src/c.ts': `import './b';`,
+  it('counts a cycle of type-only imports', async () => {
+    const { cycles } = await graphOf({
+      'src/a.ts': `import type { B } from './b'; export type A = B;`,
+      'src/b.ts': `import type { A } from './a'; export type B = A;`,
     });
-    assert.deepEqual(cycles, [
-      ['src/a.ts', 'src/b.ts'],
-      ['src/a.ts', 'src/c.ts', 'src/b.ts'],
-    ]);
+    assert.deepEqual(cycles, [['src/a.ts', 'src/b.ts']]);
   });
 
-  it('finds none in a graph that only fans out', () => {
-    const { cycles } = graphOf({
+  it('finds none in a graph that only fans out', async () => {
+    const { cycles } = await graphOf({
       'src/a.ts': `import './b'; import './c';`,
       'src/b.ts': `import './c';`,
-      'src/c.ts': '',
+      'src/c.ts': 'export const c = 1;',
     });
     assert.deepEqual(cycles, []);
+  });
+});
+
+describe('importGraphOf: orphans', () => {
+  it('lists the files that import nothing and that nothing imports', async () => {
+    const { orphans } = await graphOf({
+      'src/a.ts': `import './b';`,
+      'src/b.ts': 'export const b = 1;',
+      'src/lonely.ts': 'export const lonely = 1;',
+    });
+    assert.deepEqual(orphans, ['src/lonely.ts']);
   });
 });

@@ -54,6 +54,7 @@ export function architectureMap(inputs: MapInputs): ArchitectureMap {
     placements,
     churn: inputs.churn,
     cycleFiles: new Set(inputs.graph.cycles.flat()),
+    orphanFiles: new Set(inputs.graph.orphans),
   };
   const nodesByFile = fileNodes(files, context);
   const nodes = [...nodesByFile.values()].flat();

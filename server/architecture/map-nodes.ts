@@ -17,11 +17,12 @@ export interface Placement {
   readonly group: string;
 }
 
-/** What the nodes of the files need to be built: where each file sits, how often it changed, and which are on an import cycle. */
+/** What the nodes of the files need to be built: where each file sits, how often it changed, and which are on an import cycle or in no import at all. */
 export interface NodeContext {
   readonly placements: ReadonlyMap<string, Placement>;
   readonly churn: ReadonlyMap<string, number>;
   readonly cycleFiles: ReadonlySet<string>;
+  readonly orphanFiles: ReadonlySet<string>;
 }
 
 const HANDLER_NAME = /Handler/;
@@ -95,12 +96,16 @@ export const reachesOutside = ({ outbound, specifiers }: ScannedFile): boolean =
  * Whether a file with no Angular declaration is a node of its own: every file
  * of the API server is, since most of its code is plain modules. So is any
  * other file that reaches outside the process, since showing that is what the
- * map is for, and any on an import cycle, which would otherwise run through a
- * gap with no node to hang the cycle on.
+ * map is for, any on an import cycle, which would otherwise run through a gap
+ * with no node to hang the cycle on, and any no file imports and that imports
+ * nothing, which is dead code the map should show.
  */
 function isModule(scanned: ScannedFile, { runtime }: Placement, context: NodeContext): boolean {
   return (
-    runtime.kind === 'server' || reachesOutside(scanned) || context.cycleFiles.has(scanned.file)
+    runtime.kind === 'server' ||
+    reachesOutside(scanned) ||
+    context.cycleFiles.has(scanned.file) ||
+    context.orphanFiles.has(scanned.file)
   );
 }
 

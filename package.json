@@ -49,6 +49,7 @@
     "@types/three": "^0.186.0",
     "angular-eslint": "22.5.0",
     "concurrently": "^10.0.5",
+    "dependency-cruiser": "^18.5.0",
     "eslint": "^10.9.1",
     "husky": "^9.1.7",
     "jsdom": "^30.0.0",

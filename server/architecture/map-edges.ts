@@ -15,6 +15,7 @@ const link = (from: string, to: string, kind: ArchitectureEdge['kind']): Archite
   kind,
   how: null,
   members: [],
+  marks: [],
 });
 
 function referenceEdges(
@@ -25,7 +26,7 @@ function referenceEdges(
   const from = nodeId(file, declaration.name);
   return declaration.references.flatMap(({ target, kind, how, members }) => {
     const to = resolver.named(file, target);
-    return to === null ? [] : [{ from, to, kind, how, members }];
+    return to === null ? [] : [{ from, to, kind, how, members, marks: [] }];
   });
 }
 

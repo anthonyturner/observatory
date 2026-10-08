@@ -1,0 +1,40 @@
+<header class="hud">
+  <div class="way">
+    <app-up-link to="/orrery" label="All projects" />
+    <app-project-tabs [repo]="repo()" current="insights" />
+  </div>
+  <div class="brand">
+    <h1>Insights</h1>
+    <span class="stamp">{{ stamp() }}</span>
+  </div>
+  @if (report(); as report) {
+    @if (report.commits.weeks.length) {
+      <app-commit-stars class="stars" [weeks]="report.commits.weeks" />
+    }
+  }
+  <p class="note">
+    The last twelve weeks: commits, how long pull requests took to merge, who did the work, and who
+    came to look.
+  </p>
+</header>
+
+@if (report(); as report) {
+  <main class="log" tabindex="-1">
+    @if (isCounting()) {
+      <p class="counting" role="status">
+        {{ countingNote }}
+        <button type="button" class="abtn" (click)="recount()">Check again</button>
+      </p>
+    }
+    <app-insights-sections [report]="report" [agents]="agents.report()" />
+  </main>
+}
+
+@if (message(); as message) {
+  <div class="state" role="status">
+    <strong>{{ message.headline }}</strong>
+    @if (message.detail) {
+      <span>{{ message.detail }}</span>
+    }
+  </div>
+}

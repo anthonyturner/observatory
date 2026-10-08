@@ -32,6 +32,7 @@ import { readFilePaths, readFileText } from './docs-reader.ts';
 import { rawWikiReader } from './wiki-reader.ts';
 import { securityReader } from './security-reader.ts';
 import { notificationReader } from './notification-reader.ts';
+import { insightsReader } from './insights-reader.ts';
 import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -246,6 +247,7 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     ...rawWikiReader(),
     ...securityReader(getJson),
     ...notificationReader(getJson),
+    ...insightsReader(getJson),
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),

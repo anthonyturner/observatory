@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { isMissingFile } from '../architecture/project-source.ts';
+import { isMissingFile } from '../architecture/project-files.ts';
 import type { Git } from '../live-agents/read-only-git.ts';
 
 /** The files of one checkout, as the depth analysis reads them. */

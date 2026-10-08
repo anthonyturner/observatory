@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 import { readMap } from '../../viewer/architecture-map/map-source.ts';
 import { ARCHITECTURE_FILE } from './architecture-file.ts';
 import { architectureHtml } from './architecture-html.ts';
-import { isMissingFile } from './project-source.ts';
+import { isMissingFile } from './project-files.ts';
 
 const USAGE = 'Usage: npm run arch:html -- [map.json] [--out map.html]';
 

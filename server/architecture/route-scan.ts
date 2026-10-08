@@ -33,25 +33,60 @@ function lazyTargetOf(loader: ts.Expression): RouteTarget | null {
   return module && name ? { name, module } : null;
 }
 
-function targetOf(route: ts.ObjectLiteralExpression): RouteTarget | null {
+/** The value of each top-level `const`, by name, so a loader a route names can be looked up. */
+function topLevelValues(source: ts.SourceFile): Map<string, ts.Expression> {
+  const values = new Map<string, ts.Expression>();
+  for (const statement of source.statements.filter(ts.isVariableStatement)) {
+    for (const { name, initializer } of statement.declarationList.declarations) {
+      if (ts.isIdentifier(name) && initializer) values.set(name.text, initializer);
+    }
+  }
+  return values;
+}
+
+/** A loader written in the route, or named there and defined at the top of the file. */
+function loaderOf(
+  loader: ts.Expression,
+  values: ReadonlyMap<string, ts.Expression>,
+): ts.Expression {
+  return (ts.isIdentifier(loader) ? values.get(loader.text) : undefined) ?? loader;
+}
+
+function targetOf(
+  route: ts.ObjectLiteralExpression,
+  values: ReadonlyMap<string, ts.Expression>,
+): RouteTarget | null {
   const component = optionOf(route, 'component');
   if (component && ts.isIdentifier(component)) return { name: component.text, module: null };
   const loader = optionOf(route, 'loadComponent');
-  return loader ? lazyTargetOf(loader) : null;
+  return loader ? lazyTargetOf(loaderOf(loader, values)) : null;
 }
 
-function routeOf(node: ts.Node): ScannedRoute | undefined {
+/** A route's path, or null for one a `matcher` function decides. */
+function pathOf(route: ts.ObjectLiteralExpression): string | null | undefined {
+  const path = textOption(route, 'path');
+  if (path !== null) return path;
+  return optionOf(route, 'matcher') === null ? undefined : null;
+}
+
+function routeOf(
+  node: ts.Node,
+  values: ReadonlyMap<string, ts.Expression>,
+): ScannedRoute | undefined {
   if (!ts.isObjectLiteralExpression(node)) return undefined;
-  const path = textOption(node, 'path');
-  if (path === null) return undefined;
-  const component = targetOf(node);
+  const path = pathOf(node);
+  if (path === undefined) return undefined;
+  const component = targetOf(node, values);
   const loader = optionOf(node, 'loadChildren');
   const children = loader ? (firstIn(loader, dynamicImportOf) ?? null) : null;
   return component || children ? { path, component, children } : undefined;
 }
 
 /** Every route in a file that shows a component or loads child routes. */
-export const routesIn = (source: ts.SourceFile): ScannedRoute[] => allIn(source, routeOf);
+export function routesIn(source: ts.SourceFile): ScannedRoute[] {
+  const values = topLevelValues(source);
+  return allIn(source, (node) => routeOf(node, values));
+}
 
 /** The path a `navigate(['/path'])` or `navigateByUrl('/path')` call goes to. */
 function navigatedPathOf(node: ts.Node): string | undefined {

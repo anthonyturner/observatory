@@ -1,34 +1,15 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { dirname, join, posix } from 'node:path';
 import ts from 'typescript';
 import type { PathAlias } from './module-resolution.ts';
+import { isObject, sourceFilesUnder, textOf } from './project-files.ts';
 import type { ScannedDeclaration, ScannedFile } from './scanned-source.ts';
 import { scanSource } from './source-scan.ts';
 import { tagsIn } from './template-tags.ts';
 
-/** Where an Angular app's source lives, relative to the project root. */
-const APP_FOLDER = 'src/app';
 const MANIFEST_FILE = 'manifest.json';
 const TSCONFIG_FILE = 'tsconfig.json';
 const WILDCARD = '*';
-const SKIPPED_SUFFIXES = ['.spec.ts', '.d.ts', '.testing.ts'];
-
-/** Whether a path is production TypeScript: not a spec, a declaration file or a test helper. */
-export const isSource = (file: string): boolean =>
-  file.endsWith('.ts') && !SKIPPED_SUFFIXES.some((suffix) => file.endsWith(suffix));
-
-export const isMissingFile = (error: unknown): boolean =>
-  error instanceof Error && 'code' in error && error.code === 'ENOENT';
-
-/** A file's text; null when it does not exist. */
-async function textOf(path: string): Promise<string | null> {
-  try {
-    return await readFile(path, 'utf8');
-  } catch (error) {
-    if (isMissingFile(error)) return null;
-    throw error;
-  }
-}
 
 /** The declaration with the tags of its `templateUrl` added; unchanged when it has none. */
 async function withTemplate(
@@ -41,25 +22,32 @@ async function withTemplate(
   return { ...declaration, tags: [...new Set([...declaration.tags, ...tagsIn(template)])] };
 }
 
-/** Every source file under the project's `src/app`, scanned, by its path from the project root; nothing in the project is written. */
-export async function scannedFiles(projectRoot: string): Promise<ScannedFile[]> {
-  const appRoot = join(projectRoot, APP_FOLDER);
-  const names = (await readdir(appRoot, { recursive: true })).filter(isSource).sort();
-  return Promise.all(
-    names.map(async (name) => {
-      const file = posix.join(APP_FOLDER, name.replaceAll('\\', '/'));
-      const scanned = scanSource(file, await readFile(join(appRoot, name), 'utf8'));
-      const folder = dirname(join(appRoot, name));
+/**
+ * The given files and every source file under the given folders, scanned, by
+ * path from the project root. Nothing in the project is written.
+ */
+export async function scannedFiles(
+  projectRoot: string,
+  folders: readonly string[],
+  files: readonly string[] = [],
+): Promise<ScannedFile[]> {
+  const found = await Promise.all(folders.map((folder) => sourceFilesUnder(projectRoot, folder)));
+  const paths = [...new Set([...found.flat(), ...files])].sort();
+  const scanned = await Promise.all(
+    paths.map(async (file): Promise<ScannedFile | null> => {
+      const text = await textOf(join(projectRoot, file));
+      if (text === null) return null;
+      const source = scanSource(file, text);
       const declarations = await Promise.all(
-        scanned.declarations.map((declaration) => withTemplate(declaration, folder)),
+        source.declarations.map((declaration) =>
+          withTemplate(declaration, dirname(join(projectRoot, file))),
+        ),
       );
-      return { ...scanned, file, declarations };
+      return { ...source, file, declarations };
     }),
   );
+  return scanned.flatMap((each) => each ?? []);
 }
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** The window names in an Overwolf manifest's text; none when it declares no windows. */
 export function windowsIn(manifestText: string): string[] {

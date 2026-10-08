@@ -1,6 +1,7 @@
 import type { ArchitectureEdge } from './architecture-types.ts';
 import type { ReferenceResolver } from './reference-resolver.ts';
-import type { ScannedFile, ScannedRoute } from './scanned-source.ts';
+import { componentOf, type PlacedRoute, placedRoutes } from './routed-components.ts';
+import type { ScannedFile } from './scanned-source.ts';
 
 export interface HostingInputs {
   /** The window names from the manifest. */
@@ -8,11 +9,6 @@ export interface HostingInputs {
   readonly files: readonly ScannedFile[];
   readonly edges: readonly ArchitectureEdge[];
   readonly resolver: ReferenceResolver;
-}
-
-interface PlacedRoute {
-  readonly file: string;
-  readonly route: ScannedRoute;
 }
 
 function outboundOf(edges: readonly ArchitectureEdge[]): Map<string, string[]> {
@@ -33,17 +29,6 @@ function reachable(roots: readonly string[], outbound: ReadonlyMap<string, strin
   return seen;
 }
 
-/** The node a route shows, as one id or none. */
-function componentOf({ file, route }: PlacedRoute, resolver: ReferenceResolver): string[] {
-  const target = route.component;
-  if (!target) return [];
-  const id =
-    target.module === null
-      ? resolver.named(file, target.name)
-      : resolver.exported(file, target.module, target.name);
-  return id === null ? [] : [id];
-}
-
 /** The paths the app navigates to in its `case` for `window`. */
 const pathsOf = (window: string, files: readonly ScannedFile[]): Set<string> =>
   new Set(
@@ -56,7 +41,7 @@ const pathsOf = (window: string, files: readonly ScannedFile[]): Set<string> =>
 function rootsOf(window: string, inputs: HostingInputs, routes: readonly PlacedRoute[]): string[] {
   const paths = pathsOf(window, inputs.files);
   return routes
-    .filter(({ route }) => paths.has(route.path))
+    .filter(({ route }) => route.path !== null && paths.has(route.path))
     .flatMap((placed) => {
       const { file, route } = placed;
       const children =
@@ -68,9 +53,7 @@ function rootsOf(window: string, inputs: HostingInputs, routes: readonly PlacedR
 
 /** For each node a window's routed component reaches, along any edge, the windows that reach it. */
 export function windowsByNode(inputs: HostingInputs): Map<string, string[]> {
-  const routes = inputs.files.flatMap(({ file, routes }) =>
-    routes.map((route): PlacedRoute => ({ file, route })),
-  );
+  const routes = placedRoutes(inputs.files);
   const outbound = outboundOf(inputs.edges);
   const hosts = new Map<string, string[]>();
   for (const window of inputs.windows) {

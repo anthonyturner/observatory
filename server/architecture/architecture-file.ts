@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { NotFound } from '../http/api-handler.ts';
 import { OBSERVATORY_DIR } from '../store/file-store.ts';
 import type { ArchitectureMap } from './architecture-types.ts';
-import { isMissingFile } from './project-source.ts';
+import { isMissingFile } from './project-files.ts';
 
 /**
  * Kept outside the checkout: the mapped project may be private, and a map

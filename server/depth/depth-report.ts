@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
-import { isSource } from '../architecture/project-source.ts';
+import { isSource } from '../architecture/project-files.ts';
 import { NotFound } from '../http/api-handler.ts';
 import { type Git, readOnlyGit } from '../live-agents/read-only-git.ts';
 import type { CloneFinder } from '../collisions/clone-finder.ts';

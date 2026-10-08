@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+/* Takes no gap in the card until there is something to show. */
+:host(:empty) {
+  display: none;
+}
+
+.sky,
+.more {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.weather {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heading {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 9px;
+  border-left: 2px solid var(--edge);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.place,
+.excerpt {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.place,
+.note,
+.principle {
+  color: var(--ink-soft);
+}
+
+.excerpt {
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.principle {
+  font-style: italic;
+}

@@ -1,0 +1,40 @@
+@if (view(); as weather) {
+  @switch (weather.kind) {
+    @case ('clear') {
+      <p class="sky" title="Read from the added lines by pattern: it can miss a red flag">
+        Clear skies: no design red flags in the added lines.
+      </p>
+    }
+    @case ('unscanned') {
+      <p class="sky">Weather unknown: the diff could not be read.</p>
+    }
+    @case ('stormy') {
+      <section class="weather" aria-label="Design red flags in the added lines">
+        <p
+          class="heading"
+          title="Read from the added lines by pattern, so it can miss or mistake one"
+        >
+          {{ weather.heading }}
+        </p>
+        <ul>
+          @for (row of weather.rows; track row.key) {
+            <li>
+              <span class="title">{{ row.title }}</span>
+              <code class="place">{{ row.place }}</code>
+              @if (row.note) {
+                <span class="note">{{ row.note }}</span>
+              }
+              @if (row.excerpt) {
+                <code class="excerpt">{{ row.excerpt }}</code>
+              }
+              <span class="principle">{{ row.principle }}</span>
+            </li>
+          }
+        </ul>
+        @if (weather.more > 0) {
+          <p class="more">and {{ weather.more }} more in the diff</p>
+        }
+      </section>
+    }
+  }
+}

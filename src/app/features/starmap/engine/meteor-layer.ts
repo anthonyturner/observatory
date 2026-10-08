@@ -1,3 +1,4 @@
+import { dopplerOf, listenerOf } from '../sound/doppler';
 import { starRadius } from './canvas-sky';
 import { rnd } from './rnd';
 import { SkyFrame, SkyLayer } from './sky-frame';
@@ -161,11 +162,31 @@ export interface MeteorLanding {
   readonly pan: number;
   /** 0 to 1: how big the change was. */
   readonly strength: number;
+  /** The Doppler factor of its fall; 1 when motion is off and it did not move. */
+  readonly doppler: number;
 }
 
 /** The speakers' share of a screen x, kept short of the extremes so a landing never sits in one ear. */
 export const panOf = (x: number, width: number): number =>
   width > 0 ? Math.max(-1, Math.min(1, (x / width) * 2 - 1)) * 0.8 : 0;
+
+/** How far from a star's centre a meteor stops: just outside its rim, so it never hides the star. */
+const rimOf = (radius: number): number => radius * 1.15 + 2;
+
+/** The head of a meteor falling on a star at (x, y), at `p` through its flight. */
+const headAt = (
+  x: number,
+  y: number,
+  rim: number,
+  heading: { readonly x: number; readonly y: number },
+  p: number,
+): { readonly x: number; readonly y: number; readonly z: number } => {
+  const away = headDistance(rim, p);
+  return { x: x + heading.x * away, y: y + heading.y * away, z: 0 };
+};
+
+/** The last stretch of the fall that the landing's pitch is read from, in seconds. */
+const LANDING_WINDOW_S = 0.05;
 
 /** A star this far off screen is out of sight, and its landing out of earshot. */
 const OFF_SCREEN_PX = 300;
@@ -239,7 +260,23 @@ export class MeteorLayer implements SkyLayer {
     if (!star) return;
     const [x, y] = f.toScreen(star.ax, star.ay, star.az);
     if (!isNear(f, x, y)) return;
-    this.landed({ pr: meteor.pr, pan: panOf(x, f.width), strength: strengthOf(meteor.commits) });
+    const rim = rimOf(starRadius(f, star, 1));
+    const heading = meteorHeading(meteor.pr);
+    // With motion off there is no streak, so nothing fell and nothing shifts.
+    const doppler = f.frozen
+      ? 1
+      : dopplerOf(
+          headAt(x, y, rim, heading, 1 - LANDING_WINDOW_S / FLIGHT_S),
+          headAt(x, y, rim, heading, 1),
+          LANDING_WINDOW_S,
+          listenerOf(f.width, f.height),
+        );
+    this.landed({
+      pr: meteor.pr,
+      pan: panOf(x, f.width),
+      strength: strengthOf(meteor.commits),
+      doppler,
+    });
   }
 
   private later(): void {
@@ -258,7 +295,7 @@ export class MeteorLayer implements SkyLayer {
     const { tailPx, brightness } = meteorLook(meteor.commits);
     const alpha = brightness * f.dim(star);
     const radius = starRadius(f, star, 1);
-    const rim = radius * 1.15 + 2;
+    const rim = rimOf(radius);
     ctx.save();
     if (stage === 'flying') {
       if (!f.frozen)
@@ -281,9 +318,7 @@ interface Streak {
 }
 
 function streak(ctx: CanvasRenderingContext2D, s: Streak): void {
-  const away = headDistance(s.rim, s.p);
-  const headX = s.x + s.heading.x * away;
-  const headY = s.y + s.heading.y * away;
+  const { x: headX, y: headY } = headAt(s.x, s.y, s.rim, s.heading, s.p);
   const fade = Math.min(1, s.p / 0.2) * s.alpha;
   const tail = ctx.createLinearGradient(
     headX,

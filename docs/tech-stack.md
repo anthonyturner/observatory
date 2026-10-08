@@ -32,6 +32,10 @@ so a missing line costs more than a long one.
   fallback. transformers.js 4.3.0, kokoro-js 1.2.1 and phonemizer 1.2.1 load
   at run time from pinned jsDelivr files (the last two SHA-256 checked), and
   the weights from pinned Hugging Face commits: none are npm dependencies.
+- Architecture map viewer: `viewer/architecture-map/`, plain TypeScript for the browser (no
+  framework) that esbuild bundles with ELK.js (`elkjs`, layout) into one self-contained HTML
+  file (`npm run arch:html`, built by `server/architecture/architecture-html.ts`). Tests:
+  `node:test` (`npm run test:viewer`); type check: `npm run typecheck:viewer`.
 - Build: Angular CLI (`ng build`, esbuild). Tests: Vitest through `ng test`.
   Lint: angular-eslint. Format: Prettier. Deployment: not yet decided.
 - CI: GitHub Actions runs one workflow, **Wiki sync**

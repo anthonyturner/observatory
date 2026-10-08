@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { type CheckRerunner, rerunFailedJobsPath } from './check-rerunner.ts';
 import { gh, ghJson } from './gh-cli.ts';
+import { type InboxMarker, NOTIFICATIONS_PATH, threadPath } from './inbox-marker.ts';
 import type { LivePull, PullChanges, PullWriter } from './pull-writer.ts';
 
 const LIST_FLAGS: readonly (readonly [keyof PullChanges, string])[] = [
@@ -83,6 +84,27 @@ export function ghCliRerunner(): CheckRerunner {
   return {
     rerunFailedJobs: async (repo, runId) => {
       await gh(['api', '--method', 'POST', rerunFailedJobsPath(repo, runId)]);
+    },
+  };
+}
+
+/** Marks notifications read through the `gh` CLI, as this machine's account. */
+export function ghCliInboxMarker(): InboxMarker {
+  return {
+    markThreadRead: async (threadId) => {
+      await gh(['api', '--method', 'PATCH', threadPath(threadId)]);
+    },
+    markAllRead: async (lastReadAt) => {
+      await gh([
+        'api',
+        '--method',
+        'PUT',
+        NOTIFICATIONS_PATH,
+        '-f',
+        `last_read_at=${lastReadAt}`,
+        '-F',
+        'read=true',
+      ]);
     },
   };
 }

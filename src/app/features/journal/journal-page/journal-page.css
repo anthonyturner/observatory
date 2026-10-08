@@ -1,0 +1,121 @@
+/* The Releases page's header and messages, shared; the Journal lays its own
+   header in the flow so the log below starts wherever the header ends. */
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--queue-sky);
+}
+
+.hud {
+  position: static;
+  flex: none;
+  padding-bottom: 14px;
+}
+
+.log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px calc(96px + var(--playlist-clear-bottom, 0px));
+  border-top: 1px solid var(--edge-soft);
+  background: var(--panel-soft);
+}
+
+.log:focus {
+  outline: none;
+}
+
+.log > section {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.filter {
+  margin-bottom: 18px;
+}
+
+h2 {
+  margin: 0 0 8px;
+  color: var(--detail-heading);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  min-height: 30px;
+  padding: 3px 12px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--flow);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--flow);
+  background: var(--flow-tint-strong);
+  color: var(--ink);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.count {
+  margin-left: 4px;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.picked {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.picked:empty {
+  display: none;
+}
+
+.picked strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.entries {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 720px) {
+  .log {
+    padding-inline: 14px;
+  }
+}

@@ -25,6 +25,11 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'inbox',
+    title: 'Inbox · Observatory',
+    loadComponent: () => import('./features/inbox/inbox-page/inbox-page').then((m) => m.InboxPage),
+  },
+  {
     path: 'agents',
     children: [
       {
@@ -56,6 +61,37 @@ export const routes: Routes = [
     title: 'Actions · Observatory',
     loadComponent: () =>
       import('./features/actions/actions-page/actions-page').then((m) => m.ActionsPage),
+  },
+  {
+    path: 'p/:owner/:repo/journal',
+    title: 'Journal · Observatory',
+    loadComponent: () =>
+      import('./features/journal/journal-page/journal-page').then((m) => m.JournalPage),
+  },
+  {
+    path: 'p/:owner/:repo/depth',
+    title: 'Depth · Observatory',
+    loadComponent: () => import('./features/depth/depth-page/depth-page').then((m) => m.DepthPage),
+  },
+  {
+    path: 'p/:owner/:repo/security',
+    title: 'Security · Observatory',
+    loadComponent: () =>
+      import('./features/security/security-page/security-page').then((m) => m.SecurityPage),
+  },
+  {
+    path: 'p/:owner/:repo/insights',
+    title: 'Insights · Observatory',
+    loadComponent: () =>
+      import('./features/insights/insights-page/insights-page').then((m) => m.InsightsPage),
+  },
+  {
+    path: 'p/:owner/:repo/deployments',
+    title: 'Deployments · Observatory',
+    loadComponent: () =>
+      import('./features/deployments/deployments-page/deployments-page').then(
+        (m) => m.DeploymentsPage,
+      ),
   },
   {
     matcher: libraryMatcher,

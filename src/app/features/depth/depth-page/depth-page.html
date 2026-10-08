@@ -1,0 +1,97 @@
+@if (hasReport() && shown().length) {
+  @if (view() === 'map') {
+    <div class="map">
+      <app-depth-map [chart]="chart()" [active]="activeFile()" (activate)="show($event)" />
+    </div>
+  } @else {
+    <div class="listview">
+      <app-depth-list [modules]="shown()" [active]="activeFile()" (activate)="show($event)" />
+    </div>
+  }
+}
+
+@if (message(); as message) {
+  <div class="state" role="status">
+    <strong>{{ message.headline }}</strong>
+    @if (message.detail) {
+      <span>{{ message.detail }}</span>
+    }
+  </div>
+}
+
+<header class="hud">
+  <div class="way">
+    <app-up-link to="/orrery" label="All projects" />
+    <app-project-tabs [repo]="repo()" current="depth" />
+  </div>
+  <div class="brand">
+    <h1>Depth</h1>
+    <span class="stamp">{{ stamp() }}</span>
+  </div>
+  <p class="note">
+    Each planet is a file. Its core is the work it hides; its ring is what a caller must learn. A
+    deep module is nearly all core. A shallow one is a hollow ring.
+  </p>
+  <div class="tools">
+    <div class="views" role="group" aria-label="View">
+      <button
+        type="button"
+        class="abtn"
+        [attr.aria-pressed]="view() === 'map'"
+        (click)="view.set('map')"
+      >
+        Sky
+      </button>
+      <button
+        type="button"
+        class="abtn"
+        [attr.aria-pressed]="view() === 'list'"
+        (click)="view.set('list')"
+      >
+        List
+      </button>
+    </div>
+    @if (hasReport()) {
+      <label class="filter">
+        <span>Filter by path</span>
+        <input
+          type="search"
+          autocomplete="off"
+          placeholder="queue, server/…"
+          [value]="query()"
+          (input)="search($event)"
+        />
+      </label>
+      <div class="views" role="group" aria-label="Verdict">
+        @for (chip of chips(); track chip.label) {
+          <button
+            type="button"
+            class="abtn"
+            [attr.aria-pressed]="chip.isOn"
+            (click)="verdict.set(chip.verdict)"
+          >
+            {{ chip.label }} {{ chip.count }}
+          </button>
+        }
+      </div>
+    }
+    <button type="button" class="abtn quiet" (click)="refresh()">Read again</button>
+    @if (view() === 'map') {
+      <ul class="legend" aria-label="What the sky shows">
+        <li data-ink="deep">deep: solid core</li>
+        <li data-ink="balanced">balanced</li>
+        <li data-ink="shallow">shallow: hollow ring</li>
+      </ul>
+    }
+  </div>
+</header>
+
+@if (hasReport()) {
+  <aside class="panel" aria-label="The module in view">
+    @if (active(); as module) {
+      <app-depth-detail [module]="module" [principle]="principle()" />
+    } @else {
+      <p class="hint">Hover or focus a planet to see what it hides and what it shows.</p>
+    }
+  </aside>
+}

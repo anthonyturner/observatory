@@ -106,6 +106,36 @@ describe('PrScreen', () => {
     expect(visible()?.querySelector('a')?.getAttribute('href')).toBe('https://x.dev');
   });
 
+  it('shows the head’s preview deployment and links its site, read when the screen opens', () => {
+    const { http, open, visible, settle } = render();
+    open();
+    http.expectOne(`/api/deployments/preview?repo=me/app&sha=${HEAD}`).flush({
+      repo: 'me/app',
+      sha: HEAD,
+      deployments: [
+        {
+          id: 9,
+          environment: 'Preview',
+          sha: HEAD,
+          ref: null,
+          creator: 'vercel[bot]',
+          createdAt: '2026-09-24T09:03:00Z',
+          outcome: 'ready',
+          description: 'Deployment has completed',
+          url: 'https://app-9.vercel.app',
+          logUrl: 'https://app-9.vercel.app',
+          commitUrl: `https://github.com/me/app/commit/${HEAD}`,
+        },
+      ],
+    });
+    settle();
+
+    const preview = visible()?.querySelector('app-sheet-preview');
+    expect(preview?.textContent).toContain('Preview Ready');
+    expect(preview?.querySelectorAll('a').length).toBe(1);
+    expect(preview?.querySelector('a')?.getAttribute('href')).toBe('https://app-9.vercel.app');
+  });
+
   it('counts each tab and switches between them', () => {
     const { element, open, tab, visible } = render();
     open();

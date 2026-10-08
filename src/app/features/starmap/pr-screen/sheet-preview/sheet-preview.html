@@ -1,0 +1,23 @@
+@if (rows().length) {
+  <ul class="preview" aria-label="Deployments of this pull request's head">
+    @for (row of rows(); track row.key) {
+      <li [style.--dot]="row.colour">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="what"
+          ><b>{{ row.environment }}</b> {{ row.outcome }} ·
+          <span class="commit">{{ row.commit }}</span></span
+        >
+        @if (row.siteUrl) {
+          <a [href]="row.siteUrl" target="_blank" rel="noopener"
+            >Open {{ row.environment }}<span aria-hidden="true"> ↗</span></a
+          >
+        }
+        @if (row.logUrl) {
+          <a [href]="row.logUrl" target="_blank" rel="noopener"
+            >Log<span class="visually-hidden">, {{ row.environment }}</span></a
+          >
+        }
+      </li>
+    }
+  </ul>
+}

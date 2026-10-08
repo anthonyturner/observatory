@@ -4,7 +4,9 @@ import { routeRequestFrom } from '../assistant/route-request.ts';
 import { editRequestFrom, editTargetFrom } from '../edits/edit-request.ts';
 import type { PullEditor } from '../edits/pull-editor.ts';
 import type { RouteTable } from '../http/api-handler.ts';
+import { isFresh } from '../http/fresh-query.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
+import { PREVIEW_PATH } from '../deployments/deployments-report.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
@@ -17,8 +19,6 @@ import type { ApiReads } from './api-reads.ts';
 
 const repoOf = (query: URLSearchParams): string => repoNameFrom(query.get('repo'));
 const numberOf = (query: URLSearchParams): number => pullNumberFrom(query.get('number'));
-/** A Refresh button asks for GitHub's answer now, not one the cache kept. */
-const isFresh = (query: URLSearchParams): boolean => query.get('fresh') === '1';
 
 /** A description may be up to 65,536 characters, and JSON can take several bytes for each. */
 const EDIT_BODY_LIMIT_BYTES = 512 * 1024;
@@ -44,6 +44,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       '/api/history': (query) => reads.history(repoOf(query)),
       '/api/ledger': (query) => reads.ledger(repoOf(query)),
       '/api/releases': (query) => reads.releases(repoOf(query)),
+      '/api/journal': (query) => reads.journal(repoOf(query)),
       '/api/library': (query) => reads.library(repoOf(query)),
       '/api/actions': (query) => {
         const repo = repoOf(query);
@@ -52,6 +53,18 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       },
       '/api/actions/run': (query) => reads.runJobs(repoOf(query), runIdFrom(query.get('run'))),
       '/api/ci-health': (query) => reads.ciHealth(repoOf(query)),
+      '/api/security': (query) => reads.security(repoOf(query)),
+      '/api/insights': (query) => {
+        const repo = repoOf(query);
+        if (isFresh(query)) reads.forgetInsights(repo);
+        return reads.insights(repo);
+      },
+      '/api/deployments': (query) => {
+        const repo = repoOf(query);
+        if (isFresh(query)) reads.forgetDeployments(repo);
+        return reads.deployments(repo);
+      },
+      [PREVIEW_PATH]: (query) => reads.pullPreview(repoOf(query), commitShaFrom(query.get('sha'))),
       '/api/issues': (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetIssues(repo);

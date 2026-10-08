@@ -51,3 +51,45 @@ an issue, or broaden the pull request's scope while reviewing. Fixing the
 findings and merging are the engineer's next steps, in **Review and merge** in
 [implementation.md](implementation.md), and they start only after the review is
 posted.
+
+## The second draft
+
+A review that makes the engineer change something has taught something. Once
+the fixes are in, the engineer records the lesson in a `## Second draft`
+section of the comment that reports the fixes (the re-review comment that
+**Review and merge** in [implementation.md](implementation.md) already
+requires, or a comment of its own). Observatory's Journal screen reads these
+sections from the pull request's comments and lists them over time, so GitHub
+stays the one record.
+
+Write only what really happened. A review that changed nothing has no second
+draft: leave the section out rather than writing "none". Never write one for a
+pull request after the fact.
+
+```markdown
+## Second draft
+
+- **First version:** What was built before the review, in a sentence or two.
+- **Feedback:** What the review found, in a sentence or two.
+- **Changed and why:** What changed on the redo, and the reason.
+- **Principles:** deep-modules, design-it-twice
+```
+
+The parser (`server/journal/second-draft.ts`) reads it like this:
+
+- The section runs from a heading whose text starts with "Second draft" (any
+  heading level) to the next heading of the same or a higher level.
+- Each field is a line starting with its label and a colon, case and bold
+  ignored: `First version`, `Feedback`, `Changed and why` (`Changed` also
+  works) and `Principles`. Text on the lines after a label belongs to it.
+- Text inside a fenced code block is skipped, so a review can quote the format
+  without recording a lesson.
+- One `First version` line starts one entry, so a review that taught several
+  lessons repeats the four fields for each.
+- An entry missing its first version, feedback or change is left out of the
+  Journal; nothing else breaks.
+- `Principles` lists ids from `PRINCIPLES` in `server/principles/principles.ts`
+  (for example `deep-modules`, `design-it-twice`, `errors-out-of-existence`),
+  separated by commas or spaces. Use the id, never the title or a copy of the
+  wording: the Journal shows the title from that list. A word that is not an id
+  is ignored, and an entry naming no id is still listed, without a chip.

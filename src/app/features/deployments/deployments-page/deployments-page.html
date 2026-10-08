@@ -1,0 +1,61 @@
+@if (report(); as report) {
+  @if (view() === 'sky') {
+    <app-launch-sky
+      [environments]="report.environments"
+      [now]="report.generatedAt"
+      [insets]="insets"
+    />
+  } @else {
+    <div class="listview">
+      <app-deploy-list [environments]="report.environments" [now]="report.generatedAt" />
+    </div>
+  }
+}
+
+@if (message(); as message) {
+  <div class="state" role="status">
+    <strong>{{ message.headline }}</strong>
+    @if (message.detail) {
+      <span>{{ message.detail }}</span>
+    }
+  </div>
+}
+
+<header class="hud">
+  <div class="way">
+    <app-up-link to="/orrery" label="All projects" />
+    <app-project-tabs [repo]="repo()" current="deployments" />
+  </div>
+  <div class="brand">
+    <h1>Deployments</h1>
+    <span class="stamp">{{ stamp() }}</span>
+  </div>
+  <div class="tools">
+    <div class="views" role="group" aria-label="View">
+      <button
+        type="button"
+        class="abtn"
+        [attr.aria-pressed]="view() === 'sky'"
+        (click)="view.set('sky')"
+      >
+        Sky
+      </button>
+      <button
+        type="button"
+        class="abtn"
+        [attr.aria-pressed]="view() === 'list'"
+        (click)="view.set('list')"
+      >
+        List
+      </button>
+    </div>
+    <button type="button" class="abtn" (click)="refresh()">Refresh</button>
+    @if (view() === 'sky') {
+      <ul class="legend" aria-label="What the sky shows">
+        @for (item of legend; track item.key) {
+          <li [style.--dot]="item.colour">{{ item.label }}</li>
+        }
+      </ul>
+    }
+  </div>
+</header>

@@ -46,6 +46,8 @@ const stateAsked: string[] = [];
 const diffsAsked: string[] = [];
 /** Each workflow run GitHub was asked to rerun. */
 const reruns: number[] = [];
+/** Each time GitHub was asked for the token's notifications, or to mark them read. */
+const inboxAsked: string[] = [];
 
 /** Two repositories, one private; each with one open pull request. */
 const github = {
@@ -85,6 +87,22 @@ const github = {
   },
   commitDiff: async () => 'diff --git a/y b/y\n+secret commit',
   rerunFailedJobs: async (_repo: string, runId: number) => void reruns.push(runId),
+  notifications: async () => {
+    inboxAsked.push('read');
+    return [
+      {
+        id: '11',
+        reason: 'mention',
+        repo: 'someone/private-thing',
+        title: 'You were mentioned',
+        subjectType: 'Issue',
+        subjectUrl: 'https://api.github.com/repos/someone/private-thing/issues/3',
+        updatedAt: '2026-10-08T00:00:00Z',
+      },
+    ];
+  },
+  markThreadRead: async (id: string) => void inboxAsked.push(`mark ${id}`),
+  markAllRead: async (before: string) => void inboxAsked.push(`mark all ${before}`),
 } as unknown as GitHub;
 
 function memoryStore(): Store & { readonly data: Map<string, unknown> } {
@@ -342,6 +360,51 @@ describe('hostedApi', () => {
 
     assert.equal(response.status, 403);
     assert.deepEqual(reruns, []);
+  });
+
+  it('never shows a visitor the owner’s inbox, nor lets them mark it, even with PUBLIC_PREVIEW=all', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+    const mark = (path: string, body: object, cookie?: string) =>
+      handle(
+        new Request(`${SITE}${path}`, {
+          method: 'POST',
+          headers: {
+            'x-observatory': '1',
+            'content-type': 'application/json',
+            ...(cookie ? { cookie } : {}),
+          },
+          body: JSON.stringify(body),
+        }),
+      );
+    inboxAsked.length = 0;
+
+    const read = await get(handle, '/api/inbox');
+    assert.equal(read.status, 403);
+    assert.doesNotMatch(await read.text(), /private-thing/);
+    assert.equal((await mark('/api/inbox/read', { id: '11' })).status, 403);
+    assert.equal(
+      (await mark('/api/inbox/read-all', { before: '2026-10-08T00:00:00Z' })).status,
+      403,
+    );
+    assert.deepEqual(inboxAsked, []);
+
+    const owners = (await (await get(handle, '/api/inbox', ownerCookie)).json()) as {
+      items: { repo: string }[];
+    };
+    assert.deepEqual(
+      owners.items.map((item) => item.repo),
+      ['someone/private-thing'],
+    );
+    assert.equal((await mark('/api/inbox/read', { id: '11' }, ownerCookie)).status, 200);
+    assert.deepEqual(inboxAsked, ['read', 'mark 11']);
+  });
+
+  it('asks someone signed out to sign in before any inbox is read', async () => {
+    const { handle } = site();
+    inboxAsked.length = 0;
+
+    assert.equal((await get(handle, '/api/inbox')).status, 401);
+    assert.deepEqual(inboxAsked, []);
   });
 
   it('shows a visitor private repositories too with PUBLIC_PREVIEW=all, still read-only', async () => {

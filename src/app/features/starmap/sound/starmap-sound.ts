@@ -56,7 +56,6 @@ export class StarmapSound {
   private readonly errors = inject(ErrorHandler);
   private readonly document = inject(DOCUMENT);
   private score: StarmapScore | null = null;
-  private tension = 0;
 
   readonly isOn = signal(read(SOUND_KEY) === 'on');
   readonly volume = signal(parseVolume(read(VOLUME_KEY)));
@@ -93,25 +92,19 @@ export class StarmapSound {
     this.score?.setVolume(volume);
   }
 
-  /** How many things are blocked: the tension voice follows it. */
-  setTension(blocked: number): void {
-    this.tension = blocked;
-    this.score?.setTension(blocked);
-  }
-
   /** A soft tone when a star is chosen: lower when it is stuck. */
   ping(stuck: boolean, pr = 0): void {
     if (this.isOn()) this.score?.ping(stuck, pr);
   }
 
-  /** A short crackle when a meteor lands, only while sound is on. */
-  crackle(pan: number, strength: number, seed: number): void {
-    if (this.isOn()) this.score?.crackle(pan, strength, seed);
+  /** A short crackle when a meteor lands, only while sound is on, shifted by how it was falling. */
+  crackle(pan: number, strength: number, seed: number, doppler = 1): void {
+    if (this.isOn()) this.score?.crackle(pan, strength, seed, doppler);
   }
 
-  /** A satellite's beep, at its state's pitch and panned by where it is on screen. */
-  beep(pan: number, state: SatelliteState): void {
-    if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state]);
+  /** A satellite's beep, at its state's pitch, panned and shifted by where and how it is moving. */
+  beep(pan: number, state: SatelliteState, doppler = 1): void {
+    if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state], doppler);
   }
 
   /** A boom for a pull request that merged, only while the sound is on. */
@@ -122,7 +115,6 @@ export class StarmapSound {
   private play(): void {
     this.score ??= this.makeScore();
     this.score.setVolume(this.volume());
-    this.score.setTension(this.tension);
     this.score.start().catch((error: unknown) => this.errors.handleError(error));
   }
 }

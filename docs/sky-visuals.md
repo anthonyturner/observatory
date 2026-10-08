@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars, the Releases and Actions skies, and the Library
+# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions, Security, Depth and Deployments skies, the Library, the Inbox and Insights
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -8,7 +8,8 @@ line; this page says how it works.
 The Orrery and Review Queue sections describe the WebGL renderer. Each of those
 skies also has a Canvas 2D fallback for when WebGL can't start or a shader
 won't compile; the fallback keeps the older, simpler marks unless a section
-says otherwise. The Releases and Actions skies are Canvas 2D only.
+says otherwise. The Releases, Actions, Security and Deployments skies are Canvas
+2D only; the Depth sky is SVG.
 
 ## Principle: meaning versus scenery
 
@@ -35,6 +36,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 | Review Queue | Merge supernova  | A merged PR in the news    | `novaProgress`, `mergeCues`    |
+| Review Queue | Doppler shift    | How a sound's source moves | `dopplerOf`, `dopplerFactor`   |
 | Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
 | Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseStarType`    |
@@ -46,6 +48,19 @@ TypeScript and the shader only draws it.
 | Actions      | Pulse ring       | A run queued or running    | `pulsePhase`                   |
 | Actions      | Amber ring       | Passed only on a rerun     | `isFlaky` (server)             |
 | Library      | Star size        | How long the page is       | `starDiameterOf`               |
+| Depth        | Core size        | Statements a module does   | `coreRadius`                   |
+| Depth        | Ring width       | What a caller must learn   | `shellRadius`                  |
+| Depth        | Colour, ring     | Depth: work per thing      | `judgeDepth` (server)          |
+| Depth        | Place            | The module's folder        | `depthChart`, `packCircles`    |
+| Security     | Belt, size, ink  | An alert's grade           | `layoutBelts`, `HAZARD_PX`     |
+| Security     | Shape            | Which list it came from    | `outlineOf`                    |
+| Security     | World's air      | The worst open grade       | `worstSeverity`                |
+| Inbox        | Beacon colour    | Why the notification came  | `reasonWords(reason).tone`     |
+| Inbox        | Beacon pulse     | It asks something of you   | tone `asks`                    |
+| Insights     | Star size        | A week's commits           | `starRadius`, `commitStars`    |
+| Deployments  | Pad, place       | An environment             | `layoutPads`                   |
+| Deployments  | Colour, star     | How a deployment went      | `outcomeOf` (server)           |
+| Deployments  | Trail            | Earlier deployments        | `trailRadius`, `trailAlpha`    |
 
 ## Orrery worlds
 
@@ -311,7 +326,8 @@ Changes: those cross the sky and land on nothing.
 
 With sound on, each landing plays a quiet crackle (`crackleOf`: a few
 high-passed noise pops through `noiseBurst`), panned by the star's screen x
-(`panOf`). Nothing plays with sound off, or for a star panned far off screen.
+(`panOf`) and pitched by the Doppler shift of the fall (see **Doppler shift**
+below). Nothing plays with sound off, or for a star panned far off screen.
 
 ### Satellites (data: live coding agents)
 
@@ -338,7 +354,10 @@ band-passed triangle tone at low gain, higher while working, panned by the
 satellite's screen x. `nextBeep` lets only one beep through every 350 ms, so
 any number of agents stays under three a second; the beeper only runs while
 sound is on and the queue sky is shown. Beeps follow the agent's real state
-even when motion is off.
+even when motion is off. Each beep is also shifted by the satellite's Doppler
+factor, read by `SatelliteLayer.heardOf` from how far it moved between its last
+two drawn frames: a little higher on the side of the orbit coming toward the
+viewer, lower going away.
 
 ### Chain (data: stacked pull requests)
 
@@ -386,9 +405,43 @@ where: the delay until the supernova starts and a pan from the departure point's
 screen x, kept within 0.8 either side. A cue exists only for a merge the news diff
 found, never on a timer, and at most four booms per refresh.
 
-Reduced motion: only the brief flash plays (no ring, no streak), and the sound
-still does. `Effect.flashesStill` marks the one burst a still sky keeps, and
-`SkyLayer.animating` keeps the loop drawing until it has played.
+After the boom, the streak gets a short whoosh (`whoosh` in `core/sound`):
+noise through a band-pass filter that glides, with the pan, along eight stretches
+of the streak's own path. `mergeCues` samples the head with the same
+`streakHead` the 3D sky draws and projects each point through the active
+renderer, so the pan and Doppler factor of each stretch come from the positions
+the picture uses. Where the sky is flat the head gains no depth, as drawn.
+
+Reduced motion: only the brief flash plays (no ring, no streak), and the boom
+still does; the whoosh does not, since nothing moves. `Effect.flashesStill`
+marks the one burst a still sky keeps, and `SkyLayer.animating` keeps the loop
+drawing until it has played.
+
+### Doppler shift (data: how a moving sound's source moves)
+
+Code: `features/starmap/sound/doppler.ts`. One pure rule for every sound whose
+source moves: the merge streak's whoosh, the meteor landing's crackle and the
+satellites' beeps. `closingSpeed(from, to, seconds, listener)` is how fast the
+source drew nearer to the listener between two drawn places, in pixels a second;
+`dopplerFactor` turns it into a playback-rate factor, 3 semitones either way at
+600 px/s and beyond, 1 when it did not move. `listenerOf` puts the listener at
+the middle of the screen's bottom edge, half a screen in front of it, looking up
+at the sky, so what falls comes toward them and what rises goes away.
+
+Each layer reads positions it already draws; the score methods only take the
+factor (`crackle(pan, strength, seed, doppler)`, `beep(pan, hz, doppler)`, the
+cue's `whoosh` path) and multiply it into a pitch. Nothing is invented:
+
+| Sound   | Positions the factor is read from                                   |
+| ------- | ------------------------------------------------------------------- |
+| Whoosh  | `streakHead` at each step of the streak, projected, with its depth  |
+| Crackle | `headAt` the last 50 ms of the fall onto the star (`MeteorLanding`) |
+| Beep    | Where the satellite was drawn last frame and this one (`heardOf`)   |
+
+Reduced motion: nothing moves, so the factor is 1 and nothing shifts. A frame
+after a stall (more than 0.25 s) measures no motion either. With sound off
+nothing plays. The first frame a satellite is drawn has nothing to compare, so
+its beep is unshifted. Tests drive these with a fake `AudioContext`.
 
 ### Weather (data: design red flags in the added lines)
 
@@ -517,6 +570,136 @@ same commit (the queue's flaky-check history) carries a turning dashed amber
 ring with a small tag. Everything that moves reads the frame loop's scene time,
 so it holds still when motion is off.
 
+## The Depth sky
+
+Code: `features/depth/`, with the layout in `core/depth/`. It is SVG, not a
+canvas, so every planet is a real element that takes hover and keyboard focus.
+Where Ousterhout's _deep modules_ idea is the rule, each file of a repository's
+local clone is a planet: a **core** for the work the file hides inside a **ring**
+for what a caller must learn. Nothing moves, so there is no motion to switch off.
+
+### Measure (data: a file's code)
+
+`measureModule` in `server/depth/module-measure.ts` reads a TypeScript file with
+the compiler API and returns two counts. `GET /api/depth?repo=` serves them for
+the repository's local clone (on the owner's machine only), through
+`depthReports`, which lists files with git so ignored folders stay out, parses a
+file again only when its text changed, and keeps a read for 30 seconds
+(`?fresh=1` skips that).
+
+- **Implementation** (`implementationSize`): the statements the file runs, plus
+  each method, constructor, accessor and initialised field, and each
+  expression-bodied arrow. A function or class declaration only holds the work
+  inside it. Imports, re-exports and type declarations count nothing, so
+  comments and layout cannot move it.
+- **Interface** (`exportedSurface`): each exported name, each parameter of an
+  exported function or public method, each public member of an exported class
+  (not `private`, `protected` or `#private`), each field of an exported
+  interface or object type, each name in a re-export (`export *` counts one). A
+  class an Angular decorator builds pays nothing for its constructor, since its
+  callers never construct it.
+- **Depth** = implementation / interface, with an empty interface read as 1. A
+  file with no exports (an entry point) or only types (no work, nothing hidden)
+  is not a module and gets no planet.
+- **Verdict** (`judgeDepth`): _deep_ from 8, _shallow_ below 1 when the interface
+  has at least two things in it, else _balanced_. Shallow points at the
+  `shallow-modules` principle; deep and balanced at `deep-modules`. The report
+  carries those principles' words from `server/principles/principles.ts` by id.
+
+### Marks
+
+`coreRadius` is `1.1 × √statements` px (at least 1.5), so core _area_ follows the
+work. `shellRadius` is the core plus `1.4 × √interface` (at least 2), so the
+ring's width follows the interface and `1 − core / shell` is how hollow a planet
+reads: a deep module hugs a solid core, a shallow one is a thin ring round a
+speck. Colour repeats the verdict (`--depth-deep` amber, `--depth-balanced`
+blue, `--depth-shallow` pink), but shape says it first: a deep core is a lit
+gradient sphere, a shallow ring is bolder and its inside is left empty.
+
+`depthChart` puts each folder's planets in a faint disc with `packCircles`
+(largest at the centre, the rest spiralling out into the nearest free place),
+labels the discs big enough to hold a name, and packs the discs the same way.
+Filtering lays the sky out again, so a narrower path makes bigger planets.
+
+### Reading it
+
+Hovering or focusing a planet, or a row in the **List** view (shallowest first),
+fills the panel with its three numbers, its verdict and the principle's title and
+idea. Tab reaches one planet; the arrow keys, Home and End walk the rest in
+folder order. A focused planet gets a halo; the last one reached stays lit.
+
+## The Security sky
+
+Code: `features/security/hazard-sky/`. The Security screen opens on its list,
+which is a triage list; **Sky** shows the same alerts. Like the Actions sky it
+is Canvas 2D only: the Orrery's night, and in the middle the project's world,
+painted once by the shared portrait painter as the Architecture page paints a
+planet (`planetLook`), a flat lit disc until it loads. Its air is the colour of
+the worst open alert's grade, or `--security-clear` when none is open. Each
+alert with details is a real link over the canvas, so hover and keyboard focus
+show it and a click opens it on GitHub.
+
+### Belts (data: grade)
+
+`layoutBelts` rings the world with four belts, one per grade, critical
+innermost at 1.75 world radii and low outermost at 92% of the stage, each an
+ellipse 0.36 as tall as it is wide. A grade's hazards are spread evenly along
+its belt from a starting turn seeded by the repository, with a little jitter
+along and across it, so a project's sky is the same on every load. A hazard on
+the far half is drawn behind the world, dimmer and at 80% of its size; one that
+would sit out of sight behind the world is mirrored onto the near half. A belt
+with alerts is drawn in its grade's colour, an empty one faintly. Sizes are
+`HAZARD_PX`: 9 px critical, 7 high, 5.5 medium, 4 low. At most 240 are
+drawn; the list holds every one.
+
+### Hazards (data: which list)
+
+`outlineOf` gives each list its own shape: a Dependabot alert is a lumpy rock,
+a code-scanning alert a sharp shard, a secret a four-pointed spark, each lit
+from the upper left and rimmed in its grade's colour (`--security-*`). Each
+tumbles at its own pace (`tumbleOf`), and a critical one throbs with a red glow
+(`throbOf`), both on the frame loop's scene time, so they hold still when
+motion is off. A preview visitor gets counts only, so their sky draws the same
+number of hazards in each belt with no links.
+
+## The Deployments sky
+
+Code: `features/deployments/launch-sky/`. Like the Actions sky it is Canvas 2D
+only: the Orrery's night (`paintBackground`, `paintField`, vignette and grain),
+each light painted once by the shared portrait painter through `SunPortraits`,
+a flat glow until it loads. Each light is a real link over the canvas, to the
+deployed site, or to the commit on GitHub when there is none, so hover and
+keyboard focus show it; the List view gives the same deployments with their
+site, commit and log links.
+
+### Pads (data: environments)
+
+`layoutPads` stands each environment's launch pad along the foot of the stage,
+at 86% of its height, in columns at most 320 px apart, centred, production first
+(the server's `byProminence`, then the most recently deployed). A pad is a flat
+ellipse lit from above in its latest deployment's colour; production's carries a
+second, wider ring. Its name and count sit under it. At most six environments
+are read (`ENVIRONMENT_LIMIT` on the server, since each costs nine requests):
+production, then the most recently deployed to, and the header says "6 of 14"
+when there are more.
+
+### Beacon and trail (data: how each deployment went)
+
+The latest deployment is a beacon 11 px across on a beam rising from its pad,
+16% of the stage (at least 40 px) above it. The seven before it climb away from
+it in even steps of at most 64 px, each smaller (`trailRadius`: 6.5 px, shrinking
+by 0.84 a step, at least 2.4) and dimmer (`trailAlpha`: 0.09 less a step, at
+least 0.3), joined by a faint dashed line. How far the trail drifts sideways is
+scenery, seeded by the environment's name. A deployment's colour and star are
+its newest status (`outcomeOf` on the server): live (`success`) is a calm star
+in `--actions-passed`, building (`queued`, `pending`, `in_progress`) a bright
+one in `--meh`, failed (`error`, `failure`) a giant in `--actions-failed`, and
+replaced (`inactive`) or with no status yet a veiled one. The colours are the
+Actions sky's tokens, reused so nothing is added to the start-up stylesheet. A
+latest one still building sends out a ring every 2.4 s (`beaconPulse`); a latest
+one that failed breathes a red bloom (`flareReach`). Both read the frame loop's
+scene time, so they hold still when motion is off.
+
 ## The Library's star chart
 
 Code: `features/library/library-index/`. The Library is for reading, so its
@@ -528,6 +711,31 @@ of its length past 100 words, at most 13 px. The open page's star is lit gold
 and slowly breathes; it holds still when motion is off. The scatter of faint
 stars behind the index is scenery. The links themselves are the list
 alternative: Tab or the arrow keys walk them, and search narrows them.
+
+## The Inbox's transmissions
+
+Code: `features/inbox/`. The Inbox is a list first and only: unread GitHub
+notifications as incoming transmissions, one glass panel per repository, a
+heading per reason. Each row's beacon is coloured by how loudly its reason
+calls (`reasonWords`): `--warm` for what is asked of you (a review, an
+assignment, a deployment to approve), `--flow` for what is said to you (a
+mention, an invitation), `--bad-soft` for warnings (CI runs, security alerts)
+and `--muted` for news (threads you opened, commented on or watch). Only the
+`asks` beacons pulse, so what waits on you keeps signalling; they hold still
+when motion is off. The rows are ordinary links and buttons, so there is no
+separate list alternative to keep.
+
+## The Insights constellation
+
+Code: `features/insights/commit-stars/`. The Insights screen is charts first;
+its only sky is a small SVG constellation under the title, one star a week for
+the screen's twelve weeks, oldest at the left, joined by one faint line.
+`starRadius` sizes a star from 1 px to 5 px so its _area_ follows the week's
+commits against the busiest week's; a week with none is a faint grey point the
+line still runs through. How far each star sits above or below the middle is
+scenery, the same on every load. Nothing moves, so there is no motion to
+switch off. The constellation is hidden from screen readers: the Commits
+chart below it and its **Table view** carry the same numbers.
 
 ## Changing a visual
 

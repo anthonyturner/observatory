@@ -1,0 +1,30 @@
+<canvas #canvas aria-hidden="true"></canvas>
+
+@for (pad of marks().pads; track pad.key) {
+  <span
+    class="pad"
+    aria-hidden="true"
+    [style.--dot]="pad.colour"
+    [style.left.px]="pad.x"
+    [style.top.px]="pad.y"
+    ><b>{{ pad.name }}</b
+    ><small>{{ pad.detail }}</small></span
+  >
+}
+
+<div class="bodies" role="group" aria-label="Deployments, each environment newest first">
+  @for (light of marks().lights; track light.key) {
+    <a
+      class="body"
+      [href]="light.href"
+      target="_blank"
+      rel="noopener"
+      [style.left.px]="light.x"
+      [style.top.px]="light.y"
+      [style.--hit.px]="light.hit"
+      [attr.aria-label]="light.spoken"
+    >
+      <span class="tip" aria-hidden="true">{{ light.tip }}</span>
+    </a>
+  }
+</div>

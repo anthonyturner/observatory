@@ -1,0 +1,19 @@
+<ol aria-label="Modules, shallowest first">
+  @for (row of rows(); track row.module.file) {
+    <li>
+      <button
+        type="button"
+        [attr.data-verdict]="row.module.verdict"
+        [attr.aria-pressed]="row.module.file === active()"
+        (pointerenter)="activate.emit(row.module)"
+        (focus)="activate.emit(row.module)"
+        (click)="activate.emit(row.module)"
+      >
+        <span class="dot" aria-hidden="true"></span>
+        <b>{{ row.name }}</b>
+        <span class="folder">{{ row.folder }}</span>
+        <span class="numbers">{{ row.numbers }}</span>
+      </button>
+    </li>
+  }
+</ol>

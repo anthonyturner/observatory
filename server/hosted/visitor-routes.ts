@@ -9,6 +9,7 @@ import {
   type Routes,
 } from '../http/api-handler.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
+import { PREVIEW_PATH } from '../deployments/deployments-report.ts';
 import { NEWS_PATH } from '../news/news-routes.ts';
 import { PRINCIPLES_PATH } from '../principles/principle-routes.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
@@ -17,6 +18,8 @@ import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { WEATHER_PATH } from '../queue/pull-weather.ts';
 import { RISK_PATH, riskGlanceOf } from '../queue/risk-routes.ts';
+import { withoutTraffic } from '../insights/insights-report.ts';
+import { withoutAlerts } from '../security/security-report.ts';
 import { EMPTY_TRIAGE } from '../triage/triage.ts';
 import { triagedQueue } from '../triage/triaged-queue.ts';
 import { redactStrings } from './redact.ts';
@@ -96,11 +99,20 @@ export function visitorRoutes(
       '/api/history': async (query) => reads.history(await visibleRepo(query)),
       '/api/ledger': async (query) => reads.ledger(await visibleRepo(query)),
       '/api/releases': async (query) => reads.releases(await visibleRepo(query)),
+      '/api/journal': async (query) => reads.journal(await visibleRepo(query)),
       '/api/library': async (query) => reads.library(await visibleRepo(query)),
       '/api/actions': async (query) => reads.actions(await visibleRepo(query)),
       '/api/actions/run': async (query) =>
         reads.runJobs(await visibleRepo(query), runIdFrom(query.get('run'))),
       '/api/ci-health': async (query) => reads.ciHealth(await visibleRepo(query)),
+      // Alerts are shown on GitHub only to those who can fix them, so a visitor gets the counts.
+      '/api/security': async (query) =>
+        withoutAlerts(await reads.security(await visibleRepo(query))),
+      '/api/insights': async (query) =>
+        withoutTraffic(await reads.insights(await visibleRepo(query))),
+      '/api/deployments': async (query) => reads.deployments(await visibleRepo(query)),
+      [PREVIEW_PATH]: async (query) =>
+        reads.pullPreview(await visibleRepo(query), commitShaFrom(query.get('sha'))),
       '/api/issues': async (query) => reads.issues(await visibleRepo(query)),
       '/api/issue': async (query) =>
         reads.issue(await visibleRepo(query), issueNumberFrom(query.get('number'))),

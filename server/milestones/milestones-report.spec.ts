@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { DiscussionReader, DiscussionsMark } from '../github/discussion-reader.ts';
-import type { MilestoneMark, MilestoneReader } from '../github/milestone-reader.ts';
+import type { MilestoneList, MilestoneMark, MilestoneReader } from '../github/milestone-reader.ts';
 import { milestonesReport } from './milestones-report.ts';
 
 const NOW = Date.parse('2026-10-08T12:00:00Z');
@@ -24,21 +24,32 @@ const mark = (number: number, more: Partial<MilestoneMark> = {}): MilestoneMark 
 
 const DISCUSSIONS: DiscussionsMark = { isEnabled: true, total: 0, threads: [] };
 
+/** Every open one counted, unless `openCount` says there are more than were read. */
+const listOf = (marks: MilestoneMark[], openCount?: number): MilestoneList => ({
+  marks,
+  openCount: openCount ?? marks.filter((each) => each.isOpen).length,
+});
+
 const reader = (
-  milestones: () => Promise<MilestoneMark[]>,
+  milestones: () => Promise<MilestoneList>,
   discussions: () => Promise<DiscussionsMark> = async () => DISCUSSIONS,
 ): MilestoneReader & DiscussionReader => ({ milestones, discussions });
 
 describe('milestonesReport', () => {
   it('puts the soonest due first and those with none last, and the latest closed first', async () => {
     const report = await milestonesReport(
-      reader(async () => [
-        mark(1),
-        mark(2, { dueOn: '2026-11-01T00:00:00Z' }),
-        mark(3, { dueOn: '2026-10-10T00:00:00Z' }),
-        mark(4, { isOpen: false, closedAt: '2026-09-01T00:00:00Z' }),
-        mark(5, { isOpen: false, closedAt: '2026-10-01T00:00:00Z' }),
-      ]),
+      reader(async () =>
+        listOf(
+          [
+            mark(1),
+            mark(2, { dueOn: '2026-11-01T00:00:00Z' }),
+            mark(3, { dueOn: '2026-10-10T00:00:00Z' }),
+            mark(4, { isOpen: false, closedAt: '2026-09-01T00:00:00Z' }),
+            mark(5, { isOpen: false, closedAt: '2026-10-01T00:00:00Z' }),
+          ],
+          40,
+        ),
+      ),
       'me/app',
       NOW,
     );
@@ -51,6 +62,7 @@ describe('milestonesReport', () => {
       report.milestones.closed.map((view) => view.number),
       [5, 4],
     );
+    assert.equal(report.milestones.openCount, 40);
     assert.equal(report.generatedAt, '2026-10-08T12:00:00.000Z');
   });
 
@@ -61,7 +73,7 @@ describe('milestonesReport', () => {
       { number: 6, title: 'c', url: 'u', isPull: true, state: 'merged' as const },
     ];
     const report = await milestonesReport(
-      reader(async () => [mark(1, { items })]),
+      reader(async () => listOf([mark(1, { items })])),
       'me/app',
       NOW,
     );
@@ -77,7 +89,7 @@ describe('milestonesReport', () => {
   it('keeps the milestones when the discussions are refused, with a plain note', async () => {
     const report = await milestonesReport(
       reader(
-        async () => [mark(1)],
+        async () => listOf([mark(1)]),
         async () => {
           throw new Error(
             'GitHub: Resource not accessible by integration (at repository.discussions)',
@@ -91,6 +103,23 @@ describe('milestonesReport', () => {
     assert.equal(report.milestones.open.length, 1);
     assert.equal(report.discussions.note, 'This token is not allowed to read the discussions.');
     assert.deepEqual(report.discussions.threads, []);
+  });
+
+  it('reads a classic token missing the discussions scope as refused, not as down', async () => {
+    const report = await milestonesReport(
+      reader(
+        async () => listOf([]),
+        async () => {
+          throw new Error(
+            'GitHub: Your token has not been granted the required scopes to execute this query.',
+          );
+        },
+      ),
+      'me/app',
+      NOW,
+    );
+
+    assert.equal(report.discussions.note, 'This token is not allowed to read the discussions.');
   });
 
   it('keeps the discussions when the milestones fail, with a plain note', async (t) => {

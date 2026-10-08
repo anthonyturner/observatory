@@ -47,8 +47,10 @@ export interface DiscussionThread {
 export interface MilestonesPart {
   /** Why GitHub gave none; null when it answered. */
   readonly note: string | null;
-  /** Soonest due first; those with no due date last. */
+  /** Soonest due first; those with no due date last. Past a limit, only the first. */
   readonly open: readonly Milestone[];
+  /** Every open milestone, past the ones listed. */
+  readonly openCount: number;
   /** Most lately closed first. */
   readonly closed: readonly Milestone[];
 }
@@ -126,14 +128,17 @@ function parseThread(value: unknown): DiscussionThread | null {
 const UNREAD_MILESTONES: MilestonesPart = {
   note: 'The milestones could not be read.',
   open: [],
+  openCount: 0,
   closed: [],
 };
 
 function parseMilestonesPart(value: unknown): MilestonesPart {
   if (!isObject(value)) return UNREAD_MILESTONES;
+  const open = listOf(value['open'], parseMilestone);
   return {
     note: textOrNull(value['note']),
-    open: listOf(value['open'], parseMilestone),
+    open,
+    openCount: Math.max(countOf(value['openCount']), open.length),
     closed: listOf(value['closed'], parseMilestone),
   };
 }

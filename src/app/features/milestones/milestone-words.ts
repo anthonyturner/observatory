@@ -86,21 +86,23 @@ export function emptyMessage(report: MilestonesReport): PageMessage | null {
   };
 }
 
-/** How to read the sky, and how many it leaves to the list; null with nothing in it. */
+/** How to read the sky, and when it leaves some to the list; null with nothing in it. */
 export function skyNote(report: MilestonesReport): string | null {
   const { open } = report.milestones;
   if (!open.length) return null;
   const reading =
     'Each planet is a milestone, as far along its lane as its work is done, toward its due date.';
-  const hidden = open.length - MAX_LANES;
-  return hidden > 0
-    ? `${reading} The sky shows the first ${MAX_LANES} of ${open.length}; List shows them all.`
+  return open.length > MAX_LANES
+    ? `${reading} The sky shows the soonest ${MAX_LANES}; List shows the rest.`
     : reading;
 }
 
-/** "me/app · 3 open milestones". */
+/** "me/app · 3 open milestones", or "me/app · 25 of 31 open milestones" when only the first were read. */
 export function milestonesStamp(repo: string, report: MilestonesReport | null): string {
-  return report ? `${repo} · ${plural(report.milestones.open.length, 'open milestone')}` : repo;
+  if (!report) return repo;
+  const { open, openCount } = report.milestones;
+  const total = plural(openCount, 'open milestone');
+  return open.length < openCount ? `${repo} · ${open.length} of ${total}` : `${repo} · ${total}`;
 }
 
 /** What to say in place of the discussions, or null when there are some to list. */

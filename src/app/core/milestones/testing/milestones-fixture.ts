@@ -46,6 +46,7 @@ export const RAW_REPORT = {
   repo: 'me/app',
   milestones: {
     note: null,
+    openCount: 3,
     open: [
       rawMilestone(1, { title: 'Beta', dueOn: '2026-10-01T00:00:00Z' }),
       rawMilestone(2, { title: 'Launch', dueOn: '2026-10-12T00:00:00Z', open: 1, closed: 9 }),
@@ -76,6 +77,6 @@ export const RAW_REPORT = {
 /** A project with neither: no milestones, and Discussions off. */
 export const BARE_REPORT = {
   ...RAW_REPORT,
-  milestones: { note: null, open: [], closed: [] },
+  milestones: { note: null, open: [], openCount: 0, closed: [] },
   discussions: { note: null, isEnabled: false, total: 0, threads: [] },
 };

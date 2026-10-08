@@ -1,3 +1,11 @@
+/** Sizes are rounded up to a step, so bodies of nearly one size share a picture. */
+const SIZE_STEP_PX = 16;
+const MAX_PIXELS = 256;
+
+/** A body's picture size in pixels, `frame` of its radii each side, stepped and capped. */
+export const portraitPixels = (radius: number, frame: number, pixelRatio: number): number =>
+  Math.min(MAX_PIXELS, Math.ceil((radius * frame * 2 * pixelRatio) / SIZE_STEP_PX) * SIZE_STEP_PX);
+
 /**
  * Pictures painted once each, by key, and kept as images for a canvas. A
  * picture is given out only once it has loaded; until then the sky draws its

@@ -29,22 +29,29 @@ export interface MilestoneMark {
   readonly openPulls: number;
   /** Merged or closed. */
   readonly closedPulls: number;
-  /** The most recently updated of its issues and pull requests, at most `ITEM_LIMIT` of each. */
+  /** Its most recently updated issues and its newest pull requests, at most `ITEM_LIMIT` of each. */
   readonly items: readonly MilestoneItemMark[];
+}
+
+/** The open milestones and the few closed most lately, and how many are open in all. */
+export interface MilestoneList {
+  /** The open ones first, then the closed. */
+  readonly marks: readonly MilestoneMark[];
+  /** Every open milestone, past the ones read. */
+  readonly openCount: number;
 }
 
 /** What the Milestones screen reads of a repository's milestones, and nothing else. */
 export interface MilestoneReader {
-  /** The open milestones, and the few closed most lately. */
-  milestones(repo: string): Promise<MilestoneMark[]>;
+  milestones(repo: string): Promise<MilestoneList>;
 }
 
 /** More open milestones than this is a backlog, not a plan; the screen names the first. */
-export const OPEN_LIMIT = 25;
+const OPEN_LIMIT = 25;
 /** Enough closed ones to show what just landed. */
-export const CLOSED_LIMIT = 5;
+const CLOSED_LIMIT = 5;
 /** Of each kind, per milestone: a long milestone lists its newest, and counts the rest. */
-export const ITEM_LIMIT = 30;
+const ITEM_LIMIT = 30;
 
 const ITEM_FIELDS = `nodes { number title url state }`;
 const RECENT_FIRST = `orderBy: { field: UPDATED_AT, direction: DESC }`;
@@ -64,6 +71,7 @@ const MILESTONE_FIELDS = `
 export const MILESTONES_QUERY = `query($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {
     open: milestones(states: OPEN, first: ${OPEN_LIMIT}, orderBy: { field: DUE_DATE, direction: ASC }) {
+      totalCount
       nodes { ${MILESTONE_FIELDS} }
     }
     closed: milestones(states: CLOSED, first: ${CLOSED_LIMIT}, ${RECENT_FIRST}) {
@@ -113,12 +121,15 @@ function milestoneOf(node: Node): MilestoneMark | null {
   };
 }
 
-/** The milestones in a `MILESTONES_QUERY` answer: the open ones, then the closed. */
-export function milestonesOf(data: unknown): MilestoneMark[] {
+/** The milestones in a `MILESTONES_QUERY` answer, and how many are open in all. */
+export function milestonesOf(data: unknown): MilestoneList {
   const repository = field(data, 'repository');
-  return [...nodesOf(field(repository, 'open')), ...nodesOf(field(repository, 'closed'))]
+  const open = field(repository, 'open');
+  const marks = [...nodesOf(open), ...nodesOf(field(repository, 'closed'))]
     .map(milestoneOf)
     .filter((mark) => mark !== null);
+  const openRead = marks.filter((mark) => mark.isOpen).length;
+  return { marks, openCount: Math.max(totalIn(open), openRead) };
 }
 
 /** The reader over one way of asking GitHub's GraphQL API. */

@@ -9,6 +9,9 @@ import { plural } from '../../../shared/text/plural';
 import { dueColour } from '../milestone-look';
 import { DUE_WORDS, dayWords, dueWords, progressWords } from '../milestone-words';
 
+/** A closed milestone is past its date either way, so it takes no due state's colour. */
+const CLOSED_COLOUR = 'var(--muted)';
+
 const ITEM_STATE_WORDS: Readonly<Record<MilestoneItemState, string>> = {
   open: 'open',
   closed: 'closed',
@@ -84,7 +87,7 @@ function milestoneRow(milestone: Milestone, now: number): MilestoneRow {
     percent: Math.round(progressOf(milestone) * 100),
     when: whenWords(milestone, now),
     standing: milestone.isOpen ? DUE_WORDS[state] : 'closed',
-    colour: dueColour(state),
+    colour: milestone.isOpen ? dueColour(state) : CLOSED_COLOUR,
     counts: `${milestone.open} open · ${milestone.closed} closed`,
     itemCount: plural(total, 'item'),
     items: milestone.items.map(itemRow),

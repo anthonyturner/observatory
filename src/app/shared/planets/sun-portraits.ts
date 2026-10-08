@@ -1,5 +1,5 @@
 import { StarType } from '../gl/star-shader';
-import { PaintedImages } from './painted-images';
+import { PaintedImages, portraitPixels } from './painted-images';
 import { PortraitPainter, SUN_FRAME } from './planet-portrait.types';
 
 /** One star picture to have ready. */
@@ -11,15 +11,8 @@ export interface PortraitRequest {
   readonly radius: number;
 }
 
-/** Sizes are rounded up to a step, so stars of nearly one size share a picture. */
-const SIZE_STEP_PX = 16;
-const MAX_PIXELS = 256;
 /** Enough for every star on show at a few sizes; past it the cache starts over. */
 const MAX_IMAGES = 120;
-
-/** A body's picture size in pixels, `frame` of its radii each side, stepped and capped. */
-export const portraitPixels = (radius: number, frame: number, pixelRatio: number): number =>
-  Math.min(MAX_PIXELS, Math.ceil((radius * frame * 2 * pixelRatio) / SIZE_STEP_PX) * SIZE_STEP_PX);
 
 const pixelsFor = (radius: number, pixelRatio: number): number =>
   portraitPixels(radius, SUN_FRAME, pixelRatio);

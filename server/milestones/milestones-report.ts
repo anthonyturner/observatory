@@ -7,8 +7,9 @@ import type {
   MilestonesReport,
 } from './milestones-types.ts';
 
-/** A fine-grained token without "Discussions: read" is refused the field, not the repository. */
-const REFUSED = /not accessible|forbidden|HTTP 40[13]\b/i;
+/** A token that may not read discussions is refused the field, not the repository: a
+ *  fine-grained one as "not accessible", a classic one as missing a "required scope". */
+const REFUSED = /not accessible|required scopes|forbidden|HTTP 40[13]\b/i;
 
 const MILESTONES_FAILED = 'GitHub did not answer for the milestones. Try again in a moment.';
 const DISCUSSIONS_FAILED = 'GitHub did not answer for the discussions. Try again in a moment.';
@@ -38,7 +39,7 @@ const timeOr = (iso: string | null, otherwise: number): number =>
   iso === null ? otherwise : Date.parse(iso);
 
 /** Soonest due first, those with no due date last, then oldest first. */
-export const byDueDate = (a: MilestoneView, b: MilestoneView): number =>
+const byDueDate = (a: MilestoneView, b: MilestoneView): number =>
   timeOr(a.dueOn, Infinity) - timeOr(b.dueOn, Infinity) || a.number - b.number;
 
 const byClosedLately = (a: MilestoneView, b: MilestoneView): number =>
@@ -46,15 +47,17 @@ const byClosedLately = (a: MilestoneView, b: MilestoneView): number =>
 
 async function milestonesPart(github: MilestoneReader, repo: string): Promise<MilestonesPart> {
   try {
-    const views = (await github.milestones(repo)).map(viewOf);
+    const { marks, openCount } = await github.milestones(repo);
+    const views = marks.map(viewOf);
     return {
       note: null,
       open: views.filter((view) => view.isOpen).sort(byDueDate),
+      openCount,
       closed: views.filter((view) => !view.isOpen).sort(byClosedLately),
     };
   } catch (error: unknown) {
     console.error(`Could not read ${repo}'s milestones:`, error);
-    return { note: MILESTONES_FAILED, open: [], closed: [] };
+    return { note: MILESTONES_FAILED, open: [], openCount: 0, closed: [] };
   }
 }
 

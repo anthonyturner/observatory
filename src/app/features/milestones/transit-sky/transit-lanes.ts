@@ -52,7 +52,7 @@ const MAX_PLANET_PX = 20;
 /** A planet never takes more than this share of the gap to the next lane. */
 const PLANET_GAP_SHARE = 0.3;
 
-export const EMPTY_TRANSIT: TransitLayout = { lanes: [], hidden: 0 };
+const EMPTY_TRANSIT: TransitLayout = { lanes: [], hidden: 0 };
 
 /** A planet's radius for a milestone with `items` issues and pull requests on it. */
 export const planetRadius = (items: number): number =>

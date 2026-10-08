@@ -48,6 +48,7 @@ describe('parseMilestonesReport', () => {
       'Q&A',
     ]);
     expect(report?.discussions.total).toBe(12);
+    expect(report?.milestones.openCount).toBe(3);
   });
 
   it('drops a link that is not GitHub’s, and refuses an answer that is not a report', () => {

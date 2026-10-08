@@ -74,6 +74,7 @@ describe('MilestonesPage', () => {
       'https://github.com/me/app/pull/21',
     ]);
     expect(text(cards[0].querySelector('summary'))).toBe('5 items');
+    expect(cards[3].getAttribute('style')).toContain('--dot: var(--muted)');
   });
 
   it('lists the latest discussions beside, by category, with their answer state', () => {

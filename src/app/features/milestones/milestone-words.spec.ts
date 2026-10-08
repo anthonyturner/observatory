@@ -79,6 +79,8 @@ describe('the screen’s notes', () => {
 
   it('stamps the project with its open milestones', () => {
     expect(milestonesStamp('me/app', report)).toBe('me/app · 3 open milestones');
+    const backlog = { ...report, milestones: { ...report.milestones, openCount: 31 } };
+    expect(milestonesStamp('me/app', backlog)).toBe('me/app · 3 of 31 open milestones');
     expect(milestonesStamp('me/app', null)).toBe('me/app');
   });
 });

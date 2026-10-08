@@ -33,9 +33,9 @@ const milestone = (number: number, more: object = {}) => ({
 
 describe('milestonesOf', () => {
   it('reads each milestone’s counts and items, the open ones before the closed', () => {
-    const marks = milestonesOf({
+    const { marks, openCount } = milestonesOf({
       repository: {
-        open: { nodes: [milestone(1)] },
+        open: { totalCount: 31, nodes: [milestone(1)] },
         closed: {
           nodes: [milestone(2, { state: 'CLOSED', closedAt: '2026-10-01T00:00:00Z', dueOn: null })],
         },
@@ -49,6 +49,7 @@ describe('milestonesOf', () => {
         [2, false, null, '2026-10-01T00:00:00Z'],
       ],
     );
+    assert.equal(openCount, 31);
     const [first] = marks;
     assert.deepEqual(
       [first.openIssues, first.closedIssues, first.openPulls, first.closedPulls],
@@ -65,8 +66,11 @@ describe('milestonesOf', () => {
   });
 
   it('reads an answer with no repository, or a milestone with no number, as none', () => {
-    assert.deepEqual(milestonesOf({ repository: null }), []);
-    assert.deepEqual(milestonesOf({ repository: { open: { nodes: [{ title: 'x' }] } } }), []);
+    assert.deepEqual(milestonesOf({ repository: null }), { marks: [], openCount: 0 });
+    assert.deepEqual(milestonesOf({ repository: { open: { nodes: [{ title: 'x' }] } } }), {
+      marks: [],
+      openCount: 0,
+    });
   });
 });
 
@@ -78,9 +82,10 @@ describe('milestoneReader', () => {
       return { repository: { open: { nodes: [milestone(3)] }, closed: { nodes: [] } } };
     });
 
-    const marks = await reader.milestones('me/app');
+    const { marks, openCount } = await reader.milestones('me/app');
 
     assert.deepEqual(asked, [MILESTONES_QUERY, { owner: 'me', name: 'app' }]);
     assert.equal(marks[0].title, 'v3');
+    assert.equal(openCount, 1);
   });
 });

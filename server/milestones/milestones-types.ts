@@ -20,8 +20,10 @@ export interface MilestoneView {
 export interface MilestonesPart {
   /** One plain line on why GitHub gave none; null when it answered. */
   readonly note: string | null;
-  /** Soonest due first; those with no due date last. */
+  /** Soonest due first; those with no due date last. Past a limit, only the first. */
   readonly open: readonly MilestoneView[];
+  /** Every open milestone, past the ones listed. */
+  readonly openCount: number;
   /** Most lately closed first. */
   readonly closed: readonly MilestoneView[];
 }

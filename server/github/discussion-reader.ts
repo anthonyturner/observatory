@@ -32,7 +32,7 @@ export interface DiscussionReader {
 }
 
 /** Enough to show what is being talked about now; GitHub holds the rest. */
-export const DISCUSSION_LIMIT = 30;
+const DISCUSSION_LIMIT = 30;
 
 export const DISCUSSIONS_QUERY = `query($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {

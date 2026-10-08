@@ -5,28 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { NotFound } from '../http/api-handler.ts';
 import { fileArchitecture, writeArchitecture } from './architecture-file.ts';
-import type { ArchitectureMap } from './architecture-types.ts';
-
-const MAP: ArchitectureMap = {
-  schema: 2,
-  project: 'clockwork',
-  scannedAt: '2026-10-01T00:00:00Z',
-  areas: [{ id: 'core', label: 'Core' }],
-  windows: ['desktop'],
-  nodes: [
-    {
-      id: 'core/clock.ts#ClockService',
-      name: 'ClockService',
-      kind: 'service',
-      file: 'core/clock.ts',
-      area: 'core',
-      group: '',
-      providedIn: 'root',
-      windows: ['desktop'],
-    },
-  ],
-  edges: [],
-};
+import { SAMPLE_MAP } from './sample-map.ts';
 
 describe('architecture file', () => {
   let dir = '';
@@ -41,8 +20,8 @@ describe('architecture file', () => {
 
   it('reads back the map it wrote, creating missing folders', async () => {
     const file = join(dir, 'nested', 'map.json');
-    await writeArchitecture(MAP, file);
-    assert.deepEqual(await fileArchitecture(file)(), MAP);
+    await writeArchitecture(SAMPLE_MAP, file);
+    assert.deepEqual(await fileArchitecture(file)(), SAMPLE_MAP);
   });
 
   it('throws NotFound when no map has been written', async () => {

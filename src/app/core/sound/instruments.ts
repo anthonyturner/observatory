@@ -146,6 +146,45 @@ export function noiseBurst(rig: Rig, burst: NoiseBurst): void {
   playFor([source], [filter, gain, panner], { at, end: at + decay + 0.05 });
 }
 
+/** One stop on a whoosh's path: where the filter is, and where it sits between the speakers. */
+export interface WhooshStop {
+  /** Seconds after the whoosh begins. */
+  readonly at: number;
+  readonly freq: number;
+  readonly pan: number;
+}
+
+export interface Whoosh {
+  readonly at: number;
+  readonly seconds: number;
+  readonly level: number;
+  readonly q: number;
+  /** At least one stop; the filter and the pan glide from each to the next. */
+  readonly path: readonly WhooshStop[];
+}
+
+/** Noise through a band that glides along `path`: something passing, heard as it goes. */
+export function whoosh(rig: Rig, { at, seconds, level, q, path }: Whoosh): void {
+  if (path.length === 0) return;
+  const { context } = rig;
+  const source = context.createBufferSource();
+  source.buffer = rig.noise;
+  source.loop = true;
+  const filter = context.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.Q.value = q;
+  const gain = envelope(context, { at, attack: seconds * 0.2, level, end: at + seconds });
+  const panner = context.createStereoPanner();
+  filter.frequency.setValueAtTime(path[0].freq, at);
+  panner.pan.setValueAtTime(path[0].pan, at);
+  for (const stop of path.slice(1)) {
+    filter.frequency.linearRampToValueAtTime(stop.freq, at + stop.at);
+    panner.pan.linearRampToValueAtTime(stop.pan, at + stop.at);
+  }
+  source.connect(filter).connect(gain).connect(panner).connect(rig.bus);
+  playFor([source], [filter, gain, panner], { at, end: at + seconds + 0.05 });
+}
+
 /** The sun's pulse: a falling sine, the heartbeat of the system. */
 export function thump(rig: Rig, at: number, level: number, pan = 0): void {
   const { context } = rig;

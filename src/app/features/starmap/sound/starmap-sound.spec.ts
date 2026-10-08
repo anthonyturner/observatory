@@ -9,8 +9,9 @@ function fakeScore() {
     stop: () => void calls.push('stop'),
     setVolume: (v) => void calls.push(`volume ${v}`),
     ping: (stuck, pr) => void calls.push(`ping ${stuck} ${pr}`),
-    crackle: (pan, strength, seed) => void calls.push(`crackle ${pan} ${strength} ${seed}`),
-    beep: (pan, hz) => void calls.push(`beep ${pan} ${hz}`),
+    crackle: (pan, strength, seed, doppler) =>
+      void calls.push(`crackle ${pan} ${strength} ${seed} ${doppler}`),
+    beep: (pan, hz, doppler) => void calls.push(`beep ${pan} ${hz} ${doppler}`),
     merge: ({ delayS, pan }) => void calls.push(`merge ${delayS} ${pan}`),
   };
   return { score, calls };
@@ -51,28 +52,31 @@ describe('StarmapSound', () => {
     const { sound, calls } = setUp();
     sound.crackle(-0.4, 0.5, 412);
     sound.toggle();
-    sound.crackle(0.6, 1, 7);
+    sound.crackle(0.6, 1, 7, 1.1);
     sound.toggle();
-    sound.crackle(0.1, 1, 8);
+    sound.crackle(0.1, 1, 8, 1.1);
 
-    expect(calls.filter((c) => c.startsWith('crackle'))).toEqual(['crackle 0.6 1 7']);
+    expect(calls.filter((c) => c.startsWith('crackle'))).toEqual(['crackle 0.6 1 7 1.1']);
   });
 
   it('beeps a satellite at its state’s pitch, only while it plays', () => {
     const { sound, calls } = setUp();
     sound.beep(0.5, 'working');
     sound.toggle();
-    sound.beep(-0.25, 'working');
+    sound.beep(-0.25, 'working', 1.05);
     sound.beep(0, 'quiet');
 
-    expect(calls.filter((c) => c.startsWith('beep'))).toEqual(['beep -0.25 1568', 'beep 0 988']);
+    expect(calls.filter((c) => c.startsWith('beep'))).toEqual([
+      'beep -0.25 1568 1.05',
+      'beep 0 988 1',
+    ]);
   });
 
   it('booms for a merge only while it plays', () => {
     const { sound, calls } = setUp();
-    sound.merged({ delayS: 1, pan: -0.5 });
+    sound.merged({ delayS: 1, pan: -0.5, whoosh: [] });
     sound.toggle();
-    sound.merged({ delayS: 0.5, pan: 0.25 });
+    sound.merged({ delayS: 0.5, pan: 0.25, whoosh: [] });
 
     expect(calls.filter((c) => c.startsWith('merge'))).toEqual(['merge 0.5 0.25']);
   });
@@ -169,5 +173,22 @@ describe('the score’s satellite beep', () => {
       }
     ).linearRampToValueAtTime.mock.calls[0][0] as number;
     expect(level).toBeLessThanOrEqual(0.05);
+  });
+
+  it('pitches the beep by the Doppler factor it is given, and leaves it alone by default', async () => {
+    const { context, made } = fakeContext();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const pitchOf = (play: () => void): number => {
+      const before = made.length;
+      play();
+      const oscillator = made.slice(before).find((each) => each['kind'] === 'oscillator');
+      return (oscillator?.['frequency'] as { value: number }).value;
+    };
+
+    expect(pitchOf(() => score.beep(0, 1000))).toBe(1000);
+    expect(pitchOf(() => score.beep(0, 1000, 1.1))).toBeCloseTo(1100);
+    expect(pitchOf(() => score.beep(0, 1000, 0.9))).toBeCloseTo(900);
+    score.stop();
   });
 });

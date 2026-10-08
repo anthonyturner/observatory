@@ -1,6 +1,6 @@
-import { noiseBurst, pluck, thump } from '../../../core/sound/instruments';
+import { noiseBurst, pluck, thump, whoosh } from '../../../core/sound/instruments';
 import { Rig } from '../../../core/sound/sound-rig';
-import { MergeCue } from '../memory/merge-supernova';
+import { MergeCue, NOVA_S, STREAK_S } from '../memory/merge-supernova';
 import { crackleOf } from './meteor-crackle';
 
 /* The star map's sound, generated live rather than played from a recording.
@@ -16,11 +16,17 @@ export interface StarmapScore {
   setVolume(volume: number): void;
   /** A soft tone for a chosen star: lower and darker when it is stuck. */
   ping(stuck: boolean, pr: number): void;
-  /** A short quiet crackle for a meteor landing; `pan` is −1 (left) to 1 (right). */
-  crackle(pan: number, strength: number, seed: number): void;
-  /** A short, soft satellite beep at `hz`, panned -1 (left) to 1 (right). */
-  beep(pan: number, hz: number): void;
-  /** A deep boom and a fading shimmer for a merge, after the cue's delay, panned by it. */
+  /**
+   * A short quiet crackle for a meteor landing; `pan` is −1 (left) to 1 (right).
+   * `doppler` scales its pitch (see `dopplerFactor`); 1 leaves it as it is.
+   */
+  crackle(pan: number, strength: number, seed: number, doppler?: number): void;
+  /** A short, soft satellite beep at `hz`, panned -1 (left) to 1 (right), shifted by `doppler`. */
+  beep(pan: number, hz: number, doppler?: number): void;
+  /**
+   * A deep boom and a fading shimmer for a merge, after the cue's delay, panned
+   * by it, then the whoosh of the streak along the path the cue gives.
+   */
   merge(cue: MergeCue): void;
 }
 
@@ -33,6 +39,9 @@ export const SCALE = [440, 493.88, 554.37, 659.25, 739.99, 880, 987.77] as const
 /** Satellite beeps are brief and quiet: heard as a sky's company, never as an alert. */
 const BEEP_LEVEL = 0.035;
 const BEEP_SECONDS = 0.09;
+
+/** The streak's whoosh: a soft band of noise, centred here before the Doppler shift moves it. */
+const WHOOSH = { hz: 640, q: 2.5, level: 0.07 } as const;
 
 /** The boom's levels: the loudest thing the sky plays. */
 const BOOM = { thump: 0.4, rumble: 0.14 } as const;
@@ -101,7 +110,7 @@ export class WebAudioStarmapScore implements StarmapScore {
   }
 
   /** A few ticks of high-passed noise, each softer than the last: embers dying. */
-  crackle(pan: number, strength: number, seed: number): void {
+  crackle(pan: number, strength: number, seed: number, doppler = 1): void {
     const { ac, parts } = this;
     if (!this.on || !ac || !parts) return;
     const rig = this.rigOf(ac, parts);
@@ -110,7 +119,7 @@ export class WebAudioStarmapScore implements StarmapScore {
       noiseBurst(rig, {
         at: now + pop.at,
         type: 'highpass',
-        freq: pop.freq,
+        freq: pop.freq * doppler,
         q: 1.2,
         level: pop.level,
         decay: pop.decay,
@@ -119,9 +128,10 @@ export class WebAudioStarmapScore implements StarmapScore {
     }
   }
 
-  beep(pan: number, hz: number): void {
+  beep(pan: number, base: number, doppler = 1): void {
     const { ac, parts } = this;
     if (!this.on || !ac || !parts) return;
+    const hz = base * doppler;
     const t = ac.currentTime;
     const o = ac.createOscillator();
     o.type = 'triangle';
@@ -142,8 +152,8 @@ export class WebAudioStarmapScore implements StarmapScore {
     o.stop(t + BEEP_SECONDS + 0.05);
   }
 
-  /** A low thump and a rumble, then a few bright notes of the key falling away. */
-  merge({ delayS, pan }: MergeCue): void {
+  /** A low thump and a rumble, then a few bright notes of the key falling away, then the streak's whoosh. */
+  merge({ delayS, pan, whoosh: path }: MergeCue): void {
     const { ac, parts } = this;
     if (!this.on || !ac || !parts) return;
     const rig = this.rigOf(ac, parts);
@@ -153,6 +163,13 @@ export class WebAudioStarmapScore implements StarmapScore {
     SHIMMER.forEach(({ midi, lag, level }) =>
       pluck(rig, { at: at + lag, midi, severity: 'clear', pan, level }),
     );
+    whoosh(rig, {
+      at: at + NOVA_S,
+      seconds: STREAK_S,
+      level: WHOOSH.level,
+      q: WHOOSH.q,
+      path: path.map((stop) => ({ at: stop.at, pan: stop.pan, freq: WHOOSH.hz * stop.doppler })),
+    });
   }
 
   /** The graph the shared instruments play into. */

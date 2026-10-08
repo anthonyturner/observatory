@@ -776,9 +776,9 @@ export class StarmapPage {
   }
 
   /** Flies to a star from the list, and opens it. */
-  /** A meteor landed on its star: a quiet crackle, panned to where the star sits. */
-  protected meteorLanded({ pan, strength, pr }: MeteorLanding): void {
-    this.sound.crackle(pan, strength, pr);
+  /** A meteor landed on its star: a quiet crackle, panned to where the star sits and shifted by its fall. */
+  protected meteorLanded({ pan, strength, pr, doppler }: MeteorLanding): void {
+    this.sound.crackle(pan, strength, pr, doppler);
   }
 
   /** A click on the sky: a star opens its pull request's screen; empty sky closes its card. */

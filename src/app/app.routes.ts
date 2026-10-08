@@ -64,6 +64,12 @@ export const routes: Routes = [
       import('./features/journal/journal-page/journal-page').then((m) => m.JournalPage),
   },
   {
+    path: 'p/:owner/:repo/security',
+    title: 'Security · Observatory',
+    loadComponent: () =>
+      import('./features/security/security-page/security-page').then((m) => m.SecurityPage),
+  },
+  {
     matcher: libraryMatcher,
     title: 'Library · Observatory',
     loadComponent: () =>

@@ -17,6 +17,7 @@ import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { WEATHER_PATH } from '../queue/pull-weather.ts';
 import { RISK_PATH, riskGlanceOf } from '../queue/risk-routes.ts';
+import { withoutAlerts } from '../security/security-report.ts';
 import { EMPTY_TRIAGE } from '../triage/triage.ts';
 import { triagedQueue } from '../triage/triaged-queue.ts';
 import { redactStrings } from './redact.ts';
@@ -102,6 +103,9 @@ export function visitorRoutes(
       '/api/actions/run': async (query) =>
         reads.runJobs(await visibleRepo(query), runIdFrom(query.get('run'))),
       '/api/ci-health': async (query) => reads.ciHealth(await visibleRepo(query)),
+      // Alerts are shown on GitHub only to those who can fix them, so a visitor gets the counts.
+      '/api/security': async (query) =>
+        withoutAlerts(await reads.security(await visibleRepo(query))),
       '/api/issues': async (query) => reads.issues(await visibleRepo(query)),
       '/api/issue': async (query) =>
         reads.issue(await visibleRepo(query), issueNumberFrom(query.get('number'))),

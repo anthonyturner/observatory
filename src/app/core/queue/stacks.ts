@@ -34,7 +34,7 @@ export type Stacks = ReadonlyMap<number, StackNote>;
  * Head branch → pull request, for heads only one open pull request has. A
  * fork's pull request from its own `main` into `main` heads nothing here.
  */
-function headsOf(pulls: readonly StackPull[]): Map<string, number> {
+export function headsOf(pulls: readonly StackPull[]): Map<string, number> {
   const heads = new Map<string, number>();
   const shared = new Set<string>();
   for (const pull of pulls) {

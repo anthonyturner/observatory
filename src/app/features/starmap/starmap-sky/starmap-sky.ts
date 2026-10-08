@@ -6,6 +6,7 @@ import {
   ElementRef,
   ErrorHandler,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
@@ -40,6 +41,10 @@ import { DoneLayer, isDoneHit } from '../engine/done-layer';
 import { CrewLayer } from '../engine/crew-layer';
 import { Meteor, MeteorLanding, MeteorLayer } from '../engine/meteor-layer';
 import { CrewMark } from '../../../core/crew/crew.types';
+import { Satellite } from '../../../core/live-agents/satellites';
+import { SatelliteLayer } from '../engine/satellite-layer';
+import { SatelliteBeeper } from '../sound/satellite-beeper';
+import { PageVisibility } from '../../../core/presence/page-visibility';
 import { BlackHoleLayer } from '../engine/black-hole-layer';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StackLayer } from '../engine/stack-layer';
@@ -151,6 +156,8 @@ export class StarmapSky {
   readonly doneOnly = input<DoneKind | null>(null);
   /** Crews sent to fix pull requests, drawn as ships by their stars. */
   readonly crews = input<readonly CrewMark[]>([]);
+  /** The live coding agents in this repository, drawn as satellites. */
+  readonly satellites = input<readonly Satellite[]>([]);
   /** Stacked pull requests, drawn as chains, and those whose base has merged. */
   readonly stacks = input<Stacks>(new Map());
   /** Pull requests with new commits since they were looked at, each a meteor that lands on its star. */
@@ -196,6 +203,19 @@ export class StarmapSky {
     () => this.engine?.kick(),
     (landing) => this.meteorLanded.emit(landing),
   );
+  private readonly visibility = inject(PageVisibility);
+  private readonly satelliteLayer = new SatelliteLayer(() => ({
+    side: this.insets().side,
+    top: this.insets().top,
+  }));
+  /** Satellites beep only while the queue sky is in view and sound is on. */
+  private readonly canHearSatellites = computed(
+    () =>
+      this.sound.isOn() && this.chart() === 'prs' && !this.hidden() && !this.visibility.isHidden(),
+  );
+  private readonly satelliteBeeper = new SatelliteBeeper((satellite) =>
+    this.sound.beep(this.satelliteLayer.panOf(satellite.key), satellite.state),
+  );
   private readonly tetherLayer = new TetherLayer(
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
     () => this.cometLayer.selectedAt(),
@@ -214,6 +234,7 @@ export class StarmapSky {
       this.hover.cancel();
       this.crewLayer.dispose();
       this.meteorLayer.dispose();
+      this.satelliteBeeper.dispose();
       this.engine?.dispose();
     });
     effect(() => {
@@ -276,6 +297,11 @@ export class StarmapSky {
     });
     effect(() => this.crewLayer.set(this.crews()));
     effect(() => this.meteorLayer.set(this.meteors()));
+    effect(() => {
+      this.satelliteLayer.set(this.satellites());
+      this.satelliteBeeper.set(this.satellites(), this.canHearSatellites());
+      this.engine?.kick();
+    });
     effect(() => {
       this.stackLayer.set(this.stacks());
       this.stackLayer.paused = this.replaying();
@@ -386,6 +412,13 @@ export class StarmapSky {
 
   private hoverQueue(engine: SkyEngine, event: PointerEvent | null): void {
     if (event?.pointerType === 'touch') return;
+    // A satellite names itself; a star behind it has nothing to preview then.
+    const point = event ? { x: event.clientX, y: event.clientY } : null;
+    if (this.satelliteLayer.hoverAt(point)) engine.kick();
+    if (this.satelliteLayer.isHovering) {
+      this.canvas().nativeElement.style.cursor = '';
+      return this.hover.aim(null, null);
+    }
     const hit = event ? engine.hitAt(event.clientX, event.clientY) : null;
     // A light on the Spiral of Done names itself; it has no card to dwell for.
     const done = hit && 'other' in hit && isDoneHit(hit.other) ? hit.other.done : null;
@@ -472,6 +505,7 @@ export class StarmapSky {
       this.doneLayer,
       this.crewLayer,
       this.meteorLayer,
+      this.satelliteLayer,
     ];
     this.engine.filter = filterFor(this.filter(), this.litPrs());
     this.engine.fog = this.fog();

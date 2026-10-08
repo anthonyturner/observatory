@@ -20,6 +20,8 @@ export interface StarmapScore {
   ping(stuck: boolean, pr: number): void;
   /** A short quiet crackle for a meteor landing; `pan` is −1 (left) to 1 (right). */
   crackle(pan: number, strength: number, seed: number): void;
+  /** A short, soft satellite beep at `hz`, panned -1 (left) to 1 (right). */
+  beep(pan: number, hz: number): void;
   /** A deep boom and a fading shimmer for a merge, after the cue's delay, panned by it. */
   merge(cue: MergeCue): void;
 }
@@ -32,6 +34,10 @@ export const tensionGainFor = (blocked: number): number => (Math.min(blocked, 12
 
 /** A major pentatonic has no semitone clashes, so random notes from it never sound wrong. */
 export const SCALE = [440, 493.88, 554.37, 659.25, 739.99, 880, 987.77] as const;
+
+/** Satellite beeps are brief and quiet: heard as a sky's company, never as an alert. */
+const BEEP_LEVEL = 0.035;
+const BEEP_SECONDS = 0.09;
 
 /** The boom's levels, set against the drone's 0.14. */
 const BOOM = { thump: 0.4, rumble: 0.14 } as const;
@@ -123,6 +129,29 @@ export class WebAudioStarmapScore implements StarmapScore {
         pan,
       });
     }
+  }
+
+  beep(pan: number, hz: number): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const t = ac.currentTime;
+    const o = ac.createOscillator();
+    o.type = 'triangle';
+    o.frequency.value = hz;
+    // Filtered to its own pitch: a thin, clipped beep rather than a bare tone.
+    const tone = ac.createBiquadFilter();
+    tone.type = 'bandpass';
+    tone.frequency.value = hz;
+    tone.Q.value = 6;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(BEEP_LEVEL, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + BEEP_SECONDS);
+    const panner = ac.createStereoPanner();
+    panner.pan.value = Math.min(1, Math.max(-1, pan));
+    o.connect(tone).connect(g).connect(panner).connect(parts.master);
+    o.start(t);
+    o.stop(t + BEEP_SECONDS + 0.05);
   }
 
   /** A low thump and a rumble, then a few bright notes of the key falling away. */

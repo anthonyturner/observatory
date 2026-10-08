@@ -7,6 +7,8 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { SatelliteState } from '../../../core/live-agents/satellites';
+
 import { MergeCue } from '../memory/merge-supernova';
 import { StarmapScore, WebAudioStarmapScore } from './starmap-score';
 
@@ -19,6 +21,12 @@ export const STARMAP_SCORE = new InjectionToken<() => StarmapScore>('STARMAP_SCO
 const SOUND_KEY = 'observatory.starmap.sound';
 const VOLUME_KEY = 'observatory.starmap.volume';
 const DEFAULT_VOLUME = 0.7;
+/** A working satellite beeps highest and a quiet one lowest. */
+const BEEP_HZ: Readonly<Record<SatelliteState, number>> = {
+  working: 1568,
+  waiting: 1319,
+  quiet: 988,
+};
 const GESTURES = ['pointerdown', 'keydown'] as const;
 
 function read(key: string): string | null {
@@ -99,6 +107,11 @@ export class StarmapSound {
   /** A short crackle when a meteor lands, only while sound is on. */
   crackle(pan: number, strength: number, seed: number): void {
     if (this.isOn()) this.score?.crackle(pan, strength, seed);
+  }
+
+  /** A satellite's beep, at its state's pitch and panned by where it is on screen. */
+  beep(pan: number, state: SatelliteState): void {
+    if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state]);
   }
 
   /** A boom for a pull request that merged, only while the sound is on. */

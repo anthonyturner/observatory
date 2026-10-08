@@ -342,15 +342,16 @@ export class StarmapSky {
       entranceEnd: engine.entranceEnd(),
       frozen: engine.frozen,
     });
-    const width = this.document.defaultView?.innerWidth ?? 0;
-    for (const cue of mergeCues(events, {
-      now,
-      width,
-      toScreen: (x, y, z) => engine.toScreen(x, y, z),
-    })) {
-      this.sound.merged(cue);
-    }
+    // A boom with no supernova to see (the list view, another sky) would be a ghost.
+    if (!this.hidden() && this.chart() === 'prs') this.boom(events, engine, now);
     engine.kick();
+  }
+
+  private boom(events: readonly NewsEvent[], engine: SkyEngine, now: number): void {
+    const width = this.document.defaultView?.innerWidth ?? 0;
+    const toScreen = (x: number, y: number, z: number): [number, number] =>
+      engine.toScreen(x, y, z);
+    for (const cue of mergeCues(events, { now, width, toScreen })) this.sound.merged(cue);
   }
 
   /** Flies to a fault's star, as a log list row does. */

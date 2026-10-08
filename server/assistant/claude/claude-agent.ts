@@ -81,7 +81,7 @@ const ANSWER_SHAPE = [
   'Reply with only one JSON object and nothing else, no code fence:',
   '{"text": "your answer, plain text that reads well aloud", "sources": [{"title": "…", "url": "https://…"}]}',
   'List in sources the pages you used from a web search, most useful first, at most five; otherwise [].',
-  `For the owner's projects, pull requests, issues and usage, and to open a page, refresh, show help, act on the Review Queue or propose a task, use the ${MCP_SERVER} tools. For news and anything current, use WebSearch.`,
+  `For the owner's projects, pull requests, issues and usage, and to open a page, refresh, show help, act on the Review Queue, read today's design principle or propose a task, use the ${MCP_SERVER} tools. For news and anything current, use WebSearch.`,
 ].join('\n');
 
 /** What Claude Code reads on stdin: who Jev is, the conversation, the new words. */

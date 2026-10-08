@@ -10,6 +10,7 @@ import {
 } from '../http/api-handler.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
 import { NEWS_PATH } from '../news/news-routes.ts';
+import { PRINCIPLES_PATH } from '../principles/principle-routes.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
@@ -32,6 +33,8 @@ export type VisibleRepos = () => Promise<ReadonlySet<string>>;
 
 export const PREVIEW_ONLY = 'This is a preview. Sign in to change anything.';
 const LOGS_PATH = '/api/logs';
+/** The same for everyone: public headlines and the principle of the day. */
+const SHARED_PATHS = [NEWS_PATH, PRINCIPLES_PATH];
 
 const refuse = async (): Promise<never> => {
   throw new Forbidden(PREVIEW_ONLY);
@@ -70,9 +73,12 @@ export function visitorRoutes(
     return repo;
   };
   const ownerLogs = owner.get[LOGS_PATH];
-  const ownerNews = owner.get[NEWS_PATH];
-  // Public headlines, the same for everyone.
-  const news: Routes = ownerNews ? { [NEWS_PATH]: ownerNews } : {};
+  const shared: Routes = Object.fromEntries(
+    SHARED_PATHS.flatMap((path) => {
+      const route = owner.get[path];
+      return route ? [[path, route] as const] : [];
+    }),
+  );
   const logs: Routes =
     policy.logs && ownerLogs ? { [LOGS_PATH]: redactedLogs(ownerLogs, visible) } : {};
   return {
@@ -109,7 +115,7 @@ export function visitorRoutes(
           false,
         ),
       ...logs,
-      ...news,
+      ...shared,
     },
     post: refusingAll(owner.post),
   };

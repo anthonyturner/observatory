@@ -1,0 +1,37 @@
+@if (principles.shown(); as shown) {
+  <app-hud-section heading="Principle of the day" [note]="note()">
+    <div class="principle" aria-live="polite">
+      <h3 class="title">{{ shown.principle.title }}</h3>
+      <p class="idea">{{ shown.principle.idea }}</p>
+      <p class="question"><span class="ask">Ask yourself</span>{{ shown.principle.question }}</p>
+    </div>
+    <div class="steps" role="group" aria-label="Other principles">
+      <button
+        type="button"
+        class="abtn quiet"
+        aria-label="Previous principle"
+        (click)="principles.previous()"
+      >
+        ‹ Previous
+      </button>
+      <!-- Kept in place on today's, so focus is never left on a button that vanished. -->
+      <button
+        type="button"
+        class="abtn quiet"
+        aria-label="Back to today’s principle"
+        [attr.aria-disabled]="shown.isToday"
+        (click)="principles.backToToday()"
+      >
+        Today’s
+      </button>
+      <button
+        type="button"
+        class="abtn quiet"
+        aria-label="Next principle"
+        (click)="principles.next()"
+      >
+        Next ›
+      </button>
+    </div>
+  </app-hud-section>
+}

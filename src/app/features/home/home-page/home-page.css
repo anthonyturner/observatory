@@ -72,9 +72,10 @@ app-home-tools {
     grid-template-columns:
       clamp(260px, 22vw, 330px) minmax(0, 1fr)
       clamp(300px, 26vw, 380px);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
       'left core skills'
+      'left core principle'
       'left core ask';
     gap: 14px 28px;
     /* Clear of the tools and the two-row playlist along the foot. */
@@ -95,6 +96,10 @@ app-home-tools {
     grid-area: skills;
   }
 
+  app-principle-card {
+    grid-area: principle;
+  }
+
   app-ask-panel {
     grid-area: ask;
     min-height: 0;
@@ -103,9 +108,10 @@ app-home-tools {
 
   /* Mail takes the lower half of the left column, under the vitals. */
   .hud-body.has-mail {
-    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
       'left core skills'
+      'left core principle'
       'left core ask'
       'mail core ask';
   }

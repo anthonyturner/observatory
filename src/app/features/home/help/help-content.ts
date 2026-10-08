@@ -165,6 +165,12 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
     section: USING,
   },
   {
+    term: 'Principle',
+    meaning:
+      'Under the skills: one of John Ousterhout’s software-design principles each day, what it means, and a question to ask yourself today. The same one all day, a new one each day, round all of them in turn. Previous and Next step through the rest; Today’s comes back. Ask Jev “what’s today’s principle?” to hear it.',
+    section: USING,
+  },
+  {
     term: 'Ask',
     meaning:
       'Type a request and press Enter. Plainly named app actions are matched by keyword; Jev answers the rest, thinking with Claude Code on your own subscription and looking up your projects, usage or the web as it needs, and remembers this visit’s conversation. A web answer lists its sources under it: click one to read it in a floating window you can drag and resize (Ctrl-click opens a tab instead). Each reply says which tier it took and how.',

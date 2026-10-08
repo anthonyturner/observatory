@@ -23,6 +23,7 @@ import { MAIL_PROVIDERS, MAIL_SHOWN } from '../../../core/mail/mail-inbox';
 import { HomeTools } from '../home-tools/home-tools';
 import { RunDockPanel } from '../run-dock/run-dock';
 import { SkillsPanel } from '../skills-panel/skills-panel';
+import { PrincipleCard } from '../principle-card/principle-card';
 import { SkyBackdrop } from '../sky-backdrop/sky-backdrop';
 import { MusicSky } from '../music-sky/music-sky';
 import { VideoSky } from '../../playlist/video-sky/video-sky';
@@ -36,8 +37,8 @@ import { RunsStore } from '../../../core/runs/runs-store';
 /** The Mail section's id, which a mail notice's link names. */
 const MAIL_SECTION = 'mail';
 
-/** Home: the HUD over the sky with mail under the vitals, the news and the projects below the fold, and a
- *  task's panel beside them. It lays the sections out and nothing more. */
+/** Home: the HUD over the sky with mail under the vitals and the principle of the day under the skills, the
+ *  news and the projects below the fold, and a task's panel beside them. It lays the sections out and nothing more. */
 @Component({
   selector: 'app-home-page',
   imports: [
@@ -50,6 +51,7 @@ const MAIL_SECTION = 'mail';
     AskPanel,
     VitalsPanel,
     SkillsPanel,
+    PrincipleCard,
     FleetSection,
     AgentsSection,
     AgentReviewCard,

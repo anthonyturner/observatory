@@ -27,6 +27,7 @@ import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
 import { mergeCues } from '../memory/merge-supernova';
+import { Point } from '../sound/doppler';
 import { News, NewsLayer } from '../memory/news-layer';
 import { LogSkyLayout, LogStar } from '../../../core/logs/log-layout';
 import { twinStars } from '../../../core/logs/log-trace';
@@ -213,9 +214,10 @@ export class StarmapSky {
     () =>
       this.sound.isOn() && this.chart() === 'prs' && !this.hidden() && !this.visibility.isHidden(),
   );
-  private readonly satelliteBeeper = new SatelliteBeeper((satellite) =>
-    this.sound.beep(this.satelliteLayer.panOf(satellite.key), satellite.state),
-  );
+  private readonly satelliteBeeper = new SatelliteBeeper((satellite) => {
+    const { pan, doppler } = this.satelliteLayer.heardOf(satellite.key);
+    this.sound.beep(pan, satellite.state, doppler);
+  });
   private readonly tetherLayer = new TetherLayer(
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
     () => this.cometLayer.selectedAt(),
@@ -386,9 +388,17 @@ export class StarmapSky {
 
   private boom(events: readonly NewsEvent[], engine: SkyEngine, now: number): void {
     const width = this.document.defaultView?.innerWidth ?? 0;
-    const toScreen = (x: number, y: number, z: number): [number, number] =>
-      engine.toScreen(x, y, z);
-    for (const cue of mergeCues(events, { now, width, toScreen })) this.sound.merged(cue);
+    const height = this.document.defaultView?.innerHeight ?? 0;
+    // Only the 3D sky gives the streak depth; the flat one draws it across the screen.
+    const rises = engine.rendererKind === 'webgl';
+    const project = (x: number, y: number, z: number): Point => {
+      const [sx, sy] = engine.toScreen(x, y, z);
+      return { x: sx, y: sy, z: rises ? z * engine.camera.current.scale : 0 };
+    };
+    const frozen = engine.frozen;
+    for (const cue of mergeCues(events, { now, width, height, frozen, project })) {
+      this.sound.merged(cue);
+    }
   }
 
   /** Flies to a fault's star, as a log list row does. */

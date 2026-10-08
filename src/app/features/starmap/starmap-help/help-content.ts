@@ -36,7 +36,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['Thread', 'The dotted silver line runs through the groups in the order to work them.'],
       [
         'Changes',
-        'What changed since you last looked. A shockwave marks a pull request that became blocked, a white flash a new one, falling green rings one that was unblocked; a closed one crosses the sky as a shooting star. A merged one goes out as a supernova: a white-gold flash and one ring of dust where its star stood, then it streaks away, and with the sound on a deep boom and a fading shimmer play from that side of the screen. With motion off only a brief flash plays. The panel lists them; Got it clears the marks.',
+        'What changed since you last looked. A shockwave marks a pull request that became blocked, a white flash a new one, falling green rings one that was unblocked; a closed one crosses the sky as a shooting star. A merged one goes out as a supernova: a white-gold flash and one ring of dust where its star stood, then it streaks away, and with the sound on a deep boom and a fading shimmer play from that side of the screen, then a soft whoosh follows the streak, rising in pitch as it comes toward you and dropping as it draws away. With motion off only a brief flash plays. The panel lists them; Got it clears the marks.',
       ],
       [
         'Collide',
@@ -52,7 +52,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Meteor',
-        'A meteor streaks in and lands on a star when its pull request has new commits since you last looked, the same change its card calls “new commits since you looked”; one whose branch was rewritten gets one too. More commits make a brighter, longer streak, and with sound on each landing crackles softly, on the side of the screen the star is on. They land once the sky has arrived, at most twelve, the biggest changes first. With motion off there is no streak, only a brief glint on the star.',
+        'A meteor streaks in and lands on a star when its pull request has new commits since you last looked, the same change its card calls “new commits since you looked”; one whose branch was rewritten gets one too. More commits make a brighter, longer streak, and with sound on each landing crackles softly, on the side of the screen the star is on and a little higher in pitch for the way it fell. They land once the sky has arrived, at most twelve, the biggest changes first. With motion off there is no streak, only a brief glint on the star.',
       ],
       [
         'Done',
@@ -88,7 +88,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Satellites',
-        'On your own machine, each Claude Code agent running in this repository orbits as a small satellite with a blinking light: round the star of the pull request whose branch it is working on, or along the top of the sky when none matches. Green and quick means working, amber means waiting for you, grey and slow means quiet; hover one to see its name and state. With sound on, each gives a soft Sputnik beep, faster while working, panned by where it is on screen and never more than a few a second in all. Motion off parks them and holds the light steady. A crew’s run is its ship instead.',
+        'On your own machine, each Claude Code agent running in this repository orbits as a small satellite with a blinking light: round the star of the pull request whose branch it is working on, or along the top of the sky when none matches. Green and quick means working, amber means waiting for you, grey and slow means quiet; hover one to see its name and state. With sound on, each gives a soft Sputnik beep, faster while working, panned by where it is on screen, a little higher on the side of its orbit that comes toward you and lower on the side going away, and never more than a few a second in all. Motion off parks them and holds the light steady. A crew’s run is its ship instead.',
       ],
       [
         'Plan',

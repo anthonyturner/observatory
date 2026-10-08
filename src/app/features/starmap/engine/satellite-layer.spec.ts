@@ -92,12 +92,18 @@ describe('isLit', () => {
   });
 });
 
-const fakeFrame = (chart: SkyFrame['chart'] = 'prs', pr: number | null = null): SkyFrame =>
+const STILL = { t: 0, frozen: true };
+
+const fakeFrame = (
+  chart: SkyFrame['chart'] = 'prs',
+  pr: number | null = null,
+  { t, frozen } = STILL,
+): SkyFrame =>
   ({
     width: 1000,
     height: 700,
-    t: 0,
-    frozen: true,
+    t,
+    frozen,
     chart,
     stars: pr === null ? [] : [{ item: { pr }, mag: 6, ax: 0, ay: 0, az: 0 }],
     camera: { current: { scale: 1 } },
@@ -123,11 +129,43 @@ describe('SatelliteLayer', () => {
   it('pans a satellite by where it was drawn, and nothing before it is drawn', () => {
     const sky = layer();
     sky.set([mark('a', null)]);
-    expect(sky.panOf('a')).toBe(0);
+    expect(sky.heardOf('a').pan).toBe(0);
 
     sky.flat(fakeCanvas(), fakeFrame());
 
-    expect(sky.panOf('a')).toBeCloseTo(0.8);
+    expect(sky.heardOf('a').pan).toBeCloseTo(0.8);
+  });
+
+  it('shifts a satellite up while its orbit brings it toward you, and down while it takes it away', () => {
+    const heard = (from: number): number => {
+      const sky = layer();
+      sky.set([mark('a', 7)]);
+      sky.flat(fakeCanvas(), fakeFrame('prs', 7, { t: from, frozen: false }));
+      sky.flat(fakeCanvas(), fakeFrame('prs', 7, { t: from + 0.1, frozen: false }));
+      return sky.heardOf('a').doppler;
+    };
+    const farSide = -Math.PI / 0.32;
+
+    expect(heard(0)).toBeGreaterThan(1);
+    expect(heard(farSide)).toBeLessThan(1);
+    expect(heard(0)).toBeLessThan(2 ** (3 / 12) + 1e-9);
+  });
+
+  it('shifts nothing when motion is off, on a first frame, or after a stall', () => {
+    const sky = layer();
+    sky.set([mark('a', 7)]);
+
+    sky.flat(fakeCanvas(), fakeFrame('prs', 7, { t: 0, frozen: false }));
+    expect(sky.heardOf('a').doppler).toBe(1);
+
+    sky.flat(fakeCanvas(), fakeFrame('prs', 7, { t: 30, frozen: false }));
+    expect(sky.heardOf('a').doppler).toBe(1);
+
+    sky.flat(fakeCanvas(), fakeFrame('prs', 7, { t: 30.1, frozen: false }));
+    expect(sky.heardOf('a').doppler).not.toBe(1);
+
+    sky.flat(fakeCanvas(), fakeFrame('prs', 7, { t: 30.2, frozen: true }));
+    expect(sky.heardOf('a').doppler).toBe(1);
   });
 
   it('names a satellite under the pointer, and says when that changed', () => {
@@ -151,11 +189,11 @@ describe('SatelliteLayer', () => {
     sky.set([mark('a', 7)]);
 
     sky.flat(fakeCanvas(), fakeFrame('prs', 7));
-    const near = sky.panOf('a');
+    const near = sky.heardOf('a').pan;
     sky.flat(fakeCanvas(), fakeFrame('prs', 9));
 
     expect(near).toBeCloseTo(-0.6, 0);
-    expect(sky.panOf('a')).toBeCloseTo(0.8);
+    expect(sky.heardOf('a').pan).toBeCloseTo(0.8);
   });
 
   it('draws nothing off the pull request chart', () => {
@@ -164,6 +202,6 @@ describe('SatelliteLayer', () => {
 
     sky.flat(fakeCanvas(), fakeFrame('logs'));
 
-    expect(sky.panOf('a')).toBe(0);
+    expect(sky.heardOf('a')).toEqual({ pan: 0, doppler: 1 });
   });
 });

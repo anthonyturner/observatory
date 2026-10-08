@@ -104,14 +104,14 @@ export class StarmapSound {
     if (this.isOn()) this.score?.ping(stuck, pr);
   }
 
-  /** A short crackle when a meteor lands, only while sound is on. */
-  crackle(pan: number, strength: number, seed: number): void {
-    if (this.isOn()) this.score?.crackle(pan, strength, seed);
+  /** A short crackle when a meteor lands, only while sound is on, shifted by how it was falling. */
+  crackle(pan: number, strength: number, seed: number, doppler = 1): void {
+    if (this.isOn()) this.score?.crackle(pan, strength, seed, doppler);
   }
 
-  /** A satellite's beep, at its state's pitch and panned by where it is on screen. */
-  beep(pan: number, state: SatelliteState): void {
-    if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state]);
+  /** A satellite's beep, at its state's pitch, panned and shifted by where and how it is moving. */
+  beep(pan: number, state: SatelliteState, doppler = 1): void {
+    if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state], doppler);
   }
 
   /** A boom for a pull request that merged, only while the sound is on. */

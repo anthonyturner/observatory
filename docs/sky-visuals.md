@@ -35,6 +35,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 | Review Queue | Merge supernova  | A merged PR in the news    | `novaProgress`, `mergeCues`    |
+| Review Queue | Doppler shift    | How a sound's source moves | `dopplerOf`, `dopplerFactor`   |
 | Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
 | Releases     | Star colour      | Version bump, prerelease   | `bumpOf`, `releaseStarType`    |
@@ -311,7 +312,8 @@ Changes: those cross the sky and land on nothing.
 
 With sound on, each landing plays a quiet crackle (`crackleOf`: a few
 high-passed noise pops through `noiseBurst`), panned by the star's screen x
-(`panOf`). Nothing plays with sound off, or for a star panned far off screen.
+(`panOf`) and pitched by the Doppler shift of the fall (see **Doppler shift**
+below). Nothing plays with sound off, or for a star panned far off screen.
 
 ### Satellites (data: live coding agents)
 
@@ -338,7 +340,10 @@ band-passed triangle tone at low gain, higher while working, panned by the
 satellite's screen x. `nextBeep` lets only one beep through every 350 ms, so
 any number of agents stays under three a second; the beeper only runs while
 sound is on and the queue sky is shown. Beeps follow the agent's real state
-even when motion is off.
+even when motion is off. Each beep is also shifted by the satellite's Doppler
+factor, read by `SatelliteLayer.heardOf` from how far it moved between its last
+two drawn frames: a little higher on the side of the orbit coming toward the
+viewer, lower going away.
 
 ### Chain (data: stacked pull requests)
 
@@ -386,9 +391,43 @@ where: the delay until the supernova starts and a pan from the departure point's
 screen x, kept within 0.8 either side. A cue exists only for a merge the news diff
 found, never on a timer, and at most four booms per refresh.
 
-Reduced motion: only the brief flash plays (no ring, no streak), and the sound
-still does. `Effect.flashesStill` marks the one burst a still sky keeps, and
-`SkyLayer.animating` keeps the loop drawing until it has played.
+After the boom, the streak gets a short whoosh (`whoosh` in `core/sound`):
+noise through a band-pass filter that glides, with the pan, along eight stretches
+of the streak's own path. `mergeCues` samples the head with the same
+`streakHead` the 3D sky draws and projects each point through the active
+renderer, so the pan and Doppler factor of each stretch come from the positions
+the picture uses. Where the sky is flat the head gains no depth, as drawn.
+
+Reduced motion: only the brief flash plays (no ring, no streak), and the boom
+still does; the whoosh does not, since nothing moves. `Effect.flashesStill`
+marks the one burst a still sky keeps, and `SkyLayer.animating` keeps the loop
+drawing until it has played.
+
+### Doppler shift (data: how a moving sound's source moves)
+
+Code: `features/starmap/sound/doppler.ts`. One pure rule for every sound whose
+source moves: the merge streak's whoosh, the meteor landing's crackle and the
+satellites' beeps. `closingSpeed(from, to, seconds, listener)` is how fast the
+source drew nearer to the listener between two drawn places, in pixels a second;
+`dopplerFactor` turns it into a playback-rate factor, 3 semitones either way at
+600 px/s and beyond, 1 when it did not move. `listenerOf` puts the listener at
+the middle of the screen's bottom edge, half a screen in front of it, looking up
+at the sky, so what falls comes toward them and what rises goes away.
+
+Each layer reads positions it already draws; the score methods only take the
+factor (`crackle(pan, strength, seed, doppler)`, `beep(pan, hz, doppler)`, the
+cue's `whoosh` path) and multiply it into a pitch. Nothing is invented:
+
+| Sound   | Positions the factor is read from                                   |
+| ------- | ------------------------------------------------------------------- |
+| Whoosh  | `streakHead` at each step of the streak, projected, with its depth  |
+| Crackle | `headAt` the last 50 ms of the fall onto the star (`MeteorLanding`) |
+| Beep    | Where the satellite was drawn last frame and this one (`heardOf`)   |
+
+Reduced motion: nothing moves, so the factor is 1 and nothing shifts. A frame
+after a stall (more than 0.25 s) measures no motion either. With sound off
+nothing plays. The first frame a satellite is drawn has nothing to compare, so
+its beep is unshifted. Tests drive these with a fake `AudioContext`.
 
 ### Weather (data: design red flags in the added lines)
 

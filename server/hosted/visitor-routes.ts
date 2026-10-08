@@ -97,6 +97,7 @@ export function visitorRoutes(
       '/api/history': async (query) => reads.history(await visibleRepo(query)),
       '/api/ledger': async (query) => reads.ledger(await visibleRepo(query)),
       '/api/releases': async (query) => reads.releases(await visibleRepo(query)),
+      '/api/journal': async (query) => reads.journal(await visibleRepo(query)),
       '/api/library': async (query) => reads.library(await visibleRepo(query)),
       '/api/actions': async (query) => reads.actions(await visibleRepo(query)),
       '/api/actions/run': async (query) =>

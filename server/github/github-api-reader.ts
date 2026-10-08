@@ -9,6 +9,7 @@ import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
 import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
 import { readChangelog } from './changelog-reader.ts';
+import { readPullComments } from './comment-reader.ts';
 import { readCheckHistory } from './check-history.ts';
 import { githubApiInboxMarker, githubApiRerunner, githubApiWriter } from './github-api-writer.ts';
 import { type GraphQl, type GraphQlConfig, githubGraphQl } from './github-graphql.ts';
@@ -234,6 +235,7 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     releases: (repo, limit) => readReleases(getJson, repo, limit),
     tags: (repo, limit) => readTags(getJson, repo, limit),
     changelog: (repo) => readChangelog(getJson, repo),
+    pullComments: (repo) => readPullComments(getJson, repo),
     mergedPulls: (repo) => readMergedPulls(getJson, repo),
     workflowRuns: (repo, branch) => readWorkflowRuns(getJson, repo, branch),
     workflows: (repo) => readWorkflows(getJson, repo),

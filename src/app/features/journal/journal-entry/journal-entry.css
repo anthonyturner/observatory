@@ -1,0 +1,107 @@
+:host {
+  display: block;
+}
+
+article {
+  padding: 16px 20px 18px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 12px;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+}
+
+header a {
+  color: var(--flow);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+header a:hover {
+  text-decoration: underline;
+}
+
+header a:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.when {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+dt {
+  margin-bottom: 2px;
+  color: var(--detail-heading);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+dd {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* What changed is the lesson itself, so it sits on its own rule. */
+.change dd {
+  padding-left: 10px;
+  border-left: 2px solid var(--flow);
+  color: var(--ink);
+}
+
+.taught {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  min-height: 28px;
+  padding: 3px 12px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--flow);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--flow);
+  background: var(--flow-tint-strong);
+  color: var(--ink);
+}

@@ -1,0 +1,91 @@
+/* A planet is a core for the work its module hides, inside a ring for its
+   interface. A deep module is nearly all core; a shallow one is a hollow ring
+   round a speck. Nothing here moves, so there is no motion to switch off. */
+:host {
+  display: block;
+}
+
+.sky {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.system circle {
+  fill: none;
+  stroke: var(--depth-system);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.system text {
+  fill: var(--depth-system-label);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-anchor: middle;
+}
+
+.planet {
+  cursor: default;
+  outline: none;
+}
+
+.halo {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+}
+
+.planet:hover .halo,
+.planet.active .halo {
+  opacity: 0.45;
+}
+
+.planet:focus-visible .halo {
+  stroke: var(--flow);
+  stroke-width: 2.5;
+  opacity: 1;
+}
+
+.shell {
+  fill: none;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.core {
+  stroke: none;
+}
+
+.planet[data-verdict='deep'] .core {
+  fill: url(#depth-core-deep);
+}
+
+.planet[data-verdict='balanced'] .core {
+  fill: url(#depth-core-balanced);
+}
+
+.planet[data-verdict='shallow'] .core {
+  fill: url(#depth-core-shallow);
+}
+
+/* Deep: a thin shell hugging a solid core. */
+.planet[data-verdict='deep'] .shell {
+  stroke: var(--depth-deep);
+  opacity: 0.5;
+}
+
+.planet[data-verdict='balanced'] .shell {
+  stroke: var(--depth-balanced);
+  opacity: 0.7;
+}
+
+/* Shallow: the ring is the planet, and its fill shows nothing inside. */
+.planet[data-verdict='shallow'] .shell {
+  stroke: var(--depth-shallow);
+  stroke-width: 1.8;
+  fill: var(--depth-system);
+}

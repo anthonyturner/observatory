@@ -48,6 +48,8 @@ import { withVoiceRoutes } from './voice/voice-routes.ts';
 import { fetchPage } from './reader/page-fetch.ts';
 import { withReaderRoutes } from './reader/reader-routes.ts';
 import { cachedNews, withNewsRoutes } from './news/news-routes.ts';
+import { depthReports } from './depth/depth-report.ts';
+import { withDepthRoutes } from './depth/depth-routes.ts';
 import { withPrincipleRoutes } from './principles/principle-routes.ts';
 import { fileArchitecture } from './architecture/architecture-file.ts';
 import { withArchitectureRoutes } from './architecture/architecture-routes.ts';
@@ -164,9 +166,10 @@ const ownerAndFeedRoutes = withLiveAgentFeedRoute(
   agentFeedReader(),
 );
 
-// Only this server runs git in an agent's folder; the hosted API has no such route.
-const ownerTable = withPrincipleRoutes(
-  withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader()),
+// Only this server runs git in a folder on this machine; the hosted API has no such route.
+const ownerTable = withDepthRoutes(
+  withPrincipleRoutes(withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader())),
+  depthReports(clones),
 );
 
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it

@@ -25,6 +25,7 @@ import { PlanLayer, PlanMark } from '../engine/plan-layer';
 import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
+import { mergeCues } from '../memory/merge-supernova';
 import { News, NewsLayer } from '../memory/news-layer';
 import { LogSkyLayout, LogStar } from '../../../core/logs/log-layout';
 import { twinStars } from '../../../core/logs/log-trace';
@@ -42,6 +43,7 @@ import { BlackHoleLayer } from '../engine/black-hole-layer';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StackLayer } from '../engine/stack-layer';
 import { Stacks } from '../../../core/queue/stacks';
+import { StarmapSound } from '../sound/starmap-sound';
 
 /** What the pointer can rest on over the queue: a star's pull request, or a comet. */
 type QueueHover = number | Comet;
@@ -167,6 +169,7 @@ export class StarmapSky {
   private readonly document = inject(DOCUMENT);
   private readonly motion = inject(MotionPreference);
   private readonly blackHole = inject(BlackHoleSetting);
+  private readonly sound = inject(StarmapSound);
   private readonly errors = inject(ErrorHandler);
   private readonly collisions = new CollisionLayer();
   private readonly binaries = new BinaryLayer((star) => star.item?.issues ?? []);
@@ -323,11 +326,20 @@ export class StarmapSky {
   play(events: readonly NewsEvent[]): void {
     const engine = this.engine;
     if (!engine) return;
+    const now = performance.now() / 1000;
     play(events, engine.skyClusters, {
-      now: performance.now() / 1000,
+      now,
       entranceEnd: engine.entranceEnd(),
       frozen: engine.frozen,
     });
+    const width = this.document.defaultView?.innerWidth ?? 0;
+    for (const cue of mergeCues(events, {
+      now,
+      width,
+      toScreen: (x, y, z) => engine.toScreen(x, y, z),
+    })) {
+      this.sound.merged(cue);
+    }
     engine.kick();
   }
 

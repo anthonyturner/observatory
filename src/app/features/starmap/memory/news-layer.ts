@@ -1,6 +1,13 @@
 import { rnd } from '../engine/rnd';
 import { NewsEffect3D, SkyFrame, SkyLayer } from '../engine/sky-frame';
 import { SkyStar } from '../engine/sky-model';
+import {
+  NOVA_FLASH,
+  NOVA_RING,
+  DEPARTED_MAG,
+  novaProgress,
+  streakProgress,
+} from './merge-supernova';
 import { EFFECTS, NewsEvent } from './news';
 
 const ease = (p: number): number => 1 - Math.pow(1 - p, 3);
@@ -129,10 +136,35 @@ const burstShooting: Burst = (ev, star, p, c, at, r, f) => {
   ev.head = [hx, hy];
 };
 
+/** A white-gold flash and one ring of dust where the star stood, then the streak.
+ *  With motion off only a brief flash plays: no ring, no streak. */
+const burstMerged: Burst = (ev, star, p, c, at, r, f) => {
+  const q = novaProgress(p);
+  if (q !== null) {
+    const [x, y] = f.toScreen(ev.fromX ?? 0, ev.fromY ?? 0, ev.fromZ ?? 0);
+    const size = DEPARTED_MAG * Math.max(f.camera.current.scale, 0.42);
+    c.globalAlpha = (1 - q) ** 2 * 0.9;
+    c.fillStyle = NOVA_FLASH;
+    c.beginPath();
+    c.arc(x, y, size * (1.5 + q * 3), 0, Math.PI * 2);
+    c.fill();
+    if (!f.frozen) {
+      c.globalAlpha = (1 - q) * 0.85;
+      c.strokeStyle = NOVA_RING;
+      c.lineWidth = Math.max(size * 0.45 * (1 - q), 0.6);
+      c.beginPath();
+      c.arc(x, y, size * (1.5 + ease(q) * 16), 0, Math.PI * 2);
+      c.stroke();
+    }
+  }
+  const sp = streakProgress(p);
+  if (sp > 0 && sp < 1 && !f.frozen) burstShooting(ev, star, sp, c, at, r, f);
+};
+
 const BURSTS: Readonly<Record<NewsEvent['kind'], Burst>> = {
   blocked: burstSupernova,
   opened: burstNova,
-  merged: burstShooting,
+  merged: burstMerged,
   unblocked: burstImplode,
   closed: burstShooting,
   left: burstShooting,
@@ -141,7 +173,7 @@ const BURSTS: Readonly<Record<NewsEvent['kind'], Burst>> = {
 const MODES: Readonly<Record<NewsEvent['kind'], NewsEffect3D['mode']>> = {
   blocked: 'supernova',
   opened: 'nova',
-  merged: 'shooting',
+  merged: 'merged',
   unblocked: 'implode',
   closed: 'shooting',
   left: 'shooting',
@@ -172,8 +204,10 @@ const starsByPr = (stars: readonly SkyStar[]): Map<number, SkyStar> =>
   new Map(stars.filter((s) => s.item).map((s) => [s.item?.pr as number, s]));
 
 /** How far through its burst an event is: 1 when still, or not yet played. */
-const progress = (ev: NewsEvent, f: SkyFrame): number =>
-  f.frozen || ev.startAt == null ? 1 : (f.wall - ev.startAt) / EFFECTS[ev.kind].span;
+const progress = (ev: NewsEvent, f: SkyFrame): number => {
+  const fx = EFFECTS[ev.kind];
+  return ev.startAt == null || (f.frozen && !fx.flashesStill) ? 1 : (f.wall - ev.startAt) / fx.span;
+};
 
 /**
  * The review queue's news on the sky: bursts as each change plays, rings that
@@ -241,6 +275,14 @@ export class NewsLayer implements SkyLayer {
     ctx.restore();
   }
 
+  /** Whether a burst is still to play or playing, so a still sky keeps drawing it. */
+  animating(wall: number): boolean {
+    return this.news.events.some((ev) => {
+      const fx = EFFECTS[ev.kind];
+      return fx.flashesStill && ev.startAt != null && wall < ev.startAt + fx.span;
+    });
+  }
+
   /** The bursts playing now, for the 3D scene to build. */
   effects3D(f: SkyFrame): NewsEffect3D[] {
     if (f.chart !== 'prs') return [];
@@ -255,6 +297,7 @@ export class NewsLayer implements SkyLayer {
         key: ev,
         mode: MODES[ev.kind],
         p,
+        still: f.frozen,
         star: star ?? null,
         colour: fx.colour,
         seed: ev.pr,

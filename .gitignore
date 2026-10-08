@@ -46,3 +46,6 @@ Thumbs.db
 # Local environment and Vercel's project link: secrets stay out of git
 .env*
 .vercel
+
+# Windows PowerShell module cache, written when PowerShell starts in the repo
+/Microsoft/

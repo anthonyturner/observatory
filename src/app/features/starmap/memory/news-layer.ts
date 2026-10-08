@@ -8,6 +8,7 @@ import {
   novaLook,
   novaProgress,
   streakProgress,
+  streakTravel,
 } from './merge-supernova';
 import { EFFECTS, NewsEvent } from './news';
 
@@ -113,9 +114,8 @@ const burstShooting: Burst = (ev, star, p, c, at, r, f) => {
   const [x0, y0] = f.toScreen(ev.fromX ?? 0, ev.fromY ?? 0, ev.fromZ ?? 0);
   const scale = Math.max(f.camera.current.scale, 0.5);
   const angle = ev.angle ?? 0;
-  const len = 620 * scale;
-  const hx = x0 + Math.cos(angle) * len * ease(p);
-  const hy = y0 + Math.sin(angle) * len * ease(p);
+  const hx = x0 + Math.cos(angle) * streakTravel(p) * scale;
+  const hy = y0 + Math.sin(angle) * streakTravel(p) * scale;
   const tail = 170 * scale * (1 - p * 0.4);
   const tx = hx - Math.cos(angle) * tail;
   const ty = hy - Math.sin(angle) * tail;

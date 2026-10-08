@@ -264,6 +264,31 @@ describe('MeteorLayer', () => {
     layer.dispose();
   });
 
+  it('shifts the landing up, for a meteor that fell toward the viewer', () => {
+    const landed = vi.fn();
+    const layer = new MeteorLayer(vi.fn(), landed);
+    layer.set([{ repo: 'me/a', pr: 7, commits: 4 }]);
+
+    play(layer, 0, 5);
+
+    const { doppler } = landed.mock.calls[0][0];
+    expect(doppler).toBeGreaterThan(1);
+    expect(doppler).toBeLessThan(2 ** (3 / 12) + 1e-9);
+    layer.dispose();
+  });
+
+  it('shifts nothing when motion is off, since nothing fell', () => {
+    const landed = vi.fn();
+    const layer = new MeteorLayer(vi.fn(), landed);
+    layer.set([{ repo: 'me/a', pr: 7, commits: 4 }]);
+
+    play(layer, 0, 5, { frozen: true });
+
+    expect(landed).toHaveBeenCalledTimes(1);
+    expect(landed.mock.calls[0][0].doppler).toBe(1);
+    layer.dispose();
+  });
+
   it('makes no sound for a star the viewer has panned far away from', () => {
     const landed = vi.fn();
     const layer = new MeteorLayer(vi.fn(), landed);

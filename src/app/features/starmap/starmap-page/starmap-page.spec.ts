@@ -117,7 +117,7 @@ describe('StarmapPage', () => {
     const { element } = render();
 
     expect(element.querySelector('app-starmap-sky')).not.toBeNull();
-    expect(element.querySelector('h1')?.textContent).toBe('Review Queue');
+    expect(element.querySelector('app-starmap-header h2')?.textContent).toBe('Review Queue');
     expect(element.querySelector('.stamp')?.textContent).toContain('me/a · 2 open · refreshed');
     expect(element.querySelector('.lg')?.textContent).toContain('0 cannot merge');
   });
@@ -255,7 +255,7 @@ describe('StarmapPage', () => {
     http.expectOne('/api/logs?repo=me/a').flush({ configured: false, reason: 'not-set' });
     fixture.detectChanges();
 
-    expect(element.querySelector('h1')?.textContent).toBe('Log Sky');
+    expect(element.querySelector('app-starmap-header h2')?.textContent).toBe('Log Sky');
     expect(element.querySelector('.stamp')?.textContent).toBe('no logs yet');
     expect(element.querySelector('.state')?.textContent).toContain('No logs charted yet.');
   });
@@ -265,7 +265,7 @@ describe('StarmapPage', () => {
     flushIssues(http);
     fixture.detectChanges();
 
-    expect(element.querySelector('h1')?.textContent).toBe('Issues');
+    expect(element.querySelector('app-starmap-header h2')?.textContent).toBe('Issues');
     expect(element.querySelector('.stamp')?.textContent).toContain(
       'me/a · 2 open · 0 closed in 60 days',
     );
@@ -449,15 +449,15 @@ describe('StarmapPage', () => {
     ]);
   });
 
-  it('crackles, panned to the star, when a meteor lands', () => {
+  it('crackles, panned to the star and shifted by its fall, when a meteor lands', () => {
     const { fixture } = render();
     const crackle = vi.spyOn(TestBed.inject(StarmapSound), 'crackle');
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
 
-    sky.meteorLanded.emit({ pr: 7, pan: -0.4, strength: 0.5 });
+    sky.meteorLanded.emit({ pr: 7, pan: -0.4, strength: 0.5, doppler: 1.1 });
 
-    expect(crackle).toHaveBeenCalledWith(-0.4, 0.5, 7);
+    expect(crackle).toHaveBeenCalledWith(-0.4, 0.5, 7, 1.1);
   });
 
   it('offers a visitor to the hosted preview no triage to change', () => {

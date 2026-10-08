@@ -149,7 +149,7 @@
     <button
       type="button"
       [attr.aria-pressed]="sound.isOn()"
-      [title]="sound.isOn() ? 'Ambient sound is on — click to silence' : 'Play ambient sound'"
+      [title]="sound.isOn() ? 'Sky sound is on — click to silence' : 'Play the sky’s sound'"
       (click)="sound.toggle()"
     >
       {{ sound.isOn() ? 'Sound on' : 'Sound off' }}

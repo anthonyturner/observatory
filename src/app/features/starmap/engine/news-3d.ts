@@ -24,7 +24,10 @@ import {
   NOVA_RING,
   novaLook,
   novaProgress,
+  STREAK_RISE,
+  streakHead,
   streakProgress,
+  streakTravel,
 } from '../memory/merge-supernova';
 
 /* pr-starmap's 3D news: shells, a flash and debris that expand or fall
@@ -177,7 +180,7 @@ function shooting(ctx: Context, request: NewsEffect3D): Effect3D {
   scene.add(streak);
   return {
     update({ p, from, angle, onHead }) {
-      const travel = 620 * ease(p);
+      const travel = streakTravel(p);
       const tail = 170 * (1 - p * 0.4);
       const attr = streak.geometry.attributes['position'];
       for (let i = 0; i < STREAK_POINTS; i++) {
@@ -186,19 +189,14 @@ function shooting(ctx: Context, request: NewsEffect3D): Effect3D {
           i,
           from.x + Math.cos(angle) * d,
           -(from.y + Math.sin(angle) * d),
-          from.z + d * 0.32,
+          from.z + d * STREAK_RISE,
         );
       }
       attr.needsUpdate = true;
       streak.geometry.computeBoundingSphere();
       material.opacity = 1 - p ** 3;
-      onHead?.(
-        ctx.toScreen(
-          from.x + Math.cos(angle) * travel,
-          from.y + Math.sin(angle) * travel,
-          from.z + travel * 0.32,
-        ),
-      );
+      const head = streakHead(from, angle, p);
+      onHead?.(ctx.toScreen(head.x, head.y, head.z));
     },
     dispose() {
       kit.owned.release(streak);

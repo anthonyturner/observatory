@@ -18,6 +18,7 @@ const owner: RouteTable = {
 const reads = {
   history: async (repo: string) => ({ repo, frames: [] }),
   releases: async (repo: string) => ({ repo, releases: [] }),
+  journal: async (repo: string) => ({ repo, entries: [] }),
   library: async (repo: string) => ({ repo, pages: [] }),
   actions: async (repo: string) => ({ repo, runs: [] }),
   runJobs: async (repo: string, runId: number) => ({ repo, runId, jobs: [] }),
@@ -111,6 +112,8 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/issue?repo=me/secret&number=3')).status, 404);
     assert.equal((await get(handle, '/api/releases?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/releases?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/journal?repo=me/app')).status, 200);
+    assert.equal((await get(handle, '/api/journal?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/library?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/library?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/actions?repo=me/app')).status, 200);

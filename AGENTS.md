@@ -16,6 +16,8 @@ that matches the work before starting it.
 | `npm run lint` | Runs the linters. |
 | `npm run test:server` | Runs the API server's tests (`node:test`). |
 | `npm run typecheck:server` | Type-checks the API server under strict TypeScript. |
+| `npm run test:viewer` | Runs the architecture map viewer's tests (`node:test`). |
+| `npm run typecheck:viewer` | Type-checks the architecture map viewer, for the browser, and its tests. |
 
 The default branch is `main`. Infer the layout from the
 repository tree, which cannot drift out of date the way a list in this file can.

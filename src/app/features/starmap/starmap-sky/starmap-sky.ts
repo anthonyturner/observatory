@@ -6,6 +6,7 @@ import {
   ElementRef,
   ErrorHandler,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
@@ -42,6 +43,7 @@ import { Satellite } from '../../../core/live-agents/satellites';
 import { SatelliteLayer } from '../engine/satellite-layer';
 import { SatelliteBeeper } from '../sound/satellite-beeper';
 import { StarmapSound } from '../sound/starmap-sound';
+import { PageVisibility } from '../../../core/presence/page-visibility';
 import { BlackHoleLayer } from '../engine/black-hole-layer';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StackLayer } from '../engine/stack-layer';
@@ -191,10 +193,16 @@ export class StarmapSky {
   private readonly weatherLayer = new WeatherLayer();
   private readonly crewLayer = new CrewLayer(Date.now, () => this.engine?.kick());
   private readonly sound = inject(StarmapSound);
+  private readonly visibility = inject(PageVisibility);
   private readonly satelliteLayer = new SatelliteLayer(() => ({
     side: this.insets().side,
     top: this.insets().top,
   }));
+  /** Satellites beep only while the queue sky is in view and sound is on. */
+  private readonly canHearSatellites = computed(
+    () =>
+      this.sound.isOn() && this.chart() === 'prs' && !this.hidden() && !this.visibility.isHidden(),
+  );
   private readonly satelliteBeeper = new SatelliteBeeper((satellite) =>
     this.sound.beep(this.satelliteLayer.panOf(satellite.key), satellite.state),
   );
@@ -279,10 +287,7 @@ export class StarmapSky {
     effect(() => this.crewLayer.set(this.crews()));
     effect(() => {
       this.satelliteLayer.set(this.satellites());
-      this.satelliteBeeper.set(
-        this.satellites(),
-        this.sound.isOn() && this.chart() === 'prs' && !this.hidden(),
-      );
+      this.satelliteBeeper.set(this.satellites(), this.canHearSatellites());
       this.engine?.kick();
     });
     effect(() => {

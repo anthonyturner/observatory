@@ -7,14 +7,14 @@ import type { ZoomLevel } from '../../model/map-state.ts';
  */
 export const CHIP_WIDTH = 248;
 export const CHIP_PADDING = 10;
-export const CHIP_HEADER_HEIGHT = 20;
-export const CHIP_NAME_HEIGHT = 26;
-export const CHIP_FILE_HEIGHT = 16;
-export const CHIP_PINS_HEIGHT = 30;
+const CHIP_HEADER_HEIGHT = 20;
+const CHIP_NAME_HEIGHT = 26;
+const CHIP_FILE_HEIGHT = 16;
+const CHIP_PINS_HEIGHT = 30;
 export const DAUGHTER_HEIGHT = 20;
 export const DAUGHTER_GAP = 6;
-export const MEMBER_HEIGHT = 15;
-export const MEMBER_BLOCK_GAP = 8;
+const MEMBER_HEIGHT = 15;
+const MEMBER_BLOCK_GAP = 8;
 
 /** A chip lists at most this many members; the rest are counted, not drawn. */
 export const MEMBERS_SHOWN = 10;

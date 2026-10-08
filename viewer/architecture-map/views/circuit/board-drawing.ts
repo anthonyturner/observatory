@@ -8,10 +8,10 @@ import { bayElement, rigElement } from './frame-element.ts';
 import { traceElement, type TraceDrawing } from './trace-element.ts';
 
 /** With nothing selected, only this many flow traces pulse, so a large board stays calm and cheap. */
-export const IDLE_PULSE_LIMIT = 40;
+const IDLE_PULSE_LIMIT = 40;
 
 /** A board with more traces than this draws them faint until something is selected, so the lines do not drown the boxes. */
-export const DENSE_TRACE_COUNT = 120;
+const DENSE_TRACE_COUNT = 120;
 
 /** What the drawing needs to know to style itself; none of it changes where anything is. */
 export interface Paint {

@@ -62,7 +62,7 @@ export interface Board {
   readonly internalLinks: ReadonlyMap<string, number>;
 }
 
-export const rigId = (runtimeId: string): string => `rig:${runtimeId}`;
+const rigId = (runtimeId: string): string => `rig:${runtimeId}`;
 export const bayId = (areaId: string): string => `bay:${areaId}`;
 export const chipId = (nodeId: string): string => `chip:${nodeId}`;
 

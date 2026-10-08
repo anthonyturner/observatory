@@ -700,6 +700,12 @@ export class StarmapPage {
             : null;
       if (blocked !== null) untracked(() => this.sound.setTension(blocked));
     });
+    // The recordings under the drone swell with how many pull requests are open.
+    effect(() => {
+      if (this.chart() !== 'prs') return;
+      const open = this.skyItems().length;
+      untracked(() => this.sound.setOpen(open));
+    });
     // A refresh lays the Log Sky out again; the card and threads follow their fault.
     effect(() => {
       this.logs.layout();

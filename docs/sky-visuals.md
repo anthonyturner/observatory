@@ -438,6 +438,30 @@ the filter, and steps aside during replay, since it describes the code as it is
 now. The star card lists the flags, each with its file and line and the
 principle it breaks.
 
+### Space recordings (sound; data: open pull requests)
+
+With the star map's sound on, a quiet bed of real recordings from space plays
+under the drone: NASA's Perseverance rover driving on Mars and InSight's
+seismometer hearing wind and its own arm (`BED_RECORDINGS` in
+`sound/space-bed.ts`; sources, missions and credit lines in
+`public/audio/space/CREDITS.md`, also on the Review Queue's help card). Only
+recordings credited to NASA alone are used; plasma-wave audio such as Voyager's
+or Cassini's is credited to a university and left out.
+
+Each is a 40-second Opus loop, low-passed, levelled to about -23 LUFS and
+crossfaded at the join so it loops without a click, about 0.2 MB apiece, served
+from `public/audio/space/`. `SpaceBed` fetches and decodes them the first time
+the score starts, never before, and loops them through one gain into the score's
+master, so the sound switch and the volume slider fade them with everything
+else. A clip that cannot be fetched or decoded is skipped without a message and
+tried again next time the sound turns on.
+
+Loudness is `bedGainFor(open)`: silent for an empty queue, rising with the log of
+the open count (each extra pull request counts for less) up to a full queue of
+20, where it sits about 12 dB under the drone. `StarmapScore.setOpen` carries the
+count from the Review Queue and glides to the new level over a few seconds.
+Browsers that cannot decode Ogg Opus play the score without it.
+
 ## The Releases sky
 
 Code: `features/releases/release-sky/`. It is Canvas 2D only: the Orrery's

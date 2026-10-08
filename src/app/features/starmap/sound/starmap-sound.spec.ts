@@ -8,6 +8,7 @@ function fakeScore() {
     start: async () => void calls.push('start'),
     stop: () => void calls.push('stop'),
     setTension: (n) => void calls.push(`tension ${n}`),
+    setOpen: (n) => void calls.push(`open ${n}`),
     setVolume: (v) => void calls.push(`volume ${v}`),
     ping: (stuck, pr) => void calls.push(`ping ${stuck} ${pr}`),
     crackle: (pan, strength, seed) => void calls.push(`crackle ${pan} ${strength} ${seed}`),
@@ -28,15 +29,16 @@ function setUp() {
 describe('StarmapSound', () => {
   beforeEach(() => localStorage.clear());
 
-  it('is off until asked for, then plays at the remembered volume and tension', () => {
+  it('is off until asked for, then plays at the remembered volume, tension and open count', () => {
     const { sound, calls } = setUp();
     sound.setTension(3);
+    sound.setOpen(9);
     expect(sound.isOn()).toBe(false);
 
     sound.toggle();
 
     expect(sound.isOn()).toBe(true);
-    expect(calls).toEqual(['volume 0.7', 'tension 3', 'start']);
+    expect(calls).toEqual(['volume 0.7', 'tension 3', 'open 9', 'start']);
     expect(localStorage.getItem('observatory.starmap.sound')).toBe('on');
   });
 

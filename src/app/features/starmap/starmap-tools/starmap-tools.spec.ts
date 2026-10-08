@@ -20,6 +20,7 @@ function render(chart: Chart = 'prs') {
           start: async () => undefined,
           stop: () => undefined,
           setTension: () => undefined,
+          setOpen: () => undefined,
           setVolume: () => undefined,
           ping: () => undefined,
         }),

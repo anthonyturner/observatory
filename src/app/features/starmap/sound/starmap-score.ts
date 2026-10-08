@@ -2,11 +2,13 @@ import { noiseBurst, pluck, thump } from '../../../core/sound/instruments';
 import { Rig } from '../../../core/sound/sound-rig';
 import { MergeCue } from '../memory/merge-supernova';
 import { crackleOf } from './meteor-crackle';
+import { ClipBytes, SpaceBed } from './space-bed';
 
 /* pr-starmap's star map score, generated live rather than played from a
    recording: a drone, a shimmer, a far engine room, pings on an echo line, and
    a tension voice that rises with the number of blocked pull requests, so a
-   backlog sounds uneasy and clearing it lets the sky settle. */
+   backlog sounds uneasy and clearing it lets the sky settle, and under it all a
+   bed of real space recordings (space-bed.ts) that swells with the open count. */
 
 /** The score as the page drives it; behind an interface so tests need no audio device. */
 export interface StarmapScore {
@@ -14,6 +16,8 @@ export interface StarmapScore {
   stop(): void;
   /** How many things are blocked right now; the tension voice follows it. */
   setTension(blocked: number): void;
+  /** How many pull requests are open; the bed of space recordings is louder the more there are. */
+  setOpen(open: number): void;
   /** 0 to 1, as the slider gives it. */
   setVolume(volume: number): void;
   /** A soft tone for a chosen star: lower and darker when it is stuck. */
@@ -64,10 +68,15 @@ export class WebAudioStarmapScore implements StarmapScore {
   private parts: Parts | null = null;
   private on = false;
   private tension = 0;
+  private open = 0;
+  private bed: SpaceBed | null = null;
   private volume = 0.7;
   private blipTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private readonly makeContext: () => AudioContext = () => new AudioContext()) {}
+  constructor(
+    private readonly makeContext: () => AudioContext = () => new AudioContext(),
+    private readonly clipBytes?: ClipBytes,
+  ) {}
 
   async start(): Promise<void> {
     if (!this.ac) this.build();
@@ -75,6 +84,7 @@ export class WebAudioStarmapScore implements StarmapScore {
     if (!ac || !parts) return;
     if (ac.state === 'suspended') await ac.resume();
     this.on = true;
+    this.bed?.load();
     parts.master.gain.cancelScheduledValues(ac.currentTime);
     parts.master.gain.setTargetAtTime(1, ac.currentTime, 1.4);
     this.schedule();
@@ -94,6 +104,11 @@ export class WebAudioStarmapScore implements StarmapScore {
   setTension(blocked: number): void {
     this.tension = blocked;
     this.applyTension();
+  }
+
+  setOpen(open: number): void {
+    this.open = open;
+    this.bed?.setOpen(open);
   }
 
   setVolume(volume: number): void {
@@ -302,6 +317,8 @@ export class WebAudioStarmapScore implements StarmapScore {
     for (let i = 0; i < wd.length; i++) wd[i] = Math.random() * 2 - 1;
 
     this.parts = { master, out, bus, delay, tensionGain, noise: whiteNoise };
+    this.bed = new SpaceBed(ac, master, this.clipBytes);
+    this.bed.setOpen(this.open);
     this.applyTension();
   }
 

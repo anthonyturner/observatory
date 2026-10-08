@@ -1,3 +1,5 @@
+import { BED_RECORDINGS } from '../sound/space-bed';
+
 /* pr-starmap's help, one card per screen and view, word for word. */
 
 /** A help card: what the screen is, then what each mark means. */
@@ -146,6 +148,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Sound',
         'Ambient score, off until you press Sound; the slider beside it sets the volume. An off-key tone grows with the number of blocked pull requests, and settles as you clear them. Clicking a star plays a note, lower when it is stuck.',
       ],
+      ['Space recordings', spaceRecordings()],
       ['Move', 'Drag the sky to pan, scroll to zoom, Fit to see everything.'],
     ],
   },
@@ -313,3 +316,11 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
     ],
   },
 };
+
+/** What plays under the score and where it came from, so the card never drifts from the clips. */
+function spaceRecordings(): string {
+  const heard = BED_RECORDINGS.map(
+    ({ title, mission, credit, source }) => `${title} (${mission}; ${credit}; ${source})`,
+  ).join(', and ');
+  return `With sound on, real recordings from space loop quietly under the score and swell with the number of open pull requests: ${heard}. Trimmed and filtered, otherwise as NASA published them.`;
+}

@@ -1,3 +1,4 @@
+import type { ClipBytes } from './space-bed';
 import { WebAudioStarmapScore } from './starmap-score';
 
 /** A stand-in for the audio device: it records what is started and where it is panned. */
@@ -127,5 +128,57 @@ describe('WebAudioStarmapScore.crackle', () => {
     score.crackle(0, 1, 1);
 
     expect(starts.length).toBe(after);
+  });
+});
+
+describe('WebAudioStarmapScore space bed', () => {
+  function withBed() {
+    const { context, starts } = fakeAudio();
+    const recording = {};
+    const played: unknown[] = [];
+    const heard = {
+      ...context,
+      decodeAudioData: async () => recording,
+      createBufferSource: () => {
+        const source = {
+          buffer: null as unknown,
+          loop: false,
+          connect: (to: unknown) => to,
+          start: () => {
+            if (source.buffer === recording) played.push(source);
+          },
+        };
+        return source;
+      },
+    } as unknown as AudioContext;
+    const bytes = vi.fn<ClipBytes>(async () => new ArrayBuffer(8));
+    return { score: new WebAudioStarmapScore(() => heard, bytes), bytes, played, starts };
+  }
+
+  it('loads the recordings only once the sound is turned on', async () => {
+    const { score, bytes, played } = withBed();
+    score.setOpen(6);
+    expect(bytes).not.toHaveBeenCalled();
+
+    await score.start();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(bytes.mock.calls.length).toBeGreaterThan(1);
+    expect(played.length).toBe(bytes.mock.calls.length);
+    score.stop();
+  });
+
+  it('plays on without the recordings when they cannot be loaded', async () => {
+    const { context } = fakeAudio();
+    const score = new WebAudioStarmapScore(
+      () => context,
+      async () => {
+        throw new Error('offline');
+      },
+    );
+
+    await expect(score.start()).resolves.toBeUndefined();
+    score.setOpen(3);
+    score.stop();
   });
 });

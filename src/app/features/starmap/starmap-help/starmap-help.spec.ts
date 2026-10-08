@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HelpState } from '../../../shared/help/help-state';
+import { BED_RECORDINGS } from '../sound/space-bed';
 import { HELP } from './help-content';
 import { StarmapHelp } from './starmap-help';
 
@@ -24,6 +25,16 @@ describe('StarmapHelp', () => {
     expect(element.querySelector('h2')?.textContent).toBe('Review Queue');
     expect(element.querySelectorAll('li').length).toBe(HELP['prs-map'].rows.length);
     expect(element.querySelector('li b')?.textContent).toBe('Star');
+  });
+
+  it('credits every space recording on the Review Queue card, with its source', () => {
+    const card = HELP['prs-map'].rows.find(([name]) => name === 'Space recordings')?.[1] ?? '';
+
+    for (const { mission, credit, source } of BED_RECORDINGS) {
+      expect(card).toContain(mission);
+      expect(card).toContain(credit);
+      expect(card).toContain(source);
+    }
   });
 
   it('closes when the screen changes, as its words no longer fit', () => {

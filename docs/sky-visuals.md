@@ -1,4 +1,4 @@
-# Sky visuals: Orrery worlds, Review Queue stars, the Releases and Actions skies, and the Library
+# Sky visuals: Orrery worlds, Review Queue stars, the Releases, Actions and Depth skies, and the Library
 
 How the Orrery's worlds and the Review Queue's pull-request stars are drawn,
 which data each mark carries, and how to change one safely. The help cards
@@ -8,7 +8,8 @@ line; this page says how it works.
 The Orrery and Review Queue sections describe the WebGL renderer. Each of those
 skies also has a Canvas 2D fallback for when WebGL can't start or a shader
 won't compile; the fallback keeps the older, simpler marks unless a section
-says otherwise. The Releases and Actions skies are Canvas 2D only.
+says otherwise. The Releases and Actions skies are Canvas 2D only; the Depth
+sky is SVG.
 
 ## Principle: meaning versus scenery
 
@@ -46,6 +47,10 @@ TypeScript and the shader only draws it.
 | Actions      | Pulse ring       | A run queued or running    | `pulsePhase`                   |
 | Actions      | Amber ring       | Passed only on a rerun     | `isFlaky` (server)             |
 | Library      | Star size        | How long the page is       | `starDiameterOf`               |
+| Depth        | Core size        | Statements a module does   | `coreRadius`                   |
+| Depth        | Ring width       | What a caller must learn   | `shellRadius`                  |
+| Depth        | Colour, ring     | Depth: work per thing      | `judgeDepth` (server)          |
+| Depth        | Place            | The module's folder        | `depthChart`, `packCircles`    |
 
 ## Orrery worlds
 
@@ -516,6 +521,64 @@ skipped ones veiled. A run whose job failed and then passed on a rerun at the
 same commit (the queue's flaky-check history) carries a turning dashed amber
 ring with a small tag. Everything that moves reads the frame loop's scene time,
 so it holds still when motion is off.
+
+## The Depth sky
+
+Code: `features/depth/`, with the layout in `core/depth/`. It is SVG, not a
+canvas, so every planet is a real element that takes hover and keyboard focus.
+Where Ousterhout's _deep modules_ idea is the rule, each file of a repository's
+local clone is a planet: a **core** for the work the file hides inside a **ring**
+for what a caller must learn. Nothing moves, so there is no motion to switch off.
+
+### Measure (data: a file's code)
+
+`measureModule` in `server/depth/module-measure.ts` reads a TypeScript file with
+the compiler API and returns two counts. `GET /api/depth?repo=` serves them for
+the repository's local clone (on the owner's machine only), through
+`depthReports`, which lists files with git so ignored folders stay out, parses a
+file again only when its text changed, and keeps a read for 30 seconds
+(`?fresh=1` skips that).
+
+- **Implementation** (`implementationSize`): the statements the file runs, plus
+  each method, constructor, accessor and initialised field, and each
+  expression-bodied arrow. A function or class declaration only holds the work
+  inside it. Imports, re-exports and type declarations count nothing, so
+  comments and layout cannot move it.
+- **Interface** (`exportedSurface`): each exported name, each parameter of an
+  exported function or public method, each public member of an exported class
+  (not `private`, `protected` or `#private`), each field of an exported
+  interface or object type, each name in a re-export (`export *` counts one). A
+  class an Angular decorator builds pays nothing for its constructor, since its
+  callers never construct it.
+- **Depth** = implementation / interface, with an empty interface read as 1. A
+  file with no exports (an entry point) or only types (no work, nothing hidden)
+  is not a module and gets no planet.
+- **Verdict** (`judgeDepth`): _deep_ from 8, _shallow_ below 1 when the interface
+  has at least two things in it, else _balanced_. Shallow points at the
+  `shallow-modules` principle; deep and balanced at `deep-modules`. The report
+  carries those principles' words from `server/principles/principles.ts` by id.
+
+### Marks
+
+`coreRadius` is `1.1 × √statements` px (at least 1.5), so core _area_ follows the
+work. `shellRadius` is the core plus `1.4 × √interface` (at least 2), so the
+ring's width follows the interface and `1 − core / shell` is how hollow a planet
+reads: a deep module hugs a solid core, a shallow one is a thin ring round a
+speck. Colour repeats the verdict (`--depth-deep` amber, `--depth-balanced`
+blue, `--depth-shallow` pink), but shape says it first: a deep core is a lit
+gradient sphere, a shallow ring is bolder and its inside is left empty.
+
+`depthChart` puts each folder's planets in a faint disc with `packCircles`
+(largest at the centre, the rest spiralling out into the nearest free place),
+labels the discs big enough to hold a name, and packs the discs the same way.
+Filtering lays the sky out again, so a narrower path makes bigger planets.
+
+### Reading it
+
+Hovering or focusing a planet, or a row in the **List** view (shallowest first),
+fills the panel with its three numbers, its verdict and the principle's title and
+idea. Tab reaches one planet; the arrow keys, Home and End walk the rest in
+folder order. A focused planet gets a halo; the last one reached stays lit.
 
 ## The Library's star chart
 

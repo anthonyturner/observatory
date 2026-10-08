@@ -58,6 +58,11 @@ export const routes: Routes = [
       import('./features/actions/actions-page/actions-page').then((m) => m.ActionsPage),
   },
   {
+    path: 'p/:owner/:repo/depth',
+    title: 'Depth · Observatory',
+    loadComponent: () => import('./features/depth/depth-page/depth-page').then((m) => m.DepthPage),
+  },
+  {
     matcher: libraryMatcher,
     title: 'Library · Observatory',
     loadComponent: () =>

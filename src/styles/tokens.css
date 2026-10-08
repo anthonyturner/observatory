@@ -342,6 +342,16 @@
   --ci-passing: var(--actions-passed);
   --ci-none: var(--muted);
 
+  /* The Security sky: an alert's colour says how severe it is; the world's
+     air takes the worst open one's, or the calm green when there are none. */
+  --security-critical: #ff4a5e;
+  --security-high: #ff8a4c;
+  --security-medium: var(--meh);
+  --security-low: #a9b6dc;
+  --security-clear: var(--actions-passed);
+  --security-belt: #3a4d7a;
+  --security-badge: #ff8a4c;
+
   /* pr-starmap's PR screen: its glass, the diff's washes, and the Edit tab. */
   --sheet-glass: linear-gradient(170deg, rgba(16, 24, 50, 0.95), rgba(6, 10, 22, 0.97));
   --sheet-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 40px 90px -24px rgba(0, 0, 0, 0.9);

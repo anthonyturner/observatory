@@ -1,5 +1,6 @@
 import { SATELLITE_RHYTHM, Satellite, SatelliteState } from '../../../core/live-agents/satellites';
 import { hashString } from '../../../core/orrery/world-layout';
+import { dopplerOf, listenerOf } from '../sound/doppler';
 import { starRadius } from './canvas-sky';
 import { labelLeft } from './done-layer';
 import { SkyFrame, SkyLayer } from './sky-frame';
@@ -99,17 +100,39 @@ interface Drawn {
   readonly mark: Satellite;
   readonly x: number;
   readonly y: number;
+  /** The Doppler factor of its motion since the frame before. */
+  readonly doppler: number;
 }
+
+/** Where a satellite was drawn, and when, on the scene's clock. */
+interface Seen {
+  readonly x: number;
+  readonly y: number;
+  readonly t: number;
+}
+
+/** What a satellite sounds like to the viewer right now. */
+export interface Heard {
+  /** -1 left to 1 right. */
+  readonly pan: number;
+  /** Above 1 on the side of its orbit coming toward you, below 1 going away. */
+  readonly doppler: number;
+}
+
+/** A frame this far after the last is a stall, not motion. */
+const MAX_STEP_S = 0.25;
 
 /**
  * The live agents' satellites: each a small marker, flat over both renderers,
  * orbiting its pull request's star or parked along the top of the sky. Its
  * light blinks at a rate set by the agent's state. A still sky parks them and
- * holds the light steady.
+ * holds the light steady. What it sounds like follows what it drew: panned by
+ * where it is, shifted by how fast it moved toward or away from the viewer.
  */
 export class SatelliteLayer implements SkyLayer {
   private marks: readonly Satellite[] = [];
   private drawn: Drawn[] = [];
+  private seen = new Map<string, Seen>();
   private width = 0;
   private hovered: string | null = null;
 
@@ -119,11 +142,14 @@ export class SatelliteLayer implements SkyLayer {
     this.marks = marks;
   }
 
-  /** Where a satellite was last drawn across the screen, -1 left to 1 right; 0 when not drawn. */
-  panOf(key: string): number {
+  /** How a satellite sounds, from where and how it was last drawn; centred and unshifted when not drawn. */
+  heardOf(key: string): Heard {
     const drawn = this.drawn.find((each) => each.mark.key === key);
-    if (!drawn || !this.width) return 0;
-    return Math.min(1, Math.max(-1, (drawn.x / this.width) * 2 - 1));
+    if (!drawn || !this.width) return { pan: 0, doppler: 1 };
+    return {
+      pan: Math.min(1, Math.max(-1, (drawn.x / this.width) * 2 - 1)),
+      doppler: drawn.doppler,
+    };
   }
 
   /** Marks the satellite under the pointer at `point` (null: off the sky); true when that changed. */
@@ -140,9 +166,12 @@ export class SatelliteLayer implements SkyLayer {
   }
 
   flat(ctx: CanvasRenderingContext2D, f: SkyFrame): void {
+    const before = this.seen;
     this.drawn = [];
+    this.seen = new Map();
     this.width = f.width;
     if (f.chart !== 'prs') return;
+    const listener = listenerOf(f.width, f.height);
     const sky = this.clearSky();
     // A pull request with no star in this sky (dismissed, snoozed) leaves its agents parked.
     const placed = this.marks.map((mark) => ({
@@ -157,7 +186,14 @@ export class SatelliteLayer implements SkyLayer {
       const at = star
         ? this.aroundStar(f, star, lane)
         : parkingPoint(lane, { width: f.width - sky.side, top: sky.top }, f.t, f.frozen);
-      this.drawn.push({ mark, ...at });
+      // A still sky parks them, and a frame after a stall measures no motion.
+      const last = before.get(mark.key);
+      const doppler =
+        f.frozen || !last || f.t - last.t > MAX_STEP_S
+          ? 1
+          : dopplerOf({ ...last, z: 0 }, { ...at, z: 0 }, f.t - last.t, listener);
+      this.seen.set(mark.key, { ...at, t: f.t });
+      this.drawn.push({ mark, ...at, doppler });
       const lit = isLit(mark.state, f.t, f.frozen, hashString(mark.key));
       drawSatellite(ctx, at.x, at.y, mark.state, lit);
     }

@@ -8,6 +8,7 @@ import {
 import { gh, ghJson } from './gh-cli.ts';
 import { DIFF_MEDIA_TYPE } from './github-rest.ts';
 import { readChangelog } from './changelog-reader.ts';
+import { readPullComments } from './comment-reader.ts';
 import { readCheckHistory } from './check-history.ts';
 import { ghCliRerunner, ghCliWriter } from './gh-cli-writer.ts';
 import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
@@ -33,6 +34,7 @@ import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
 import { readReleases, readTags } from './release-reader.ts';
 import { readFilePaths, readFileText } from './docs-reader.ts';
 import { rawWikiReader } from './wiki-reader.ts';
+import { securityReader } from './security-reader.ts';
 import type { JsonGet } from './rest-json.ts';
 import { AGENT_PULL_FIELDS, type AgentPull } from '../agents/agents-report.ts';
 import { LEDGER_PULL_FIELDS, type LedgerPull, byNumberDescending } from '../history/ledger.ts';
@@ -61,6 +63,7 @@ export function ghCliReader(): GitHub {
     releases: (repo, limit) => readReleases(getJson, repo, limit),
     tags: (repo, limit) => readTags(getJson, repo, limit),
     changelog: (repo) => readChangelog(getJson, repo),
+    pullComments: (repo) => readPullComments(getJson, repo),
     mergedPulls: (repo) => readMergedPulls(getJson, repo),
     workflowRuns: (repo, branch) => readWorkflowRuns(getJson, repo, branch),
     workflows: (repo) => readWorkflows(getJson, repo),
@@ -69,6 +72,7 @@ export function ghCliReader(): GitHub {
     filePaths: (repo, ref) => readFilePaths(getJson, repo, ref),
     fileText: (repo, path, ref) => readFileText(getJson, repo, path, ref),
     ...rawWikiReader(),
+    ...securityReader(getJson),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([

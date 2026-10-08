@@ -1,0 +1,13 @@
+<ol aria-label="Open alerts, most severe first">
+  @for (row of rows(); track row.key) {
+    <li>
+      <a [href]="row.url" target="_blank" rel="noopener" [style.--dot]="row.colour">
+        <span class="dot" aria-hidden="true"></span>
+        <b>{{ row.title }}</b>
+        <span class="severity">{{ row.severity }}</span>
+        <span class="where">{{ row.where }}</span>
+        <span class="meta">{{ row.meta }}</span>
+      </a>
+    </li>
+  }
+</ol>

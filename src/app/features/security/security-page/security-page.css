@@ -1,0 +1,55 @@
+/* Added to the Releases page's layout, which this page shares. */
+
+.legend li::before {
+  background: var(--dot);
+  box-shadow: 0 0 8px 1px var(--dot);
+}
+
+/* Each kind's shape in the sky, drawn small and grey: rock, shard, spark. */
+.legend .shape::before {
+  background: var(--ink-soft);
+  box-shadow: none;
+}
+
+.legend [data-kind='dependabot']::before {
+  border-radius: 40% 55% 45% 60%;
+}
+
+.legend [data-kind='code-scanning']::before {
+  width: 10px;
+  height: 5px;
+  border-radius: 0;
+  clip-path: polygon(0 50%, 40% 0, 100% 50%, 40% 100%);
+}
+
+.legend [data-kind='secret-scanning']::before {
+  border-radius: 0;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+
+.column {
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.withheld {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.empty {
+  display: grid;
+  gap: 6px;
+  padding: 28px 16px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty strong {
+  color: var(--ink);
+  font-weight: 400;
+  font-size: 17px;
+}

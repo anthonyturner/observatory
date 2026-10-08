@@ -6,6 +6,11 @@ import {
   extendsOf,
   nestedInjections,
 } from './dependency-scan.ts';
+import { linesOfCode } from './lines-of-code.ts';
+import { membersOf } from './member-scan.ts';
+import { bootstrappedIn, constantsIn, exportsIn, specifiersIn } from './module-scan.ts';
+import { endpointsIn } from './endpoint-scan.ts';
+import { outboundIn } from './outbound-scan.ts';
 import { decorationOf, namesIn, optionOf, textOption } from './decorator-scan.ts';
 import { isProviderObject, providersIn, type ProviderScan } from './provider-scan.ts';
 import { caseRoutesIn, routesIn } from './route-scan.ts';
@@ -50,6 +55,7 @@ function declarationOf(
     element: null,
     templateUrl: null,
     tags: [],
+    members: [],
     ...extra,
   };
 }
@@ -73,6 +79,7 @@ function classFound(node: ts.ClassDeclaration): Found | null {
     element: selector ? elementOf(selector) : null,
     templateUrl: textOption(options, 'templateUrl'),
     tags: template ? tagsIn(template) : [],
+    members: membersOf(node),
   });
   return { declaration, bindings: providers.bindings };
 }
@@ -152,15 +159,40 @@ function importsOf(source: ts.SourceFile): ScannedImport[] {
     });
 }
 
+/** Names the declaration a node sits in, from the top-level statement that holds it; null outside every one. */
+function ownerFinder(
+  source: ts.SourceFile,
+  foundBy: ReadonlyMap<ts.Node, readonly Found[]>,
+): (node: ts.Node) => string | null {
+  return (node) => {
+    let statement = node;
+    while (statement.parent !== source) statement = statement.parent;
+    return foundBy.get(statement)?.[0]?.declaration.name ?? null;
+  };
+}
+
 /** Everything the map needs from one TypeScript source file. */
 export function scanSource(fileName: string, text: string): ScannedSource {
   const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
-  const founds = source.statements.flatMap(statementFound);
+  const foundBy = new Map(
+    source.statements.map((statement): [ts.Node, Found[]] => [
+      statement,
+      statementFound(statement),
+    ]),
+  );
+  const founds = [...foundBy.values()].flat();
   return {
     declarations: founds.map(({ declaration }) => declaration),
     imports: importsOf(source),
     bindings: founds.flatMap(({ bindings }) => bindings),
     routes: routesIn(source),
     caseRoutes: caseRoutesIn(source),
+    loc: linesOfCode(source),
+    exports: exportsIn(source),
+    specifiers: specifiersIn(source),
+    constants: constantsIn(source),
+    bootstrapped: bootstrappedIn(source),
+    endpoints: endpointsIn(source),
+    outbound: outboundIn(source, ownerFinder(source, foundBy)),
   };
 }

@@ -143,4 +143,32 @@ describe('parseArchitecture', () => {
       { from: 'AlarmHandler', to: 'ClockService', kind: 'injects', how: 'inject', members: [] },
     ]);
   });
+
+  it('keeps a version 3 map’s classes and drops the nodes and links this page cannot draw', () => {
+    const route = node('GET /api/queue', {
+      id: 'route:GET /api/queue',
+      kind: 'route',
+      area: 'server:app',
+    });
+    const module = node('queue', { id: 'server/queue.ts', kind: 'module', area: 'server:queue' });
+    const map = parseArchitecture(
+      body(
+        [node('ClockService'), node('AlarmHandler'), route, module],
+        [
+          edge('AlarmHandler', 'ClockService', { marks: ['cycle'] }),
+          { from: idOf('AlarmHandler'), to: route.id, kind: 'requests', how: null, members: [] },
+          { from: route.id, to: module.id, kind: 'handles', how: null, members: [] },
+        ],
+        {
+          schema: 3,
+          areas: [{ id: 'core', label: 'Core', runtime: 'browser', folder: 'src/app' }],
+        },
+      ),
+    );
+    expect(map?.nodes.map((n) => n.id)).toEqual([idOf('ClockService'), idOf('AlarmHandler')]);
+    expect(map?.edges.map((e) => [e.from, e.to])).toEqual([
+      [idOf('AlarmHandler'), idOf('ClockService')],
+    ]);
+    expect(map?.areas).toEqual([{ id: 'core', label: 'Core' }]);
+  });
 });

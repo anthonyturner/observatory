@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import type { AreaRule } from './area-rules.ts';
-import { architectureMap } from './architecture-map.ts';
-import { type EdgeKind, MAP_SCHEMA } from './architecture-types.ts';
+import { architectureMap, type MapInputs } from './architecture-map.ts';
+import { type ArchitectureRuntime, type EdgeKind, MAP_SCHEMA } from './architecture-types.ts';
 import { mapProblems } from './map-problems.ts';
 import type {
   ScannedDeclaration,
@@ -11,10 +10,12 @@ import type {
   ScannedSource,
 } from './scanned-source.ts';
 
-const RULES: readonly AreaRule[] = [
-  { id: 'core', label: 'Core', root: 'src/app/core' },
-  { id: 'ui', label: 'Interface', root: 'src/app' },
-];
+const BROWSER: ArchitectureRuntime = {
+  id: 'browser',
+  label: 'Browser app',
+  kind: 'browser',
+  root: 'src/app',
+};
 
 const ref = (
   target: string,
@@ -39,6 +40,7 @@ const decl = (
   element: null,
   templateUrl: null,
   tags: [],
+  members: [],
   ...extra,
 });
 
@@ -56,29 +58,40 @@ const file = (
   bindings: [],
   routes: [],
   caseRoutes: [],
+  loc: 0,
+  exports: [],
+  specifiers: [],
+  constants: [],
+  bootstrapped: [],
+  endpoints: [],
+  outbound: [],
   ...extra,
 });
 
-interface Setting {
-  readonly rules?: readonly AreaRule[];
-  readonly windows?: readonly string[];
-}
+type Setting = Partial<Pick<MapInputs, 'windows' | 'runtimes' | 'entryFiles'>>;
 
-const mapOf = ({ rules = RULES, windows = [] }: Setting, ...files: ScannedFile[]) =>
+const mapOf = (
+  { windows = [], runtimes = [BROWSER], entryFiles = [] }: Setting,
+  ...files: ScannedFile[]
+) =>
   architectureMap({
     project: 'clockwork',
     scannedAt: '2026-10-01T00:00:00Z',
     windows,
-    rules,
+    runtimes,
+    entryFiles,
     files,
     aliases: [{ prefix: '@/', target: 'src/' }],
+    graph: { imports: [], cycles: [] },
+    churn: new Map(),
+    churnDays: 0,
   });
 
 const linksOf = (map: ReturnType<typeof mapOf>) =>
   map.edges.map(({ from, to, kind }) => `${from} ${kind} ${to}`);
 
 describe('architectureMap: nodes', () => {
-  it('names each kind from the declaration and the class name', () => {
+  it('names each kind from the declaration and the class name, sorted by id', () => {
     const map = mapOf(
       {},
       file('src/app/core/all.ts', [
@@ -95,12 +108,12 @@ describe('architectureMap: nodes', () => {
       map.nodes.map(({ name, kind }) => [name, kind]),
       [
         ['AlarmHandler', 'handler'],
-        ['TickStore', 'store'],
+        ['CLOCK_SOURCE', 'token'],
         ['ClockService', 'service'],
         ['DialComponent', 'component'],
-        ['CLOCK_SOURCE', 'token'],
-        ['createFitter', 'function'],
         ['TICK_PROVIDERS', 'providers'],
+        ['TickStore', 'store'],
+        ['createFitter', 'function'],
       ],
     );
   });
@@ -110,7 +123,12 @@ describe('architectureMap: nodes', () => {
     const [clock] = map.nodes;
     assert.deepEqual(
       [clock?.id, clock?.area, clock?.group, clock?.file],
-      ['src/app/core/time/clock.ts#ClockService', 'core', 'time', 'src/app/core/time/clock.ts'],
+      [
+        'src/app/core/time/clock.ts#ClockService',
+        'browser:core',
+        'time',
+        'src/app/core/time/clock.ts',
+      ],
     );
   });
 
@@ -126,25 +144,77 @@ describe('architectureMap: nodes', () => {
     );
   });
 
-  it('skips files that no rule holds', () => {
-    const map = mapOf(
-      { rules: [{ id: 'core', label: 'Core', root: 'src/app/core' }] },
-      file('src/app/elsewhere/a.ts', [decl('ClockService')]),
-    );
+  it('skips files outside every runtime’s folder', () => {
+    const map = mapOf({}, file('src/elsewhere/a.ts', [decl('ClockService')]));
     assert.deepEqual(map.nodes, []);
   });
 
-  it('lists the areas in the browser runtime with their folders, and stamps the schema', () => {
-    const map = mapOf({});
+  it('lists only the areas that hold a node, with their folders, and stamps the schema', () => {
+    const map = mapOf(
+      {},
+      file('src/app/core/a.ts', [decl('ClockService')]),
+      file('src/app/shell.ts', [component('ShellComponent')]),
+      file('src/app/ui/plain.ts', []),
+    );
     assert.deepEqual(map.areas, [
-      { id: 'core', label: 'Core', runtime: 'browser', folder: 'src/app/core' },
-      { id: 'ui', label: 'Interface', runtime: 'browser', folder: 'src/app' },
+      { id: 'browser:.', label: 'Shell', runtime: 'browser', folder: 'src/app' },
+      { id: 'browser:core', label: 'Core', runtime: 'browser', folder: 'src/app/core' },
     ]);
     assert.deepEqual(
       map.runtimes.map(({ id }) => id),
       ['browser'],
     );
     assert.equal(map.schema, MAP_SCHEMA);
+  });
+
+  it('copies a class’s members, and its file’s lines of code and churn, onto its nodes', () => {
+    const member = { name: 'now', kind: 'method', visibility: 'public' } as const;
+    const map = architectureMap({
+      project: 'clockwork',
+      scannedAt: '2026-10-01T00:00:00Z',
+      windows: [],
+      runtimes: [BROWSER],
+      entryFiles: [],
+      files: [
+        file('src/app/core/a.ts', [decl('ClockService', [], { members: [member] })], { loc: 12 }),
+      ],
+      aliases: [],
+      graph: { imports: [], cycles: [] },
+      churn: new Map([['src/app/core/a.ts', 3]]),
+      churnDays: 90,
+    });
+    const [clock] = map.nodes;
+    assert.deepEqual([clock?.members, clock?.loc, clock?.metrics.churn], [[member], 12, 3]);
+    assert.equal(map.churnDays, 90);
+  });
+
+  it('maps a file with no declaration whole when it is on an import cycle, and not otherwise', () => {
+    const map = architectureMap({
+      project: 'clockwork',
+      scannedAt: '2026-10-01T00:00:00Z',
+      windows: [],
+      runtimes: [BROWSER],
+      entryFiles: [],
+      files: [
+        file('src/app/core/a.ts', [decl('ClockService')]),
+        file('src/app/core/b.ts', []),
+        file('src/app/core/c.ts', []),
+      ],
+      aliases: [],
+      graph: {
+        imports: [],
+        cycles: [['src/app/core/a.ts', 'src/app/core/b.ts']],
+      },
+      churn: new Map(),
+      churnDays: 0,
+    });
+    assert.deepEqual(
+      map.nodes.map(({ id, kind }) => [id, kind]),
+      [
+        ['src/app/core/a.ts#ClockService', 'service'],
+        ['src/app/core/b.ts', 'module'],
+      ],
+    );
   });
 });
 
@@ -300,7 +370,7 @@ describe('architectureMap: windows', () => {
   it('hosts a window’s routed component and everything it reaches', () => {
     assert.deepEqual(windowsOf('FaceComponent'), ['wall']);
     assert.deepEqual(windowsOf('AlarmList'), ['pocket']);
-    assert.deepEqual(windowsOf('DialComponent'), ['wall', 'pocket']);
+    assert.deepEqual(windowsOf('DialComponent'), ['pocket', 'wall']);
   });
 
   it('leaves the shell and anything no window reaches unhosted', () => {
@@ -309,6 +379,6 @@ describe('architectureMap: windows', () => {
   });
 
   it('keeps every manifest window, hosting or not', () => {
-    assert.deepEqual(map.windows, ['wall', 'pocket', 'background']);
+    assert.deepEqual(map.windows, ['background', 'pocket', 'wall']);
   });
 });

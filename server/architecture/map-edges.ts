@@ -65,6 +65,32 @@ function templateEdges(
   });
 }
 
+/** Every use a template makes of a component, between two mapped nodes and never of a node by itself. */
+export function templateUses(
+  files: readonly ScannedFile[],
+  ids: ReadonlySet<string>,
+): ArchitectureEdge[] {
+  const claims = claimsOf(files);
+  return files
+    .flatMap(({ file, declarations }) =>
+      declarations.flatMap((declaration) => templateEdges(file, declaration, claims)),
+    )
+    .filter(({ from, to }) => from !== to && ids.has(from) && ids.has(to));
+}
+
+/** For each component rendered by the template of exactly one other, that other. */
+export function parentsOf(uses: readonly ArchitectureEdge[]): Map<string, string> {
+  const renderers = new Map<string, Set<string>>();
+  for (const { from, to } of uses)
+    renderers.set(to, (renderers.get(to) ?? new Set<string>()).add(from));
+  return new Map(
+    [...renderers].flatMap(([child, parents]): [string, string][] => {
+      const [parent] = parents;
+      return parent !== undefined && parents.size === 1 ? [[child, parent]] : [];
+    }),
+  );
+}
+
 /** One edge per pair and kind, with the members of every duplicate merged in. */
 function merged(edges: readonly ArchitectureEdge[]): ArchitectureEdge[] {
   const byKey = new Map<string, ArchitectureEdge>();
@@ -79,15 +105,14 @@ function merged(edges: readonly ArchitectureEdge[]): ArchitectureEdge[] {
 
 /** Every edge between two mapped nodes, never from a node to itself. */
 export function edgesOf({ files, ids, resolver }: EdgeInputs): ArchitectureEdge[] {
-  const claims = claimsOf(files);
-  const edges = files.flatMap((scanned) => [
-    ...scanned.declarations
-      .filter(({ name }) => ids.has(nodeId(scanned.file, name)))
-      .flatMap((declaration) => [
-        ...referenceEdges(scanned.file, declaration, resolver),
-        ...templateEdges(scanned.file, declaration, claims),
-      ]),
-    ...bindingEdges(scanned, resolver),
-  ]);
+  const edges = [
+    ...files.flatMap((scanned) => [
+      ...scanned.declarations
+        .filter(({ name }) => ids.has(nodeId(scanned.file, name)))
+        .flatMap((declaration) => referenceEdges(scanned.file, declaration, resolver)),
+      ...bindingEdges(scanned, resolver),
+    ]),
+    ...templateUses(files, ids),
+  ];
   return merged(edges.filter(({ from, to }) => from !== to && ids.has(from) && ids.has(to)));
 }

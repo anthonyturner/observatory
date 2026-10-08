@@ -21,6 +21,35 @@ describe('routes', () => {
   });
 });
 
+describe('routes: loaders and matchers', () => {
+  it('follows a loader the route names to the import at the top of the file', () => {
+    const { routes } = scanSource(
+      'app.routes.ts',
+      `const detail = () => import('./detail/detail').then((m) => m.DetailPage);
+      export const routes: Routes = [{ path: 'detail', loadComponent: detail }];`,
+    );
+    assert.deepEqual(routes, [
+      {
+        path: 'detail',
+        component: { name: 'DetailPage', module: './detail/detail' },
+        children: null,
+      },
+    ]);
+  });
+
+  it('keeps a route a matcher decides, with no path', () => {
+    const { routes } = scanSource(
+      'app.routes.ts',
+      `export const routes: Routes = [
+        { matcher: libraryMatcher, loadComponent: () => import('./lib').then((m) => m.LibraryPage) },
+      ];`,
+    );
+    assert.deepEqual(routes, [
+      { path: null, component: { name: 'LibraryPage', module: './lib' }, children: null },
+    ]);
+  });
+});
+
 describe('case routes', () => {
   it('pairs each string case with the path it navigates to', () => {
     const { caseRoutes } = scanSource(

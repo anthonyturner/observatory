@@ -12,6 +12,7 @@
   @if (!context().replay) {
     <app-star-risk [repo]="repo()" [number]="item().number" />
   }
+  <app-star-weather [weather]="weather()" />
   <dl class="facts">
     @for (fact of facts(); track fact.term + fact.value) {
       <dt>{{ fact.term }}</dt>

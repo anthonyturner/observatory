@@ -18,7 +18,14 @@ import { CameraController } from './camera-controller';
 import { Kit, vec } from './gpu-kit';
 import { rnd } from './rnd';
 import { NewsEffect3D } from './sky-frame';
-import { SkyStar } from './sky-model';
+import {
+  DEPARTED_MAG,
+  NOVA_FLASH,
+  NOVA_RING,
+  novaLook,
+  novaProgress,
+  streakProgress,
+} from '../memory/merge-supernova';
 
 /* pr-starmap's 3D news: shells, a flash and debris that expand or fall
    inward on a star, and a streak for a pull request crossing the sky as it
@@ -38,33 +45,32 @@ interface Context {
   readonly toScreen: (x: number, y: number, z?: number) => [number, number];
 }
 
-/** The size a star is drawn at, in world units at its depth. */
-const worldRadius = (star: SkyStar, camera: CameraController): number => {
+/** The size a star of this magnitude is drawn at, in world units at its depth. */
+const worldRadius = (mag: number, az: number, camera: CameraController): number => {
   const scale = camera.current.scale;
-  return (star.mag * Math.max(scale, 0.42)) / (scale * camera.depth(star.az));
+  return (mag * Math.max(scale, 0.42)) / (scale * camera.depth(az));
 };
 
-function expanding(ctx: Context, request: NewsEffect3D): Effect3D {
-  const { scene, kit, camera } = ctx;
-  const own = <T extends { dispose(): void }>(resource: T): T => kit.owned.own(resource);
-  const mode = request.mode as 'nova' | 'supernova' | 'implode';
-  const group = new Group();
-  scene.add(group);
-  const colour = mode === 'nova' ? '#ffffff' : mode === 'implode' ? '#5fe3a1' : request.colour;
-  const flash = new Mesh(
+type Own = <T extends { dispose(): void }>(resource: T) => T;
+
+const flashMesh = (own: Own, colour: string): Mesh<SphereGeometry, MeshBasicMaterial> =>
+  new Mesh(
     own(new SphereGeometry(1, 20, 12)),
     own(
       new MeshBasicMaterial({
-        color: new Color('#ffffff').multiplyScalar(2),
+        color: new Color(colour).multiplyScalar(2),
         transparent: true,
         depthWrite: false,
         blending: AdditiveBlending,
       }),
     ),
   );
-  group.add(flash);
-  const shells = Array.from({ length: mode === 'implode' ? 3 : mode === 'nova' ? 1 : 2 }, () => {
-    const material = own(
+
+/** A glowing rim round a sphere: seen from the front, a ring. */
+const shellMesh = (own: Own, colour: string): Mesh<SphereGeometry, ShaderMaterial> =>
+  new Mesh(
+    own(new SphereGeometry(1, 24, 16)),
+    own(
       new ShaderMaterial({
         uniforms: { ink: { value: new Color(colour) }, opacity: { value: 1 } },
         vertexShader: `varying vec3 n; varying vec3 v; void main() {
@@ -76,8 +82,20 @@ function expanding(ctx: Context, request: NewsEffect3D): Effect3D {
         depthWrite: false,
         blending: AdditiveBlending,
       }),
-    );
-    const shell = new Mesh(own(new SphereGeometry(1, 24, 16)), material);
+    ),
+  );
+
+function expanding(ctx: Context, request: NewsEffect3D): Effect3D {
+  const { scene, kit, camera } = ctx;
+  const own: Own = (resource) => kit.owned.own(resource);
+  const mode = request.mode as 'nova' | 'supernova' | 'implode';
+  const group = new Group();
+  scene.add(group);
+  const colour = mode === 'nova' ? '#ffffff' : mode === 'implode' ? '#5fe3a1' : request.colour;
+  const flash = flashMesh(own, '#ffffff');
+  group.add(flash);
+  const shells = Array.from({ length: mode === 'implode' ? 3 : mode === 'nova' ? 1 : 2 }, () => {
+    const shell = shellMesh(own, colour);
     group.add(shell);
     return shell;
   });
@@ -111,7 +129,7 @@ function expanding(ctx: Context, request: NewsEffect3D): Effect3D {
     update({ p, star }) {
       if (!star) return;
       group.position.copy(vec(star.ax, star.ay, star.az));
-      const r = worldRadius(star, camera);
+      const r = worldRadius(star.mag, star.az, camera);
       flash.visible = mode === 'nova' || (mode === 'supernova' && p < 0.25);
       flash.scale.setScalar(r * (mode === 'nova' ? 1 + ease(p) * 5 : 2 + p * 14));
       flash.material.opacity = mode === 'nova' ? (1 - p) * 0.9 : Math.max(0, 1 - p / 0.25);
@@ -188,6 +206,46 @@ function shooting(ctx: Context, request: NewsEffect3D): Effect3D {
   };
 }
 
+/**
+ * A merged pull request: a white-gold flash and one ring of dust where its star
+ * stood, then the streak. With motion off the flash alone plays.
+ */
+function merging(ctx: Context, request: NewsEffect3D): Effect3D {
+  const { scene, kit, camera } = ctx;
+  const own: Own = (resource) => kit.owned.own(resource);
+  const group = new Group();
+  scene.add(group);
+  const flash = flashMesh(own, NOVA_FLASH);
+  const ring = shellMesh(own, NOVA_RING);
+  group.add(flash, ring);
+  let streak: Effect3D | null = null;
+  return {
+    update(update) {
+      const { p, from, still } = update;
+      const q = novaProgress(p);
+      group.visible = q !== null;
+      if (q !== null) {
+        group.position.copy(vec(from.x, from.y, from.z));
+        const r = worldRadius(DEPARTED_MAG, from.z, camera);
+        const look = novaLook(q);
+        flash.scale.setScalar(r * look.flashRadius);
+        flash.material.opacity = look.flashAlpha;
+        ring.visible = !still;
+        ring.scale.setScalar(r * look.ringRadius);
+        ring.material.uniforms['opacity'].value = look.ringAlpha;
+      }
+      const along = streakProgress(p);
+      if (still || along <= 0) return;
+      streak ??= shooting(ctx, request);
+      streak.update({ ...update, p: along });
+    },
+    dispose() {
+      streak?.dispose();
+      kit.owned.release(group);
+    },
+  };
+}
+
 /** Builds each burst as it starts, plays it, and releases it once it ends. */
 export class NewsEffects3D {
   private readonly playing = new Map<object, Effect3D>();
@@ -200,8 +258,7 @@ export class NewsEffects3D {
       active.add(request.key);
       let effect = this.playing.get(request.key);
       if (!effect) {
-        effect =
-          request.mode === 'shooting' ? shooting(this.ctx, request) : expanding(this.ctx, request);
+        effect = this.build(request);
         this.playing.set(request.key, effect);
       }
       effect.update(request);
@@ -211,6 +268,12 @@ export class NewsEffects3D {
       effect.dispose();
       this.playing.delete(key);
     }
+  }
+
+  private build(request: NewsEffect3D): Effect3D {
+    if (request.mode === 'shooting') return shooting(this.ctx, request);
+    if (request.mode === 'merged') return merging(this.ctx, request);
+    return expanding(this.ctx, request);
   }
 
   dispose(): void {

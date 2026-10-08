@@ -6,6 +6,7 @@ import {
   ElementRef,
   ErrorHandler,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
@@ -25,6 +26,7 @@ import { PlanLayer, PlanMark } from '../engine/plan-layer';
 import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
+import { mergeCues } from '../memory/merge-supernova';
 import { News, NewsLayer } from '../memory/news-layer';
 import { LogSkyLayout, LogStar } from '../../../core/logs/log-layout';
 import { twinStars } from '../../../core/logs/log-trace';
@@ -37,11 +39,17 @@ import { HoverDwell } from './hover-dwell';
 import { DoneItem, DoneKind } from '../../../core/queue/done-work';
 import { DoneLayer, isDoneHit } from '../engine/done-layer';
 import { CrewLayer } from '../engine/crew-layer';
+import { Meteor, MeteorLanding, MeteorLayer } from '../engine/meteor-layer';
 import { CrewMark } from '../../../core/crew/crew.types';
+import { Satellite } from '../../../core/live-agents/satellites';
+import { SatelliteLayer } from '../engine/satellite-layer';
+import { SatelliteBeeper } from '../sound/satellite-beeper';
+import { PageVisibility } from '../../../core/presence/page-visibility';
 import { BlackHoleLayer } from '../engine/black-hole-layer';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StackLayer } from '../engine/stack-layer';
 import { Stacks } from '../../../core/queue/stacks';
+import { StarmapSound } from '../sound/starmap-sound';
 import { WeatherByPull } from '../../../core/queue/weather';
 import { WeatherLayer } from '../engine/weather-layer';
 
@@ -148,8 +156,14 @@ export class StarmapSky {
   readonly doneOnly = input<DoneKind | null>(null);
   /** Crews sent to fix pull requests, drawn as ships by their stars. */
   readonly crews = input<readonly CrewMark[]>([]);
+  /** The live coding agents in this repository, drawn as satellites. */
+  readonly satellites = input<readonly Satellite[]>([]);
   /** Stacked pull requests, drawn as chains, and those whose base has merged. */
   readonly stacks = input<Stacks>(new Map());
+  /** Pull requests with new commits since they were looked at, each a meteor that lands on its star. */
+  readonly meteors = input<readonly Meteor[]>([]);
+  /** A meteor landed on its star: where, for the sound. */
+  readonly meteorLanded = output<MeteorLanding>();
   /** Each pull request's design red flags, drawn as weather round its star. */
   readonly weather = input<WeatherByPull>(new Map());
   /** A star was clicked open, or empty sky (null). */
@@ -171,6 +185,7 @@ export class StarmapSky {
   private readonly document = inject(DOCUMENT);
   private readonly motion = inject(MotionPreference);
   private readonly blackHole = inject(BlackHoleSetting);
+  private readonly sound = inject(StarmapSound);
   private readonly errors = inject(ErrorHandler);
   private readonly collisions = new CollisionLayer();
   private readonly binaries = new BinaryLayer((star) => star.item?.issues ?? []);
@@ -184,6 +199,23 @@ export class StarmapSky {
   private readonly stackLayer = new StackLayer();
   private readonly weatherLayer = new WeatherLayer();
   private readonly crewLayer = new CrewLayer(Date.now, () => this.engine?.kick());
+  private readonly meteorLayer = new MeteorLayer(
+    () => this.engine?.kick(),
+    (landing) => this.meteorLanded.emit(landing),
+  );
+  private readonly visibility = inject(PageVisibility);
+  private readonly satelliteLayer = new SatelliteLayer(() => ({
+    side: this.insets().side,
+    top: this.insets().top,
+  }));
+  /** Satellites beep only while the queue sky is in view and sound is on. */
+  private readonly canHearSatellites = computed(
+    () =>
+      this.sound.isOn() && this.chart() === 'prs' && !this.hidden() && !this.visibility.isHidden(),
+  );
+  private readonly satelliteBeeper = new SatelliteBeeper((satellite) =>
+    this.sound.beep(this.satelliteLayer.panOf(satellite.key), satellite.state),
+  );
   private readonly tetherLayer = new TetherLayer(
     () => this.document.querySelector(TETHERED)?.getBoundingClientRect() ?? null,
     () => this.cometLayer.selectedAt(),
@@ -201,6 +233,8 @@ export class StarmapSky {
     inject(DestroyRef).onDestroy(() => {
       this.hover.cancel();
       this.crewLayer.dispose();
+      this.meteorLayer.dispose();
+      this.satelliteBeeper.dispose();
       this.engine?.dispose();
     });
     effect(() => {
@@ -262,6 +296,12 @@ export class StarmapSky {
       this.engine?.kick();
     });
     effect(() => this.crewLayer.set(this.crews()));
+    effect(() => this.meteorLayer.set(this.meteors()));
+    effect(() => {
+      this.satelliteLayer.set(this.satellites());
+      this.satelliteBeeper.set(this.satellites(), this.canHearSatellites());
+      this.engine?.kick();
+    });
     effect(() => {
       this.stackLayer.set(this.stacks());
       this.stackLayer.paused = this.replaying();
@@ -333,12 +373,22 @@ export class StarmapSky {
   play(events: readonly NewsEvent[]): void {
     const engine = this.engine;
     if (!engine) return;
+    const now = performance.now() / 1000;
     play(events, engine.skyClusters, {
-      now: performance.now() / 1000,
+      now,
       entranceEnd: engine.entranceEnd(),
       frozen: engine.frozen,
     });
+    // A boom with no supernova to see (the list view, another sky) would be a ghost.
+    if (!this.hidden() && this.chart() === 'prs') this.boom(events, engine, now);
     engine.kick();
+  }
+
+  private boom(events: readonly NewsEvent[], engine: SkyEngine, now: number): void {
+    const width = this.document.defaultView?.innerWidth ?? 0;
+    const toScreen = (x: number, y: number, z: number): [number, number] =>
+      engine.toScreen(x, y, z);
+    for (const cue of mergeCues(events, { now, width, toScreen })) this.sound.merged(cue);
   }
 
   /** Flies to a fault's star, as a log list row does. */
@@ -362,6 +412,13 @@ export class StarmapSky {
 
   private hoverQueue(engine: SkyEngine, event: PointerEvent | null): void {
     if (event?.pointerType === 'touch') return;
+    // A satellite names itself; a star behind it has nothing to preview then.
+    const point = event ? { x: event.clientX, y: event.clientY } : null;
+    if (this.satelliteLayer.hoverAt(point)) engine.kick();
+    if (this.satelliteLayer.isHovering) {
+      this.canvas().nativeElement.style.cursor = '';
+      return this.hover.aim(null, null);
+    }
     const hit = event ? engine.hitAt(event.clientX, event.clientY) : null;
     // A light on the Spiral of Done names itself; it has no card to dwell for.
     const done = hit && 'other' in hit && isDoneHit(hit.other) ? hit.other.done : null;
@@ -447,6 +504,8 @@ export class StarmapSky {
       this.tetherLayer,
       this.doneLayer,
       this.crewLayer,
+      this.meteorLayer,
+      this.satelliteLayer,
     ];
     this.engine.filter = filterFor(this.filter(), this.litPrs());
     this.engine.fog = this.fog();

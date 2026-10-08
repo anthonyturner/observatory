@@ -122,6 +122,37 @@ describe('StarmapPage', () => {
     expect(element.querySelector('.lg')?.textContent).toContain('0 cannot merge');
   });
 
+  it('sends the live agents in this repository to the sky as satellites', () => {
+    const { fixture, element, http } = render(null, {}, [
+      pull(7, 'failing', { branch: 'feat/7-thing', base: 'main' }),
+    ]);
+    const agent = (session: string, repo: string, branch: string) => ({
+      session,
+      agentId: null,
+      state: 'working',
+      lastActiveAt: new Date().toISOString(),
+      repo,
+      branch,
+      title: session,
+    });
+    http.expectOne('/api/live-agents').flush({
+      agents: [
+        agent('on-pr', 'me/a', 'feat/7-thing'),
+        agent('loose', 'me/a', 'main'),
+        agent('elsewhere', 'me/other', 'feat/7-thing'),
+      ],
+    });
+    fixture.detectChanges();
+
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+    expect(sky.satellites().map((each) => [each.name, each.pr])).toEqual([
+      ['on-pr', 7],
+      ['loose', null],
+    ]);
+    expect(element.querySelector('app-starmap-sky')).not.toBeNull();
+  });
+
   it('lets the playlist video through beneath the stars while Video is on', () => {
     const { fixture, element } = render();
     const sky = element.querySelector('app-starmap-sky');
@@ -398,6 +429,35 @@ describe('StarmapPage', () => {
     expect(ping).toHaveBeenCalledWith(false);
     http.expectOne('/api/issue?repo=me/a&number=4');
     expect(element.querySelector('app-issue-window')).not.toBeNull();
+  });
+
+  it('sends a meteor to each shown pull request with new commits since you looked', () => {
+    const changed = (number: number, newCommits: number | null, extra = {}) =>
+      pull(number, 'unreviewed', { lookedSha: 'abc', sinceLook: { newCommits }, ...extra });
+    const { fixture } = render(null, {}, [
+      changed(7, 3),
+      changed(9, null),
+      pull(11, 'unreviewed'),
+      changed(13, 2, { hidden: { reason: 'dismissed' } }),
+    ]);
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    expect(sky.meteors()).toEqual([
+      { repo: 'me/a', pr: 7, commits: 3 },
+      { repo: 'me/a', pr: 9, commits: null },
+    ]);
+  });
+
+  it('crackles, panned to the star, when a meteor lands', () => {
+    const { fixture } = render();
+    const crackle = vi.spyOn(TestBed.inject(StarmapSound), 'crackle');
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+
+    sky.meteorLanded.emit({ pr: 7, pan: -0.4, strength: 0.5 });
+
+    expect(crackle).toHaveBeenCalledWith(-0.4, 0.5, 7);
   });
 
   it('offers a visitor to the hosted preview no triage to change', () => {

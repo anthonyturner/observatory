@@ -17,11 +17,12 @@ function render() {
 }
 
 describe('StarmapHeader', () => {
-  it('leads up to every project, and names the sky', () => {
+  it('leads up to every project, and names the project and the sky', () => {
     const { element } = render();
 
     expect(element.querySelector('app-up-link a')?.getAttribute('href')).toBe('/orrery');
-    expect(element.querySelector('h1')?.textContent).toBe('Review Queue');
+    expect(element.querySelector('h1')?.textContent).toBe('a');
+    expect(element.querySelector('h2')?.textContent).toBe('Review Queue');
     expect(
       element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
     ).toBe('/p/me/a');

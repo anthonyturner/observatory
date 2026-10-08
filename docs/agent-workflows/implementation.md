@@ -306,15 +306,23 @@ See **Defect lane** in [pipeline.md](pipeline.md).
    produces the reported behavior and cite the file and line.
 2. Name the module, service, or layer that owns the responsibility, and check
    whether one already does ([rule 10](../rules.md)) before adding a new one.
-3. State the approach in a few sentences: what changes, where, why there
-   rather than somewhere else, and the alternative rejected with its reason.
-4. Note the blast radius — public signatures, existing callers, persisted
+3. State the approach in a few sentences: what changes, where, and why there
+   rather than somewhere else.
+4. **Confirm or revisit the issue's Alternatives considered before the first
+   code edit**, per **Design it twice** in
+   [../design-principles.md](../design-principles.md). Check the chosen
+   approach against the code you have now read. If the section is missing or
+   token, sketch a real alternative now. If the code shows a rejected
+   approach was better, or reveals a new one, switch, and say so in a comment
+   on the issue with the reason. Either way the pull request names the
+   alternative rejected and why.
+5. Note the blast radius — public signatures, existing callers, persisted
    shapes, and anything that stays deliberately unfixed.
-5. For substantial work, post this as a comment on the GitHub issue before
+6. For substantial work, post this as a comment on the GitHub issue before
    implementing, so it is reviewable on its own. For a small or obvious change,
    stating it in the response is enough. Either way it belongs in the
    pull-request body.
-6. Report **escalation signals** when they occur, as defined in
+7. Report **escalation signals** when they occur, as defined in
    [refinement.md](refinement.md). On this stage the ones that matter most are:
    you revised the root cause after first stating it; you could not reproduce
    the reported behavior; a fix made a test pass without you being able to
@@ -362,9 +370,9 @@ reaches it.
    **Issue references in commits** below.
 2. Push without force.
 3. Update the pull request to the shape of `.github/PULL_REQUEST_TEMPLATE.md` —
-   Summary, Changes, SOLID, Verification, Not done — titled with the
-   Conventional Commit subject, with `Closes #<n>` in the body. Replace the
-   scaffold body; do not leave a stub.
+   Summary, Alternatives considered, Changes, SOLID, Verification, Not done —
+   titled with the Conventional Commit subject, with `Closes #<n>` in the
+   body. Replace the scaffold body; do not leave a stub.
 
    Keep the body short (about 200 words): brief bullets, no long rationale,
    nothing the diff already makes obvious.

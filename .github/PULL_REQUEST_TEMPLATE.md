@@ -6,6 +6,10 @@ Closes #
 
 One or two sentences: what changed and why.
 
+## Alternatives considered
+
+- The approach rejected and why, from the issue; say if implementation revisited it.
+
 ## Diagram
 
 <!-- The change's Mermaid block, reused from the issue (docs/diagrams.md). Delete this section for an XS change. -->

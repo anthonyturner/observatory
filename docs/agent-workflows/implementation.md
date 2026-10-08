@@ -370,8 +370,8 @@ reaches it.
    **Issue references in commits** below.
 2. Push without force.
 3. Update the pull request to the shape of `.github/PULL_REQUEST_TEMPLATE.md` —
-   Summary, Alternatives considered, Changes, SOLID, Verification, Not done — titled with the
-   Conventional Commit subject, with `Closes #<n>` in the body. Replace the
+   Summary, Alternatives considered, Changes, SOLID, Verification, Not done —
+   titled with the Conventional Commit subject, with `Closes #<n>` in the body. Replace the
    scaffold body; do not leave a stub.
 
    Keep the body short (about 200 words): brief bullets, no long rationale,

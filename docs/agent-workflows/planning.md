@@ -70,8 +70,7 @@ the Product Manager to:
   rewriting any acceptance criterion refinement found untestable;
 - fill the required **Alternatives considered** section from the rejected
   approach options (see **Issue format** in
-  [product-manager.md](product-manager.md)). An issue without it is not ready
-  to implement;
+  [product-manager.md](product-manager.md));
 - carry every assumption and unknown the assessment left open onto the issue as
   an explicit **Open questions** section — nobody challenges them before work
   starts now, so absorbing them into the body would let a guess read as

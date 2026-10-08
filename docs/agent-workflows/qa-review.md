@@ -20,8 +20,9 @@ and file and line references kept as evidence.
 3. Review correctness, scope, the stack rules, test coverage of new logic,
    commit format, PR linkage, secrets, debug artifacts, comments
    ([rule 15](../rules.md)), tactical shortcuts, a missing or token
-   alternative on the issue or pull request ([../design-principles.md](../design-principles.md), **Design
-   it twice**), and the `CHANGELOG.md` entry
+   alternative on the issue or pull request
+   ([../design-principles.md](../design-principles.md), **Design it twice**),
+   and the `CHANGELOG.md` entry
    ([../changelog.md](../changelog.md)) as applicable. A user-visible change
    with no entry, and no reason given for leaving it out, is a finding.
 4. Do not claim a build or test passed without evidence. Mark behavior that

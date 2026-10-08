@@ -42,6 +42,8 @@ const pull = (number: number): QueuePull => ({
 
 /** Each pull request whose state GitHub was asked for. */
 const stateAsked: string[] = [];
+/** Each pull request whose diff GitHub was asked for. */
+const diffsAsked: string[] = [];
 /** Each workflow run GitHub was asked to rerun. */
 const reruns: number[] = [];
 
@@ -77,7 +79,10 @@ const github = {
     files: [],
     commits: [],
   }),
-  pullDiff: async () => 'diff --git a/x b/x\n+secret code',
+  pullDiff: async (repo: string, number: number) => {
+    diffsAsked.push(`${repo}#${number}`);
+    return 'diff --git a/x b/x\n+secret code';
+  },
   commitDiff: async () => 'diff --git a/y b/y\n+secret commit',
   rerunFailedJobs: async (_repo: string, runId: number) => void reruns.push(runId),
 } as unknown as GitHub;
@@ -378,6 +383,33 @@ describe('hostedApi', () => {
     assert.deepEqual([secret.diff, secret.diffHidden], ['', true]);
     assert.match((await read('me/app')).diff, /secret commit/);
     assert.match((await read('me/secret', ownerCookie)).diff, /secret commit/);
+  });
+
+  it('withholds a private repository’s red flags from a visitor, and only from a visitor', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+    const read = async (repo: string, cookie?: string) =>
+      (await (await get(handle, `/api/weather?repo=${repo}`, cookie)).json()) as {
+        hidden: boolean;
+        pulls: { number: number; scanned: boolean }[];
+      };
+
+    const secret = await read('me/secret');
+    assert.equal(secret.hidden, true);
+    assert.deepEqual(secret.pulls, [
+      { number: 7, headSha: 'a'.repeat(40), scanned: false, flags: [] },
+    ]);
+    assert.deepEqual((await read('me/app')).pulls[0].scanned, true);
+    assert.equal((await read('me/secret', ownerCookie)).hidden, false);
+  });
+
+  it('reads each pull request’s diff for its weather once per head commit', async () => {
+    const { handle } = site();
+    diffsAsked.length = 0;
+
+    await get(handle, '/api/weather?repo=me/app', ownerCookie);
+    await get(handle, '/api/weather?repo=me/app', ownerCookie);
+
+    assert.deepEqual(diffsAsked, ['me/app#7']);
   });
 
   it('sends a run-out session to sign in even with the preview on', async () => {

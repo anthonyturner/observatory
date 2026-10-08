@@ -155,6 +155,9 @@ const inFolder = (parts: PathParts, folders: ReadonlySet<string>): boolean =>
 const isTestOrDoc = (parts: PathParts): boolean =>
   TEST_OR_DOC_NAME.test(parts.name) || inFolder(parts, TEST_OR_DOC_FOLDERS);
 
+/** Whether a path is a test, a fixture or prose: code that cannot break what runs. */
+export const isTestOrDocPath = (path: string): boolean => isTestOrDoc(partsOf(path));
+
 /** The reasons one file gives, except breadth, which only the whole change can show. */
 const FILE_RULES: readonly (readonly [RiskReason, (parts: PathParts) => boolean])[] = [
   ['auth', (parts) => hasAny(parts.words, AUTH_WORDS)],

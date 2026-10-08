@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { SatelliteState } from '../../../core/live-agents/satellites';
 import { StarmapScore, WebAudioStarmapScore } from './starmap-score';
 
 /** Makes the score; a test provides one that needs no audio device. */
@@ -18,6 +19,12 @@ export const STARMAP_SCORE = new InjectionToken<() => StarmapScore>('STARMAP_SCO
 const SOUND_KEY = 'observatory.starmap.sound';
 const VOLUME_KEY = 'observatory.starmap.volume';
 const DEFAULT_VOLUME = 0.7;
+/** A working satellite beeps highest and a quiet one lowest. */
+const BEEP_HZ: Readonly<Record<SatelliteState, number>> = {
+  working: 1568,
+  waiting: 1319,
+  quiet: 988,
+};
 const GESTURES = ['pointerdown', 'keydown'] as const;
 
 function read(key: string): string | null {
@@ -93,6 +100,11 @@ export class StarmapSound {
   /** A soft tone when a star is chosen: lower when it is stuck. */
   ping(stuck: boolean, pr = 0): void {
     if (this.isOn()) this.score?.ping(stuck, pr);
+  }
+
+  /** A satellite's beep, at its state's pitch and panned by where it is on screen. */
+  beep(pan: number, state: SatelliteState): void {
+    if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state]);
   }
 
   private play(): void {

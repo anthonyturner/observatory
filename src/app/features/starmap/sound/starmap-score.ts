@@ -13,6 +13,8 @@ export interface StarmapScore {
   setVolume(volume: number): void;
   /** A soft tone for a chosen star: lower and darker when it is stuck. */
   ping(stuck: boolean, pr: number): void;
+  /** A short, soft satellite beep at `hz`, panned -1 (left) to 1 (right). */
+  beep(pan: number, hz: number): void;
 }
 
 /** Loudness is heard as the square of the slider, so the gain follows it. */
@@ -23,6 +25,10 @@ export const tensionGainFor = (blocked: number): number => (Math.min(blocked, 12
 
 /** A major pentatonic has no semitone clashes, so random notes from it never sound wrong. */
 export const SCALE = [440, 493.88, 554.37, 659.25, 739.99, 880, 987.77] as const;
+
+/** Satellite beeps are brief and quiet: heard as a sky's company, never as an alert. */
+const BEEP_LEVEL = 0.035;
+const BEEP_SECONDS = 0.09;
 
 interface Parts {
   readonly master: GainNode;
@@ -83,6 +89,29 @@ export class WebAudioStarmapScore implements StarmapScore {
       stuck ? 0.05 : 0.04,
       stuck ? 1.4 : 1,
     );
+  }
+
+  beep(pan: number, hz: number): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const t = ac.currentTime;
+    const o = ac.createOscillator();
+    o.type = 'triangle';
+    o.frequency.value = hz;
+    // Filtered to its own pitch: a thin, clipped beep rather than a bare tone.
+    const tone = ac.createBiquadFilter();
+    tone.type = 'bandpass';
+    tone.frequency.value = hz;
+    tone.Q.value = 6;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(BEEP_LEVEL, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + BEEP_SECONDS);
+    const panner = ac.createStereoPanner();
+    panner.pan.value = Math.min(1, Math.max(-1, pan));
+    o.connect(tone).connect(g).connect(panner).connect(parts.master);
+    o.start(t);
+    o.stop(t + BEEP_SECONDS + 0.05);
   }
 
   /** A room made of decaying noise: five seconds of it reads as space. */

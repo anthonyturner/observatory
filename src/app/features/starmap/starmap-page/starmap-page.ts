@@ -48,6 +48,8 @@ import { BlackHoleSetting } from '../black-hole/black-hole-setting';
 import { StarCard } from '../star-card/star-card';
 import { CrewDispatch } from '../../../core/crew/crew-dispatch';
 import { crewMarksOf } from '../../../core/crew/crew-roster';
+import { LiveAgentsFeed } from '../../../core/live-agents/live-agents-feed';
+import { satellitesOf } from '../../../core/live-agents/satellites';
 import { CometCard } from '../comet-card/comet-card';
 import { StarmapSound } from '../sound/starmap-sound';
 import { mergePlan } from '../merge-plan';
@@ -223,6 +225,7 @@ export class StarmapPage {
   protected readonly issues = inject(IssuesScreen);
   private readonly router = inject(Router);
   private readonly crew = inject(CrewDispatch);
+  private readonly liveAgents = inject(LiveAgentsFeed);
   protected readonly sprint = inject(ReviewSprint);
   protected readonly motion = inject(MotionPreference);
   protected readonly video = inject(VideoBackground);
@@ -563,6 +566,15 @@ export class StarmapPage {
   );
   /** The crews out in this repository, drawn as ships by their stars. */
   protected readonly crewMarks = computed(() => crewMarksOf(this.crew.crews(), this.repo()));
+  /** The live coding agents in this repository, as satellites; a crew's run is its ship instead. */
+  protected readonly satellites = computed(() =>
+    satellitesOf({
+      agents: this.liveAgents.agents(),
+      repo: this.repo(),
+      pulls: this.items(),
+      crewed: new Set(this.crewMarks().map((mark) => mark.pr)),
+    }),
+  );
   /** The open issues, for the search; it finds closed ones on the Done list. */
   private readonly searchIssues = computed(
     (): readonly SearchedIssue[] => this.issues.report()?.open ?? [],

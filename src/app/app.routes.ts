@@ -58,6 +58,12 @@ export const routes: Routes = [
       import('./features/actions/actions-page/actions-page').then((m) => m.ActionsPage),
   },
   {
+    path: 'p/:owner/:repo/journal',
+    title: 'Journal · Observatory',
+    loadComponent: () =>
+      import('./features/journal/journal-page/journal-page').then((m) => m.JournalPage),
+  },
+  {
     matcher: libraryMatcher,
     title: 'Library · Observatory',
     loadComponent: () =>

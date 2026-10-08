@@ -8,6 +8,10 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ## [Unreleased]
 
+### Removed
+
+- The Review Queue's sound no longer plays a continuous background drone. Space is silent, so with sound on the sky stays quiet until something happens on it: a star's ping, a meteor's crackle, a satellite's beep, a merge's boom. The off-key tone that grew with blocked pull requests went with it ([#553](https://github.com/anthonyturner/observatory/issues/553)).
+
 ### Added
 
 - Moving sounds in the Review Queue now follow their motion with a gentle Doppler shift (at most three semitones either way), read from the positions the sky draws. A merged pull request's streak gets a soft whoosh that rises as it comes toward you and drops as it leaves, a meteor's crackle is a little higher for the way it fell, and a satellite's beep is higher on the side of its orbit coming toward you and lower going away. Motion off means no shift, and sound off means no sound ([#552](https://github.com/anthonyturner/observatory/pull/552)).

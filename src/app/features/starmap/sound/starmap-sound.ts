@@ -56,7 +56,6 @@ export class StarmapSound {
   private readonly errors = inject(ErrorHandler);
   private readonly document = inject(DOCUMENT);
   private score: StarmapScore | null = null;
-  private tension = 0;
 
   readonly isOn = signal(read(SOUND_KEY) === 'on');
   readonly volume = signal(parseVolume(read(VOLUME_KEY)));
@@ -93,12 +92,6 @@ export class StarmapSound {
     this.score?.setVolume(volume);
   }
 
-  /** How many things are blocked: the tension voice follows it. */
-  setTension(blocked: number): void {
-    this.tension = blocked;
-    this.score?.setTension(blocked);
-  }
-
   /** A soft tone when a star is chosen: lower when it is stuck. */
   ping(stuck: boolean, pr = 0): void {
     if (this.isOn()) this.score?.ping(stuck, pr);
@@ -122,7 +115,6 @@ export class StarmapSound {
   private play(): void {
     this.score ??= this.makeScore();
     this.score.setVolume(this.volume());
-    this.score.setTension(this.tension);
     this.score.start().catch((error: unknown) => this.errors.handleError(error));
   }
 }

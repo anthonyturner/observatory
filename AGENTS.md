@@ -60,6 +60,7 @@ authorization and its limits are in
 | write any response, issue, PR body or comment | [response-style.md](docs/response-style.md) |
 | propose or report a change (plan, issue, PR, refactor) | [diagrams.md](docs/diagrams.md) |
 | generate any code | [rules.md](docs/rules.md) and [stack/clean-code.md](docs/stack/clean-code.md) — SOLID and Clean Code are mandatory |
+| design or change any code — strategic, never tactical | [design-principles.md](docs/design-principles.md) |
 | write or cut a code comment | [comments.md](docs/comments.md) |
 | write TypeScript or touch dependencies | [stack/typescript.md](docs/stack/typescript.md) |
 | structure a component or service | [stack/angular.md](docs/stack/angular.md) |

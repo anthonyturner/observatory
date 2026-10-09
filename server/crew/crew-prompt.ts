@@ -58,6 +58,7 @@ const scopeOf = (target: CrewTarget): string[] => [
   'Ground rules:',
   '- Leave this checkout as you found it: its branch and any uncommitted work belong to the owner.',
   `- Work in a temporary worktree instead: \`git fetch origin\`, then \`git worktree add --detach <a new temporary folder> origin/${target.branch}\`, and work there.`,
+  '- Point every git command at that worktree with `git -C <the temporary folder>`. Never chain `cd` or `Set-Location` with git in one command: the run cannot ask for approval, so that command is refused.',
   `- Push only to the pull request's own branch, with a plain \`git push origin HEAD:${target.branch}\`.`,
   '- Never force-push, rewrite published history, merge the pull request, close it, or push to any other branch.',
   '- When you are done, remove the temporary worktree with `git worktree remove`.',

@@ -1,0 +1,47 @@
+@let guide = shown();
+<header class="hud">
+  <div class="way">
+    <app-up-link to="/" label="Home" [guide]="null" />
+  </div>
+  <div class="brand">
+    <h1>Guide</h1>
+    <span class="stamp">How every part of Observatory works</span>
+  </div>
+</header>
+
+<div class="room">
+  <button
+    type="button"
+    class="abtn fold"
+    aria-controls="guide-contents"
+    [attr.aria-expanded]="isIndexOpen()"
+    (click)="toggleIndex()"
+  >
+    {{ isIndexOpen() ? 'Hide contents' : 'Contents' }}
+  </button>
+  <aside id="guide-contents" class="index" [class.open]="isIndexOpen()" aria-label="Guide contents">
+    <app-library-index
+      searchLabel="Filter the guide"
+      listLabel="Contents"
+      [shelves]="shelves()"
+      [resultLine]="resultLine()"
+      [isStill]="isStill()"
+      [(query)]="query"
+    />
+  </aside>
+  <main #reading class="reading" tabindex="-1">
+    <article class="column" aria-label="Guide">
+      @if (guide.intro.length) {
+        <app-doc-blocks [blocks]="guide.intro" />
+      }
+      @for (part of guide.parts; track part.id) {
+        <app-doc-blocks class="part" [blocks]="part.lead" />
+        @for (section of part.sections; track section.id) {
+          <app-doc-blocks class="section" [blocks]="section.blocks" />
+        }
+      } @empty {
+        <p class="empty">Nothing in the guide matches. Try fewer words.</p>
+      }
+    </article>
+  </main>
+</div>

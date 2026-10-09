@@ -85,6 +85,23 @@ kbd {
   color: var(--ink);
 }
 
+.guide {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--flow);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.guide:hover {
+  text-decoration: underline;
+}
+
+.guide:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
 .close {
   position: absolute;
   top: 13px;

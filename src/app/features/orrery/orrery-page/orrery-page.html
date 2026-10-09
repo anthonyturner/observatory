@@ -9,7 +9,7 @@
 
 <header class="hud top">
   <div>
-    <app-up-link to="/" label="Home" />
+    <app-up-link to="/" label="Home" guide="orrery" />
     <div class="brand">
       <h1>Orrery</h1>
       <span class="stamp">{{ stamp() }}</span>
@@ -39,7 +39,7 @@
   />
 }
 
-<app-help-card title="Orrery" [entries]="helpEntries" [keys]="helpKeys" />
+<app-help-card title="Orrery" [entries]="helpEntries" [keys]="helpKeys" guide="orrery" />
 
 <footer class="hud bottom">
   <app-orrery-tools

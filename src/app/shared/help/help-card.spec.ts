@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { HelpCard } from './help-card';
 import { HelpState } from './help-state';
 
@@ -10,10 +11,12 @@ const KEYS = [{ key: '?', action: 'help' }];
 
 describe('HelpCard', () => {
   function render() {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(HelpCard);
     fixture.componentRef.setInput('title', 'Star map');
     fixture.componentRef.setInput('entries', ENTRIES);
     fixture.componentRef.setInput('keys', KEYS);
+    fixture.componentRef.setInput('guide', 'review-queue');
     const help = TestBed.inject(HelpState);
     const element = fixture.nativeElement as HTMLElement;
     return { fixture, help, element };
@@ -84,5 +87,13 @@ describe('HelpCard', () => {
     fixture.destroy();
 
     expect(help.isOpen()).toBe(false);
+  });
+
+  it('links to the page’s part of the Guide', () => {
+    const { fixture, help, element } = render();
+    help.toggle();
+    fixture.detectChanges();
+
+    expect(element.querySelector('a.guide')?.getAttribute('href')).toBe('/guide#review-queue');
   });
 });

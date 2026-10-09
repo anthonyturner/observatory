@@ -21,7 +21,7 @@ const PAGE_LINKS = 'a[data-page]';
 /**
  * The Library's pages as a star chart: each shelf a constellation, each page
  * a star sized by its length, the open page lit. Search narrows it by title
- * and text; the arrow keys walk it.
+ * and text; the arrow keys walk it. The Guide draws its contents with it too.
  */
 @Component({
   selector: 'app-library-index',
@@ -40,6 +40,9 @@ export class LibraryIndex {
   /** True when motion is off, so the open page's star holds still. */
   readonly isStill = input.required<boolean>();
   readonly query = model.required<string>();
+  /** The search box's label, and the list's name, for what the entries are. */
+  readonly searchLabel = input('Search pages');
+  readonly listLabel = input('Pages');
 
   protected search(event: Event): void {
     if (event.target instanceof HTMLInputElement) this.query.set(event.target.value);

@@ -1,8 +1,10 @@
 /* pr-starmap's help, one card per screen and view, word for word. */
 
-/** A help card: what the screen is, then what each mark means. */
+/** A help card: what the screen is, then what each mark means, and its part of the Guide. */
 export interface HelpScreen {
   readonly title: string;
+  /** The anchor of the Guide's section on this screen, such as `issues`. */
+  readonly guide: string;
   readonly rows: readonly (readonly [string, string])[];
 }
 
@@ -19,6 +21,7 @@ export type HelpKey =
 export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   'prs-map': {
     title: 'Review Queue',
+    guide: 'review-queue',
     rows: [
       ['Star', 'One open pull request.'],
       ['Colour', 'Why it is stuck. Click a colour at the top to show only that kind.'],
@@ -151,6 +154,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   },
   'prs-list': {
     title: 'Review Queue — list',
+    guide: 'review-queue',
     rows: [
       ['Rows', 'Every open pull request, most urgent group first.'],
       ['Order', 'Within a group, the one waiting longest comes first.'],
@@ -168,6 +172,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   },
   'issues-map': {
     title: 'Issues — nursery',
+    guide: 'issues',
     rows: [
       [
         'Disk',
@@ -210,6 +215,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   },
   'issues-list': {
     title: 'Issues',
+    guide: 'issues',
     rows: [
       ['Toggle', 'Starmap / List switch to the nursery sky of the same issues, and back.'],
       [
@@ -239,6 +245,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   },
   'usage-list': {
     title: 'Usage',
+    guide: 'usage',
     rows: [
       [
         'Week',
@@ -267,6 +274,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   },
   'retro-list': {
     title: 'Weekly retro',
+    guide: 'retro',
     rows: [
       ['Week', 'The seven days up to when the queue was last read from GitHub.'],
       [
@@ -286,6 +294,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   },
   'logs-map': {
     title: 'Log Sky',
+    guide: 'log-sky',
     rows: [
       ['Group', 'One app window. Its name and line count sit underneath.'],
       ['Star', 'One distinct error (red) or warning (amber).'],
@@ -305,6 +314,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
   },
   'logs-list': {
     title: 'Log Sky — list',
+    guide: 'log-sky',
     rows: [
       ['Rows', 'Every error and warning, grouped by window, worst window first.'],
       ['×n', 'How many times that message was logged.'],

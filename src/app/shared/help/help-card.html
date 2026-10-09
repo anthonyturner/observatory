@@ -29,5 +29,8 @@
         <kbd>{{ item.key }}</kbd> {{ item.action }}{{ last ? '.' : ' · ' }}
       }
     </p>
+    <a class="guide" [routerLink]="guideLink" [fragment]="guide()"
+      >More in the Guide <span aria-hidden="true">&rsaquo;</span></a
+    >
   </aside>
 }

@@ -17,6 +17,7 @@ const DECISIONS_PAGE = 'Decisions';
 /** What a visitor reads first; the agent workflow docs stay in the repository. */
 const MAIN_PAGES: readonly WikiPage[] = [
   { source: 'README.md', name: 'Home', title: 'Home' },
+  { source: 'docs/guide.md', name: 'Guide', title: 'Guide' },
   { source: 'docs/tech-stack.md', name: 'Tech-stack', title: 'Tech stack' },
   { source: 'docs/sky-visuals.md', name: 'Sky-visuals', title: 'Sky visuals' },
   { source: 'CHANGELOG.md', name: 'Changelog', title: 'Changelog' },

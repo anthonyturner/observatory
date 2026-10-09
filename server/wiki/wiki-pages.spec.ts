@@ -3,13 +3,14 @@ import { describe, it } from 'node:test';
 import { wikiPages } from './wiki-pages.ts';
 
 describe('wikiPages', () => {
-  it('publishes the overview pages first, Home from the README', () => {
+  it('publishes the overview pages first, Home from the README and then the Guide', () => {
     const pages = wikiPages([]);
 
     assert.deepEqual(
       pages.map(({ source, name }) => [source, name]),
       [
         ['README.md', 'Home'],
+        ['docs/guide.md', 'Guide'],
         ['docs/tech-stack.md', 'Tech-stack'],
         ['docs/sky-visuals.md', 'Sky-visuals'],
         ['CHANGELOG.md', 'Changelog'],
@@ -24,7 +25,7 @@ describe('wikiPages', () => {
       { fileName: '0001-record.md', markdown: 'No heading' },
       { fileName: '0000-template.md', markdown: '# ADR-NNNN: <title>' },
       { fileName: 'README.md', markdown: '# Index' },
-    ]).slice(5);
+    ]).slice(6);
 
     assert.deepEqual(pages, [
       {

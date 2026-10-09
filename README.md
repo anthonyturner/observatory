@@ -26,7 +26,8 @@ migrated one small piece at a time into typed, tested Angular components.
 
 Every mark that carries meaning is driven by your data; the rest is scenery,
 kept the same for each project on every load. Each page's help card (press
-`?`) has the one-line version, and
+`?`) has the one-line version, the in-app Guide (`/guide`, written in
+[docs/guide.md](docs/guide.md)) explains every screen in plain words, and
 [docs/sky-visuals.md](docs/sky-visuals.md) has the rules behind each mark.
 
 **The Orrery**: one world per project you own.

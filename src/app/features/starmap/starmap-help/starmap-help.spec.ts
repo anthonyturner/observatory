@@ -1,9 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { HelpState } from '../../../shared/help/help-state';
 import { HELP } from './help-content';
 import { StarmapHelp } from './starmap-help';
 
 function render() {
+  TestBed.configureTestingModule({ providers: [provideRouter([])] });
   const fixture = TestBed.createComponent(StarmapHelp);
   fixture.componentRef.setInput('screen', 'prs-map');
   fixture.detectChanges();
@@ -46,5 +48,14 @@ describe('StarmapHelp', () => {
     fixture.detectChanges();
 
     expect(element.querySelector('h2')?.textContent).toBe('Usage');
+  });
+
+  it('links to the showing screen’s part of the Guide', () => {
+    const { fixture, element, help } = render();
+    fixture.componentRef.setInput('screen', 'issues-map');
+    help.toggle();
+    fixture.detectChanges();
+
+    expect(element.querySelector('a.guide')?.getAttribute('href')).toBe('/guide#issues');
   });
 });

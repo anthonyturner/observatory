@@ -12,35 +12,46 @@
     <p class="note warn">{{ wording().cutShort }}</p>
   }
   @if (views().length) {
-    <p class="note tally" aria-live="polite">{{ viewedCount() }} / {{ views().length }} viewed</p>
-  }
-  @for (view of views(); track view.file) {
-    <div class="dfile" [class.viewed]="view.viewed">
-      <div class="head">
-        <button type="button" [attr.aria-expanded]="view.expanded" (click)="toggle(view)">
-          <span class="p">{{ view.file.path }}</span>
-          @if (view.file.isBinary) {
-            <span class="bin">binary, not shown</span>
-          } @else {
-            <span>+{{ view.file.additions }}</span>
-            <span>−{{ view.file.deletions }}</span>
-          }
-        </button>
-        <label class="mark">
-          <input
-            type="checkbox"
-            [checked]="view.viewed"
-            [attr.aria-label]="'Viewed ' + view.file.path"
-            (change)="onViewedChange($event, view)"
-          />
-          Viewed
-        </label>
-      </div>
-      @if (view.lines; as lines) {
-        <pre
-          [hidden]="!view.expanded"
-        >@for (line of lines; track $index) {<span [class]="line.kind"><span class="s">{{ line.sign }}</span>{{ line.text }}</span>}</pre>
-      }
+    <div class="bar">
+      <p class="note tally" aria-live="polite">{{ viewedCount() }} / {{ views().length }} viewed</p>
+      <label class="wrap-toggle">
+        <input type="checkbox" [checked]="wrap()" (change)="onWrapChange($event)" />
+        Wrap long lines
+      </label>
     </div>
   }
+  <div [class.wrap]="wrap()">
+    @for (view of views(); track view.file) {
+      <div class="dfile" [class.viewed]="view.viewed">
+        <div class="head">
+          <button type="button" [attr.aria-expanded]="view.expanded" (click)="toggle(view)">
+            <span class="p"
+              ><span class="dir">{{ view.path.folder }}</span
+              ><span class="name">{{ view.path.name }}</span></span
+            >
+            @if (view.file.isBinary) {
+              <span class="bin">binary, not shown</span>
+            } @else {
+              <span class="add">+{{ view.file.additions }}</span>
+              <span class="del">−{{ view.file.deletions }}</span>
+            }
+          </button>
+          <label class="mark">
+            <input
+              type="checkbox"
+              [checked]="view.viewed"
+              [attr.aria-label]="'Viewed ' + view.file.path"
+              (change)="onViewedChange($event, view)"
+            />
+            Viewed
+          </label>
+        </div>
+        @if (view.lines; as lines) {
+          <pre
+            [hidden]="!view.expanded"
+          >@for (line of lines; track $index) {<span [class]="line.kind"><span class="n" aria-hidden="true">{{ line.oldNumber }}</span><span class="n" aria-hidden="true">{{ line.newNumber }}</span><span class="s">{{ line.sign }}</span><span class="c">@if (line.parts; as parts) {@for (part of parts; track $index) {<span [class.w]="part.changed">{{ part.text }}</span>}} @else {{{ line.text }}}</span></span>}</pre>
+        }
+      </div>
+    }
+  </div>
 }

@@ -5,8 +5,16 @@ import {
   inject,
   input,
   linkedSignal,
+  signal,
 } from '@angular/core';
-import { DiffFile, DiffLine, diffFilesOf, diffLinesOf } from '../../../../core/queue/diff-files';
+import {
+  DiffFile,
+  DiffLine,
+  PathParts,
+  diffFilesOf,
+  diffLinesOf,
+  pathPartsOf,
+} from '../../../../core/queue/diff-files';
 import { SeenFile, ViewedFiles, seenFileOf } from '../../../../core/queue/viewed-files';
 
 const BYTES_PER_KB = 1024;
@@ -27,6 +35,7 @@ export const GITHUB_DIFF_WORDING: SheetDiffWording = {
 interface FileEntry {
   readonly file: DiffFile;
   readonly seen: SeenFile;
+  readonly path: PathParts;
 }
 
 /** The diff split by file, each drawn only when opened: a large pull request is
@@ -50,7 +59,11 @@ export class SheetDiff {
   private readonly viewedFiles = inject(ViewedFiles);
 
   protected readonly files = computed((): readonly FileEntry[] =>
-    diffFilesOf(this.diff()).map((file) => ({ file, seen: seenFileOf(file) })),
+    diffFilesOf(this.diff()).map((file) => ({
+      file,
+      seen: seenFileOf(file),
+      path: pathPartsOf(file.path),
+    })),
   );
   protected readonly sizeKb = computed(() => Math.round(this.diffBytes() / BYTES_PER_KB));
   /** Each opened file's lines, kept once drawn; a new diff starts all closed. */
@@ -66,17 +79,20 @@ export class SheetDiff {
     computation: () => new Set(),
   });
   protected readonly views = computed(() =>
-    this.files().map(({ file, seen }) => {
+    this.files().map(({ file, seen, path }) => {
       const lines = this.opened().get(file) ?? null;
       return {
         file,
         seen,
+        path,
         lines,
         expanded: lines !== null && !this.closed().has(file),
         viewed: this.viewedFiles.isViewed(this.viewedKey(), seen),
       };
     }),
   );
+  /** Long lines wrap under their code, or scroll sideways. */
+  protected readonly wrap = signal(false);
   protected readonly viewedCount = computed(
     () => this.views().filter((view) => view.viewed).length,
   );
@@ -89,6 +105,10 @@ export class SheetDiff {
     }
     this.expand(file);
     this.viewedFiles.mark(this.viewedKey(), seen);
+  }
+
+  protected onWrapChange(event: Event): void {
+    if (event.target instanceof HTMLInputElement) this.wrap.set(event.target.checked);
   }
 
   /** The tick only marks the file: opening and closing stay with its header. */

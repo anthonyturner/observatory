@@ -77,7 +77,7 @@ describe('SheetCommits', () => {
     fixture.detectChanges();
 
     const controls = line(FIRST).getAttribute('aria-controls')!;
-    expect(element.querySelector(`#${controls} pre .a`)?.textContent).toBe('+new');
+    expect(element.querySelector(`#${controls} pre .a .c`)?.textContent).toBe('new');
   });
 
   it('says so when a commit changes no file’s content', () => {

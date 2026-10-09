@@ -122,7 +122,68 @@ describe('SheetDiff', () => {
 
     const { header } = render(`${DIFF}\n${binary}`);
 
-    const counts = [...header(2).querySelectorAll('span')].map((span) => span.textContent?.trim());
+    const counts = [...header(2).children].map((child) => child.textContent?.trim());
     expect(counts).toEqual(['logo.png', 'binary, not shown']);
+  });
+
+  it('shows the folder apart from the file name, with the counts in their own spans', () => {
+    const { header } = render(DIFF.replace(/x\.ts/g, 'src/app/x.ts'));
+
+    expect(header(0).querySelector('.dir')?.textContent).toBe('src/app/');
+    expect(header(0).querySelector('.name')?.textContent).toBe('x.ts');
+    expect(header(0).querySelector('.add')?.textContent).toBe('+1');
+    expect(header(0).querySelector('.del')?.textContent).toBe('−1');
+  });
+
+  describe('an opened file', () => {
+    const CODE = [
+      'diff --git a/x.ts b/x.ts',
+      '@@ -4,2 +4,2 @@',
+      ' keep',
+      '-const total = price * 2;',
+      '+const total = cost * 2;',
+    ].join('\n');
+
+    const open = () => {
+      const view = render(CODE);
+      view.click(view.header(0));
+      const rows = [...view.element.querySelectorAll<HTMLElement>('pre > span')];
+      const gutters = (row: HTMLElement) =>
+        [...row.querySelectorAll('.n')].map((cell) => cell.textContent);
+      return { ...view, rows, gutters };
+    };
+
+    it('numbers each line in an old and a new gutter', () => {
+      const { rows, gutters } = open();
+
+      expect(rows.map(gutters)).toEqual([['', ''], ['4', '4'], ['5', ''], ['', '5']]);
+    });
+
+    it('marks the changed words on both sides of a pair', () => {
+      const { rows } = open();
+
+      const marked = (row: HTMLElement) =>
+        [...row.querySelectorAll('.w')].map((word) => word.textContent);
+      expect(marked(rows[2])).toEqual(['price']);
+      expect(marked(rows[3])).toEqual(['cost']);
+    });
+
+    it('keeps the code copyable without the numbers or signs', () => {
+      const { rows } = open();
+
+      expect(rows[3].querySelector('.c')?.textContent).toBe('const total = cost * 2;');
+    });
+
+    it('wraps long lines only when asked', () => {
+      const { element, click } = open();
+      const toggle = element.querySelector<HTMLInputElement>('.wrap-toggle input')!;
+      expect(element.querySelector('.wrap')).toBeNull();
+
+      click(toggle);
+      expect(element.querySelector('.wrap pre')).not.toBeNull();
+
+      click(toggle);
+      expect(element.querySelector('.wrap')).toBeNull();
+    });
   });
 });

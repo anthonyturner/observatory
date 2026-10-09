@@ -496,7 +496,8 @@ or press **Replay** to watch the sky change, **[** and **]** to step, and
   merges in the base branch or fixes the failing checks and pushes the result.
   It never merges the pull request. **Only on your own computer.**
 - **Rerun.** A pull request failing only on flaky checks (ones that failed,
-  then passed on a rerun) has a Rerun button.
+  then passed on a rerun) has a Rerun button. Preview visitors see the flaky
+  tags but no button.
 - **Move around.** Drag to pan, scroll to zoom, **Fit** to see everything.
   Cards and screens move by their headers; double-click a header to put it
   back.
@@ -724,8 +725,8 @@ the hosted site; never a preview visitor.
 The Claude Code agents running on your computer. Each session and helper agent
 shows its project, branch, folder, title, when it last wrote and its last tool
 call, and whether it is **working**, **waiting for you** or **quiet**. Agents
-waiting for you come first, and ones started without a chat window are tagged
-headless.
+waiting for you come first. One started to work on its own, such as a task
+or a crew, with nobody chatting to it, is tagged **headless**.
 
 Open an agent for its own page:
 

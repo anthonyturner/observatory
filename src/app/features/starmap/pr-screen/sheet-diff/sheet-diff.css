@@ -15,9 +15,39 @@
   overflow: hidden;
 }
 
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .tally {
-  margin: 0 0 8px;
+  margin: 0;
   font-family: var(--font-mono);
+}
+
+.wrap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.wrap-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--flow);
+  cursor: pointer;
+}
+
+.wrap-toggle input:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
 }
 
 .head {
@@ -85,6 +115,27 @@
   overflow-wrap: anywhere;
 }
 
+/* The folder steps back so the file's name is what the eye lands on. */
+.dir {
+  color: var(--muted);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.viewed .dir {
+  opacity: 0.75;
+}
+
+.add {
+  color: var(--sheet-add-ink);
+}
+
+.del {
+  color: var(--sheet-del-ink);
+}
+
 .bin {
   color: var(--muted);
   font-style: italic;
@@ -92,31 +143,62 @@
 
 pre {
   margin: 0;
-  padding: 8px 0;
+  padding: 6px 0;
   overflow-x: auto;
   background: var(--sheet-diff-well);
   font-family: var(--font-mono);
-  font-size: 11.5px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 4;
 }
 
 pre > span {
-  display: block;
-  padding: 0 14px;
+  display: flex;
+  width: max-content;
+  min-width: 100%;
   color: var(--sheet-code-ink);
-  white-space: pre;
+}
+
+.wrap pre > span {
+  width: auto;
+}
+
+/* The numbers are for finding a line, not part of it: a copy leaves them behind. */
+.n {
+  box-sizing: content-box;
+  flex: none;
+  width: 4ch;
+  padding: 0 1ch;
+  color: var(--muted);
+  text-align: right;
+  user-select: none;
 }
 
 /* The sign sits in its own column; on a changed line it alone carries the colour. */
 .s {
-  display: inline-block;
-  width: 1.5ch;
+  flex: none;
+  width: 2ch;
   font-weight: 600;
   user-select: none;
 }
 
+.c {
+  flex: 1 0 auto;
+  padding-right: 14px;
+  white-space: pre;
+}
+
+.wrap .c {
+  flex-basis: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* A changed line keeps the code's own ink: a faint wash and an edge bar mark it,
-   so a long addition reads as code rather than a block of green. */
+   so a long addition reads as code rather than a block of green. The words that
+   changed get a stronger wash, still under the same ink. */
 .a {
   background: var(--sheet-add-wash);
   box-shadow: inset 3px 0 var(--sheet-add-edge);
@@ -124,6 +206,11 @@ pre > span {
 
 .a .s {
   color: var(--sheet-add-ink);
+}
+
+.a .w {
+  background: var(--sheet-add-word);
+  border-radius: 2px;
 }
 
 .d {
@@ -135,12 +222,30 @@ pre > span {
   color: var(--sheet-del-ink);
 }
 
-.h {
-  color: var(--sheet-hunk-ink);
-  background: var(--sheet-hunk-wash);
+.d .w {
+  background: var(--sheet-del-word);
+  border-radius: 2px;
 }
 
-/* A hunk header has no sign, so it keeps the left edge. */
+/* A hunk header is a quiet band between sections, not a line of the file. */
+.h {
+  margin: 4px 0;
+  padding: 2px 0;
+  border-block: 1px solid var(--edge-soft);
+  background: var(--sheet-hunk-wash);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.h:first-child {
+  margin-top: 0;
+}
+
+.h .n,
 .h .s {
   display: none;
+}
+
+.h .c {
+  padding-left: 14px;
 }

@@ -156,7 +156,7 @@ describe('PrScreen', () => {
     expect(visible()?.querySelector('pre')).toBeNull();
     visible()?.querySelector<HTMLButtonElement>('.dfile button')?.click();
     settle();
-    expect(visible()?.querySelector('pre .a')?.textContent).toBe('+new');
+    expect(visible()?.querySelector('pre .a .c')?.textContent).toBe('new');
   });
 
   it('applies an edit, reports it, and holds newer details back until asked', () => {

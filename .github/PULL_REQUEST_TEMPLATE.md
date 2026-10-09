@@ -22,6 +22,10 @@ One or two sentences: what changed and why.
 
 - One line per principle applied or deliberately skipped, and why.
 
+## Design
+
+- One line per design principle applied (docs/design-principles.md), and how.
+
 ## Verification
 
 - `npm run build`, `npm run lint`, `npm test -- --watch=false`, with pass counts.

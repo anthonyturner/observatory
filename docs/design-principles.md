@@ -104,6 +104,9 @@ If you see one of these in your diff, stop and redesign:
   ([rule 7](rules.md)).
 - "Deep" is not "more abstract". Never add a layer or interface that hides
   nothing ([rule 9](rules.md)).
+- Every pull request names the principles it applied in a short **Design**
+  note; the format is step 9 of **Implement and verify** in
+  [agent-workflows/implementation.md](agent-workflows/implementation.md).
 - In review, a tactical shortcut is a finding, with the same weight as a bug.
   So is a missing or token alternative (a straw man named only to fill the
   section, with no real reason it lost).

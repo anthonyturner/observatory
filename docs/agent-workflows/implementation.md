@@ -358,6 +358,15 @@ See **Defect lane** in [pipeline.md](pipeline.md).
    worth it), and one line for any principle or abstraction deliberately not
    used and why, so a reader can tell a considered omission from an
    oversight.
+9. Write the Design note the same way, for the principles in
+   [../design-principles.md](../design-principles.md): one line per
+   principle the change applied, naming it and saying how — for example
+   "Strategic: replaced the special case with a general rule", "Deep module:
+   one call now hides the retry", "Error defined away: deleting a missing
+   item succeeds", or "Follow-up: #n for the part out of scope". **Design it
+   twice** is already shown by **Alternatives considered**, so leave it out
+   here. Two or three lines is typical; a change with nothing to note (a typo
+   fix) says so in one line.
 
 ## Publish
 
@@ -370,9 +379,9 @@ reaches it.
    **Issue references in commits** below.
 2. Push without force.
 3. Update the pull request to the shape of `.github/PULL_REQUEST_TEMPLATE.md` —
-   Summary, Alternatives considered, Changes, SOLID, Verification, Not done —
-   titled with the Conventional Commit subject, with `Closes #<n>` in the
-   body. Replace the scaffold body; do not leave a stub.
+   Summary, Alternatives considered, Changes, SOLID, Design, Verification,
+   Not done — titled with the Conventional Commit subject, with `Closes #<n>`
+   in the body. Replace the scaffold body; do not leave a stub.
 
    Keep the body short (about 200 words): brief bullets, no long rationale,
    nothing the diff already makes obvious.

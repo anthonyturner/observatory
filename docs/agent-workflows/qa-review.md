@@ -22,6 +22,7 @@ and file and line references kept as evidence.
    ([rule 15](../rules.md)), tactical shortcuts, a missing or token
    alternative on the issue or pull request
    ([../design-principles.md](../design-principles.md), **Design it twice**),
+   a missing or token Design note on the pull request,
    and the `CHANGELOG.md` entry
    ([../changelog.md](../changelog.md)) as applicable. A user-visible change
    with no entry, and no reason given for leaving it out, is a finding.

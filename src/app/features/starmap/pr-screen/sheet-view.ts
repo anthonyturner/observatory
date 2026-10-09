@@ -4,6 +4,8 @@ import { BUCKET_LOOK } from '../../queue/queue-view';
 
 export const SHEET_TABS = ['overview', 'files', 'commits', 'checks', 'diff', 'edit'] as const;
 export type SheetTab = (typeof SHEET_TABS)[number];
+/** The tabs for a viewer who may not change the pull request: all but Edit. */
+export const READ_TABS: readonly SheetTab[] = SHEET_TABS.filter((tab) => tab !== 'edit');
 
 export const TAB_LABEL: Readonly<Record<SheetTab, string>> = {
   overview: 'Overview',

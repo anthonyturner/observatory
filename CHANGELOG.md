@@ -8,6 +8,10 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- On the hosted site, a visitor who opens a pull request's screen sees it read-only: no **Edit** tab, merge box or crew control. The API already refused their changes, so nothing on GitHub could change, but the controls looked usable and failed when pressed ([#580](https://github.com/anthonyturner/observatory/issues/580)).
+
 ### Removed
 
 - The Review Queue's sound no longer plays a continuous background drone. Space is silent, so with sound on the sky stays quiet until something happens on it: a star's ping, a meteor's crackle, a satellite's beep, a merge's boom. The off-key tone that grew with blocked pull requests went with it ([#553](https://github.com/anthonyturner/observatory/issues/553)).

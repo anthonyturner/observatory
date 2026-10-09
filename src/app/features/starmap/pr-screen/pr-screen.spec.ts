@@ -1,6 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ViewerSession } from '../../../core/session/viewer-session';
 import { PrScreen } from './pr-screen';
 
 const HEAD = 'b2b767f94b7a8acb0e88d0cc7ec9c3023b0329be';
@@ -47,8 +49,14 @@ const detail = {
   fetchedAt: '2026-09-26T10:00:00Z',
 };
 
-function render() {
-  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+function render(canWrite = true) {
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      ...(canWrite ? [] : [{ provide: ViewerSession, useValue: { canWrite: signal(false) } }]),
+    ],
+  });
   const fixture = TestBed.createComponent(PrScreen);
   fixture.componentRef.setInput('repo', 'me/app');
   fixture.componentRef.setInput('number', 572);
@@ -134,6 +142,22 @@ describe('PrScreen', () => {
     expect(preview?.textContent).toContain('Preview Ready');
     expect(preview?.querySelectorAll('a').length).toBe(1);
     expect(preview?.querySelector('a')?.getAttribute('href')).toBe('https://app-9.vercel.app');
+  });
+
+  it('is read-only for a viewer who may not write: no Edit tab, merge box or crew', () => {
+    const { element, http, settle } = render(false);
+    http.expectOne('/api/pull?repo=me/app&number=572').flush(detail);
+    settle();
+
+    const tabs = Array.from(element.querySelectorAll('[role="tab"]'), (each) =>
+      each.textContent?.trim(),
+    );
+    expect(tabs.some((name) => name?.startsWith('Edit'))).toBe(false);
+    expect(tabs.length).toBe(5);
+    expect(element.querySelector('app-sheet-editor')).toBeNull();
+    expect(element.querySelector('app-merge-box')).toBeNull();
+    expect(element.querySelector('app-crew-control')).toBeNull();
+    http.expectNone('/api/edit?repo=me/app&number=572');
   });
 
   it('counts each tab and switches between them', () => {

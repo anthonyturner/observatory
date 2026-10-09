@@ -40,7 +40,7 @@
     (showNewer)="showNewer.emit()"
   />
   <nav class="tabs" role="tablist">
-    @for (name of tabs; track name) {
+    @for (name of tabs(); track name) {
       <button
         type="button"
         role="tab"

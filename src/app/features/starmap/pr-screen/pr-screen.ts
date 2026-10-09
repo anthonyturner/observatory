@@ -13,6 +13,7 @@ import { PullEdits } from '../../../core/edits/pull-edits';
 import { PullDetailFeed } from '../../../core/queue/pull-detail-feed';
 import { QueueBucket } from '../../../core/queue/queue-report';
 import { LandedBase } from '../../../core/queue/stacks';
+import { ViewerSession } from '../../../core/session/viewer-session';
 import { Draggable } from '../../../shared/draggable/draggable';
 import { BUCKET_LOOK } from '../../queue/queue-view';
 import { SheetDiffTab } from './sheet-diff-tab/sheet-diff-tab';
@@ -24,7 +25,15 @@ import { SheetPreview } from './sheet-preview/sheet-preview';
 import { SheetCommits } from './sheet-commits/sheet-commits';
 import { checkRows, fileRows } from './sheet-rows/sheet-row';
 import { SheetRows } from './sheet-rows/sheet-rows';
-import { NO_COUNTS, SHEET_TABS, SheetTab, kickerOf, routeOf, tabCounts } from './sheet-view';
+import {
+  NO_COUNTS,
+  READ_TABS,
+  SHEET_TABS,
+  SheetTab,
+  kickerOf,
+  routeOf,
+  tabCounts,
+} from './sheet-view';
 import { AgentLanes } from '../../../shared/agent-lanes/agent-lanes';
 import { CrewControl } from '../crew-control/crew-control';
 
@@ -35,7 +44,8 @@ const TYPING = 'input, textarea, select';
 /**
  * pr-starmap's PR screen: one pull request's description, files, commits,
  * checks and diff in a window that can be dragged by its header, with an Edit
- * tab that changes it on GitHub and a merge box along its foot.
+ * tab that changes it on GitHub and a merge box along its foot. A viewer who
+ * may not write, such as a hosted visitor, gets it read-only: none of those.
  */
 @Component({
   selector: 'app-pr-screen',
@@ -82,7 +92,8 @@ export class PrScreen {
   private readonly edits = inject(PullEdits);
 
   protected readonly placeKey = PLACE_KEY;
-  protected readonly tabs = SHEET_TABS;
+  protected readonly canWrite = inject(ViewerSession).canWrite;
+  protected readonly tabs = computed(() => (this.canWrite() ? SHEET_TABS : READ_TABS));
   /** Each pull request opens on its description, as pr-starmap's screen does. */
   protected readonly tab = linkedSignal<number, SheetTab>({
     source: this.number,
@@ -134,7 +145,9 @@ export class PrScreen {
   constructor() {
     effect(() => {
       this.feed.load(this.repo(), this.number());
-      this.edits.load(this.repo(), this.number());
+    });
+    effect(() => {
+      if (this.canWrite()) this.edits.load(this.repo(), this.number());
     });
     effect(() => {
       const head = this.shownOpenHead();

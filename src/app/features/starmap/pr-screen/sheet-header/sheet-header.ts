@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { EditBadge } from '../../../../core/edits/edit-badge';
-import { SHEET_TABS, SheetTab, TAB_LABEL, TabCounts } from '../sheet-view';
+import { SheetTab, TAB_LABEL, TabCounts } from '../sheet-view';
 import { Route } from '../sheet-view';
 import { SheetStatus } from '../sheet-status/sheet-status';
 
@@ -30,12 +30,12 @@ export class SheetHeader {
   readonly title = input.required<string>();
   readonly url = input.required<string>();
   readonly state = input.required<HeaderState>();
+  readonly tabs = input.required<readonly SheetTab[]>();
   readonly tab = input.required<SheetTab>();
   readonly tabChange = output<SheetTab>();
   readonly refresh = output<void>();
   readonly closed = output<void>();
   readonly showNewer = output<void>();
 
-  protected readonly tabs = SHEET_TABS;
   protected readonly tabLabel = TAB_LABEL;
 }

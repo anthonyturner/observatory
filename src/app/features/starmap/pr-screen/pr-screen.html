@@ -13,13 +13,14 @@
     [title]="shownTitle()"
     [url]="url()"
     [state]="header()"
+    [tabs]="tabs()"
     [tab]="tab()"
     (tabChange)="tab.set($event)"
     (refresh)="refresh()"
     (closed)="closed.emit()"
     (showNewer)="showNewer()"
   />
-  @for (name of tabs; track name) {
+  @for (name of tabs(); track name) {
     <section class="pane" role="tabpanel" [hidden]="name !== tab()">
       @if (detail(); as pull) {
         @switch (name) {
@@ -60,14 +61,16 @@
       }
     </section>
   }
-  <app-crew-control
-    class="crew"
-    [repo]="repo()"
-    [number]="number()"
-    [bucket]="shownBucket()"
-    [landed]="landed()"
-  />
-  @if (detail(); as pull) {
-    <app-merge-box [detail]="pull" (saved)="refresh()" />
+  @if (canWrite()) {
+    <app-crew-control
+      class="crew"
+      [repo]="repo()"
+      [number]="number()"
+      [bucket]="shownBucket()"
+      [landed]="landed()"
+    />
+    @if (detail(); as pull) {
+      <app-merge-box [detail]="pull" (saved)="refresh()" />
+    }
   }
 </div>

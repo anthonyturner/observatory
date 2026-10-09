@@ -37,9 +37,13 @@ function blockText(block: DocBlock): string {
   }
 }
 
+/** The words of some blocks as a reader sees them, on one line. */
+export const blocksText = (blocks: readonly DocBlock[]): string =>
+  blocks.map(blockText).join(' ').replace(/\s+/g, ' ').trim();
+
 /** A page's words, read through the same parser that draws it. */
 export function pageTextOf(page: LibraryPage): PageText {
-  const text = parseDoc(page.markdown).blocks.map(blockText).join(' ').replace(/\s+/g, ' ').trim();
+  const text = blocksText(parseDoc(page.markdown).blocks);
   return {
     slug: page.slug,
     text,

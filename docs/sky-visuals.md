@@ -788,8 +788,8 @@ chart below it and its **Table view** carry the same numbers.
 ## Changing a visual
 
 - **Change the rule in TypeScript, not the shader.** A data mark's thresholds
-  live in its function, with tests. Update the help-card row when its meaning
-  changes.
+  live in its function, with tests. Update the help-card row, and its section
+  of [guide.md](guide.md), when its meaning changes.
 - **Reduced motion:** when motion is off, the Review Queue passes its shaders a
   fixed `time` and the Orrery stops redrawing, so surfaces, clouds, flares,
   discs and planets hold still. Drive anything new that moves from that same

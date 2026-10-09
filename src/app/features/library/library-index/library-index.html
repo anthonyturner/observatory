@@ -1,5 +1,5 @@
 <div class="search" role="search">
-  <label for="library-search">Search pages</label>
+  <label for="library-search">{{ searchLabel() }}</label>
   <input
     id="library-search"
     type="search"
@@ -11,7 +11,7 @@
 </div>
 <p class="result" role="status">{{ resultLine() }}</p>
 
-<nav aria-label="Pages">
+<nav [attr.aria-label]="listLabel()">
   @for (shelf of shelves(); track shelf.name) {
     <section class="shelf">
       <h2>{{ shelf.name }}</h2>
@@ -21,6 +21,7 @@
             <a
               data-page
               [routerLink]="entry.link"
+              [fragment]="entry.fragment ?? undefined"
               [attr.aria-current]="entry.isCurrent ? 'page' : null"
               (keydown)="walk($event)"
             >

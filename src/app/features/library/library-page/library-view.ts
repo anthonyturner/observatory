@@ -11,6 +11,8 @@ export interface IndexEntry {
   readonly slug: string;
   readonly title: string;
   readonly link: string;
+  /** The heading it lands on, for an entry that is a part of one page; null for a whole page. */
+  readonly fragment: string | null;
   readonly diameter: number;
   readonly isCurrent: boolean;
   /** Where a search found it in the text; null with no search, or a match in the title only. */
@@ -65,6 +67,7 @@ function entryOf(page: LibraryPage, text: PageText | undefined, input: IndexInpu
     slug: page.slug,
     title: page.title,
     link: libraryLink(input.repo, page.slug),
+    fragment: null,
     diameter: starDiameterOf(text?.wordCount ?? 0),
     isCurrent: page.slug === input.currentSlug,
     snippet: input.terms.length && text ? snippetOf(text.text, input.terms) : null,

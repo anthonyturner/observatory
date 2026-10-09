@@ -1,5 +1,7 @@
 :host {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   width: fit-content;
   margin-bottom: 9px;
 }
@@ -28,7 +30,14 @@ a {
 a:hover {
   color: var(--ink);
   border-color: var(--flow);
+}
+
+.up:hover {
   transform: translateX(-2px);
+}
+
+.guide {
+  padding-left: 12px;
 }
 
 a:focus-visible {

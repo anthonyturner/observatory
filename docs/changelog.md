@@ -23,6 +23,9 @@ test, a CI tweak, a documentation typo, a dependency bump with no visible
 effect. Say so in the pull request instead ("No changelog entry: internal
 refactor"), so a reviewer can tell an omission from a decision.
 
+A change someone using the project would notice also updates its section of
+[guide.md](guide.md), the Guide page in the app, in the same pull request.
+
 ## How to write one
 
 - **One line per change, written for the user.** Say what they can now do or

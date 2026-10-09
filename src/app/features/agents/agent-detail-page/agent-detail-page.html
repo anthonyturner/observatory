@@ -1,6 +1,6 @@
 @let shown = state();
 <main class="page">
-  <app-up-link to="/agents" label="Agents" />
+  <app-up-link to="/agents" label="Agents" guide="agents" />
   @switch (shown.status) {
     @case ('reading') {
       <p class="note">Reading the session…</p>

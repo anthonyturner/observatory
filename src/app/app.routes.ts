@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { GUIDE_PATH } from './core/guide/guide-link';
 import { libraryMatcher } from './core/library/library-route';
 
 const agentDetailPage = () =>
@@ -28,6 +29,11 @@ export const routes: Routes = [
     path: 'inbox',
     title: 'Inbox · Observatory',
     loadComponent: () => import('./features/inbox/inbox-page/inbox-page').then((m) => m.InboxPage),
+  },
+  {
+    path: GUIDE_PATH,
+    title: 'Guide · Observatory',
+    loadComponent: () => import('./features/guide/guide-page/guide-page').then((m) => m.GuidePage),
   },
   {
     path: 'agents',

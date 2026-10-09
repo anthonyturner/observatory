@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { GUIDE_LINK } from '../../../core/guide/guide-link';
 import { MAIL_SHOWN } from '../../../core/mail/mail-inbox';
 import { LiveAgentsLink } from '../../agents/live-agents-link/live-agents-link';
 import { InboxLink } from '../../inbox/inbox-link/inbox-link';
@@ -26,8 +27,8 @@ const JUMPS: readonly Jump[] = [
 ];
 
 /** A task's pill, jumps to Home's sections, the agents running now, the
- *  inbox, and the way to the orrery. The page's tools sit along the foot of the screen
- *  instead, as on every screen. */
+ *  inbox, and the ways to the orrery, the architecture map and the guide.
+ *  The page's tools sit along the foot of the screen instead, as on every screen. */
 @Component({
   selector: 'app-top-nav',
   imports: [RouterLink, RunPill, LiveAgentsLink, InboxLink],
@@ -40,4 +41,5 @@ export class TopNav {
   private readonly hasMail = inject(MAIL_SHOWN);
   /** Mail first, where Home has it: it is the most time-sensitive section. */
   protected readonly jumps = computed(() => (this.hasMail() ? [MAIL_JUMP, ...JUMPS] : JUMPS));
+  protected readonly guideLink = GUIDE_LINK;
 }

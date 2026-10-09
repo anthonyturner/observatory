@@ -51,6 +51,13 @@ describe('crewPrompt', () => {
     assert.match(prompt, /git worktree add --detach/);
   });
 
+  it('runs git with -C rather than cd-ing into the worktree, which a run cannot get approved', () => {
+    const prompt = crewPrompt(TARGET);
+
+    assert.match(prompt, /git -C <the temporary folder>/);
+    assert.match(prompt, /Never chain `cd` or `Set-Location` with git/);
+  });
+
   it('reads the failed logs for failing checks', () => {
     const prompt = crewPrompt({ ...TARGET, task: 'fix-checks' });
 

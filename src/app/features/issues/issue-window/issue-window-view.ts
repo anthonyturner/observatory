@@ -16,7 +16,7 @@ export interface Kicker {
   readonly ink: string | null;
 }
 
-/** What this window shows, in the words the pull request screen's "Pull request" mirrors. */
+/** What this window holds; the pull request screen names its own the same way. */
 const KIND = 'Issue';
 
 interface StateLook {

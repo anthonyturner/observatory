@@ -576,14 +576,18 @@ the top.
 
 Beside the tabs, and on the project's card on Home, is a **Run** button. It
 starts the project's dev server in its clone on your computer (the project's
-`dev` script, else its `start` script) and opens the site in a new tab once the
-server prints its address. It reads **Starting…** while it waits, then **Open ↗**
-and **Stop**; pressing Run again reuses the running server, and Stop ends it and
-everything it started. A project with no clone here, or no script, says why. To
-run something else, or to say where the site is (a script that starts an API and a
+`dev` script, else its `start` script) on a free port, so a port something else
+holds never stalls it, and opens the site in a new tab once the site answers.
+It reads **Starting…** while it waits, then **Open ↗** and **Stop**; if your
+browser blocks the new tab, **Open ↗** stays and a note says to allow pop-ups
+for Observatory. Pressing Run again reuses the running server, and Stop ends it
+and everything it started. A project with no clone here, or no script, says why,
+and a server that stalls or quits says its last line of output. To run
+something else, or to say where the site is (a script that starts an API and a
 site together can fool the address Observatory picks), add the project to
 `~/.claude/observatory/run.json`, as `{"owner/name": {"command": "...", "url":
-"..."}}`. **Only on your own computer:** the hosted site has no Run button.
+"..."}}`; write `{port}` in the command where it takes its port.
+**Only on your own computer:** the hosted site has no Run button.
 
 ### Releases
 

@@ -37,6 +37,7 @@ describe('shellLauncher', () => {
     const process = shellLauncher({ spawn, platform: 'win32', env: ENV })(
       'E:\\repos\\app',
       'npm run dev',
+      4300,
     );
 
     assert.equal(process.pid, 7);
@@ -53,16 +54,22 @@ describe('shellLauncher', () => {
   it('puts the server in its own process group elsewhere, so a kill reaches its children', () => {
     const { spawn, calls } = recordingSpawner();
 
-    shellLauncher({ spawn, platform: 'linux', env: ENV })('/repos/app', 'npm start');
+    shellLauncher({ spawn, platform: 'linux', env: ENV })('/repos/app', 'npm start', 4300);
 
     assert.equal(calls[0]?.options.detached, true);
   });
 
-  it('withholds the API’s own credentials from the project', () => {
+  it('withholds the API’s own credentials from the project, and tells it its port and not to ask or open a browser', () => {
     const { spawn, calls } = recordingSpawner();
 
-    shellLauncher({ spawn, platform: 'linux', env: ENV })('/repos/app', 'npm start');
+    shellLauncher({ spawn, platform: 'linux', env: ENV })('/repos/app', 'npm start', 4300);
 
-    assert.deepEqual(calls[0]?.options.env, { PATH: 'C:/bin', HOME: 'h' });
+    assert.deepEqual(calls[0]?.options.env, {
+      PATH: 'C:/bin',
+      HOME: 'h',
+      NG_CLI_ANALYTICS: 'false',
+      BROWSER: 'none',
+      PORT: '4300',
+    });
   });
 });

@@ -2,8 +2,10 @@ import type { CloneFinder } from '../collisions/clone-finder.ts';
 import { type ProjectRef, cloneCheckouts } from '../runner/checkouts.ts';
 import { processTreeKiller } from '../runner/process-tree.ts';
 import { shellLauncher } from './dev-launcher.ts';
+import { freeLoopbackPort } from './dev-port.ts';
 import { DevServers } from './dev-servers.ts';
 import { fileRunCommands } from './run-command.ts';
+import { answersHttp } from './site-probe.ts';
 
 /** What the local server knows that its dev servers are built from. */
 export interface LocalDevServerSources {
@@ -18,6 +20,8 @@ export function localDevServers(sources: LocalDevServerSources): DevServers {
     commands: fileRunCommands(),
     launch: shellLauncher(),
     killer: processTreeKiller(),
+    freePort: freeLoopbackPort,
+    probe: answersHttp,
     later: (run, ms) => {
       const timer = setTimeout(run, ms);
       timer.unref();

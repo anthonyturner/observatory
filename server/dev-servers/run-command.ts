@@ -1,10 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { portFlagFor } from './dev-port.ts';
 
 /** What to run in a project's checkout, and optionally where its site then is. */
 export interface RunCommand {
-  /** One shell line: `npm run dev`, or the owner's own from run.json. */
+  /** One shell line: `npm run dev`, or the owner's own from run.json. A `{port}` in it
+   *  stands for the port Observatory chooses. */
   readonly command: string;
   /** The owner's address for the site, which wins over the one the server prints. */
   readonly url: string | null;
@@ -73,8 +75,11 @@ export function fileRunCommands(
       const override = listed && overrideFrom(listed[1]);
       if (override) return override;
       const scripts = scriptsOf(readJson(join(folder, 'package.json')));
-      const found = SCRIPTS.find(({ script }) => typeof scripts[script] === 'string');
-      return found ? { command: found.command, url: null } : null;
+      for (const { script, command } of SCRIPTS) {
+        const body = scripts[script];
+        if (typeof body === 'string') return { command: command + portFlagFor(body), url: null };
+      }
+      return null;
     },
   };
 }

@@ -15,9 +15,19 @@ const commandFor = (files: Record<string, unknown>, repo = 'me/app') =>
 
 describe('fileRunCommands', () => {
   it('runs the dev script', () => {
-    const files = { [`${FOLDER}/package.json`]: { scripts: { dev: 'vite', start: 'node .' } } };
+    const files = {
+      [`${FOLDER}/package.json`]: { scripts: { dev: 'node dev.js', start: 'node .' } },
+    };
 
     assert.deepEqual(commandFor(files), { command: 'npm run dev', url: null });
+  });
+
+  it('asks a known dev CLI for the port Observatory chooses, through npm', () => {
+    const dev = { [`${FOLDER}/package.json`]: { scripts: { dev: 'vite --host' } } };
+    const start = { [`${FOLDER}/package.json`]: { scripts: { start: 'ng serve' } } };
+
+    assert.deepEqual(commandFor(dev), { command: 'npm run dev -- --port {port}', url: null });
+    assert.deepEqual(commandFor(start), { command: 'npm start -- --port {port}', url: null });
   });
 
   it('runs the start script when there is no dev script', () => {
@@ -45,6 +55,12 @@ describe('fileRunCommands', () => {
     });
   });
 
+  it('keeps the {port} placeholder of the owner’s command for Observatory to fill', () => {
+    const files = { [OVERRIDES]: { 'me/app': { command: 'make serve PORT={port}' } } };
+
+    assert.deepEqual(commandFor(files), { command: 'make serve PORT={port}', url: null });
+  });
+
   it('lets an override with only a command leave the address to the server', () => {
     const files = { [OVERRIDES]: { 'me/app': { command: 'make serve' } } };
 
@@ -61,7 +77,10 @@ describe('fileRunCommands', () => {
     };
 
     assert.deepEqual(commandFor(files), { command: 'make serve', url: null });
-    assert.deepEqual(commandFor(files, 'me/other'), { command: 'npm run dev', url: null });
+    assert.deepEqual(commandFor(files, 'me/other'), {
+      command: 'npm run dev -- --port {port}',
+      url: null,
+    });
   });
 
   it('ignores a run.json that is not an object of projects', () => {

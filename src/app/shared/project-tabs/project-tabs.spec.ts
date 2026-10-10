@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { RunPreviewButton } from '../run-preview-button/run-preview-button';
 import { PROJECT_TABS, ProjectTabs, projectTabLink } from './project-tabs';
 import { QuietTab } from './quiet-tab';
 import { QUIET_TABS } from './quiet-tabs';
@@ -15,6 +17,19 @@ describe('projectTabLink', () => {
 });
 
 describe('ProjectTabs', () => {
+  it('carries the project’s Run button beside the screens, on every one of them', () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: QUIET_TABS, useValue: [] }],
+    });
+    const fixture = TestBed.createComponent(ProjectTabs);
+    fixture.componentRef.setInput('repo', 'me/app');
+    fixture.componentRef.setInput('current', 'security');
+    fixture.detectChanges();
+
+    const button = fixture.debugElement.query(By.directive(RunPreviewButton));
+    expect((button.componentInstance as RunPreviewButton).repo()).toBe('me/app');
+  });
+
   it('links every screen of the project and marks the current one as the page', () => {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), { provide: QUIET_TABS, useValue: [] }],

@@ -1,9 +1,11 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { ProjectJump } from '../../../core/projects/project-jump';
 import { ProjectSnapshot } from '../../../core/projects/project.types';
+import { RunPreviewButton } from '../../../shared/run-preview-button/run-preview-button';
 import { ProjectCard } from './project-card';
 
 const blocked: ProjectSnapshot = {
@@ -41,6 +43,15 @@ describe('ProjectCard', () => {
       'https://github.com/me/pr-starmap',
     );
     expect(card.style.getPropertyValue('--sev')).toBe('var(--sev-blocked)');
+  });
+
+  it('carries the project’s Run button', () => {
+    const fixture = TestBed.createComponent(ProjectCard);
+    fixture.componentRef.setInput('project', blocked);
+    fixture.detectChanges();
+
+    const button = fixture.debugElement.query(By.directive(RunPreviewButton));
+    expect((button.componentInstance as RunPreviewButton).repo()).toBe('me/pr-starmap');
   });
 
   it('says counts are unknown, and shows none, when GitHub could not be read', () => {

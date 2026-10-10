@@ -79,7 +79,10 @@ function render(canWrite: boolean) {
       },
       { provide: ELEMENT_SIZE, useValue: () => of({ width: 1400, height: 900 }) },
       { provide: PlanetPortraits, useValue: { painter: () => signal(null) } },
-      { provide: ViewerSession, useValue: { canWrite: signal(canWrite) } },
+      {
+        provide: ViewerSession,
+        useValue: { canWrite: signal(canWrite), isConfirmedLocal: signal(false) },
+      },
     ],
   });
   const fixture = TestBed.createComponent(ActionsPage);

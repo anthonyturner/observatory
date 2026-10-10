@@ -1,0 +1,365 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import type { Checkout } from '../runner/checkouts.ts';
+import { FakeProcess, fakeKiller } from '../runner/fake-process.ts';
+import type { DevLaunch } from './dev-launcher.ts';
+import { DevServers, NO_ADDRESS, NO_CHECKOUT, NO_COMMAND } from './dev-servers.ts';
+import type { RunCommand } from './run-command.ts';
+
+const APP: Checkout = { name: 'app', repo: 'me/app', folder: 'E:/repos/app' };
+const SITE: Checkout = { name: 'site', repo: 'me/site', folder: 'E:/repos/site' };
+const DEV: RunCommand = { command: 'npm run dev', url: null };
+
+interface Setting {
+  readonly checkouts?: readonly Checkout[];
+  readonly command?: RunCommand | null;
+  readonly listing?: Promise<void>;
+}
+
+function setUp(setting: Setting = {}) {
+  const { checkouts = [APP], command = DEV, listing = Promise.resolve() } = setting;
+  const processes: FakeProcess[] = [];
+  const launches: { folder: string; command: string }[] = [];
+  const asked: { repo: string; folder: string }[] = [];
+  const timers: { run: () => void; ms: number; cancelled: boolean }[] = [];
+  const launch: DevLaunch = (folder, line) => {
+    const process = new FakeProcess(300 + processes.length);
+    processes.push(process);
+    launches.push({ folder, command: line });
+    return process;
+  };
+  const kills = fakeKiller(processes);
+  const servers = new DevServers({
+    checkouts: {
+      list: async () => {
+        await listing;
+        return checkouts;
+      },
+    },
+    commands: {
+      commandFor: (repo, folder) => {
+        asked.push({ repo, folder });
+        return command;
+      },
+    },
+    launch,
+    killer: kills.killer,
+    later: (run, ms) => {
+      const timer = { run, ms, cancelled: false };
+      timers.push(timer);
+      return () => void (timer.cancelled = true);
+    },
+  });
+  return { servers, processes, launches, asked, timers, ...kills };
+}
+
+/** Lets the streams a test wrote to deliver their data. */
+const settle = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
+
+const running = (url: string) => ({ repo: 'me/app', state: 'running', url });
+const stoppedApp = { repo: 'me/app', state: 'stopped' };
+
+describe('DevServers', () => {
+  it('runs the project’s command in its checkout and reports starting', async () => {
+    const { servers, launches, asked } = setUp();
+
+    const status = await servers.start('me/app');
+
+    assert.deepEqual(status, { repo: 'me/app', state: 'starting' });
+    assert.deepEqual(launches, [{ folder: 'E:/repos/app', command: 'npm run dev' }]);
+    assert.deepEqual(asked, [{ repo: 'me/app', folder: 'E:/repos/app' }]);
+    assert.deepEqual(servers.status('me/app'), status);
+  });
+
+  it('reports running at the first localhost address the server prints, colour codes and all', async () => {
+    const { servers, processes } = setUp();
+    await servers.start('me/app');
+
+    processes[0]?.print(
+      '> app@0.0.0 dev',
+      '  \u001B[32m➜\u001B[39m  Local:   \u001B[36mhttp://localhost:\u001B[1m5173\u001B[22m/\u001B[39m',
+    );
+    processes[0]?.print('  Network: http://localhost:9999/');
+    await settle();
+
+    assert.deepEqual(servers.status('me/app'), running('http://localhost:5173/'));
+  });
+
+  it('prefers the address labelled Local: over an earlier one, as a full-stack script prints its API first', async () => {
+    const { servers, processes, timers } = setUp();
+    await servers.start('me/app');
+
+    processes[0]?.print('api listening on http://localhost:3001/');
+    await settle();
+    assert.equal(servers.status('me/app').state, 'starting');
+    processes[0]?.print('  Local:   http://localhost:5173/');
+    await settle();
+
+    assert.deepEqual(servers.status('me/app'), running('http://localhost:5173/'));
+    assert.ok(
+      timers.every((timer) => timer.cancelled),
+      'neither wait is left running',
+    );
+  });
+
+  it('falls back to the first address when no line is labelled Local:, after a short wait', async () => {
+    const { servers, processes, timers } = setUp();
+    await servers.start('me/app');
+
+    processes[0]?.print('listening on http://localhost:3001/', 'also http://localhost:3002/');
+    await settle();
+    assert.equal(servers.status('me/app').state, 'starting');
+    timers[1]?.run();
+
+    assert.deepEqual(servers.status('me/app'), running('http://localhost:3001/'));
+  });
+
+  it('does not report a fallback address once stopped', async () => {
+    const { servers, processes, timers } = setUp();
+    await servers.start('me/app');
+    processes[0]?.print('listening on http://localhost:3001/');
+    await settle();
+
+    servers.stop('me/app');
+
+    assert.equal(timers[1]?.cancelled, true);
+    assert.equal(servers.status('me/app').state, 'stopped');
+  });
+
+  it('reads the address from stderr too, and from a line that arrives in pieces', async () => {
+    const { servers, processes } = setUp();
+    await servers.start('me/app');
+
+    processes[0]?.stderr.write('Local: http://local');
+    processes[0]?.stderr.write('host:4200/\n');
+    await settle();
+
+    assert.deepEqual(servers.status('me/app'), running('http://localhost:4200/'));
+  });
+
+  it('keeps reading output after the address, so a full pipe cannot stall the server', async () => {
+    const { servers, processes } = setUp();
+    await servers.start('me/app');
+    processes[0]?.print('Local: http://localhost:5173/');
+    await settle();
+
+    processes[0]?.print('hot update', 'hot update');
+    await settle();
+
+    assert.equal(processes[0]?.stdout.readableLength, 0);
+  });
+
+  it('uses the owner’s command and address, reporting running at once', async () => {
+    const { servers, launches } = setUp({
+      command: { command: 'make serve', url: 'https://app.test:8443/' },
+    });
+
+    const status = await servers.start('me/app');
+
+    assert.deepEqual(launches, [{ folder: 'E:/repos/app', command: 'make serve' }]);
+    assert.deepEqual(status, running('https://app.test:8443/'));
+  });
+
+  it('reuses the server that is running, however many times Run is asked', async () => {
+    const { servers, processes, launches } = setUp();
+
+    const [first, second] = await Promise.all([servers.start('me/app'), servers.start('Me/App')]);
+    processes[0]?.print('Local: http://localhost:5173/');
+    await settle();
+    const third = await servers.start('me/app');
+
+    assert.equal(first?.state, 'starting');
+    assert.equal(second?.state, 'starting');
+    assert.deepEqual(third, running('http://localhost:5173/'));
+    assert.equal(launches.length, 1);
+  });
+
+  it('finds the checkout whatever the case of the repository', async () => {
+    const { servers, launches } = setUp();
+
+    await servers.start('ME/APP');
+
+    assert.equal(launches[0]?.folder, 'E:/repos/app');
+  });
+
+  it('keeps one server per project', async () => {
+    const { servers, launches } = setUp({ checkouts: [APP, SITE] });
+
+    await servers.start('me/app');
+    await servers.start('me/site');
+
+    assert.deepEqual(
+      launches.map((each) => each.folder),
+      ['E:/repos/app', 'E:/repos/site'],
+    );
+  });
+
+  it('stops the whole process tree and forgets the server', async () => {
+    const { servers, processes, stopped } = setUp();
+    await servers.start('me/app');
+    processes[0]?.print('Local: http://localhost:5173/');
+    await settle();
+
+    const status = servers.stop('me/app');
+
+    assert.deepEqual(status, stoppedApp);
+    assert.deepEqual(stopped, [300]);
+    assert.deepEqual(servers.status('me/app'), stoppedApp);
+  });
+
+  it('succeeds in stopping a server that is not running, and kills nothing', () => {
+    const { servers, stopped } = setUp();
+
+    assert.deepEqual(servers.stop('me/app'), stoppedApp);
+    assert.deepEqual(stopped, []);
+  });
+
+  it('does not report a stopped server as failed when its process then ends', async () => {
+    const { servers } = setUp();
+    await servers.start('me/app');
+
+    servers.stop('me/app');
+    await settle();
+
+    assert.equal(servers.status('me/app').state, 'stopped');
+  });
+
+  it('starts a fresh server after a stop', async () => {
+    const { servers, launches } = setUp();
+    await servers.start('me/app');
+    servers.stop('me/app');
+
+    await servers.start('me/app');
+
+    assert.equal(launches.length, 2);
+  });
+
+  it('launches nothing when stopped while the checkout is still being looked up', async () => {
+    let finishListing = (): void => undefined;
+    const { servers, launches } = setUp({
+      listing: new Promise((resolve) => (finishListing = resolve)),
+    });
+
+    const starting = servers.start('me/app');
+    servers.stop('me/app');
+    finishListing();
+
+    assert.equal((await starting).state, 'stopped');
+    assert.deepEqual(launches, []);
+    assert.equal(servers.status('me/app').state, 'stopped');
+  });
+
+  it('says how a server ended, with its last words, and lets Run start it again', async () => {
+    const { servers, processes, launches } = setUp();
+    await servers.start('me/app');
+    processes[0]?.print('Error: Cannot find module vite', '');
+    await settle();
+
+    processes[0]?.end(1);
+    await settle();
+
+    assert.deepEqual(servers.status('me/app'), {
+      repo: 'me/app',
+      state: 'failed',
+      reason: 'The dev server exited with code 1. Its last output: Error: Cannot find module vite',
+    });
+    await servers.start('me/app');
+    assert.equal(launches.length, 2);
+    assert.equal(servers.status('me/app').state, 'starting');
+  });
+
+  it('reports a server that ends after it was running as failed, and does not kill it again', async () => {
+    const { servers, processes, stopped } = setUp();
+    await servers.start('me/app');
+    processes[0]?.print('Local: http://localhost:5173/');
+    await settle();
+
+    processes[0]?.end(0);
+    await settle();
+
+    assert.equal(servers.status('me/app').state, 'failed');
+    servers.stop('me/app');
+    assert.deepEqual(stopped, []);
+  });
+
+  it('says why when the command could not be started at all', async () => {
+    const { servers, processes } = setUp();
+    await servers.start('me/app');
+
+    processes[0]?.fail(new Error('spawn ENOENT'));
+
+    assert.deepEqual(servers.status('me/app'), {
+      repo: 'me/app',
+      state: 'failed',
+      reason: 'Could not start "npm run dev": spawn ENOENT',
+    });
+  });
+
+  it('says why a project with no local checkout cannot run, and starts nothing', async () => {
+    const { servers, launches } = setUp({ checkouts: [] });
+
+    const status = await servers.start('me/app');
+
+    assert.deepEqual(status, { repo: 'me/app', state: 'failed', reason: NO_CHECKOUT });
+    assert.deepEqual(launches, []);
+  });
+
+  it('says why a project with no runnable script cannot run, and starts nothing', async () => {
+    const { servers, launches } = setUp({ command: null });
+
+    const status = await servers.start('me/app');
+
+    assert.deepEqual(status, { repo: 'me/app', state: 'failed', reason: NO_COMMAND });
+    assert.deepEqual(launches, []);
+  });
+
+  it('forgets a project that could not run when asked to stop it', async () => {
+    const { servers } = setUp({ checkouts: [] });
+    await servers.start('me/app');
+
+    assert.deepEqual(servers.stop('me/app'), stoppedApp);
+    assert.equal(servers.status('me/app').state, 'stopped');
+  });
+
+  it('gives up on a server that prints no address, and stops its tree', async () => {
+    const { servers, timers, stopped } = setUp();
+    await servers.start('me/app');
+
+    assert.equal(timers.length, 1);
+    timers[0]?.run();
+
+    assert.deepEqual(servers.status('me/app'), {
+      repo: 'me/app',
+      state: 'failed',
+      reason: NO_ADDRESS,
+    });
+    assert.deepEqual(stopped, [300]);
+  });
+
+  it('stops waiting for an address once it has one, and once it is stopped', async () => {
+    const found = setUp();
+    await found.servers.start('me/app');
+    found.processes[0]?.print('Local: http://localhost:5173/');
+    await settle();
+    const quit = setUp();
+    await quit.servers.start('me/app');
+
+    quit.servers.stop('me/app');
+
+    assert.equal(found.timers[0]?.cancelled, true);
+    assert.equal(quit.timers[0]?.cancelled, true);
+  });
+
+  it('kills every live server at once when the API exits', async () => {
+    const { servers, processes, stoppedNow } = setUp({ checkouts: [APP, SITE] });
+    await servers.start('me/app');
+    await servers.start('me/site');
+    processes[1]?.end(1);
+    await settle();
+
+    servers.shutdown();
+
+    assert.deepEqual(stoppedNow, [300]);
+    assert.equal(servers.status('me/app').state, 'stopped');
+  });
+});

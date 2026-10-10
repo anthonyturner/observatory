@@ -1,0 +1,75 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+/* Nothing to show off this machine: take no room, not even a gap in the row above. */
+:host:empty {
+  display: none;
+}
+
+.run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+/* The same pill as the project's screens beside it. */
+button,
+a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 3px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+button:hover:not(:disabled),
+a:hover {
+  color: var(--ink);
+  border-color: var(--flow);
+}
+
+button:disabled {
+  cursor: default;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.note {
+  min-width: 0;
+  max-width: 46ch;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+/* Said in words as well as colour, so it never rests on colour alone. */
+.note.problem {
+  color: var(--bad-soft);
+}
+
+@media (max-width: 720px) {
+  button,
+  a {
+    min-height: 44px;
+  }
+}

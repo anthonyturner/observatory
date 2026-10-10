@@ -52,6 +52,7 @@ read-only view for visitors who aren't you.
 | Inbox                                                        | Yes               | Yes                      | No                              |
 | Jev, voice, mail, skills and tasks                           | Yes               | No                       | No                              |
 | Agents, crews, satellites                                    | Yes               | No                       | No                              |
+| Run button (starts a project's dev server)                   | Yes               | No                       | No                              |
 | Usage and triage                                             | Yes               | Yes                      | No                              |
 
 A preview visitor can look but never change anything: no snoozing, no merging,
@@ -136,6 +137,7 @@ pointing at a project plays its little motif.
 - Links to the project's PRs, Issues, Logs and Usage, an **Actions** link whose
   dot says whether its main branch's checks are passing, failing or running,
   and a GitHub link.
+- A **Run** button (see [Project tabs](#project-tabs)).
 - "Counts unknown, not zero" when GitHub couldn't be read for it.
 
 The **Notify me** box in the Projects heading sends a desktop notification
@@ -568,6 +570,17 @@ Click a card to light only that agent's stars.
 
 Each project has these screens beside its Review Queue, in the row of tabs at
 the top.
+
+Beside the tabs, and on the project's card on Home, is a **Run** button. It
+starts the project's dev server in its clone on your computer (the project's
+`dev` script, else its `start` script) and opens the site in a new tab once the
+server prints its address. It reads **Starting…** while it waits, then **Open ↗**
+and **Stop**; pressing Run again reuses the running server, and Stop ends it and
+everything it started. A project with no clone here, or no script, says why. To
+run something else, or to say where the site is (a script that starts an API and a
+site together can fool the address Observatory picks), add the project to
+`~/.claude/observatory/run.json`, as `{"owner/name": {"command": "...", "url":
+"..."}}`. **Only on your own computer:** the hosted site has no Run button.
 
 ### Releases
 

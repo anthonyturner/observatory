@@ -1,0 +1,28 @@
+@if (isLocal()) {
+  @let shown = view();
+  <div class="run" role="group" [attr.aria-label]="'Dev server for ' + repo()">
+    @if (shown.canRun) {
+      <button type="button" [attr.aria-label]="'Run ' + repo()" (click)="run()">
+        <span aria-hidden="true">&#9654;</span> Run
+      </button>
+    }
+    @if (shown.isStarting) {
+      <button type="button" disabled>Starting…</button>
+    }
+    @if (shown.openUrl; as url) {
+      <a
+        [href]="url"
+        target="_blank"
+        rel="noopener noreferrer"
+        [attr.aria-label]="'Open ' + repo() + ' in a new tab'"
+        >Open <span aria-hidden="true">&#8599;</span></a
+      >
+    }
+    @if (shown.canStop) {
+      <button type="button" [attr.aria-label]="'Stop ' + repo()" (click)="stop()">
+        <span aria-hidden="true">&#9632;</span> Stop
+      </button>
+    }
+    <span class="note" [class.problem]="shown.isProblem" role="status">{{ shown.note }}</span>
+  </div>
+}

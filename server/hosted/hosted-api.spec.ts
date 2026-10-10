@@ -203,7 +203,7 @@ describe('hostedApi', () => {
     assert.deepEqual(stateAsked, ['me/app#12']);
   });
 
-  it('has no runs or crew routes, even for the owner: tier 3 runs on the local server only', async () => {
+  it('has no runs, crew or dev-server routes, even for the owner: code runs on the local server only', async () => {
     const { handle } = site();
     const asOwner = (method: string, path: string) =>
       handle(
@@ -223,6 +223,10 @@ describe('hostedApi', () => {
     }
     for (const method of ['GET', 'POST']) {
       assert.equal((await asOwner(method, '/api/crew')).status, 404, `crew ${method}`);
+    }
+    for (const method of ['GET', 'POST', 'DELETE']) {
+      const path = '/api/dev-servers?repo=me/app';
+      assert.equal((await asOwner(method, path)).status, 404, `dev-servers ${method}`);
     }
   });
 

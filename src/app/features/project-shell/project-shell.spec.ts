@@ -8,7 +8,6 @@ import { DEV_SERVER_API, DevServerApi } from '../../core/dev-servers/dev-server-
 import { DevServerStatus, STARTING, STOPPED } from '../../core/dev-servers/dev-server.types';
 import { RunPreview, STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
 import { SITE_OPENER } from '../../core/dev-servers/site-opener';
-import { ProjectBarSize } from '../../core/project-bar/project-bar-size';
 import { libraryMatcher } from '../../core/library/library-route';
 import { ViewerSession } from '../../core/session/viewer-session';
 import { ELEMENT_SIZE } from '../../shared/element-size/element-size';
@@ -134,16 +133,22 @@ describe('ProjectShell', () => {
     expect(opened).toEqual(['http://localhost:5173/']);
   });
 
-  it('holds the room it takes for the screens to leave, until it goes', async () => {
+  it('publishes the bar’s size for the screens to leave room for, until it goes', async () => {
     const { harness, settle } = await setUp();
-    const room = TestBed.inject(ProjectBarSize);
+    const root = document.documentElement.style;
     settle();
 
-    expect(room.room()).toEqual({ width: 480, height: 28 });
+    expect([
+      root.getPropertyValue('--project-bar-width'),
+      root.getPropertyValue('--project-bar-height'),
+    ]).toEqual(['480px', '28px']);
 
     await harness.navigateByUrl('/');
     settle();
 
-    expect(room.room()).toEqual({ width: 0, height: 0 });
+    expect([
+      root.getPropertyValue('--project-bar-width'),
+      root.getPropertyValue('--project-bar-height'),
+    ]).toEqual(['', '']);
   });
 });

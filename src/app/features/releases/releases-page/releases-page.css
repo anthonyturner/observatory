@@ -10,7 +10,7 @@
   top: 0;
   left: 0;
   right: 0;
-  padding: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)) 20px 0;
+  padding: var(--page-inset-top) var(--page-inset-x) 0;
   pointer-events: none;
   z-index: 5;
 }
@@ -144,7 +144,7 @@ h1 {
   inset: 0;
   overflow-y: auto;
   background: var(--queue-sky);
-  padding: calc(190px + env(safe-area-inset-top, 0px)) 20px 120px;
+  padding: calc(190px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)) 20px 120px;
   z-index: 4;
 }
 
@@ -195,23 +195,19 @@ h1 {
 
 .panel.side {
   left: auto;
-  top: calc(18px + env(safe-area-inset-top, 0px));
-  right: 20px;
+  top: calc(var(--page-inset-top) + var(--project-bar-height, 0px) + 12px);
+  right: var(--page-inset-x);
   width: 380px;
   max-height: none;
 }
 
 @media (max-width: 720px) {
-  .hud {
-    padding-inline: 16px;
-  }
-
   h1 {
     font-size: 26px;
   }
 
   .listview {
-    padding-top: calc(200px + env(safe-area-inset-top, 0px));
+    padding-top: calc(200px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
     padding-bottom: calc(46dvh + 24px);
   }
 }

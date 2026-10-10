@@ -56,7 +56,7 @@
 .map {
   position: fixed;
   inset: 0;
-  padding: calc(190px + env(safe-area-inset-top, 0px)) 20px
+  padding: calc(190px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)) 20px
     calc(60px + var(--playlist-clear-bottom, 0px));
 }
 
@@ -70,7 +70,7 @@
   inset: 0;
   overflow-y: auto;
   background: var(--queue-sky);
-  padding: calc(190px + env(safe-area-inset-top, 0px)) 20px 120px;
+  padding: calc(190px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)) 20px 120px;
   z-index: 4;
 }
 
@@ -90,11 +90,11 @@
 @media (min-width: 900px) {
   .panel {
     left: auto;
-    top: calc(190px + env(safe-area-inset-top, 0px));
+    top: calc(190px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
     bottom: auto;
     right: 20px;
     width: 380px;
-    max-height: calc(100dvh - 190px - 90px);
+    max-height: calc(100dvh - 190px - 90px - var(--status-strip-height, 0px));
   }
 
   .map {
@@ -124,6 +124,6 @@
 @media (max-width: 720px) {
   .map,
   .listview {
-    padding-top: calc(310px + env(safe-area-inset-top, 0px));
+    padding-top: calc(310px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
   }
 }

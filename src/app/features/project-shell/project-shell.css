@@ -1,30 +1,23 @@
-/* The bar floats over the page like the page's own header does, one layer above it
-   (the page header is 5) and below the status strip (7) and the sheets (8 and up).
-   Each page leaves room for it where its header begins. */
+/* The bar floats over the screen below it. A screen is a fixed layer of its own, so nothing
+   inside one can rise above the bar: a panel or card that would reach the bar starts below it
+   instead, by `--project-bar-height`, which the shell publishes. */
 :host {
   display: contents;
 }
 
 .bar {
   position: fixed;
-  top: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
-  left: 20px;
+  top: var(--page-inset-top);
+  left: var(--page-inset-x);
   z-index: 6;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 10px;
   width: fit-content;
-  max-width: calc(100% - 40px);
+  max-width: calc(100% - 2 * var(--page-inset-x));
 }
 
 .bar app-up-link {
   margin-bottom: 0;
-}
-
-@media (max-width: 720px) {
-  .bar {
-    left: 16px;
-    max-width: calc(100% - 32px);
-  }
 }

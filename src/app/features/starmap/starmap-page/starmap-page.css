@@ -12,14 +12,14 @@
   position: fixed;
   left: 0;
   right: 0;
-  padding-inline: 20px;
+  padding-inline: var(--page-inset-x);
   pointer-events: none;
   z-index: 5;
 }
 
 .hud.top {
   top: 0;
-  padding-top: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
+  padding-top: var(--page-inset-top);
 }
 
 .hud.bottom {
@@ -73,12 +73,6 @@
   color: var(--ink);
   font-weight: 400;
   font-size: 17px;
-}
-
-@media (max-width: 720px) {
-  .hud {
-    padding-inline: 16px;
-  }
 }
 
 @media (max-width: 720px), (max-height: 500px) {

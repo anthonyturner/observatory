@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
   DestroyRef,
   ElementRef,
   afterNextRender,
@@ -11,7 +12,6 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, ParamMap, Router, RouterOutlet } from '@angular/router';
 import { filter, map, of, startWith, switchMap } from 'rxjs';
-import { ProjectBarSize } from '../../core/project-bar/project-bar-size';
 import { ELEMENT_SIZE } from '../../shared/element-size/element-size';
 import {
   guidePartOf,
@@ -60,14 +60,20 @@ export class ProjectShell {
   private readonly bar = viewChild.required<ElementRef<HTMLElement>>('bar');
 
   constructor() {
-    const room = inject(ProjectBarSize);
     const sizeOf = inject(ELEMENT_SIZE);
+    const root = inject(DOCUMENT).documentElement;
     const destroyRef = inject(DestroyRef);
     afterNextRender(() =>
       sizeOf(this.bar().nativeElement)
         .pipe(takeUntilDestroyed(destroyRef))
-        .subscribe((size) => room.take(size)),
+        .subscribe(({ width, height }) => {
+          root.style.setProperty('--project-bar-width', `${width}px`);
+          root.style.setProperty('--project-bar-height', `${height}px`);
+        }),
     );
-    destroyRef.onDestroy(() => room.release());
+    destroyRef.onDestroy(() => {
+      root.style.removeProperty('--project-bar-width');
+      root.style.removeProperty('--project-bar-height');
+    });
   }
 }

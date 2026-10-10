@@ -16,6 +16,11 @@
   --meh: #ffc24d;
   --warm: #ffd98a;
 
+  /* Where a screen's header begins: below the status strip and the device's top edge, and in
+     from the side. The project bar and each project screen's header both start here. */
+  --page-inset-top: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
+  --page-inset-x: 20px;
+
   /* A pull request's risk tag on its star card. */
   --risk-low: var(--ok);
   --risk-medium: var(--meh);
@@ -441,4 +446,10 @@
   --font-serif: 'Cormorant Garamond', Georgia, serif;
 
   --radius-panel: 12px;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --page-inset-x: 16px;
+  }
 }

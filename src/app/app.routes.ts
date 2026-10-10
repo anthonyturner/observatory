@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { Routes, provideRouter, withRouterConfig } from '@angular/router';
 import { GUIDE_PATH } from './core/guide/guide-link';
 import { libraryMatcher } from './core/library/library-route';
 
@@ -130,3 +130,7 @@ export const routes: Routes = [
   },
   { path: '**', redirectTo: '' },
 ];
+
+/** The app's router: its routes, with each screen below a project reading the project's `owner` and `repo`. */
+export const provideAppRouter = () =>
+  provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' }));

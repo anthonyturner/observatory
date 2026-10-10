@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of, timer } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
 import { SITE_OPENER } from './site-opener';
@@ -12,11 +12,13 @@ interface Answers {
   readonly start?: DevServerStatus;
   readonly first?: DevServerStatus;
   readonly blocksTabs?: boolean;
+  /** How long Stop takes to answer; at once when not given. */
+  readonly stopTakes?: number;
 }
 
 /** The previews, with `me/app` already shown on a screen, where its server first reads as `first`. */
 function setUp(answers: Answers = {}) {
-  const { start = STARTING, first = STOPPED, blocksTabs = false } = answers;
+  const { start = STARTING, first = STOPPED, blocksTabs = false, stopTakes } = answers;
   const polls: DevServerStatus[] = [first];
   const log: string[] = [];
   const api: DevServerApi = {
@@ -30,7 +32,7 @@ function setUp(answers: Answers = {}) {
     },
     stop: (repo): Observable<DevServerStatus> => {
       log.push(`stop ${repo}`);
-      return of(STOPPED);
+      return stopTakes === undefined ? of(STOPPED) : timer(stopTakes).pipe(map(() => STOPPED));
     },
   };
   TestBed.configureTestingModule({
@@ -320,6 +322,32 @@ describe('RunPreviews', () => {
 
       expect(log).toEqual(['status me/app']);
       expect(later.status()).toEqual(STOPPED);
+    });
+
+    it('keeps the blocked-tab note when another screen starts showing the project', () => {
+      const { previews, preview, release, polls } = setUp({ start: RUNNING, blocksTabs: true });
+      preview.run();
+      release();
+      polls.push(RUNNING);
+
+      const later = previews.runFor('me/app');
+      later.watch();
+
+      expect(later.isTabBlocked()).toBe(true);
+    });
+
+    it('lets a Stop that nothing shows any more finish', () => {
+      const { preview, release, polls, log } = setUp({ first: RUNNING, stopTakes: 500 });
+      polls.push(RUNNING);
+
+      preview.stop();
+      release();
+      vi.advanceTimersByTime(500);
+
+      expect(preview.status()).toEqual(STOPPED);
+      log.length = 0;
+      vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+      expect(log).toEqual([]);
     });
 
     it('keeps projects apart: one project starting does not touch another', () => {

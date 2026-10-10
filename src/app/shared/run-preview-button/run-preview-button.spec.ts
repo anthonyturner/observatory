@@ -18,10 +18,12 @@ function setUp(options: {
 }) {
   const { isLocal = true, status = STOPPED, start = STARTING, blocksTabs = false } = options;
   const calls: string[] = [];
+  const asked: string[] = [];
   const polls: DevServerStatus[] = [];
   const api: DevServerApi = {
-    status: () => {
+    status: (repo) => {
       calls.push('status');
+      asked.push(repo);
       return of(polls.shift() ?? status);
     },
     start: () => {
@@ -64,7 +66,7 @@ function setUp(options: {
       );
     return { fixture, element, settle, labels };
   };
-  return { ...mount('me/app'), mount, calls, polls, isConfirmedLocal };
+  return { ...mount('me/app'), mount, calls, asked, polls, isConfirmedLocal };
 }
 
 describe('RunPreviewButton', () => {
@@ -231,5 +233,30 @@ describe('RunPreviewButton', () => {
     vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
 
     expect(calls).toEqual([]);
+  });
+
+  it('moves to the new project, and lets go of the old one, when its repo changes', () => {
+    const { fixture, labels, asked, settle } = setUp({ status: RUNNING });
+    asked.length = 0;
+
+    fixture.componentRef.setInput('repo', 'me/other');
+    settle();
+    expect(asked).toEqual(['me/other']);
+    expect(labels()).toEqual(['Open ↗', '■ Stop']);
+
+    vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+    expect(new Set(asked)).toEqual(new Set(['me/other']));
+  });
+
+  it('lets go of the project when the machine stops being confirmed as the owner’s own', () => {
+    const { element, asked, isConfirmedLocal, settle } = setUp({ status: RUNNING });
+    asked.length = 0;
+
+    isConfirmedLocal.set(false);
+    settle();
+    vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+
+    expect(element.children.length).toBe(0);
+    expect(asked).toEqual([]);
   });
 });

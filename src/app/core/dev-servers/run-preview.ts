@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, Signal, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, Subscription, expand, switchMap, timer } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
@@ -23,16 +23,32 @@ interface RunPreviewDeps {
  * screen carries on, and opens the site once, after the button that started it
  * is gone.
  */
-export class RunPreview {
+export interface RunPreview {
+  readonly status: Signal<DevServerStatus>;
+  /** Whether the browser blocked the tab that was to open the running site. */
+  readonly isTabBlocked: Signal<boolean>;
+  watch(): () => void;
+  /** Starts the server, or finds it running, and opens its site once it is up. */
+  run(): void;
+  stop(): void;
+  /** The owner opened the site by hand, so a note about the blocked tab has done its job. */
+  siteOpenedByHand(): void;
+}
+
+/** A read only shows where the server stands; Run and Stop are requests that need an answer. */
+type Follow = 'read' | 'run' | 'stop';
+
+class RunState implements RunPreview {
   private readonly current = signal<DevServerStatus>(STOPPED);
   private readonly blocked = signal(false);
   private following: Subscription | null = null;
   private watchers = 0;
   /** Whether the site is to be opened when the server being followed first reports running. */
   private opensSite = false;
+  /** Whether a Run or Stop has been sent and not yet answered. */
+  private pending = false;
 
   readonly status = this.current.asReadonly();
-  /** Whether the browser blocked the tab that was to open the running site. */
   readonly isTabBlocked = this.blocked.asReadonly();
 
   constructor(
@@ -40,14 +56,9 @@ export class RunPreview {
     private readonly deps: RunPreviewDeps,
   ) {}
 
-  /**
-   * Shows this server on a screen: reads where it stands unless it is already being
-   * followed, and keeps it followed until the returned function is called. Releasing is safe
-   * to repeat.
-   */
   watch(): () => void {
     this.watchers++;
-    if (!this.isFollowing()) this.follow(this.deps.api.status(this.repo), false);
+    if (!this.isFollowing()) this.follow(this.deps.api.status(this.repo), 'read');
     let released = false;
     return () => {
       if (released) return;
@@ -57,38 +68,40 @@ export class RunPreview {
     };
   }
 
-  /** Starts the server, or finds it running, and opens its site once it is up. */
   run(): void {
     this.current.set(STARTING);
-    this.follow(this.deps.api.start(this.repo), true);
+    this.blocked.set(false);
+    this.follow(this.deps.api.start(this.repo), 'run');
   }
 
-  /** The owner opened the site by hand, so a note about the blocked tab has done its job. */
   siteOpenedByHand(): void {
     this.blocked.set(false);
   }
 
   stop(): void {
-    this.follow(this.deps.api.stop(this.repo), false);
+    this.blocked.set(false);
+    this.follow(this.deps.api.stop(this.repo), 'stop');
   }
 
   /**
    * Shows `first` and then each poll after it, quickly while the server starts and slowly
    * while it runs, so one that dies shows Run again. The polling ends at a status that is
-   * not alive, or that nothing is showing. When `opensSite`, the site opens at the first
-   * status that is not starting.
+   * not alive, or that nothing is showing. For a Run, the site opens at the first status
+   * that is not starting.
    */
-  private follow(first: Observable<DevServerStatus>, opensSite: boolean): void {
+  private follow(first: Observable<DevServerStatus>, kind: Follow): void {
     this.unfollow();
-    this.opensSite = opensSite;
-    this.blocked.set(false);
+    this.opensSite = kind === 'run';
+    this.pending = kind !== 'read';
     this.following = first
       .pipe(
         expand((status) => this.pollAfter(status)),
         takeUntilDestroyed(this.deps.destroyRef),
       )
       .subscribe((status) => {
+        this.pending = false;
         this.current.set(status);
+        if (status.state !== 'running') this.blocked.set(false);
         this.openIfAsked(status);
       });
   }
@@ -102,9 +115,9 @@ export class RunPreview {
     return this.following !== null && !this.following.closed;
   }
 
-  /** A server that is starting is followed to the end even when no screen shows it. */
+  /** A request in flight and a server that is starting are followed to the end, shown or not. */
   private isWanted(status: DevServerStatus): boolean {
-    return this.watchers > 0 || status.state === 'starting';
+    return this.watchers > 0 || this.pending || status.state === 'starting';
   }
 
   private pollAfter(status: DevServerStatus): Observable<DevServerStatus> {
@@ -138,7 +151,7 @@ export class RunPreviews {
   runFor(repo: string): RunPreview {
     let preview = this.byRepo.get(repo);
     if (!preview) {
-      preview = new RunPreview(repo, this.deps);
+      preview = new RunState(repo, this.deps);
       this.byRepo.set(repo, preview);
     }
     return preview;

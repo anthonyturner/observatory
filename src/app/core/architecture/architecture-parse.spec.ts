@@ -226,7 +226,11 @@ describe('parseArchitecture', () => {
       ['server:queue', 'server'],
       ['web-service', 'web-service'],
     ]);
-    expect(map?.runtimes.map((r) => r.kind)).toEqual(['browser', 'server', 'web-service']);
+    expect(map?.runtimes.map((r) => r.label)).toEqual([
+      'Browser app',
+      'API server',
+      'Web services',
+    ]);
   });
 
   it('reads a node marks and drops one it does not know', () => {
@@ -247,13 +251,10 @@ describe('parseArchitecture', () => {
     expect(map?.nodes.map((n) => n.endpoint)).toEqual([{ method: 'GET', path: '/a' }, null, null]);
   });
 
-  it('leaves an area runtime empty when the map names none, and drops a runtime of an unknown kind', () => {
+  it('leaves an area runtime empty when the map names none, and drops a runtime with no label', () => {
     const map = parseArchitecture(
       body([node('ClockService')], [], {
-        runtimes: [
-          { id: 'browser', label: 'Browser app', kind: 'browser' },
-          { id: 'lab', label: 'Lab', kind: 'laboratory' },
-        ],
+        runtimes: [{ id: 'browser', label: 'Browser app' }, { id: 'lab' }],
       }),
     );
     expect(map?.areas).toEqual([{ id: 'core', label: 'Core', runtime: '' }]);

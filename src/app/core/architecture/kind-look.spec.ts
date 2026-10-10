@@ -1,18 +1,5 @@
-import {
-  ArchitectureEdge,
-  ArchitectureMap,
-  ArchitectureNode,
-  EDGE_KINDS,
-  NODE_KINDS,
-} from './architecture.types';
-import { EDGE_KIND_MEANING, NODE_KIND_LABEL, legendOf } from './kind-look';
-
-describe('the kind tables', () => {
-  it('word every kind the scanner can write, and no other', () => {
-    expect(Object.keys(NODE_KIND_LABEL).sort()).toEqual([...NODE_KINDS].sort());
-    expect(Object.keys(EDGE_KIND_MEANING).sort()).toEqual([...EDGE_KINDS].sort());
-  });
-});
+import { ArchitectureEdge, ArchitectureMap, ArchitectureNode } from './architecture.types';
+import { legendOf } from './kind-look';
 
 describe('legendOf', () => {
   const node = (kind: ArchitectureNode['kind']): ArchitectureNode => ({

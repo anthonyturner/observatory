@@ -14,7 +14,6 @@ export {
   INJECTION_STYLES,
   NODE_KINDS,
   NODE_MARKS,
-  RUNTIME_KINDS,
 } from '../../../../server/architecture/architecture-types';
 export type {
   EdgeKind,
@@ -24,7 +23,7 @@ export type {
 } from '../../../../server/architecture/architecture-types';
 
 /** One machine or process the project runs across: the browser app, the API server, an outside service. */
-export type ArchitectureRuntime = Pick<ScannedRuntime, 'id' | 'label' | 'kind'>;
+export type ArchitectureRuntime = Pick<ScannedRuntime, 'id' | 'label'>;
 
 /** One part of the mapped project: a ring in the star view, a choice in the area filter. */
 export type ArchitectureArea = Pick<ScannedArea, 'id' | 'label' | 'runtime'>;

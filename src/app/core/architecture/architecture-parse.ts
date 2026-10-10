@@ -9,14 +9,12 @@ import {
   INJECTION_STYLES,
   NODE_KINDS,
   NODE_MARKS,
-  RUNTIME_KINDS,
 } from './architecture.types';
 
 const isKind = oneOf(NODE_KINDS);
 const isEdgeKind = oneOf(EDGE_KINDS);
 const isStyle = oneOf(INJECTION_STYLES);
 const isMark = oneOf(NODE_MARKS);
-const isRuntimeKind = oneOf(RUNTIME_KINDS);
 const isString = (value: unknown): value is string => typeof value === 'string';
 const textOrNull = (value: unknown): string | null => (isText(value) ? value : null);
 const markOrNull = (value: unknown): ArchitectureNode['marks'][number] | null =>
@@ -26,8 +24,7 @@ function parseRuntime(value: unknown): ArchitectureRuntime | null {
   if (!isObject(value)) return null;
   const id = fieldOf(value, 'id', isText);
   const label = fieldOf(value, 'label', isText);
-  const kind = fieldOf(value, 'kind', isRuntimeKind);
-  return id && label && kind ? { id, label, kind } : null;
+  return id && label ? { id, label } : null;
 }
 
 function parseArea(value: unknown): ArchitectureArea | null {

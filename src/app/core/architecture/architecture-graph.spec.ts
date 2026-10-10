@@ -299,8 +299,8 @@ describe('memberUse', () => {
 
 describe('groupAreas', () => {
   const runtimes = [
-    { id: 'browser', label: 'Browser app', kind: 'browser' as const },
-    { id: 'server', label: 'API server', kind: 'server' as const },
+    { id: 'browser', label: 'Browser app' },
+    { id: 'server', label: 'API server' },
   ];
   const area = (id: string, runtime: string) => ({ id, label: id.toUpperCase(), runtime });
 

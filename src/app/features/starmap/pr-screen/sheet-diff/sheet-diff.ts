@@ -5,7 +5,6 @@ import {
   inject,
   input,
   linkedSignal,
-  signal,
 } from '@angular/core';
 import {
   DiffFile,
@@ -15,6 +14,7 @@ import {
   diffLinesOf,
   pathPartsOf,
 } from '../../../../core/queue/diff-files';
+import { DiffWrapChoice } from '../../../../core/queue/diff-wrap-choice';
 import { SeenFile, ViewedFiles, seenFileOf } from '../../../../core/queue/viewed-files';
 
 const BYTES_PER_KB = 1024;
@@ -57,6 +57,7 @@ export class SheetDiff {
   readonly wording = input<SheetDiffWording>(GITHUB_DIFF_WORDING);
 
   private readonly viewedFiles = inject(ViewedFiles);
+  private readonly wrapChoice = inject(DiffWrapChoice);
 
   protected readonly files = computed((): readonly FileEntry[] =>
     diffFilesOf(this.diff()).map((file) => ({
@@ -91,8 +92,8 @@ export class SheetDiff {
       };
     }),
   );
-  /** Long lines wrap under their code, or scroll sideways. */
-  protected readonly wrap = signal(false);
+  /** Long lines wrap under their code, or scroll sideways: one choice for every diff. */
+  protected readonly wrap = this.wrapChoice.wraps;
   protected readonly viewedCount = computed(
     () => this.views().filter((view) => view.viewed).length,
   );
@@ -108,7 +109,7 @@ export class SheetDiff {
   }
 
   protected onWrapChange(event: Event): void {
-    if (event.target instanceof HTMLInputElement) this.wrap.set(event.target.checked);
+    if (event.target instanceof HTMLInputElement) this.wrapChoice.choose(event.target.checked);
   }
 
   /** The tick only marks the file: opening and closing stay with its header. */

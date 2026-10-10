@@ -3,6 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Observable, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { plural } from '../text/plural';
+import { RunPreviewButton } from '../run-preview-button/run-preview-button';
 import { QuietTab } from './quiet-tab';
 import { QUIET_TABS } from './quiet-tabs';
 import { TAB_BADGES, TabBadge } from './tab-badge';
@@ -112,10 +113,11 @@ function quietIds(tabs: readonly QuietTab[], repo: string): Observable<ReadonlyS
   );
 }
 
-/** The row of a project's screens, on every one of them: links, the current one marked as the page. */
+/** The row of a project's screens, on every one of them: links, the current one marked as the page,
+ *  and beside them the project's Run button. */
 @Component({
   selector: 'app-project-tabs',
-  imports: [RouterLink],
+  imports: [RouterLink, RunPreviewButton],
   templateUrl: './project-tabs.html',
   styleUrl: './project-tabs.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -17,11 +17,16 @@ export const NO_COMMAND =
   'This project has no "dev" or "start" script. Add a command for it to ~/.claude/observatory/run.json.';
 export const NO_SITE =
   'The server printed nothing and nothing answered at an address we could find, so it was stopped. Add a "url" for it to ~/.claude/observatory/run.json.';
+export const NO_PORT = 'No free port could be found to run the server on.';
 
 /** A dev server whose site does not answer within this long is stopped. Builds can be slow, so it is generous. */
 const START_LIMIT_MS = 120_000;
 /** How often a starting server's address is tried. */
 const POLL_MS = 500;
+/** After a server exits, how long its output streams get to finish, since a child it started can hold them open. */
+const OUTPUT_GRACE_MS = 250;
+/** How many times a port that another server holds is set aside before giving up on finding one. */
+const PORT_ATTEMPTS = 10;
 /** A line of server output longer than this is not an address line. */
 const MAX_LINE_CHARS = 8 * 1024;
 
@@ -43,11 +48,14 @@ interface Entry {
   readonly repo: string;
   status: DevServerStatus;
   pid: number | undefined;
+  /** The port this server was told to use, held from the moment it is chosen. */
+  port: number | undefined;
   /** Where the site probably is; replaced once the command and port are known. */
   address: SiteAddress;
   readonly tail: OutputTail;
   cancelLimit: () => void;
   cancelPoll: () => void;
+  cancelOutputWait: () => void;
 }
 
 interface Launchable {
@@ -69,8 +77,11 @@ function exitReason(code: number | null, lastLine: string): string {
   return `The dev server ${how}.${lastLine ? ` Its last output: ${quoted(lastLine)}` : ''}`;
 }
 
-const timeoutReason = (lastLine: string): string =>
-  lastLine ? `The server stopped at: ${quoted(lastLine)}` : NO_SITE;
+function timeoutReason(address: string | null, lastLine: string): string {
+  if (!lastLine) return NO_SITE;
+  const where = address ? ` at ${address}` : '';
+  return `Nothing answered${where} within two minutes, so the server was stopped. Its last output: ${quoted(lastLine)}. If the site is elsewhere, add a "url" for it to ~/.claude/observatory/run.json.`;
+}
 
 /**
  * The dev servers of this machine's projects, at most one each. A project is
@@ -94,14 +105,16 @@ export class DevServers implements DevServerControl {
       repo,
       status: { repo, state: 'starting' },
       pid: undefined,
+      port: undefined,
       address: new SiteAddress(null, null),
       tail: new OutputTail(),
       cancelLimit: () => undefined,
       cancelPoll: () => undefined,
+      cancelOutputWait: () => undefined,
     };
     this.entries.set(key, entry);
     try {
-      const plan = await this.plan(repo);
+      const plan = await this.plan(repo, entry);
       if (this.entries.get(key) !== entry) return stopped(repo);
       if ('why' in plan) this.fail(entry, plan.why);
       else this.launch(entry, plan);
@@ -135,14 +148,31 @@ export class DevServers implements DevServerControl {
     this.entries.clear();
   }
 
-  private async plan(repo: string): Promise<Plan> {
+  private async plan(repo: string, entry: Entry): Promise<Plan> {
     const wanted = keyOf(repo);
     const checkouts = await this.dependencies.checkouts.list();
     const checkout = checkouts.find((each) => keyOf(each.repo) === wanted);
     if (!checkout) return { why: NO_CHECKOUT };
     const run = this.dependencies.commands.commandFor(repo, checkout.folder);
     if (!run) return { why: NO_COMMAND };
-    return { folder: checkout.folder, run, port: await this.dependencies.freePort() };
+    const port = await this.reservePort(entry);
+    return port === null ? { why: NO_PORT } : { folder: checkout.folder, run, port };
+  }
+
+  /** A free port no other live server holds, held for `entry` from the moment it is known. */
+  private async reservePort(entry: Entry): Promise<number | null> {
+    for (let attempt = 0; attempt < PORT_ATTEMPTS; attempt += 1) {
+      const port = await this.dependencies.freePort();
+      if (!this.isHeld(port)) {
+        entry.port = port;
+        return port;
+      }
+    }
+    return null;
+  }
+
+  private isHeld(port: number): boolean {
+    return [...this.entries.values()].some((each) => isAlive(each) && each.port === port);
   }
 
   private launch(entry: Entry, { folder, run, port }: Launchable): void {
@@ -155,7 +185,17 @@ export class DevServers implements DevServerControl {
       this.dependencies.startLimitMs ?? START_LIMIT_MS,
     );
     child.onError((error) => this.end(entry, `Could not start "${command}": ${error.message}`));
-    child.onExit((code) => this.end(entry, exitReason(code, entry.tail.lastLine())));
+    // The last words are in the output that arrives after the exit, so the reason waits for it.
+    const endWithLastWords = (code: number | null): void =>
+      this.end(entry, exitReason(code, entry.tail.lastLine()));
+    child.onExit((code) => {
+      if (!this.isLive(entry)) return;
+      entry.cancelOutputWait = this.dependencies.later(
+        () => endWithLastWords(code),
+        OUTPUT_GRACE_MS,
+      );
+    });
+    child.onClose((code) => endWithLastWords(code));
     this.listen(entry, child);
     this.pollSoon(entry);
   }
@@ -193,6 +233,10 @@ export class DevServers implements DevServerControl {
     });
   }
 
+  private isLive(entry: Entry): boolean {
+    return this.entries.get(keyOf(entry.repo)) === entry && isAlive(entry);
+  }
+
   private isStarting(entry: Entry): boolean {
     return this.entries.get(keyOf(entry.repo)) === entry && entry.status.state === 'starting';
   }
@@ -200,6 +244,7 @@ export class DevServers implements DevServerControl {
   private clearTimers(entry: Entry): void {
     entry.cancelLimit();
     entry.cancelPoll();
+    entry.cancelOutputWait();
   }
 
   private ready(entry: Entry, url: string): void {
@@ -209,13 +254,12 @@ export class DevServers implements DevServerControl {
 
   /** The server ended, or never started, on its own: it stays listed as failed until Run or Stop. */
   private end(entry: Entry, reason: string): void {
-    if (this.entries.get(keyOf(entry.repo)) !== entry || !isAlive(entry)) return;
-    this.fail(entry, reason);
+    if (this.isLive(entry)) this.fail(entry, reason);
   }
 
   private giveUp(entry: Entry): void {
     if (!this.isStarting(entry)) return;
-    this.fail(entry, timeoutReason(entry.tail.lastLine()));
+    this.fail(entry, timeoutReason(entry.address.candidate(), entry.tail.lastLine()));
     if (entry.pid !== undefined) this.dependencies.killer.stop(entry.pid);
   }
 

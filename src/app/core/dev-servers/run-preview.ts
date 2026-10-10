@@ -44,6 +44,11 @@ export class RunPreview {
     this.follow(this.api.start(this.repo), true);
   }
 
+  /** The owner opened the site by hand, so a note about the blocked tab has done its job. */
+  siteOpenedByHand(): void {
+    this.blocked.set(false);
+  }
+
   stop(): void {
     this.follow(this.api.stop(this.repo), false);
   }

@@ -130,6 +130,17 @@ describe('RunPreviewButton', () => {
     );
   });
 
+  it('drops the pop-up note once Open is clicked', () => {
+    const { element, settle } = setUp({ start: RUNNING, blocksTabs: true });
+    element.querySelector('button')?.click();
+    settle();
+
+    element.querySelector('a')?.click();
+    settle();
+
+    expect(element.querySelector('[role="status"]')?.textContent).toContain('localhost:5173');
+  });
+
   it('shows a server that was already running as Open and Stop, and Stop puts Run back', () => {
     const { labels, element, settle, calls } = setUp({ status: RUNNING });
     expect(labels()).toEqual(['Open ↗', '■ Stop']);

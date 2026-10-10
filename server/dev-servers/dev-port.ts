@@ -31,16 +31,21 @@ const PORT_FLAG_CLIS: readonly RegExp[] = [
   /^svelte-kit dev(?=\s|$)/,
 ];
 const PORT_ALREADY_SET = /(^|\s)--port\b/;
+/** A chained or piped script would take the flag on its last command, which may not be the server. */
+const CHAINED = /[;&|]/;
 
 /**
  * What to append to `npm run <script>` so the server takes the port Observatory
  * chose: the `--port` flag as a placeholder, or nothing when the script is not a
- * known dev CLI or already names its own port. The environment's `PORT` reaches
+ * known dev CLI, chains other commands, or already names its own port. The environment's `PORT` reaches
  * servers that read it; the known CLIs only take the flag.
  */
 export function portFlagFor(scriptBody: string): string {
   const body = scriptBody.trim();
-  const takesFlag = PORT_FLAG_CLIS.some((cli) => cli.test(body)) && !PORT_ALREADY_SET.test(body);
+  const takesFlag =
+    PORT_FLAG_CLIS.some((cli) => cli.test(body)) &&
+    !PORT_ALREADY_SET.test(body) &&
+    !CHAINED.test(body);
   return takesFlag ? ` -- --port ${PORT_PLACEHOLDER}` : '';
 }
 

@@ -115,6 +115,16 @@ describe('RunPreview', () => {
     expect(preview.isTabBlocked()).toBe(true);
   });
 
+  it('forgets a block once the site is opened by hand', () => {
+    const { preview } = setUp({ start: RUNNING, blocksTabs: true });
+    preview.run();
+
+    preview.siteOpenedByHand();
+
+    expect(preview.isTabBlocked()).toBe(false);
+    expect(preview.status()).toEqual(RUNNING);
+  });
+
   it('forgets a block when the server is stopped', () => {
     const { preview } = setUp({ start: RUNNING, blocksTabs: true });
     preview.run();

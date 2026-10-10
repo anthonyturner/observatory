@@ -73,6 +73,12 @@ describe('portFlagFor', () => {
     assert.equal(portFlagFor('vite --host --port=5000'), '');
   });
 
+  it('leaves alone a script that chains commands, where the flag would land on the last one', () => {
+    const scripts = ['vite && node api.js', 'ng serve; echo done', 'ng serve | cat', 'ng serve &'];
+
+    for (const script of scripts) assert.equal(portFlagFor(script), '', script);
+  });
+
   it('reads past leading space', () => {
     assert.equal(portFlagFor('  ng serve'), FLAG);
   });

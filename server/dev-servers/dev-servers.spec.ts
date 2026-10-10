@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import type { Checkout } from '../runner/checkouts.ts';
 import { FakeProcess, fakeKiller } from '../runner/fake-process.ts';
 import type { DevLaunch } from './dev-launcher.ts';
-import { DevServers, NO_CHECKOUT, NO_COMMAND, NO_SITE } from './dev-servers.ts';
+import { DevServers, NO_CHECKOUT, NO_COMMAND, NO_PORT, NO_SITE } from './dev-servers.ts';
 import type { RunCommand } from './run-command.ts';
 
 const APP: Checkout = { name: 'app', repo: 'me/app', folder: 'E:/repos/app' };
@@ -11,6 +11,7 @@ const SITE: Checkout = { name: 'site', repo: 'me/site', folder: 'E:/repos/site' 
 const DEV: RunCommand = { command: 'npm run dev', url: null };
 const PORT = 54321;
 const POLL_MS = 500;
+const OUTPUT_GRACE_MS = 250;
 const START_LIMIT_MS = 120_000;
 
 interface Setting {
@@ -23,6 +24,7 @@ interface Setting {
 function setUp(setting: Setting = {}) {
   const { checkouts = [APP], command = DEV, listing = Promise.resolve() } = setting;
   const ports = [...(setting.ports ?? [PORT])];
+  let spare = PORT + 1;
   const processes: FakeProcess[] = [];
   const launches: { folder: string; command: string; port: number }[] = [];
   const asked: { repo: string; folder: string }[] = [];
@@ -52,7 +54,7 @@ function setUp(setting: Setting = {}) {
     },
     launch,
     killer: kills.killer,
-    freePort: async () => ports.shift() ?? PORT,
+    freePort: async () => ports.shift() ?? spare++,
     probe: async (url) => {
       probed.push(url);
       return answering.has(url);
@@ -407,6 +409,61 @@ describe('DevServers', () => {
     assert.deepEqual(stopped, []);
   });
 
+  it('waits a moment after the exit for the last output, so the reason holds the final line', async () => {
+    const { servers, processes, timers } = setUp();
+    await servers.start('me/app');
+    processes[0]?.exitLeavingOutputOpen(1);
+    processes[0]?.print('Error: EADDRINUSE');
+    await settle();
+    assert.equal(servers.status('me/app').state, 'starting');
+
+    timers.findLast((timer) => timer.ms === OUTPUT_GRACE_MS && !timer.cancelled)?.run();
+
+    assert.deepEqual(servers.status('me/app'), {
+      repo: 'me/app',
+      state: 'failed',
+      reason: 'The dev server exited with code 1. Its last output: "Error: EADDRINUSE"',
+    });
+  });
+
+  it('ends as soon as the output closes after the exit, without waiting out the grace', async () => {
+    const { servers, processes, timers } = setUp();
+    await servers.start('me/app');
+    processes[0]?.print('last words');
+
+    processes[0]?.end(1);
+    await settle();
+    await settle();
+
+    assert.deepEqual(servers.status('me/app'), {
+      repo: 'me/app',
+      state: 'failed',
+      reason: 'The dev server exited with code 1. Its last output: "last words"',
+    });
+    assert.ok(timers.every((timer) => timer.cancelled));
+  });
+
+  it('does not give two servers started together the same port', async () => {
+    const { servers, launches } = setUp({ checkouts: [APP, SITE], ports: [4001, 4001, 4002] });
+
+    await Promise.all([servers.start('me/app'), servers.start('me/site')]);
+
+    assert.deepEqual(launches.map((each) => each.port).sort(), [4001, 4002]);
+  });
+
+  it('says so when every port it is offered is held by another server', async () => {
+    const { servers, launches } = setUp({
+      checkouts: [APP, SITE],
+      ports: Array.from({ length: 11 }, () => 4001),
+    });
+    await servers.start('me/app');
+
+    const status = await servers.start('me/site');
+
+    assert.deepEqual(status, { repo: 'me/site', state: 'failed', reason: NO_PORT });
+    assert.equal(launches.length, 1);
+  });
+
   it('says why when the command could not be started at all', async () => {
     const { servers, processes } = setUp();
     await servers.start('me/app');
@@ -446,19 +503,20 @@ describe('DevServers', () => {
     assert.equal(servers.status('me/app').state, 'stopped');
   });
 
-  it('gives up on a server whose site never answers, says where it stopped, and stops its tree', async () => {
-    const { servers, processes, limit, stopped } = setUp();
+  it('gives up on a server whose site never answers, says where it looked and the last line, and stops its tree', async () => {
+    const { servers, processes, limit, pollTimes, stopped } = setUp();
     await servers.start('me/app');
     processes[0]?.stdout.write('Port 4200 is already in use.\n');
     processes[0]?.stdout.write('? Would you like to use a different port? (Y/n) ');
     await settle();
+    await pollTimes(3);
 
     limit()?.run();
 
     assert.deepEqual(servers.status('me/app'), {
       repo: 'me/app',
       state: 'failed',
-      reason: 'The server stopped at: "? Would you like to use a different port? (Y/n)"',
+      reason: `Nothing answered at ${LOCAL} within two minutes, so the server was stopped. Its last output: "? Would you like to use a different port? (Y/n)". If the site is elsewhere, add a "url" for it to ~/.claude/observatory/run.json.`,
     });
     assert.deepEqual(stopped, [300]);
   });

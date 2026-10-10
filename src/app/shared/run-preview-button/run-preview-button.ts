@@ -87,6 +87,10 @@ export class RunPreviewButton {
     this.preview.run();
   }
 
+  protected openedByHand(): void {
+    this.preview.siteOpenedByHand();
+  }
+
   protected stop(): void {
     this.preview.stop();
   }

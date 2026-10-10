@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { NO_CHECKOUT, NO_COMMAND } from './dev-reasons.ts';
 import { APP, SITE, START_LIMIT_MS, setUp, settle, worktreeOf } from './dev-servers-fixture.ts';
-import type { PrepareRequest, Prepared } from './pull-worktrees.ts';
+import type { PullPrepareRequest } from './pull-worktrees.ts';
+import type { Prepared } from './workspace.ts';
 
 const CLONE = APP.folder;
 const PULL = { repo: 'me/app', pull: 12 };
@@ -13,8 +14,8 @@ const SEEN = 'http://localhost:5173/';
 /** A preparation the test finishes by hand, so what happens meanwhile can be seen. */
 function heldPreparation() {
   let finish: (prepared: Prepared) => void = () => undefined;
-  let request: PrepareRequest | undefined;
-  const prepare = (asked: PrepareRequest): Promise<Prepared> => {
+  let request: PullPrepareRequest | undefined;
+  const prepare = (asked: PullPrepareRequest): Promise<Prepared> => {
     request = asked;
     return new Promise((resolve) => (finish = resolve));
   };
@@ -64,7 +65,7 @@ describe('DevServers for a pull request', () => {
     assert.deepEqual(await servers.status(PULL), { ...PULL, state: 'running', url: SEEN });
   });
 
-  it('asks for the registry’s clone and the number, and tells which other pull requests are in use', async () => {
+  it('asks for the registry’s clone and the number, and can tell which other pull requests are in use', async () => {
     const { servers, prepares } = setUp();
     await servers.start({ repo: 'me/app', pull: 5 });
 
@@ -74,8 +75,8 @@ describe('DevServers for a pull request', () => {
     assert.equal(prepares[1]?.repo, 'me/app');
     assert.equal(prepares[1]?.pull, 12);
     assert.deepEqual(
-      prepares[1]?.inUse.toSorted((a, b) => a - b),
-      [5, 12],
+      [4, 5, 12, 13].map((pull) => prepares[1]?.isInUse(pull)),
+      [false, true, true, false],
     );
   });
 
@@ -222,6 +223,34 @@ describe('DevServers for a pull request', () => {
 
     assert.deepEqual(stopped, [300]);
     assert.deepEqual(status, { ...PULL, state: 'failed', reason });
+  });
+
+  it('does not wait out the server it never got when stopped while the checkout is still being looked up', async () => {
+    let finishListing = (): void => undefined;
+    const { servers, prepares, removals } = setUp({
+      listing: new Promise((resolve) => (finishListing = resolve)),
+    });
+
+    const starting = servers.start(PULL);
+    const stopping = servers.stop(PULL);
+    finishListing();
+
+    assert.equal((await starting).state, 'stopped');
+    assert.equal((await stopping).state, 'stopped');
+    assert.deepEqual(prepares, []);
+    assert.deepEqual(removals, [{ clone: CLONE, pull: 12 }]);
+  });
+
+  it('removes the worktree of a preview that failed when it is stopped', async () => {
+    const { servers, removals } = setUp({ prepare: async () => ({ why: 'npm ci failed' }) });
+    await servers.start(PULL);
+    await settle();
+    assert.equal((await servers.status(PULL)).state, 'failed');
+
+    const status = await servers.stop(PULL);
+
+    assert.deepEqual(status, { ...PULL, state: 'stopped' });
+    assert.deepEqual(removals, [{ clone: CLONE, pull: 12 }]);
   });
 
   it('removes the worktree a past run left, when stopped with no server of its own', async () => {

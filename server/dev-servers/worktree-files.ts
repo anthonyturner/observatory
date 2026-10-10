@@ -20,7 +20,7 @@ export interface FolderEntry {
 
 /** The disk as a pull request's worktree needs it; tests give their own. */
 export interface WorktreeFiles {
-  /** The text of `file`, or null when there is none. */
+  /** The text of `file`, or null when there is no such file. */
   read(file: string): Promise<string | null>;
   /** Adds `text` to the end of `file`, creating it and its folders. */
   append(file: string, text: string): Promise<void>;
@@ -40,6 +40,10 @@ export interface WorktreeFiles {
 const isMissing = (error: unknown): boolean =>
   (error as NodeJS.ErrnoException | null)?.code === 'ENOENT';
 
+/** There is no file at the path: nothing, or a folder where a file was looked for. */
+const isNoFile = (error: unknown): boolean =>
+  isMissing(error) || ['EISDIR', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '');
+
 /** Windows refuses a path past 260 characters unless it carries this prefix, and node_modules goes deeper. */
 const LONG_PATH_PREFIX = '\\\\?\\';
 const REMOVE_RETRIES = 4;
@@ -53,7 +57,7 @@ export function nodeWorktreeFiles(platform: NodeJS.Platform = process.platform):
       try {
         return await readFile(file, 'utf8');
       } catch (error) {
-        if (isMissing(error)) return null;
+        if (isNoFile(error)) return null;
         throw error;
       }
     },

@@ -613,9 +613,12 @@ branch your clone has checked out, and opens the site in a new tab once it
 answers.
 
 - Observatory fetches the branch (a pull request from a fork works too) and
-  checks it out in a folder of its own, `.claude/worktrees/pr-<number>` inside
-  your clone. It is a separate git worktree on a detached head, so no branch
-  appears in your repository and your own checkout is left alone. The folder is
+  checks it out in a folder of its own,
+  `.claude/worktrees/observatory-pr-<number>` inside your clone. It is a
+  separate git worktree on a detached head, so no branch appears in your
+  repository and your own checkout is left alone. Observatory marks the
+  worktrees it makes and only ever touches those: one of your own is never
+  reused, refreshed or removed. The folder is
   added to the clone's `.git/info/exclude`, so `git status` stays clean.
 - It then installs the dependencies there (`npm ci` when the project has a
   `package-lock.json`, else `npm install`) and starts the dev server as **Run**
@@ -627,9 +630,10 @@ answers.
   since git does not carry them. Nothing is ever linked from your clone.
 - **Stop** ends the server and everything it started, then removes the
   worktree. If the install or the server fails, the button says why and shows
-  the last line of output. Pressing it again reuses the worktree, refreshes it
-  to the pull request's latest commit, and installs again only if the
-  dependencies changed.
+  the last line of output, with **Remove** beside it to clear the worktree away.
+  Pressing Preview again reuses the worktree, refreshes it to the pull request's
+  latest commit, and installs again only if the dependencies changed. A
+  worktree you edited by hand is not refreshed over: Remove it first.
 - Quitting Observatory ends the servers but keeps the worktrees, so a restart
   starts fast. When a preview starts, the worktrees of closed or merged pull
   requests are removed.

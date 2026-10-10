@@ -14,10 +14,10 @@ import type {
 import { failed, starting, stopped, targetKey, unavailable } from './dev-target.ts';
 import { OutputTail } from './output-tail.ts';
 import { plainText } from './preview-url.ts';
-import type { PullWorktrees } from './pull-worktrees.ts';
 import type { RunCommand, RunCommands } from './run-command.ts';
 import { SiteAddress } from './site-address.ts';
 import type { SiteProbe } from './site-probe.ts';
+import type { Workspace, Workspaces } from './workspace.ts';
 
 /** A dev server whose site does not answer within this long is stopped. Builds can be slow, so it is generous. It starts when the server does, so a pull request's fetch and install are not counted against it. */
 const START_LIMIT_MS = 120_000;
@@ -36,7 +36,7 @@ const MAX_LINE_CHARS = 8 * 1024;
 export interface DevServerDependencies {
   readonly checkouts: Pick<CheckoutRegistry, 'find'>;
   readonly commands: RunCommands;
-  readonly worktrees: Pick<PullWorktrees, 'prepare' | 'remove' | 'shutdown'>;
+  readonly workspaces: Workspaces;
   readonly launch: DevLaunch;
   readonly killer: ProcessTreeKiller;
   readonly freePort: FreePort;
@@ -49,6 +49,7 @@ export interface DevServerDependencies {
 /** One target's server as the manager tracks it. */
 interface Entry {
   readonly target: DevTarget;
+  readonly workspace: Workspace;
   status: DevServerStatus;
   pid: number | undefined;
   /** The port this server was told to use, held from the moment it is chosen. */
@@ -56,7 +57,7 @@ interface Entry {
   /** Where the site probably is; replaced once the command and port are known. */
   address: SiteAddress;
   readonly tail: OutputTail;
-  /** Ends the fetch and install of a pull request's worktree. */
+  /** Ends the workspace's preparation, and any command it has running. */
   readonly preparing: AbortController;
   /** Settles once nothing of this entry is running: its server has exited, or it never got one. */
   readonly gone: Promise<void>;
@@ -75,12 +76,13 @@ interface Launchable {
 const isAlive = (entry: Entry): boolean =>
   entry.status.state === 'starting' || entry.status.state === 'running';
 
-function newEntry(target: DevTarget): Entry {
+function newEntry(target: DevTarget, workspace: Workspace): Entry {
   let markGone = (): void => undefined;
   const gone = new Promise<void>((resolve) => (markGone = resolve));
   return {
     target,
-    status: starting(target, target.pull === undefined ? 'starting' : 'fetching'),
+    workspace,
+    status: starting(target, workspace.firstPhase),
     pid: undefined,
     port: undefined,
     address: new SiteAddress(null, null),
@@ -95,15 +97,14 @@ function newEntry(target: DevTarget): Entry {
 }
 
 /**
- * The dev servers of this machine's projects, at most one per target: a
- * project's checkout, or one of its pull requests. A checkout is run where the
- * registry knows it; a pull request in a worktree of that checkout, made here
- * from the request's number alone. Never in a folder a request names, and on a
- * free port chosen here. A server is running once its site answers a request.
+ * The dev servers of this machine's projects, at most one per target. Each
+ * target's workspace decides the folder it runs in, from the registry's
+ * checkout and never from a folder a request names. The server gets a free
+ * port chosen here, and is running once its site answers a request.
  */
 export class DevServers implements DevServerControl {
   private readonly entries = new Map<string, Entry>();
-  /** Stops still removing a worktree, which a start of the same target waits for. */
+  /** Stops still giving a workspace back, which a start of the same target waits for. */
   private readonly removals = new Map<string, Promise<DevServerStatus>>();
   private readonly dependencies: DevServerDependencies;
 
@@ -116,8 +117,9 @@ export class DevServers implements DevServerControl {
     const existing = this.entries.get(key);
     if (existing && existing.status.state !== 'failed') return existing.status;
     // Claimed before the first await, so a second Run in the meantime reuses this one.
-    const entry = newEntry(target);
+    const entry = newEntry(target, this.dependencies.workspaces.of(target));
     this.entries.set(key, entry);
+    let hasHandedOver = false;
     try {
       await this.removals.get(key);
       const checkout = await this.dependencies.checkouts.find(target.repo);
@@ -126,13 +128,17 @@ export class DevServers implements DevServerControl {
         this.entries.delete(key);
         return unavailable(target, NO_CHECKOUT);
       }
+      hasHandedOver = true;
       const launching = this.launchIn(entry, checkout.folder);
-      // A pull request takes minutes to fetch and install, so its Preview answers at once and
-      // the status tells how far it has got. A checkout is ready in a moment, and answers with how it went.
-      if (target.pull === undefined) await launching;
+      // A slow workspace, such as a pull request's fetch and install, answers at once and the
+      // status tells how far it has got. A quick one answers with how it went.
+      if (entry.workspace.isQuick) await launching;
     } catch (error) {
       if (this.entries.get(key) === entry) this.entries.delete(key);
       throw error;
+    } finally {
+      // launchIn settles it from here on.
+      if (!hasHandedOver) entry.markGone();
     }
     return entry.status;
   }
@@ -155,8 +161,9 @@ export class DevServers implements DevServerControl {
     const key = targetKey(target);
     const entry = this.entries.get(key);
     if (entry) this.discard(key, entry);
-    if (target.pull === undefined) return stopped(target);
-    const removing = this.removeWorktree(target, entry);
+    const workspace = entry?.workspace ?? this.dependencies.workspaces.of(target);
+    if (!workspace.leavesFiles) return stopped(target);
+    const removing = this.release(target, workspace, entry);
     this.removals.set(key, removing);
     try {
       return await removing;
@@ -165,14 +172,14 @@ export class DevServers implements DevServerControl {
     }
   }
 
-  /** Kills every live server at once and leaves the worktrees for the next start to reuse: for the API's own exit. */
+  /** Kills every live server at once and leaves the workspaces' files for the next start to reuse: for the API's own exit. */
   shutdown(): void {
     for (const entry of this.entries.values()) {
       this.clearTimers(entry);
       if (isAlive(entry) && entry.pid !== undefined) this.dependencies.killer.stopNow(entry.pid);
     }
     this.entries.clear();
-    this.dependencies.worktrees.shutdown();
+    this.dependencies.workspaces.shutdown();
   }
 
   /** Forgets the entry and ends everything it has running. */
@@ -183,22 +190,20 @@ export class DevServers implements DevServerControl {
     if (isAlive(entry) && entry.pid !== undefined) this.dependencies.killer.stop(entry.pid);
   }
 
-  /** Waits for the server to be gone, since it holds its files open, and then removes the worktree. */
-  private async removeWorktree(
+  /** Waits for the server to be gone, since it holds its files open, and then gives its workspace back. */
+  private async release(
     target: DevTarget,
+    workspace: Workspace,
     entry: Entry | undefined,
   ): Promise<DevServerStatus> {
     try {
       if (entry) await this.untilGone(entry);
       const checkout = await this.dependencies.checkouts.find(target.repo);
-      const problem =
-        checkout && target.pull !== undefined
-          ? await this.dependencies.worktrees.remove(checkout.folder, target.pull)
-          : null;
+      const problem = checkout ? await workspace.release(checkout.folder) : null;
       return problem ? failed(target, problem) : stopped(target);
     } catch (error: unknown) {
-      console.error(`Could not remove the worktree of ${target.repo}:`, error);
-      return failed(target, `The worktree could not be removed: ${(error as Error).message}`);
+      console.error(`Could not release the workspace of ${target.repo}:`, error);
+      return failed(target, `Its files could not be removed: ${(error as Error).message}`);
     }
   }
 
@@ -213,14 +218,19 @@ export class DevServers implements DevServerControl {
   }
 
   /**
-   * Gets the folder to run in, then launches the server there. Whatever goes
+   * Gets the workspace's folder to run in, then launches the server there. Whatever goes
    * wrong is the entry's failure, so this never throws.
    */
   private async launchIn(entry: Entry, clone: string): Promise<void> {
     try {
-      const folder = await this.folderFor(entry, clone);
+      const prepared = await entry.workspace.prepare(clone, {
+        signal: entry.preparing.signal,
+        onPhase: (phase) => this.moveTo(entry, phase),
+        isBusy: (target) => this.entries.has(targetKey(target)),
+      });
       if (!this.isCurrent(entry)) return;
-      if (typeof folder !== 'string') return this.finish(entry, folder.why);
+      if ('why' in prepared) return this.finish(entry, prepared.why);
+      const { folder } = prepared;
       const run = this.dependencies.commands.commandFor(entry.target.repo, folder);
       if (!run) return this.finish(entry, NO_COMMAND);
       const port = await this.reservePort(entry);
@@ -233,29 +243,6 @@ export class DevServers implements DevServerControl {
     } finally {
       if (entry.pid === undefined) entry.markGone();
     }
-  }
-
-  /** The checkout itself, or the pull request's worktree once it is fetched and installed. */
-  private async folderFor(entry: Entry, clone: string): Promise<string | { readonly why: string }> {
-    const { repo, pull } = entry.target;
-    if (pull === undefined) return clone;
-    const prepared = await this.dependencies.worktrees.prepare({
-      repo,
-      clone,
-      pull,
-      inUse: this.pullsInUse(repo),
-      signal: entry.preparing.signal,
-      onPhase: (phase) => this.moveTo(entry, phase),
-    });
-    return 'why' in prepared ? prepared : prepared.folder;
-  }
-
-  private pullsInUse(repo: string): number[] {
-    return [...this.entries.values()].flatMap(({ target }) =>
-      target.repo.toLowerCase() === repo.toLowerCase() && target.pull !== undefined
-        ? [target.pull]
-        : [],
-    );
   }
 
   private moveTo(entry: Entry, phase: StartPhase): void {

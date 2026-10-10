@@ -20,6 +20,8 @@ interface PreviewView {
   /** Where the running site is; null until it is. */
   readonly openUrl: string | null;
   readonly canStop: boolean;
+  /** Whether a failed pull request's preview, which leaves its worktree on disk, can be cleared away. */
+  readonly canRemove: boolean;
   /** The project's production site, offered where it cannot be run here; null otherwise. */
   readonly liveUrl: string | null;
   readonly note: string;
@@ -31,6 +33,7 @@ const NOTHING = {
   progress: '',
   openUrl: null,
   canStop: false,
+  canRemove: false,
   liveUrl: null,
   note: '',
   isProblem: false,
@@ -55,6 +58,7 @@ interface Labels {
   readonly run: string;
   readonly open: string;
   readonly stop: string;
+  readonly remove: string;
 }
 
 const WEB_SCHEME = /^https?:\/\//;
@@ -62,7 +66,11 @@ const TAB_BLOCKED_NOTE =
   'Your browser blocked the new tab — allow pop-ups for Observatory to open sites automatically.';
 
 /** What a server this machine can run shows; null while it has yet to say whether it can. */
-function runViewOf(status: DevServerStatus, isTabBlocked: boolean): PreviewView | null {
+function runViewOf(
+  status: DevServerStatus,
+  isTabBlocked: boolean,
+  isPull: boolean,
+): PreviewView | null {
   switch (status.state) {
     case 'checking':
     case 'unavailable':
@@ -70,7 +78,7 @@ function runViewOf(status: DevServerStatus, isTabBlocked: boolean): PreviewView 
     case 'stopped':
       return { ...NOTHING, canRun: true };
     case 'failed':
-      return { ...NOTHING, canRun: true, note: status.reason, isProblem: true };
+      return { ...NOTHING, canRun: true, canRemove: isPull, note: status.reason, isProblem: true };
     case 'starting': {
       const { button, note } = PHASE_WORDS[status.phase];
       return { ...NOTHING, progress: button, canStop: true, note };
@@ -135,6 +143,7 @@ export class RunPreviewButton {
           run: `Run ${repo}`,
           open: `Open ${repo} in a new tab`,
           stop: `Stop ${repo}`,
+          remove: '',
         }
       : {
           group: `Preview of pull request ${pull} of ${repo}`,
@@ -142,13 +151,15 @@ export class RunPreviewButton {
           run: `Preview pull request ${pull} of ${repo}`,
           open: `Open the preview of pull request ${pull} in a new tab`,
           stop: `Stop the preview of pull request ${pull}`,
+          remove: `Remove the preview of pull request ${pull}`,
         };
   });
   /** What to show; null where there is nothing to show. */
   protected readonly view = computed((): PreviewView | null => {
     const preview = this.preview();
     const status = preview?.status();
-    const run = preview && status && runViewOf(status, preview.isTabBlocked());
+    const run =
+      preview && status && runViewOf(status, preview.isTabBlocked(), this.pull() !== undefined);
     if (run) return run;
     if (!this.offersLiveSite()) return null;
     const liveUrl = this.liveSites.urlFor(this.repo());

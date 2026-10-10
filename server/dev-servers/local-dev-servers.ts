@@ -8,6 +8,7 @@ import { PullWorktrees } from './pull-worktrees.ts';
 import { fileRunCommands } from './run-command.ts';
 import { answersHttp } from './site-probe.ts';
 import { toolRunner } from './tool-runner.ts';
+import { localWorkspaces } from './workspace.ts';
 import { nodeWorktreeFiles } from './worktree-files.ts';
 
 /** What the local server knows that its dev servers are built from. */
@@ -23,11 +24,13 @@ export function localDevServers(sources: LocalDevServerSources): DevServers {
   return new DevServers({
     checkouts: cloneCheckouts(sources.projects, sources.clones),
     commands: fileRunCommands(),
-    worktrees: new PullWorktrees({
-      tools: toolRunner(),
-      files: nodeWorktreeFiles(),
-      pulls: { isOpen: sources.isPullOpen },
-    }),
+    workspaces: localWorkspaces(
+      new PullWorktrees({
+        tools: toolRunner(),
+        files: nodeWorktreeFiles(),
+        pulls: { isOpen: sources.isPullOpen },
+      }),
+    ),
     launch: shellLauncher(),
     killer: processTreeKiller(),
     freePort: freeLoopbackPort,

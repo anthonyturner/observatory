@@ -27,6 +27,11 @@
         >Live site <span aria-hidden="true">&#8599;</span></a
       >
     }
+    @if (shown.canRemove) {
+      <button type="button" [attr.aria-label]="labels().remove" (click)="stop()">
+        <span aria-hidden="true">&#10005;</span> Remove
+      </button>
+    }
     @if (shown.canStop) {
       <button type="button" [attr.aria-label]="labels().stop" (click)="stop()">
         <span aria-hidden="true">&#9632;</span> Stop

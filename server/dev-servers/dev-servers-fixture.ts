@@ -3,8 +3,9 @@ import type { Checkout } from '../runner/checkouts.ts';
 import { FakeProcess, fakeKiller } from '../runner/fake-process.ts';
 import type { DevLaunch } from './dev-launcher.ts';
 import { DevServers } from './dev-servers.ts';
-import type { Prepared, PrepareRequest } from './pull-worktrees.ts';
+import type { PullPrepareRequest } from './pull-worktrees.ts';
 import type { RunCommand } from './run-command.ts';
+import { type Prepared, localWorkspaces } from './workspace.ts';
 
 export const APP: Checkout = { name: 'app', repo: 'me/app', folder: 'E:/repos/app' };
 export const SITE: Checkout = { name: 'site', repo: 'me/site', folder: 'E:/repos/site' };
@@ -22,7 +23,7 @@ export interface Setting {
   /** The registry cannot read the projects. */
   readonly lookupFails?: boolean;
   /** How the worktree of a pull request is made; by default at once, in the clone's own folder for it. */
-  readonly prepare?: (request: PrepareRequest) => Promise<Prepared>;
+  readonly prepare?: (request: PullPrepareRequest) => Promise<Prepared>;
   /** Why removing a pull request's worktree fails; by default it does not. */
   readonly removalFails?: string;
   /** Removing a pull request's worktree takes until this settles. */
@@ -51,11 +52,11 @@ export function setUp(setting: Setting = {}) {
     launches.push({ folder, command: line, port });
     return process;
   };
-  const prepares: PrepareRequest[] = [];
+  const prepares: PullPrepareRequest[] = [];
   const removals: { clone: string; pull: number }[] = [];
   const shutdowns: string[] = [];
   const worktrees = {
-    prepare: async (request: PrepareRequest): Promise<Prepared> => {
+    prepare: async (request: PullPrepareRequest): Promise<Prepared> => {
       prepares.push(request);
       return setting.prepare
         ? setting.prepare(request)
@@ -83,7 +84,7 @@ export function setUp(setting: Setting = {}) {
         return command;
       },
     },
-    worktrees,
+    workspaces: localWorkspaces(worktrees),
     launch,
     killer: kills.killer,
     freePort: async () => ports.shift() ?? spare++,

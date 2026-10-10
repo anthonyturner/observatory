@@ -486,8 +486,29 @@ describe('RunPreviewButton: Preview this PR', () => {
     preview.element.querySelector('button')?.click();
     preview.settle();
 
-    expect(preview.labels()).toEqual(['▶ Preview this PR']);
+    expect(preview.labels()).toEqual(['▶ Preview this PR', '✕ Remove']);
     expect(preview.element.querySelector('[role="status"]')?.textContent).toBe(reason);
+  });
+
+  it('offers Remove beside Preview this PR when the preview failed, since its worktree is still on disk, and Remove stops it', () => {
+    const reason = 'Installing the dependencies of pull request 7 (npm ci) exited with code 1.';
+    const { mount, calls } = setUp({ status: { state: 'failed', reason } });
+    const preview = mount('me/app', 7);
+
+    expect(preview.labels()).toEqual(['▶ Preview this PR', '✕ Remove']);
+    const remove = preview.element.querySelectorAll('button')[1];
+    expect(remove?.getAttribute('aria-label')).toBe('Remove the preview of pull request 7');
+    remove?.click();
+    preview.settle();
+
+    expect(calls).toContain('stop me/app#7');
+    expect(preview.labels()).toEqual(['▶ Preview this PR']);
+  });
+
+  it('offers no Remove for a project’s own failed Run, which leaves nothing on disk', () => {
+    const { labels } = setUp({ status: { state: 'failed', reason: 'No script.' } });
+
+    expect(labels()).toEqual(['▶ Run']);
   });
 
   it('keeps a pull request’s preview apart from the project’s own Run', () => {

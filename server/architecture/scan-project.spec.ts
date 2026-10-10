@@ -216,3 +216,35 @@ describe('scanProject: outside a git checkout', () => {
     assert.deepEqual(mapProblems(map), []);
   });
 });
+
+describe('scanProject: layers kept beside the app folder', () => {
+  it('maps a component in src/ui as well as the app in src/app, with no problems', async () => {
+    const root = fixtureProject({
+      'angular.json': FILES['angular.json'] ?? '',
+      'src/main.ts': FILES['src/main.ts'] ?? '',
+      'src/app/app.ts': `
+        import { Component } from '@angular/core';
+        @Component({ selector: 'app-root', template: '<app-dial></app-dial>' })
+        export class App {}
+      `,
+      'src/ui/dial/dial.ts': `
+        import { Component } from '@angular/core';
+        @Component({ selector: 'app-dial', template: '' })
+        export class Dial {}
+      `,
+    });
+    const map = await scanProject(root);
+    assert.deepEqual(mapProblems(map), []);
+    assert.deepEqual(
+      map.nodes.map(({ id }) => id),
+      ['src/app/app.ts#App', 'src/ui/dial/dial.ts#Dial'],
+    );
+    assert.deepEqual(
+      map.areas.map(({ id, folder }) => [id, folder]),
+      [
+        ['browser:.', 'src'],
+        ['browser:ui', 'src/ui'],
+      ],
+    );
+  });
+});

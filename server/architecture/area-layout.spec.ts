@@ -119,3 +119,42 @@ describe('areaLayoutOf: a server root', () => {
     );
   });
 });
+
+describe('areaLayoutOf: a browser source root with an app folder', () => {
+  const sourceRoot: ArchitectureRuntime = { ...browser, root: 'src' };
+  const files = [
+    'src/main.ts',
+    'src/app/app.ts',
+    'src/app/core/a.ts',
+    'src/ui/panel/b.ts',
+    'src/domain/c.ts',
+  ];
+
+  it('divides the app folder as if its contents sat in the root', () => {
+    const layout = areaLayoutOf(sourceRoot, files);
+    assert.equal(layout.placeOf('src/app/app.ts').area, 'browser:.');
+    assert.equal(layout.placeOf('src/main.ts').area, 'browser:.');
+    assert.equal(layout.placeOf('src/app/core/a.ts').area, 'browser:core');
+  });
+
+  it('keeps the folders beside the app folder as areas, each at its real folder', () => {
+    const folders = areaLayoutOf(sourceRoot, files).areas.map(({ id, folder }) => [id, folder]);
+    assert.deepEqual(folders, [
+      ['browser:.', 'src'],
+      ['browser:core', 'src/app/core'],
+      ['browser:domain', 'src/domain'],
+      ['browser:ui', 'src/ui'],
+    ]);
+  });
+
+  it('does not lift an app folder out of a server root', () => {
+    const server: ArchitectureRuntime = {
+      id: 'server',
+      label: 'API',
+      kind: 'server',
+      root: 'server',
+    };
+    const layout = areaLayoutOf(server, ['server/app/a.ts']);
+    assert.equal(layout.placeOf('server/app/a.ts').area, 'server:app');
+  });
+});

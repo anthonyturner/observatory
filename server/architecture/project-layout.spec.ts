@@ -19,14 +19,14 @@ const rootsOf = async (root: string, options = {}) =>
   (await detectLayout(root, options)).runtimes.map(({ id, root: folder }) => [id, folder]);
 
 describe('detectLayout: runtimes', () => {
-  it('finds the Angular app under its source root and the API in server/', async () => {
+  it('finds the Angular app in its whole source root and the API in server/', async () => {
     const root = fixtureProject({
       'angular.json': angularJson(),
       'src/app/app.ts': '',
       'server/main.ts': '',
     });
     assert.deepEqual(await rootsOf(root), [
-      ['browser', 'src/app'],
+      ['browser', 'src'],
       ['server', 'server'],
     ]);
   });
@@ -37,7 +37,16 @@ describe('detectLayout: runtimes', () => {
         "projects": { "web": { "projectType": "application", "sourceRoot": "projects/web/src" } } }`,
       'projects/web/src/app/app.ts': '',
     });
-    assert.deepEqual(await rootsOf(root), [['browser', 'projects/web/src/app']]);
+    assert.deepEqual(await rootsOf(root), [['browser', 'projects/web/src']]);
+  });
+
+  it('takes src when the application names no source root, and nothing when the folder is missing', async () => {
+    const named = (extra: object) =>
+      JSON.stringify({ projects: { web: { projectType: 'application', ...extra } } });
+    const root = fixtureProject({ 'angular.json': named({}), 'src/ui/panel.ts': '' });
+    assert.deepEqual(await rootsOf(root), [['browser', 'src']]);
+    const missing = fixtureProject({ 'angular.json': named({ sourceRoot: 'lib' }) });
+    assert.deepEqual(await rootsOf(missing), []);
   });
 
   it('falls back to src/app without an angular.json, and finds nothing in a plain src', async () => {

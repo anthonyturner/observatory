@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
 import { SITE_OPENER } from './site-opener';
-import { RUNNING_POLL_MS, RunPreview, STATUS_POLL_MS } from './run-preview';
+import { RUNNING_POLL_MS, RunPreviews, STATUS_POLL_MS } from './run-preview';
 
 const RUNNING: DevServerStatus = { state: 'running', url: 'http://localhost:5173/' };
 const OPENS_SITE = 'opens http://localhost:5173/';
@@ -14,7 +14,7 @@ interface Answers {
   readonly blocksTabs?: boolean;
 }
 
-/** A preview already watching `me/app`, where the server first reads as `first`. */
+/** The previews, with `me/app` already shown on a screen, where its server first reads as `first`. */
 function setUp(answers: Answers = {}) {
   const { start = STARTING, first = STOPPED, blocksTabs = false } = answers;
   const polls: DevServerStatus[] = [first];
@@ -35,7 +35,6 @@ function setUp(answers: Answers = {}) {
   };
   TestBed.configureTestingModule({
     providers: [
-      RunPreview,
       { provide: DEV_SERVER_API, useValue: api },
       {
         provide: SITE_OPENER,
@@ -48,15 +47,16 @@ function setUp(answers: Answers = {}) {
       },
     ],
   });
-  const preview = TestBed.inject(RunPreview);
-  preview.watch('me/app');
+  const previews = TestBed.inject(RunPreviews);
+  const preview = previews.runFor('me/app');
+  const release = preview.watch();
   const watched = [...log];
   log.length = 0;
   const opened = (): string[] => log.filter((entry) => entry.startsWith('opens'));
-  return { preview, log, polls, watched, opened };
+  return { previews, preview, release, log, polls, watched, opened };
 }
 
-describe('RunPreview', () => {
+describe('RunPreviews', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
@@ -208,7 +208,7 @@ describe('RunPreview', () => {
     expect(opened()).toEqual([]);
   });
 
-  it('stops polling when its owner goes', () => {
+  it('stops polling when the app goes', () => {
     const { preview, log } = setUp();
     preview.run();
     log.length = 0;
@@ -218,5 +218,118 @@ describe('RunPreview', () => {
 
     expect(log).toEqual([]);
     expect(preview.status()).toEqual(STARTING);
+  });
+
+  describe('shared by every screen showing a project', () => {
+    it('hands every caller the same state for a project, and its own to each other project', () => {
+      const { previews, preview } = setUp();
+
+      preview.run();
+
+      expect(previews.runFor('me/app')).toBe(preview);
+      expect(previews.runFor('me/app').status()).toEqual(STARTING);
+      expect(previews.runFor('me/other').status()).toEqual(STOPPED);
+    });
+
+    it('keeps a start going when the screen that began it goes, and opens the site once for the next', () => {
+      const { previews, preview, release, log, polls, opened } = setUp();
+      polls.push(STARTING, RUNNING);
+      preview.run();
+      release();
+      log.length = 0;
+
+      const later = previews.runFor('me/app');
+      const releaseLater = later.watch();
+      expect(later.status()).toEqual(STARTING);
+      expect(log).toEqual([]);
+
+      vi.advanceTimersByTime(STATUS_POLL_MS * 2);
+      expect(later.status()).toEqual(RUNNING);
+      expect(opened()).toEqual([OPENS_SITE]);
+
+      releaseLater();
+      polls.push(RUNNING);
+      previews.runFor('me/app').watch();
+      vi.advanceTimersByTime(RUNNING_POLL_MS * 2);
+      expect(opened()).toEqual([OPENS_SITE]);
+    });
+
+    it('opens the site once, when it answers, with no screen showing the project', () => {
+      const { preview, release, polls, opened } = setUp();
+      polls.push(STARTING, RUNNING);
+      preview.run();
+      release();
+
+      vi.advanceTimersByTime(STATUS_POLL_MS * 2);
+
+      expect(preview.status()).toEqual(RUNNING);
+      expect(opened()).toEqual([OPENS_SITE]);
+    });
+
+    it('asks no more once nothing shows a project that is not starting', () => {
+      const { preview, release, log, polls } = setUp({ first: RUNNING });
+      log.length = 0;
+
+      release();
+      polls.push(RUNNING);
+      vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+
+      expect(log).toEqual([]);
+      expect(preview.status()).toEqual(RUNNING);
+    });
+
+    it('asks no more once a start nothing shows has been answered', () => {
+      const { preview, release, log, polls } = setUp();
+      polls.push(STARTING, RUNNING);
+      preview.run();
+      release();
+      vi.advanceTimersByTime(STATUS_POLL_MS * 2);
+      log.length = 0;
+
+      vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+
+      expect(log).toEqual([]);
+    });
+
+    it('keeps asking while one of two screens still shows the project', () => {
+      const { previews, preview, release, log, polls } = setUp({ first: RUNNING });
+      const releaseSecond = previews.runFor('me/app').watch();
+      release();
+      log.length = 0;
+      polls.push(RUNNING);
+
+      vi.advanceTimersByTime(RUNNING_POLL_MS);
+
+      expect(log).toEqual(['status me/app']);
+      releaseSecond();
+      releaseSecond();
+      log.length = 0;
+      vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+      expect(log).toEqual([]);
+      expect(preview.status()).toEqual(RUNNING);
+    });
+
+    it('reads the server again when a screen shows a project nothing was following', () => {
+      const { previews, release, log, polls } = setUp({ first: RUNNING });
+      release();
+      log.length = 0;
+      polls.push(STOPPED);
+
+      const later = previews.runFor('me/app');
+      later.watch();
+
+      expect(log).toEqual(['status me/app']);
+      expect(later.status()).toEqual(STOPPED);
+    });
+
+    it('keeps projects apart: one project starting does not touch another', () => {
+      const { previews, log } = setUp();
+      const other = previews.runFor('me/other');
+      other.watch();
+      previews.runFor('me/app').run();
+
+      expect(other.status()).toEqual(STOPPED);
+      expect(log).toEqual(['status me/other', 'start me/app']);
+    });
   });
 });

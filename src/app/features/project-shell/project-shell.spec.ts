@@ -1,18 +1,16 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { Routes, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from '../../core/dev-servers/dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from '../../core/dev-servers/dev-server.types';
-import { RunPreview, STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
+import { RunPreviews, STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
 import { SITE_OPENER } from '../../core/dev-servers/site-opener';
 import { libraryMatcher } from '../../core/library/library-route';
 import { ViewerSession } from '../../core/session/viewer-session';
 import { ELEMENT_SIZE } from '../../shared/element-size/element-size';
 import { QUIET_TABS } from '../../shared/project-tabs/quiet-tabs';
-import { RunPreviewButton } from '../../shared/run-preview-button/run-preview-button';
 import { ProjectShell } from './project-shell';
 
 const RUNNING: DevServerStatus = { state: 'running', url: 'http://localhost:5173/' };
@@ -76,8 +74,7 @@ async function setUp() {
     TestBed.tick();
     root.detectChanges();
   };
-  const runPreview = (): RunPreview =>
-    root.debugElement.query(By.directive(RunPreviewButton)).injector.get(RunPreview);
+  const runPreview = () => TestBed.inject(RunPreviews).runFor('me/app');
   const currentTab = (): string | null | undefined =>
     element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href');
   return { harness, element, opened, serverIsUp, settle, runPreview, currentTab };

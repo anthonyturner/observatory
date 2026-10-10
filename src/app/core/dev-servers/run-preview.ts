@@ -1,29 +1,33 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, Subscription, expand, switchMap, timer } from 'rxjs';
-import { DEV_SERVER_API } from './dev-server-api';
+import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
-import { SITE_OPENER } from './site-opener';
+import { SITE_OPENER, SiteOpener } from './site-opener';
 
 /** How often a starting server is asked whether its site is up yet. */
 export const STATUS_POLL_MS = 1000;
 /** How often a running one is asked whether it is still there. */
 export const RUNNING_POLL_MS = 10_000;
 
+interface RunPreviewDeps {
+  readonly api: DevServerApi;
+  readonly opener: SiteOpener;
+  readonly destroyRef: DestroyRef;
+}
+
 /**
- * One project's dev server as a button needs it: what it is doing now, and
- * Run, which opens the site in a new tab once the server reports it is up,
- * and Stop. Provide it per button; it follows one project at a time.
+ * One project's dev server as the buttons showing it need it: what it is doing
+ * now, Run, which opens the site in a new tab once the server reports it is up,
+ * and Stop. Every button for the project shares one, so a Run started on one
+ * screen carries on, and opens the site once, after the button that started it
+ * is gone.
  */
-@Injectable()
 export class RunPreview {
-  private readonly api = inject(DEV_SERVER_API);
-  private readonly opener = inject(SITE_OPENER);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly current = signal<DevServerStatus>(STOPPED);
   private readonly blocked = signal(false);
-  private repo = '';
   private following: Subscription | null = null;
+  private watchers = 0;
   /** Whether the site is to be opened when the server being followed first reports running. */
   private opensSite = false;
 
@@ -31,17 +35,32 @@ export class RunPreview {
   /** Whether the browser blocked the tab that was to open the running site. */
   readonly isTabBlocked = this.blocked.asReadonly();
 
-  /** Reads where `repo`'s server stands, for a page that opens on one already running. */
-  watch(repo: string): void {
-    this.repo = repo;
-    this.current.set(STOPPED);
-    this.follow(this.api.status(repo), false);
+  constructor(
+    private readonly repo: string,
+    private readonly deps: RunPreviewDeps,
+  ) {}
+
+  /**
+   * Shows this server on a screen: reads where it stands unless it is already being
+   * followed, and keeps it followed until the returned function is called. Releasing is safe
+   * to repeat.
+   */
+  watch(): () => void {
+    this.watchers++;
+    if (!this.isFollowing()) this.follow(this.deps.api.status(this.repo), false);
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.watchers--;
+      if (!this.isWanted(this.current())) this.unfollow();
+    };
   }
 
   /** Starts the server, or finds it running, and opens its site once it is up. */
   run(): void {
     this.current.set(STARTING);
-    this.follow(this.api.start(this.repo), true);
+    this.follow(this.deps.api.start(this.repo), true);
   }
 
   /** The owner opened the site by hand, so a note about the blocked tab has done its job. */
@@ -50,22 +69,23 @@ export class RunPreview {
   }
 
   stop(): void {
-    this.follow(this.api.stop(this.repo), false);
+    this.follow(this.deps.api.stop(this.repo), false);
   }
 
   /**
    * Shows `first` and then each poll after it, quickly while the server starts and slowly
    * while it runs, so one that dies shows Run again. The polling ends at a status that is
-   * not alive. When `opensSite`, the site opens at the first status that is not starting.
+   * not alive, or that nothing is showing. When `opensSite`, the site opens at the first
+   * status that is not starting.
    */
   private follow(first: Observable<DevServerStatus>, opensSite: boolean): void {
-    this.following?.unsubscribe();
+    this.unfollow();
     this.opensSite = opensSite;
     this.blocked.set(false);
     this.following = first
       .pipe(
         expand((status) => this.pollAfter(status)),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this.deps.destroyRef),
       )
       .subscribe((status) => {
         this.current.set(status);
@@ -73,19 +93,54 @@ export class RunPreview {
       });
   }
 
+  private unfollow(): void {
+    this.following?.unsubscribe();
+    this.following = null;
+  }
+
+  private isFollowing(): boolean {
+    return this.following !== null && !this.following.closed;
+  }
+
+  /** A server that is starting is followed to the end even when no screen shows it. */
+  private isWanted(status: DevServerStatus): boolean {
+    return this.watchers > 0 || status.state === 'starting';
+  }
+
   private pollAfter(status: DevServerStatus): Observable<DevServerStatus> {
+    if (!this.isWanted(status)) return EMPTY;
     if (status.state === 'starting') return this.askIn(STATUS_POLL_MS);
     if (status.state === 'running') return this.askIn(RUNNING_POLL_MS);
     return EMPTY;
   }
 
   private askIn(ms: number): Observable<DevServerStatus> {
-    return timer(ms).pipe(switchMap(() => this.api.status(this.repo)));
+    return timer(ms).pipe(switchMap(() => this.deps.api.status(this.repo)));
   }
 
   private openIfAsked(status: DevServerStatus): void {
     if (!this.opensSite || status.state === 'starting') return;
     this.opensSite = false;
-    if (status.state === 'running') this.blocked.set(!this.opener.open(status.url));
+    if (status.state === 'running') this.blocked.set(!this.deps.opener.open(status.url));
+  }
+}
+
+/** Every project's Run state, kept for the life of the app and keyed by `owner/name`. */
+@Injectable({ providedIn: 'root' })
+export class RunPreviews {
+  private readonly deps: RunPreviewDeps = {
+    api: inject(DEV_SERVER_API),
+    opener: inject(SITE_OPENER),
+    destroyRef: inject(DestroyRef),
+  };
+  private readonly byRepo = new Map<string, RunPreview>();
+
+  runFor(repo: string): RunPreview {
+    let preview = this.byRepo.get(repo);
+    if (!preview) {
+      preview = new RunPreview(repo, this.deps);
+      this.byRepo.set(repo, preview);
+    }
+    return preview;
   }
 }

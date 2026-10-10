@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from '../../core/dev-servers/dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from '../../core/dev-servers/dev-server.types';
-import { STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
+import { RUNNING_POLL_MS, STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
 import { SITE_OPENER } from '../../core/dev-servers/site-opener';
 import { ViewerSession } from '../../core/session/viewer-session';
 import { RunPreviewButton } from './run-preview-button';
@@ -49,17 +49,22 @@ function setUp(options: {
       },
     ],
   });
-  const fixture = TestBed.createComponent(RunPreviewButton);
-  fixture.componentRef.setInput('repo', 'me/app');
-  fixture.detectChanges();
-  const element = fixture.nativeElement as HTMLElement;
-  const settle = (): void => {
-    TestBed.tick();
+  const mount = (repo: string) => {
+    const fixture = TestBed.createComponent(RunPreviewButton);
+    fixture.componentRef.setInput('repo', repo);
     fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const settle = (): void => {
+      TestBed.tick();
+      fixture.detectChanges();
+    };
+    const labels = (): string[] =>
+      Array.from(element.querySelectorAll('button, a')).map(
+        (each) => each.textContent?.trim() ?? '',
+      );
+    return { fixture, element, settle, labels };
   };
-  const labels = (): string[] =>
-    Array.from(element.querySelectorAll('button, a')).map((each) => each.textContent?.trim() ?? '');
-  return { fixture, element, calls, polls, isConfirmedLocal, settle, labels };
+  return { ...mount('me/app'), mount, calls, polls, isConfirmedLocal };
 }
 
 describe('RunPreviewButton', () => {
@@ -163,5 +168,68 @@ describe('RunPreviewButton', () => {
     const note = element.querySelector('[role="status"]');
     expect(note?.textContent).toBe(reason);
     expect(note?.classList.contains('problem')).toBe(true);
+  });
+
+  it('shows the same state on two buttons for one project, and drives it from either', () => {
+    const { labels, element, settle, mount } = setUp({});
+    const second = mount('me/app');
+
+    element.querySelector('button')?.click();
+    settle();
+    second.settle();
+
+    expect(labels()).toEqual(['Starting…', '■ Stop']);
+    expect(second.labels()).toEqual(['Starting…', '■ Stop']);
+
+    second.element.querySelectorAll('button')[1]?.click();
+    settle();
+    second.settle();
+
+    expect(labels()).toEqual(['▶ Run']);
+    expect(second.labels()).toEqual(['▶ Run']);
+  });
+
+  it('keeps projects apart', () => {
+    const { labels, element, settle, mount } = setUp({});
+    const other = mount('me/other');
+
+    element.querySelector('button')?.click();
+    settle();
+    other.settle();
+
+    expect(labels()).toEqual(['Starting…', '■ Stop']);
+    expect(other.labels()).toEqual(['▶ Run']);
+  });
+
+  it('carries a start on to a button mounted after the one that began it is gone, and opens the site once', () => {
+    const { fixture, element, calls, polls, mount, settle } = setUp({});
+    polls.push(STARTING, RUNNING);
+    element.querySelector('button')?.click();
+    settle();
+    fixture.destroy();
+    calls.length = 0;
+
+    const later = mount('me/app');
+    expect(later.labels()).toEqual(['Starting…', '■ Stop']);
+    expect(calls).toEqual([]);
+
+    vi.advanceTimersByTime(STATUS_POLL_MS * 2);
+    later.settle();
+
+    expect(later.labels()).toEqual(['Open ↗', '■ Stop']);
+    expect(calls.filter((call) => call.startsWith('opens'))).toEqual([
+      'opens http://localhost:5173/',
+    ]);
+  });
+
+  it('asks no more once its last button is gone and the server is up', () => {
+    const { fixture, calls, polls } = setUp({ status: RUNNING });
+    fixture.destroy();
+    calls.length = 0;
+    polls.push(RUNNING);
+
+    vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+
+    expect(calls).toEqual([]);
   });
 });

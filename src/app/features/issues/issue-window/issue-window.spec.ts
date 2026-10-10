@@ -39,7 +39,9 @@ describe('IssueWindow', () => {
     const { fixture, element, http } = render();
 
     expect(element.querySelector('h2')?.textContent).toContain('#12Fix the lobby');
-    expect(element.querySelector('.kicker')?.textContent).toBe('Comet — no pull request closes it');
+    expect(element.querySelector('.kicker')?.textContent).toBe(
+      'Issue · Comet — no pull request closes it',
+    );
     expect(element.querySelector('.ibody')?.textContent).toContain('Loading the description…');
     expect(element.textContent).toContain('nobody assigned');
 

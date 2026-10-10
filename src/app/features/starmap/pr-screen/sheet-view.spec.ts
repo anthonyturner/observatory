@@ -72,7 +72,8 @@ describe('the PR screen’s view', () => {
   });
 
   it('names the bucket by its star', () => {
-    expect(kickerOf('unlinked')).toBe('Vagrans — no issue linked');
+    expect(kickerOf('unlinked')).toBe('Pull request · Vagrans — no issue linked');
+    expect(kickerOf(null)).toBe('Pull request');
   });
 
   it('colours a label by GitHub’s hex, else grey', () => {

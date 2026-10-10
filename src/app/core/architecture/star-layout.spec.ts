@@ -127,14 +127,14 @@ describe('starSystem', () => {
     ]);
   });
 
-  it('widens the view box to hold the outermost ring', () => {
+  it('widens the world to hold the outermost ring', () => {
     const lonely = systemAround('ClockService', [node('ClockService')], []);
     const busy = systemAround(
       'AlarmHandler',
       [node('AlarmHandler'), node('ClockService')],
       [edge('AlarmHandler', 'ClockService')],
     );
-    const width = (viewBox: string) => Number(viewBox.split(' ')[2]);
-    expect(width(busy.viewBox)).toBeGreaterThan(width(lonely.viewBox));
+    expect(busy.world.width).toBeGreaterThan(lonely.world.width);
+    expect(busy.world.x).toBe(-busy.world.width / 2);
   });
 });

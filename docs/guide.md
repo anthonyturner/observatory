@@ -485,7 +485,8 @@ or press **Replay** to watch the sky change, **[** and **]** to step, and
 
 - **Hover** a star for its card: the essentials, a low, medium or high **risk**
   tag (from what it touches, such as auth, migrations or CI), and **Snooze**
-  and **Dismiss**. Click it, or **Open**, for the full pull request.
+  and **Dismiss**. Click it, or **Open**, for the full pull request; the card
+  closes as it opens.
 - **Next star** (or **n**) flies to the one pull request to work next and opens
   it: the most blocked first, then the one idle longest.
 - **Sprint** time-boxes a review: pick 15, 25 or 45 minutes and the queue fills

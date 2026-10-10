@@ -748,6 +748,35 @@ moved. On a narrow screen they follow the milestones in the **List** view, so
 the sky keeps its height for the lanes. The Milestones tab recedes, dimmed and
 in italics, for a project with no milestones and Discussions off or empty.
 
+## The Architecture star view
+
+Code: `features/architecture/star-view/`, with `core/architecture/` for the
+rules. The node picked is the sun; what it joins orbits as worlds, a ring per
+area. Each world is painted by the shared portrait painter (`planetLook`).
+
+### Surface and size (scenery, data)
+
+The world's kind and land are scenery, hashed from the node's id as the
+Orrery's are. Its size is data: the more nodes depend on it, the bigger it is
+(`sizeOf` in `star-layout.ts`).
+
+### Air and outline (data: heat, kind)
+
+The air is `AIR_TOKEN[heat]`. Heat is the scanner's own mark, read by `graphOf`
+and not recounted: `unused` (nothing depends on it and nothing starts it) is
+faint with a dashed outline; `hot` (among the most often changed files) is red
+and is a flaring giant when it is the sun; anything else is plain. A node that
+is both shows as unused.
+
+The outline is the kind. An Angular class has none, a component a hollow flow
+ring, a module a plain silver ring, a route a thick ticked coral ring, and an
+outside service a dashed lilac ring. Heat wins over kind when both would draw
+the outline. A spoke to the sun is coloured and dashed by the link kind, and
+the links that carry a request at run time (`requests`, `handles`, `reaches`,
+`spawns`) are thicker and brighter than any code link. The legend names only
+the kinds the map holds (`legendOf`); every kind has a name in `kind-look.ts`
+and a colour in `tokens.css`.
+
 ## The Library's star chart
 
 Code: `features/library/library-index/`. The Library is for reading, so its

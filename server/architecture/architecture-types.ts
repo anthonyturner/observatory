@@ -25,7 +25,8 @@ export const NODE_KINDS = [
 export type NodeKind = (typeof NODE_KINDS)[number];
 
 /** How a class asks Angular for a dependency. */
-export type InjectionStyle = 'inject' | 'constructor';
+export const INJECTION_STYLES = ['inject', 'constructor'] as const;
+export type InjectionStyle = (typeof INJECTION_STYLES)[number];
 
 /** What an edge says `from` does with `to`. */
 export const EDGE_KINDS = [

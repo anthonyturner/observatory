@@ -1,27 +1,25 @@
 import {
+  ArchitectureArea,
   ArchitectureEdge,
   ArchitectureMap,
   ArchitectureNode,
+  ArchitectureRuntime,
   EDGE_KINDS,
   EdgeKind,
-  NodeKind,
 } from './architecture.types';
-
-/** `unused`: nothing depends on it, so it may be dead code. `hot`: many nodes lean on it. */
-export type Heat = 'unused' | 'hot' | 'plain';
-
-/** A node this many others depend on is one a change to will be felt widely. */
-export const HOT_DEPENDENTS = 5;
+import { NODE_KIND_LABEL } from './kind-look';
 
 /**
- * Angular builds a component from a template and reads a provider list from
- * configuration, often from outside the mapped folder, so neither is ever `unused`.
+ * What the scanner's marks say about a node: `unused`, nothing depends on it and nothing
+ * starts it, so it may be dead code; `hot`, among the most often changed files.
  */
-const NEVER_UNUSED: ReadonlySet<NodeKind> = new Set<NodeKind>(['component', 'providers']);
+export type Heat = 'unused' | 'hot' | 'plain';
 
 /** One node with what the map says about it. */
 export interface MapEntry {
   readonly node: ArchitectureNode;
+  /** The node's kind as the page words it. */
+  readonly kindLabel: string;
   /** How many nodes depend on this one. */
   readonly dependents: number;
   /** How many nodes this one depends on. */
@@ -57,6 +55,30 @@ export interface ArchitectureGraph {
   readonly edges: readonly ArchitectureEdge[];
 }
 
+/** The areas of one runtime, such as the browser app or the API server, for the area filter. */
+export interface AreaGroup {
+  readonly label: string;
+  readonly areas: readonly ArchitectureArea[];
+}
+
+const OTHER_RUNTIME = 'Other';
+
+/** The areas by runtime, in the runtimes' order; an area of no known runtime goes last under "Other". */
+export function groupAreas(
+  areas: readonly ArchitectureArea[],
+  runtimes: readonly ArchitectureRuntime[],
+): AreaGroup[] {
+  const known = new Set(runtimes.map(({ id }) => id));
+  const groups = runtimes.map(({ id, label }) => ({
+    label,
+    areas: areas.filter(({ runtime }) => runtime === id),
+  }));
+  const others = areas.filter(({ runtime }) => !known.has(runtime));
+  return [...groups, { label: OTHER_RUNTIME, areas: others }].filter(
+    ({ areas: inGroup }) => inGroup.length > 0,
+  );
+}
+
 /** The part of the map in view: one area and one window, or every one for null. */
 export interface Scope {
   readonly area: string | null;
@@ -68,10 +90,10 @@ export interface EntryFilter extends Scope {
   readonly heat: Heat | null;
 }
 
-function heatOf(node: ArchitectureNode, dependents: number): Heat {
-  if (NEVER_UNUSED.has(node.kind)) return 'plain';
-  if (dependents === 0) return 'unused';
-  return dependents >= HOT_DEPENDENTS ? 'hot' : 'plain';
+/** The scanner knows what starts a node without an edge to it (an entry file, a route), so its marks are not recounted. */
+function heatOf({ marks }: ArchitectureNode): Heat {
+  if (marks.includes('unused')) return 'unused';
+  return marks.includes('hot') ? 'hot' : 'plain';
 }
 
 function tally(names: readonly string[]): Map<string, number> {
@@ -97,15 +119,13 @@ export function graphOf(map: ArchitectureMap): ArchitectureGraph {
   const dependents = tally(pairs.map(([, to]) => to));
   const dependencies = tally(pairs.map(([from]) => from));
   const entries = map.nodes
-    .map((node): MapEntry => {
-      const count = dependents.get(node.id) ?? 0;
-      return {
-        node,
-        dependents: count,
-        dependencies: dependencies.get(node.id) ?? 0,
-        heat: heatOf(node, count),
-      };
-    })
+    .map((node): MapEntry => ({
+      node,
+      kindLabel: NODE_KIND_LABEL[node.kind],
+      dependents: dependents.get(node.id) ?? 0,
+      dependencies: dependencies.get(node.id) ?? 0,
+      heat: heatOf(node),
+    }))
     .sort(byWeight);
   const byId = new Map(entries.map((entry) => [entry.node.id, entry]));
   return { entries, byId, edges: map.edges };

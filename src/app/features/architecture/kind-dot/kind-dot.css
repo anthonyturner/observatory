@@ -1,0 +1,40 @@
+:host {
+  display: inline-block;
+  flex: none;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid transparent;
+  border-radius: 50%;
+  background: var(--flow);
+}
+
+:host([data-kind='component']) {
+  border-color: var(--flow);
+  background: transparent;
+}
+
+:host([data-kind='module']) {
+  border-radius: 2px;
+  background: var(--kind-module);
+}
+
+:host([data-kind='route']) {
+  border-radius: 1px;
+  background: var(--kind-route);
+  transform: rotate(45deg);
+}
+
+:host([data-kind='external']) {
+  border: 1.5px dashed var(--kind-external);
+  background: transparent;
+}
+
+:host([data-heat='hot']) {
+  background: var(--bad-soft);
+}
+
+:host([data-heat='unused']) {
+  border: 1.5px dashed var(--muted);
+  background: var(--faint);
+}

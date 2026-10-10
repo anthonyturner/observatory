@@ -46,11 +46,11 @@ describe('parseArchitecture', () => {
       body([node('ClockService'), node('AlarmHandler')], [edge('AlarmHandler', 'ClockService')]),
     );
     expect(map?.project).toBe('clockwork');
-    expect(map?.areas).toEqual([{ id: 'core', label: 'Core' }]);
+    expect(map?.areas).toEqual([{ id: 'core', label: 'Core', runtime: '' }]);
     expect(map?.windows).toEqual(['desktop']);
-    expect(map?.nodes.map((n) => [n.id, n.windows])).toEqual([
-      [idOf('ClockService'), ['desktop']],
-      [idOf('AlarmHandler'), ['desktop']],
+    expect(map?.nodes.map((n) => [n.id, n.windows, n.marks, n.endpoint])).toEqual([
+      [idOf('ClockService'), ['desktop'], [], null],
+      [idOf('AlarmHandler'), ['desktop'], [], null],
     ]);
     expect(map?.edges).toEqual([
       {
@@ -76,7 +76,13 @@ describe('parseArchitecture', () => {
 
   it('drops nodes that are malformed', () => {
     const map = parseArchitecture(
-      body([node('ClockService'), node(''), node('TickStore', { file: 7 }), 'nope']),
+      body([
+        node('ClockService'),
+        node(''),
+        node('TickStore', { file: 7 }),
+        node('NoFile', { file: undefined }),
+        'nope',
+      ]),
     );
     expect(map?.nodes.map((n) => n.name)).toEqual(['ClockService']);
   });
@@ -147,34 +153,110 @@ describe('parseArchitecture', () => {
         ],
       }),
     );
-    expect(map?.areas).toEqual([{ id: 'core', label: 'Core' }]);
+    expect(map?.areas).toEqual([{ id: 'core', label: 'Core', runtime: '' }]);
   });
 
-  it('keeps a version 3 map’s classes and drops the nodes and links this page cannot draw', () => {
+  it('keeps modules, routes and outside services with the links that join them', () => {
     const route = node('GET /api/queue', {
       id: 'route:GET /api/queue',
       kind: 'route',
       area: 'server:app',
+      endpoint: { method: 'GET', path: '/api/queue' },
     });
     const module = node('queue', { id: 'server/queue.ts', kind: 'module', area: 'server:queue' });
+    const outside = node('api.github.com', {
+      id: 'external:api.github.com',
+      kind: 'external',
+      file: '',
+      area: 'web-service',
+    });
+    const link = (from: string, to: string, kind: string) => ({
+      from,
+      to,
+      kind,
+      how: null,
+      members: [],
+    });
     const map = parseArchitecture(
       body(
-        [node('ClockService'), node('AlarmHandler'), route, module],
+        [node('ClockService'), node('AlarmHandler'), route, module, outside],
         [
           edge('AlarmHandler', 'ClockService', { marks: ['cycle'] }),
-          { from: idOf('AlarmHandler'), to: route.id, kind: 'requests', how: null, members: [] },
-          { from: route.id, to: module.id, kind: 'handles', how: null, members: [] },
+          link(idOf('AlarmHandler'), route.id, 'requests'),
+          link(route.id, module.id, 'handles'),
+          link(module.id, outside.id, 'reaches'),
+          link(module.id, outside.id, 'spawns'),
+          link(module.id, idOf('ClockService'), 'imports'),
         ],
         {
-          schema: 3,
-          areas: [{ id: 'core', label: 'Core', runtime: 'browser', folder: 'src/app' }],
+          areas: [
+            { id: 'core', label: 'Core', runtime: 'browser', folder: 'src/app' },
+            { id: 'server:app', label: 'App', runtime: 'server', folder: 'server/app' },
+            { id: 'server:queue', label: 'Queue', runtime: 'server', folder: 'server/queue' },
+            { id: 'web-service', label: 'Web services', runtime: 'web-service', folder: '' },
+          ],
+          runtimes: [
+            { id: 'browser', label: 'Browser app', kind: 'browser', root: 'src/app' },
+            { id: 'server', label: 'API server', kind: 'server', root: 'server' },
+            { id: 'web-service', label: 'Web services', kind: 'web-service', root: '' },
+          ],
         },
       ),
     );
-    expect(map?.nodes.map((n) => n.id)).toEqual([idOf('ClockService'), idOf('AlarmHandler')]);
-    expect(map?.edges.map((e) => [e.from, e.to])).toEqual([
-      [idOf('AlarmHandler'), idOf('ClockService')],
+    expect(map?.nodes.map((n) => [n.name, n.kind])).toEqual([
+      ['ClockService', 'service'],
+      ['AlarmHandler', 'service'],
+      ['GET /api/queue', 'route'],
+      ['queue', 'module'],
+      ['api.github.com', 'external'],
     ]);
-    expect(map?.areas).toEqual([{ id: 'core', label: 'Core' }]);
+    expect(map?.nodes[2]?.endpoint).toEqual({ method: 'GET', path: '/api/queue' });
+    expect(map?.nodes[4]?.file).toBe('');
+    expect(map?.edges.map((e) => e.kind)).toEqual([
+      'injects',
+      'requests',
+      'handles',
+      'reaches',
+      'spawns',
+      'imports',
+    ]);
+    expect(map?.areas.map((a) => [a.id, a.runtime])).toEqual([
+      ['core', 'browser'],
+      ['server:app', 'server'],
+      ['server:queue', 'server'],
+      ['web-service', 'web-service'],
+    ]);
+    expect(map?.runtimes.map((r) => r.kind)).toEqual(['browser', 'server', 'web-service']);
+  });
+
+  it('reads a node marks and drops one it does not know', () => {
+    const map = parseArchitecture(
+      body([node('ClockService', { marks: ['unused', 'hot', 'haunted', 7] }), node('Other')]),
+    );
+    expect(map?.nodes.map((n) => n.marks)).toEqual([['unused', 'hot'], []]);
+  });
+
+  it('reads an endpoint only when it has both a method and a path', () => {
+    const map = parseArchitecture(
+      body([
+        node('A', { endpoint: { method: 'GET', path: '/a' } }),
+        node('B', { endpoint: { method: 'GET' } }),
+        node('C', { endpoint: null }),
+      ]),
+    );
+    expect(map?.nodes.map((n) => n.endpoint)).toEqual([{ method: 'GET', path: '/a' }, null, null]);
+  });
+
+  it('leaves an area runtime empty when the map names none, and drops a runtime of an unknown kind', () => {
+    const map = parseArchitecture(
+      body([node('ClockService')], [], {
+        runtimes: [
+          { id: 'browser', label: 'Browser app', kind: 'browser' },
+          { id: 'lab', label: 'Lab', kind: 'laboratory' },
+        ],
+      }),
+    );
+    expect(map?.areas).toEqual([{ id: 'core', label: 'Core', runtime: '' }]);
+    expect(map?.runtimes.map((r) => r.id)).toEqual(['browser']);
   });
 });

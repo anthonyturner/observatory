@@ -44,6 +44,39 @@ svg {
   stroke-dasharray: 8 3 2 3;
 }
 
+.link[data-link='imports'] {
+  stroke: var(--link-imports);
+  stroke-dasharray: 2 4;
+}
+
+.link[data-link='requests'],
+.link[data-link='handles'],
+.link[data-link='reaches'],
+.link[data-link='spawns'] {
+  stroke-width: 2;
+}
+
+.link[data-link='requests'] {
+  stroke: var(--link-requests);
+  stroke-dasharray: none;
+}
+
+.link[data-link='handles'] {
+  stroke: var(--link-handles);
+  stroke-dasharray: 12 4;
+}
+
+.link[data-link='reaches'] {
+  stroke: var(--link-reaches);
+  stroke-dasharray: 2 5;
+  stroke-linecap: round;
+}
+
+.link[data-link='spawns'] {
+  stroke: var(--link-spawns);
+  stroke-dasharray: 5 2 1 2;
+}
+
 .arrowhead {
   fill: none;
   stroke: var(--flow);
@@ -66,6 +99,23 @@ svg {
   stroke: var(--edge);
   stroke-width: 1;
   transition: stroke 0.2s;
+}
+
+/* The strip down a box's left edge names its kind in colour: the flow colour for an Angular class. */
+.accent {
+  fill: var(--flow);
+}
+
+.box[data-kind='module'] .accent {
+  fill: var(--kind-module);
+}
+
+.box[data-kind='route'] .accent {
+  fill: var(--kind-route);
+}
+
+.box[data-kind='external'] .accent {
+  fill: var(--kind-external);
 }
 
 .box[data-role='centre'] .frame {

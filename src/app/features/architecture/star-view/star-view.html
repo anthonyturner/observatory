@@ -43,7 +43,9 @@
               (click)="pick.emit(planet.entry.node.id)"
               (keydown.enter)="pick.emit(planet.entry.node.id)"
             >
-              <title>{{ planet.entry.node.name }} · {{ planet.relation }}</title>
+              <title>
+                {{ planet.entry.node.name }} · {{ planet.entry.kindLabel }} · {{ planet.relation }}
+              </title>
               <circle class="body" [attr.r]="planet.size" />
               <g class="moons">
                 @for (moon of planet.moons; track moon.member) {

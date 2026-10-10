@@ -36,6 +36,9 @@ so a missing line costs more than a long one.
   framework) that esbuild bundles with ELK.js (`elkjs`, layout) into one self-contained HTML
   file (`npm run arch:html`, built by `server/architecture/architecture-html.ts`). Tests:
   `node:test` (`npm run test:viewer`); type check: `npm run typecheck:viewer`.
+- Architecture map contract: `server/architecture/architecture-types.ts` is the one home of the
+  map's kinds and shapes. The viewer and the Architecture tab (`src/app/core/architecture/`)
+  import it, so a kind the scanner adds is a compile error in both until it has a look.
 - Build: Angular CLI (`ng build`, esbuild). Tests: Vitest through `ng test`.
   Lint: angular-eslint. Format: Prettier. Deployment: not yet decided.
 - CI: GitHub Actions runs one workflow, **Wiki sync**

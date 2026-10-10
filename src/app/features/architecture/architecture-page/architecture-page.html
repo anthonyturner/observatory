@@ -34,9 +34,16 @@
         <a class="abtn" [href]="fullMapUrl()" target="_blank" rel="noopener">Open full map</a>
       }
     </div>
+    <ul class="legend" aria-label="Node kinds">
+      @for (item of legend().nodes; track item.kind) {
+        <li><app-kind-dot [kind]="item.kind" />{{ item.label }}</li>
+      }
+    </ul>
     <ul class="legend" aria-label="Link kinds">
-      @for (kind of linkKinds; track kind) {
-        <li [attr.data-link]="kind"><span class="swatch" aria-hidden="true"></span>{{ kind }}</li>
+      @for (item of legend().links; track item.kind) {
+        <li [attr.data-link]="item.kind" [title]="item.meaning">
+          <span class="swatch" aria-hidden="true"></span>{{ item.kind }}
+        </li>
       }
     </ul>
   </div>
@@ -48,7 +55,7 @@
   <aside class="index">
     <app-node-index
       [entries]="listed()"
-      [areas]="areas()"
+      [areaGroups]="areaGroups()"
       [windows]="windows()"
       [totals]="totals()"
       [selected]="centreId()"
@@ -76,7 +83,9 @@
     <section class="facts" aria-label="Centre node" [attr.data-heat]="facts.heat">
       <h2>{{ facts.name }}</h2>
       <p class="kind">{{ facts.kind }}</p>
-      <p class="file">{{ facts.file }}</p>
+      @if (facts.file) {
+        <p class="file">{{ facts.file }}</p>
+      }
       @if (facts.providedIn) {
         <p>providedIn: {{ facts.providedIn }}</p>
       }

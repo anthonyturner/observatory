@@ -7,7 +7,7 @@ import {
 } from './architecture.types';
 import { BOX_WIDTH, umlDiagram } from './uml-layout';
 
-const AREAS: ArchitectureArea[] = [{ id: 'core', label: 'Core' }];
+const AREAS: ArchitectureArea[] = [{ id: 'core', label: 'Core', runtime: 'browser' }];
 
 const node = (name: string): ArchitectureNode => ({
   id: name,
@@ -18,6 +18,8 @@ const node = (name: string): ArchitectureNode => ({
   group: '',
   providedIn: null,
   windows: [],
+  marks: [],
+  endpoint: null,
 });
 
 const edge = (
@@ -37,6 +39,7 @@ function diagramAround(centre: string, nodes: ArchitectureNode[], edges: Archite
   const graph = graphOf({
     project: '',
     scannedAt: '',
+    runtimes: [],
     areas: AREAS,
     windows: [],
     nodes,

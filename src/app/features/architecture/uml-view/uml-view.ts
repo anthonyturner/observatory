@@ -16,4 +16,6 @@ export class UmlView {
   protected readonly boxWidth = BOX_WIDTH;
   protected readonly headerHeight = HEADER_HEIGHT;
   protected readonly captionY = TOP - 12;
+  /** Stops short of the frame's rounded corners. */
+  protected readonly accentHeight = HEADER_HEIGHT - 20;
 }

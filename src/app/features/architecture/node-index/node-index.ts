@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
-import { Heat, MapEntry } from '../../../core/architecture/architecture-graph';
-import { ArchitectureArea } from '../../../core/architecture/architecture.types';
+import { AreaGroup, Heat, MapEntry } from '../../../core/architecture/architecture-graph';
+import { KindDot } from '../kind-dot/kind-dot';
 
-/** How many classes carry each heat, shown on the chips that filter by it. */
+/** How many nodes carry each heat, shown on the chips that filter by it. */
 export interface HeatTotals {
   readonly unused: number;
   readonly hot: number;
@@ -11,13 +11,15 @@ export interface HeatTotals {
 /** The map's nodes as a searchable list, most depended-on first. */
 @Component({
   selector: 'app-node-index',
+  imports: [KindDot],
   templateUrl: './node-index.html',
   styleUrl: './node-index.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NodeIndex {
   readonly entries = input.required<readonly MapEntry[]>();
-  readonly areas = input.required<readonly ArchitectureArea[]>();
+  /** The areas to filter by, grouped by the runtime they belong to. */
+  readonly areaGroups = input.required<readonly AreaGroup[]>();
   /** The Overwolf windows to filter by; none hides the filter. */
   readonly windows = input.required<readonly string[]>();
   readonly totals = input.required<HeatTotals>();

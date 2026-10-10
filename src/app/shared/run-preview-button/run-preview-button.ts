@@ -8,7 +8,7 @@ import {
   untracked,
 } from '@angular/core';
 import { DevServerStatus } from '../../core/dev-servers/dev-server.types';
-import { RunPreview } from '../../core/dev-servers/run-preview';
+import { RunPreviews } from '../../core/dev-servers/run-preview';
 import { ViewerSession } from '../../core/session/viewer-session';
 
 /** What the buttons and the note beside them show for one status. */
@@ -63,35 +63,40 @@ function viewOf(status: DevServerStatus, isTabBlocked: boolean): PreviewView {
   selector: 'app-run-preview-button',
   templateUrl: './run-preview-button.html',
   styleUrl: './run-preview-button.css',
-  providers: [RunPreview],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RunPreviewButton {
   /** `owner/name`. */
   readonly repo = input.required<string>();
 
-  private readonly preview = inject(RunPreview);
-  protected readonly isLocal = inject(ViewerSession).isConfirmedLocal;
-  protected readonly view = computed(() =>
-    viewOf(this.preview.status(), this.preview.isTabBlocked()),
+  private readonly previews = inject(RunPreviews);
+  private readonly isLocal = inject(ViewerSession).isConfirmedLocal;
+  /** The project's shared Run state; none unless this is the owner's own machine. */
+  private readonly preview = computed(() =>
+    this.isLocal() ? this.previews.runFor(this.repo()) : null,
   );
+  /** What to show; null where there is no Run to show. */
+  protected readonly view = computed(() => {
+    const preview = this.preview();
+    return preview && viewOf(preview.status(), preview.isTabBlocked());
+  });
 
   constructor() {
-    effect(() => {
-      const repo = this.repo();
-      if (this.isLocal()) untracked(() => this.preview.watch(repo));
+    effect((onCleanup) => {
+      const preview = this.preview();
+      if (preview) onCleanup(untracked(() => preview.watch()));
     });
   }
 
   protected run(): void {
-    this.preview.run();
+    this.preview()?.run();
   }
 
   protected openedByHand(): void {
-    this.preview.siteOpenedByHand();
+    this.preview()?.siteOpenedByHand();
   }
 
   protected stop(): void {
-    this.preview.stop();
+    this.preview()?.stop();
   }
 }

@@ -1,5 +1,4 @@
-@if (isLocal()) {
-  @let shown = view();
+@if (view(); as shown) {
   <div class="run" role="group" [attr.aria-label]="'Dev server for ' + repo()">
     @if (shown.canRun) {
       <button type="button" [attr.aria-label]="'Run ' + repo()" (click)="run()">

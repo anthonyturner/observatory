@@ -1,59 +1,56 @@
+import type {
+  ArchitectureArea as ScannedArea,
+  ArchitectureEdge as ScannedEdge,
+  ArchitectureNode as ScannedNode,
+  ArchitectureRuntime as ScannedRuntime,
+} from '../../../../server/architecture/architecture-types';
+
 /**
- * What a node is, as the map colours and filters it. The scanner also maps
- * plain modules, routes and outside services; this page draws only Angular's.
+ * The scanner's own kind lists and types, so a kind it adds is a compile error here
+ * until the page gives it a look, not a node the page silently drops.
  */
-export const NODE_KINDS = [
-  'service',
-  'component',
-  'handler',
-  'store',
-  'token',
-  'function',
-  'providers',
-] as const;
-export type NodeKind = (typeof NODE_KINDS)[number];
+export {
+  EDGE_KINDS,
+  INJECTION_STYLES,
+  NODE_KINDS,
+  NODE_MARKS,
+} from '../../../../server/architecture/architecture-types';
+export type {
+  EdgeKind,
+  InjectionStyle,
+  NodeKind,
+  NodeMark,
+} from '../../../../server/architecture/architecture-types';
 
-/** How a class asks Angular for a dependency. */
-export const INJECTION_STYLES = ['inject', 'constructor'] as const;
-export type InjectionStyle = (typeof INJECTION_STYLES)[number];
-
-/** What an edge says `from` does with `to`, in the order the page names them. */
-export const EDGE_KINDS = ['injects', 'uses', 'provides', 'extends', 'calls'] as const;
-export type EdgeKind = (typeof EDGE_KINDS)[number];
+/** One machine or process the project runs across: the browser app, the API server, an outside service. */
+export type ArchitectureRuntime = Pick<ScannedRuntime, 'id' | 'label'>;
 
 /** One part of the mapped project: a ring in the star view, a choice in the area filter. */
-export interface ArchitectureArea {
-  readonly id: string;
-  readonly label: string;
-}
+export type ArchitectureArea = Pick<ScannedArea, 'id' | 'label' | 'runtime'>;
 
-/** One class, token, function or provider list. Edges refer to it by `id`. */
-export interface ArchitectureNode {
-  /** Unique even when two nodes share a name; an old map's ids are the names. */
-  readonly id: string;
-  readonly name: string;
-  readonly kind: NodeKind;
-  readonly file: string;
-  readonly area: string;
-  readonly group: string;
-  readonly providedIn: string | null;
-  /** The Overwolf windows that pull this node in. */
-  readonly windows: readonly string[];
-}
+/** One class, module, route or outside service. Edges refer to it by `id`. */
+export type ArchitectureNode = Pick<
+  ScannedNode,
+  | 'id'
+  | 'name'
+  | 'kind'
+  | 'file'
+  | 'area'
+  | 'group'
+  | 'providedIn'
+  | 'windows'
+  | 'marks'
+  | 'endpoint'
+>;
 
-/** `from` depends on `to` in the way `kind` names, and reads these members of it. */
-export interface ArchitectureEdge {
-  readonly from: string;
-  readonly to: string;
-  readonly kind: EdgeKind;
-  readonly how: InjectionStyle | null;
-  readonly members: readonly string[];
-}
+/** `from` depends on, requests, handles or reaches `to` in the way `kind` names, and reads these members of it. */
+export type ArchitectureEdge = Pick<ScannedEdge, 'from' | 'to' | 'kind' | 'how' | 'members'>;
 
-/** A project's nodes and how they depend on each other, as `GET /api/architecture` serves it. */
+/** A project's nodes and how they join, as `GET /api/architecture` serves it. */
 export interface ArchitectureMap {
   readonly project: string;
   readonly scannedAt: string;
+  readonly runtimes: readonly ArchitectureRuntime[];
   readonly areas: readonly ArchitectureArea[];
   readonly windows: readonly string[];
   readonly nodes: readonly ArchitectureNode[];

@@ -23,7 +23,8 @@ const SERVER = { id: 'server', label: 'API server', kind: 'server' } as const;
 /** The folders a Node API conventionally lives in, in the order they are tried. */
 const SERVER_FOLDERS: readonly string[] = ['server', 'backend', 'api'];
 const DEFAULT_SOURCE_ROOT = 'src';
-const APP_FOLDER = 'app';
+/** The folder the Angular CLI puts an app's code in, inside its source root. */
+export const APP_FOLDER = 'app';
 /** A script file's path; the end of a glob such as `**\/*.spec.ts` is not one. */
 const SCRIPT_FILE = /(?<![*\w@./-])[\w@./-]+\.[cm]?[jt]s\b/g;
 const LEADING_DOT_SLASH = /^\.\//;
@@ -50,19 +51,17 @@ async function angularApplication(
 }
 
 /**
- * The Angular app's code lives in the `app` folder of its source root, else in
- * the root itself. Without an `angular.json`, only `src/app` counts, since any
- * other `src` could be a Node project.
+ * The Angular app's code is everything under its source root, which holds
+ * more than the `app` folder when the app keeps layers beside it. Without an
+ * `angular.json`, only `src/app` counts, since any other `src` could be a
+ * Node project.
  */
 async function browserRootOf(
   projectRoot: string,
   application: { sourceRoot: string } | null,
 ): Promise<string | null> {
-  const app = posix.join(application?.sourceRoot ?? DEFAULT_SOURCE_ROOT, APP_FOLDER);
-  if (await isFolder(projectRoot, app)) return app;
-  return application && (await isFolder(projectRoot, application.sourceRoot))
-    ? application.sourceRoot
-    : null;
+  const root = application?.sourceRoot ?? posix.join(DEFAULT_SOURCE_ROOT, APP_FOLDER);
+  return (await isFolder(projectRoot, root)) ? root : null;
 }
 
 async function serverRootOf(projectRoot: string, override?: string): Promise<string | null> {
@@ -88,7 +87,7 @@ async function scriptFiles(projectRoot: string): Promise<string[]> {
 }
 
 /**
- * Finds what the project is made of: an Angular app (its source root from
+ * Finds what the project is made of: an Angular app (its whole source root from
  * `angular.json`, else `src/app`) as the browser, and the Node API (the first
  * of server/, backend/ or api/ that holds TypeScript, unless one is named) as
  * the server. A project with neither has no runtimes.

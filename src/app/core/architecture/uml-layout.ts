@@ -108,7 +108,7 @@ function boxAt(draft: Draft, y: number, areaLabel: string): UmlBox {
     key: `${role}:${entry.node.id}`,
     entry,
     role,
-    stereotype: `«${entry.node.kind}» ${areaLabel}`,
+    stereotype: `«${entry.kindLabel}» ${areaLabel}`,
     title: titleOf(entry.node.name),
     x: COLUMN_X[role],
     y,

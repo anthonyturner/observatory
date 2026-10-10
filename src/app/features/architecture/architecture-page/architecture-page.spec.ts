@@ -105,12 +105,107 @@ describe('ArchitecturePage', () => {
     expect(element.querySelector('a.abtn')).toBeNull();
   });
 
-  it('says so when the clone holds no Angular classes', () => {
+  it('says so only when the scan found nothing at all', () => {
     const { fixture, http, element } = render();
     http.expectOne('/api/architecture?repo=me/app').flush({ ...MAP, nodes: [], edges: [] });
     fixture.detectChanges();
 
-    expect(element.querySelector('.state')?.textContent).toContain('No Angular classes');
+    expect(element.querySelector('.state')?.textContent).toContain('found no source code');
+    expect(element.querySelector('app-star-view')).toBeNull();
+  });
+
+  describe('for a project with no Angular classes', () => {
+    const scanned = (id: string, name: string, kind: string, area: string, extra = {}) => ({
+      ...node(name, { id, kind, area, file: kind === 'external' ? '' : id }),
+      marks: [],
+      endpoint: null,
+      ...extra,
+    });
+    const flow = (from: string, to: string, kind: string) => ({
+      from,
+      to,
+      kind,
+      how: null,
+      members: [],
+    });
+    const SERVER_MAP = {
+      ...MAP,
+      areas: [
+        { id: 'server:queue', label: 'Queue', runtime: 'server', folder: 'server/queue' },
+        { id: 'web-service', label: 'Web services', runtime: 'web-service', folder: '' },
+      ],
+      runtimes: [
+        { id: 'server', label: 'API server', kind: 'server', root: 'server' },
+        { id: 'web-service', label: 'Web services', kind: 'web-service', root: '' },
+      ],
+      nodes: [
+        scanned('server/main.ts', 'main', 'module', 'server:queue', { marks: [] }),
+        scanned('server/queue.ts', 'queue', 'module', 'server:queue', { marks: ['unused'] }),
+        scanned('route:GET /api/queue', 'GET /api/queue', 'route', 'server:queue'),
+        scanned('external:api.github.com', 'api.github.com', 'external', 'web-service'),
+      ],
+      edges: [
+        flow('server/main.ts', 'route:GET /api/queue', 'imports'),
+        flow('route:GET /api/queue', 'server/queue.ts', 'handles'),
+        flow('server/queue.ts', 'external:api.github.com', 'reaches'),
+      ],
+    };
+
+    function serverPage() {
+      const page = render();
+      page.http.expectOne('/api/architecture?repo=me/app').flush(SERVER_MAP);
+      page.fixture.detectChanges();
+      return page;
+    }
+
+    it('draws its modules, routes and outside services instead of the empty message', () => {
+      const { element } = serverPage();
+
+      expect(element.querySelector('.state')).toBeNull();
+      expect(element.querySelector('app-star-view')).not.toBeNull();
+      expect(element.querySelector('.stamp')?.textContent).toContain('4 nodes · 3 links');
+      expect(element.querySelectorAll('app-node-index .row')).toHaveLength(4);
+    });
+
+    it('names the kinds it holds in the legend, and no others', () => {
+      const { element } = serverPage();
+      const legend = (label: string) =>
+        [...element.querySelectorAll(`ul[aria-label="${label}"] li`)].map((li) =>
+          li.textContent?.trim(),
+        );
+
+      expect(legend('Node kinds')).toEqual(['module', 'route', 'outside service']);
+      expect(legend('Link kinds')).toEqual(['imports', 'handles', 'reaches']);
+    });
+
+    it('flags unused code from the scanner marks, not from a count of dependents', () => {
+      const { element } = serverPage();
+      const unusedChip = element.querySelector('.chips [data-heat="unused"]');
+
+      expect(unusedChip?.textContent).toContain('Unused 1');
+    });
+
+    it('groups the area filter by runtime', () => {
+      const { element } = serverPage();
+      const groups = [...element.querySelectorAll('app-node-index optgroup')].map((group) =>
+        group.getAttribute('label'),
+      );
+
+      expect(groups).toEqual(['API server', 'Web services']);
+    });
+
+    it('shows an outside service with no file path', () => {
+      const { fixture, element } = serverPage();
+
+      element
+        .querySelector<HTMLButtonElement>('app-node-index .row[title="outside service"]')
+        ?.click();
+      fixture.detectChanges();
+
+      expect(element.querySelector('.facts h2')?.textContent).toBe('api.github.com');
+      expect(element.querySelector('.facts .kind')?.textContent).toContain('outside service');
+      expect(element.querySelector('.facts .file')).toBeNull();
+    });
   });
 
   it('scans the clone again when refreshed', () => {

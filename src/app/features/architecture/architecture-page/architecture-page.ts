@@ -13,14 +13,17 @@ import {
   countOf,
   entriesMatching,
   graphOf,
+  groupAreas,
   neighbourhoodOf,
 } from '../../../core/architecture/architecture-graph';
-import { ArchitectureMap, EDGE_KINDS } from '../../../core/architecture/architecture.types';
+import { ArchitectureMap } from '../../../core/architecture/architecture.types';
+import { Legend, legendOf } from '../../../core/architecture/kind-look';
 import { starSystem } from '../../../core/architecture/star-layout';
 import { umlDiagram } from '../../../core/architecture/uml-layout';
 import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
 import { plural } from '../../../shared/text/plural';
 import { UpLink } from '../../../shared/up-link/up-link';
+import { KindDot } from '../kind-dot/kind-dot';
 import { NodeIndex } from '../node-index/node-index';
 import { StarView } from '../star-view/star-view';
 import { UmlView } from '../uml-view/uml-view';
@@ -40,16 +43,17 @@ const WAITING_MESSAGE = {
 } as const;
 
 const EMPTY_MESSAGE =
-  'No Angular classes found in this clone. Open full map also charts plain TypeScript files, routes and outside services.';
+  'The scan found no source code to map in this clone: no TypeScript files, routes or outside services.';
 
 const HEAT_NOTE: Readonly<Record<Heat, string>> = {
-  hot: 'Hot spot: a change here is felt widely.',
+  hot: 'Hot spot: among the most often changed files.',
   unused: 'Nothing depends on it: candidate dead code.',
   plain: '',
 };
 
 const NO_LIST: readonly string[] = [];
 const NO_AREAS: ArchitectureMap['areas'] = [];
+const NO_LEGEND: Legend = { nodes: [], links: [] };
 
 function stampOf(repo: string, map: ArchitectureMap | null): string {
   if (!map) return repo;
@@ -61,12 +65,12 @@ function stampOf(repo: string, map: ArchitectureMap | null): string {
 }
 
 /**
- * A project's Architecture screen: the classes of its local clone and how they
- * depend on each other, as a star system or a dependency diagram.
+ * A project's Architecture screen: the classes, modules, routes and outside services of
+ * its local clone and how they join, as a star system or a dependency diagram.
  */
 @Component({
   selector: 'app-architecture-page',
-  imports: [UpLink, ProjectTabs, NodeIndex, StarView, UmlView],
+  imports: [UpLink, ProjectTabs, KindDot, NodeIndex, StarView, UmlView],
   providers: [ArchitectureFeed],
   templateUrl: './architecture-page.html',
   styleUrl: './architecture-page.css',
@@ -84,7 +88,6 @@ export class ArchitecturePage {
   private readonly chosen = signal<string | null>(null);
 
   protected readonly repo = toSignal(this.repoChanges, { initialValue: '' });
-  protected readonly linkKinds = EDGE_KINDS;
   protected readonly view = signal<ViewChoice>('star');
   protected readonly query = signal('');
   protected readonly area = signal<string | null>(null);
@@ -100,6 +103,14 @@ export class ArchitecturePage {
   protected readonly fullMapUrl = computed(() => architectureHtmlUrl(this.repo()));
   protected readonly hasMap = computed(() => this.map() !== null);
   protected readonly areas = computed(() => this.map()?.areas ?? NO_AREAS);
+  protected readonly areaGroups = computed(() => {
+    const map = this.map();
+    return map ? groupAreas(map.areas, map.runtimes) : [];
+  });
+  protected readonly legend = computed(() => {
+    const map = this.map();
+    return map ? legendOf(map) : NO_LEGEND;
+  });
   protected readonly windows = computed(() => this.map()?.windows ?? NO_LIST);
   protected readonly graph = computed(() => {
     const map = this.map();
@@ -140,7 +151,7 @@ export class ArchitecturePage {
     const area = this.areas().find(({ id }) => id === node.area)?.label ?? node.area;
     return {
       name: node.name,
-      kind: `${node.kind} · ${area}${node.group ? ` / ${node.group}` : ''}`,
+      kind: `${neighbourhood.centre.kindLabel} · ${area}${node.group ? ` / ${node.group}` : ''}`,
       file: node.file,
       providedIn: node.providedIn,
       windows: node.windows.join(', '),

@@ -76,6 +76,16 @@
   --link-provides: var(--sev-waiting);
   --link-extends: var(--warm);
   --link-calls: var(--sev-unsettled);
+  --link-imports: #8795ad;
+  /* The links that carry a request at run time, warm and bright against the code links. */
+  --link-requests: #ffe14d;
+  --link-handles: #ff9a52;
+  --link-reaches: #e0a8ff;
+  --link-spawns: #ff6f91;
+  /* The map's nodes that are not Angular classes, which keep the flow colour. */
+  --kind-module: #c3cbd9;
+  --kind-route: #ff8a6a;
+  --kind-external: #d59bff;
   /* The voice block: green while it listens, red when it cannot. */
   --voice-live-edge: rgba(95, 227, 161, 0.5);
   --voice-live-wash: rgba(95, 227, 161, 0.16);

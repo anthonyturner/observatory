@@ -73,11 +73,6 @@ button:focus-visible {
   background: var(--flow);
 }
 
-[data-kind='component'] .dot {
-  border: 1.5px solid var(--flow);
-  background: transparent;
-}
-
 [data-heat='hot'] .dot {
   background: var(--bad-soft);
 }

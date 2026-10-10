@@ -38,9 +38,13 @@ server, through one module, `server/dev-servers/`, on these terms:
   `npm run dev`, else `npm start`, chosen from the checkout's `package.json`.
   Never text from a request. The server's own credentials are removed from the
   environment, as for a run.
-- **Address.** The first `http://localhost:PORT` or `127.0.0.1` address the
-  server prints, with terminal colour codes stripped. An owner's `url` wins. A
-  server that prints none within two minutes is stopped and says so.
+- **Address.** An address the server prints whose parsed host is `localhost`,
+  `127.0.0.1` or `[::1]`, with a port, terminal colour codes and trailing
+  punctuation stripped. One on a line labelled `Local:` wins; otherwise the
+  first one printed is used after a short wait. A script that runs several
+  servers (an API and a site) may still pick the wrong one: give it a `url` in
+  `run.json`, which always wins. A server that prints none within two minutes is
+  stopped and says so.
 - **Limits.** One server per project; starting again returns the running one.
   Stop ends the whole process tree (`taskkill /T /F` on Windows, the process
   group elsewhere), and so does the API exiting.

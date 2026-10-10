@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
 import { PREVIEW_TABS } from './preview-tab';
-import { RunPreview, STATUS_POLL_MS } from './run-preview';
+import { RUNNING_POLL_MS, RunPreview, STATUS_POLL_MS } from './run-preview';
 
 const RUNNING: DevServerStatus = { state: 'running', url: 'http://localhost:5173/' };
 
@@ -86,7 +86,7 @@ describe('RunPreview', () => {
     ]);
   });
 
-  it('stops asking once the server is up', () => {
+  it('keeps asking, slowly, once the server is up', () => {
     const { preview, log, polls } = setUp();
     polls.push(RUNNING);
     preview.run();
@@ -94,8 +94,34 @@ describe('RunPreview', () => {
     log.length = 0;
 
     vi.advanceTimersByTime(STATUS_POLL_MS * 5);
-
     expect(log).toEqual([]);
+
+    polls.push(RUNNING);
+    vi.advanceTimersByTime(RUNNING_POLL_MS);
+    expect(log).toEqual(['status me/app']);
+  });
+
+  it('shows Run again, with the reason, when a running server dies', () => {
+    const failed: DevServerStatus = { state: 'failed', reason: 'It exited.' };
+    const { preview, log, polls } = setUp({ first: RUNNING });
+    polls.push(failed);
+
+    vi.advanceTimersByTime(RUNNING_POLL_MS);
+    expect(preview.status()).toEqual(failed);
+    log.length = 0;
+
+    vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+    expect(log).toEqual([]);
+  });
+
+  it('does not touch a tab for a server that was already running when the page opened', () => {
+    const { preview, log, polls } = setUp({ first: RUNNING });
+    polls.push(STOPPED);
+
+    vi.advanceTimersByTime(RUNNING_POLL_MS);
+
+    expect(preview.status()).toEqual(STOPPED);
+    expect(log).not.toContain('tab closed');
   });
 
   it('opens the site at once when the server was already running', () => {

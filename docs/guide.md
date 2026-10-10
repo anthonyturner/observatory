@@ -577,7 +577,8 @@ starts the project's dev server in its clone on your computer (the project's
 server prints its address. It reads **Starting…** while it waits, then **Open ↗**
 and **Stop**; pressing Run again reuses the running server, and Stop ends it and
 everything it started. A project with no clone here, or no script, says why. To
-run something else, or to say where the site is, add the project to
+run something else, or to say where the site is (a script that starts an API and a
+site together can fool the address Observatory picks), add the project to
 `~/.claude/observatory/run.json`, as `{"owner/name": {"command": "...", "url":
 "..."}}`. **Only on your own computer:** the hosted site has no Run button.
 

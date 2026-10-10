@@ -21,6 +21,8 @@ const DEV_SERVERS_URL = '/api/dev-servers';
 /** The API accepts writes only with this header, which no other site can add. */
 const WRITE_HEADERS = new HttpHeaders({ 'x-observatory': '1' });
 const NOT_A_STATUS = 'The site sent something that is not a dev server status.';
+/** A site is opened by its address, so only a web address will do. */
+const WEB_ADDRESS = /^https?:\/\//i;
 const UNREACHABLE = 'Observatory’s API could not be reached.';
 
 /** The status in an API answer, or null when it is not one. */
@@ -32,7 +34,9 @@ export function devServerStatusOf(body: unknown): DevServerStatus | null {
     case 'starting':
       return STARTING;
     case 'running':
-      return isText(body['url']) ? { state: 'running', url: body['url'] } : null;
+      return isText(body['url']) && WEB_ADDRESS.test(body['url'])
+        ? { state: 'running', url: body['url'] }
+        : null;
     case 'failed':
       return isText(body['reason']) ? { state: 'failed', reason: body['reason'] } : null;
     default:

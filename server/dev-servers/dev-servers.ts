@@ -4,7 +4,7 @@ import { readLines } from '../runner/line-reader.ts';
 import type { ProcessTreeKiller } from '../runner/process-tree.ts';
 import type { DevLaunch } from './dev-launcher.ts';
 import type { DevServerControl, DevServerStatus } from './dev-server-types.ts';
-import { localUrlIn, plainText } from './preview-url.ts';
+import { isLocalLine, localUrlIn, plainText } from './preview-url.ts';
 import type { RunCommand, RunCommands } from './run-command.ts';
 
 export const NO_CHECKOUT =
@@ -16,6 +16,9 @@ export const NO_ADDRESS =
 
 /** A dev server that prints no address within this long is stopped. Builds can be slow, so it is generous. */
 const START_LIMIT_MS = 120_000;
+/** A localhost address not labelled `Local:` waits this long for one that is, since a full-stack
+ *  script may print its API's address first. */
+const LOCAL_LABEL_GRACE_MS = 1_500;
 /** A line of server output longer than this is not an address line. */
 const MAX_LINE_CHARS = 8 * 1024;
 /** How much of the server's last words go into a failure's reason. */
@@ -37,7 +40,11 @@ interface Entry {
   readonly repo: string;
   status: DevServerStatus;
   pid: number | undefined;
-  cancelStartLimit: () => void;
+  /** Ends the start limit and any wait for a `Local:` address. */
+  cancelTimers: () => void;
+  cancelGrace: () => void;
+  /** The first unlabelled localhost address, held while a `Local:` one is awaited. */
+  fallbackUrl: string | null;
   /** The server's latest non-blank output, kept to say how it ended. */
   lastLine: string;
 }
@@ -76,7 +83,9 @@ export class DevServers implements DevServerControl {
       repo,
       status: { repo, state: 'starting' },
       pid: undefined,
-      cancelStartLimit: () => undefined,
+      cancelTimers: () => undefined,
+      cancelGrace: () => undefined,
+      fallbackUrl: null,
       lastLine: '',
     };
     this.entries.set(key, entry);
@@ -101,7 +110,7 @@ export class DevServers implements DevServerControl {
     const entry = this.entries.get(key);
     if (!entry) return stopped(repo);
     this.entries.delete(key);
-    entry.cancelStartLimit();
+    this.clearTimers(entry);
     if (isAlive(entry) && entry.pid !== undefined) this.dependencies.killer.stop(entry.pid);
     return stopped(repo);
   }
@@ -109,7 +118,7 @@ export class DevServers implements DevServerControl {
   /** Kills every live server at once: for the API's own exit. */
   shutdown(): void {
     for (const entry of this.entries.values()) {
-      entry.cancelStartLimit();
+      this.clearTimers(entry);
       if (isAlive(entry) && entry.pid !== undefined) this.dependencies.killer.stopNow(entry.pid);
     }
     this.entries.clear();
@@ -127,7 +136,7 @@ export class DevServers implements DevServerControl {
   private launch(entry: Entry, folder: string, run: RunCommand): void {
     const child: RunProcess = this.dependencies.launch(folder, run.command);
     entry.pid = child.pid;
-    entry.cancelStartLimit = this.dependencies.later(
+    entry.cancelTimers = this.dependencies.later(
       () => this.giveUp(entry),
       this.dependencies.startLimitMs ?? START_LIMIT_MS,
     );
@@ -135,24 +144,37 @@ export class DevServers implements DevServerControl {
     child.onExit((code) => this.end(entry, exitReason(code, entry.lastLine)));
     // Both streams are read to the end, whatever they say, or a full pipe would stall the server.
     const listener = {
-      onLine: (line: string) => this.hear(entry, line, run),
-      onOverlong: (head: string) => this.hear(entry, head, run),
+      onLine: (line: string) => this.hear(entry, line),
+      onOverlong: (head: string) => this.hear(entry, head),
     };
     readLines(child.stdout, MAX_LINE_CHARS, listener);
     readLines(child.stderr, MAX_LINE_CHARS, listener);
     if (run.url) this.ready(entry, run.url);
   }
 
-  private hear(entry: Entry, line: string, run: RunCommand): void {
+  private hear(entry: Entry, line: string): void {
     const text = plainText(line).trim();
     if (text) entry.lastLine = text.slice(0, LAST_LINE_CHARS);
     if (entry.status.state !== 'starting') return;
     const printed = localUrlIn(text);
-    if (printed) this.ready(entry, run.url ?? printed);
+    if (!printed) return;
+    if (isLocalLine(text)) this.ready(entry, printed);
+    else this.holdAsFallback(entry, printed);
+  }
+
+  private holdAsFallback(entry: Entry, url: string): void {
+    if (entry.fallbackUrl !== null) return;
+    entry.fallbackUrl = url;
+    entry.cancelGrace = this.dependencies.later(() => this.ready(entry, url), LOCAL_LABEL_GRACE_MS);
+  }
+
+  private clearTimers(entry: Entry): void {
+    entry.cancelTimers();
+    entry.cancelGrace();
   }
 
   private ready(entry: Entry, url: string): void {
-    entry.cancelStartLimit();
+    this.clearTimers(entry);
     entry.status = { repo: entry.repo, state: 'running', url };
   }
 
@@ -169,7 +191,7 @@ export class DevServers implements DevServerControl {
   }
 
   private fail(entry: Entry, reason: string): void {
-    entry.cancelStartLimit();
+    this.clearTimers(entry);
     entry.status = { repo: entry.repo, state: 'failed', reason };
   }
 }

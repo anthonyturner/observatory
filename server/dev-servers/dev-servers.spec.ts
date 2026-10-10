@@ -85,6 +85,47 @@ describe('DevServers', () => {
     assert.deepEqual(servers.status('me/app'), running('http://localhost:5173/'));
   });
 
+  it('prefers the address labelled Local: over an earlier one, as a full-stack script prints its API first', async () => {
+    const { servers, processes, timers } = setUp();
+    await servers.start('me/app');
+
+    processes[0]?.print('api listening on http://localhost:3001/');
+    await settle();
+    assert.equal(servers.status('me/app').state, 'starting');
+    processes[0]?.print('  Local:   http://localhost:5173/');
+    await settle();
+
+    assert.deepEqual(servers.status('me/app'), running('http://localhost:5173/'));
+    assert.ok(
+      timers.every((timer) => timer.cancelled),
+      'neither wait is left running',
+    );
+  });
+
+  it('falls back to the first address when no line is labelled Local:, after a short wait', async () => {
+    const { servers, processes, timers } = setUp();
+    await servers.start('me/app');
+
+    processes[0]?.print('listening on http://localhost:3001/', 'also http://localhost:3002/');
+    await settle();
+    assert.equal(servers.status('me/app').state, 'starting');
+    timers[1]?.run();
+
+    assert.deepEqual(servers.status('me/app'), running('http://localhost:3001/'));
+  });
+
+  it('does not report a fallback address once stopped', async () => {
+    const { servers, processes, timers } = setUp();
+    await servers.start('me/app');
+    processes[0]?.print('listening on http://localhost:3001/');
+    await settle();
+
+    servers.stop('me/app');
+
+    assert.equal(timers[1]?.cancelled, true);
+    assert.equal(servers.status('me/app').state, 'stopped');
+  });
+
   it('reads the address from stderr too, and from a line that arrives in pieces', async () => {
     const { servers, processes } = setUp();
     await servers.start('me/app');
@@ -99,7 +140,7 @@ describe('DevServers', () => {
   it('keeps reading output after the address, so a full pipe cannot stall the server', async () => {
     const { servers, processes } = setUp();
     await servers.start('me/app');
-    processes[0]?.print('http://localhost:5173/');
+    processes[0]?.print('Local: http://localhost:5173/');
     await settle();
 
     processes[0]?.print('hot update', 'hot update');
@@ -123,7 +164,7 @@ describe('DevServers', () => {
     const { servers, processes, launches } = setUp();
 
     const [first, second] = await Promise.all([servers.start('me/app'), servers.start('Me/App')]);
-    processes[0]?.print('http://localhost:5173/');
+    processes[0]?.print('Local: http://localhost:5173/');
     await settle();
     const third = await servers.start('me/app');
 
@@ -156,7 +197,7 @@ describe('DevServers', () => {
   it('stops the whole process tree and forgets the server', async () => {
     const { servers, processes, stopped } = setUp();
     await servers.start('me/app');
-    processes[0]?.print('http://localhost:5173/');
+    processes[0]?.print('Local: http://localhost:5173/');
     await settle();
 
     const status = servers.stop('me/app');
@@ -230,7 +271,7 @@ describe('DevServers', () => {
   it('reports a server that ends after it was running as failed, and does not kill it again', async () => {
     const { servers, processes, stopped } = setUp();
     await servers.start('me/app');
-    processes[0]?.print('http://localhost:5173/');
+    processes[0]?.print('Local: http://localhost:5173/');
     await settle();
 
     processes[0]?.end(0);
@@ -298,7 +339,7 @@ describe('DevServers', () => {
   it('stops waiting for an address once it has one, and once it is stopped', async () => {
     const found = setUp();
     await found.servers.start('me/app');
-    found.processes[0]?.print('http://localhost:5173/');
+    found.processes[0]?.print('Local: http://localhost:5173/');
     await settle();
     const quit = setUp();
     await quit.servers.start('me/app');

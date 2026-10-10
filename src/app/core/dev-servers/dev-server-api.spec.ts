@@ -26,6 +26,8 @@ describe('devServerStatusOf', () => {
   it('refuses anything else, including a running server with no address', () => {
     expect(devServerStatusOf(null)).toBeNull();
     expect(devServerStatusOf({ state: 'running' })).toBeNull();
+    expect(devServerStatusOf({ state: 'running', url: 'javascript:alert(1)' })).toBeNull();
+    expect(devServerStatusOf({ state: 'running', url: 'file:///etc/passwd' })).toBeNull();
     expect(devServerStatusOf({ state: 'failed', reason: '' })).toBeNull();
     expect(devServerStatusOf({ state: 'paused' })).toBeNull();
   });

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Observable, map, of, timer } from 'rxjs';
+import { CHECKING } from './dev-server.types';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
 import { SITE_OPENER } from './site-opener';
@@ -61,6 +62,34 @@ function setUp(answers: Answers = {}) {
 describe('RunPreviews', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
+
+  it('reads as checking until the API first answers, so nothing is shown on a guess', () => {
+    const api: DevServerApi = {
+      status: () => timer(50).pipe(map(() => STOPPED)),
+      start: () => of(STARTING),
+      stop: () => of(STOPPED),
+    };
+    TestBed.configureTestingModule({ providers: [{ provide: DEV_SERVER_API, useValue: api }] });
+    const preview = TestBed.inject(RunPreviews).runFor('me/app');
+
+    const release = preview.watch();
+    expect(preview.status()).toEqual(CHECKING);
+
+    vi.advanceTimersByTime(50);
+    expect(preview.status()).toEqual(STOPPED);
+    release();
+  });
+
+  it('shows a project with no checkout as unavailable, and asks no more about it', () => {
+    const unavailable: DevServerStatus = { state: 'unavailable', reason: 'No checkout.' };
+    const { preview, log } = setUp({ first: unavailable });
+    log.length = 0;
+
+    vi.advanceTimersByTime(RUNNING_POLL_MS * 3);
+
+    expect(preview.status()).toEqual(unavailable);
+    expect(log).toEqual([]);
+  });
 
   it('shows a server that is already running, without opening a tab', () => {
     const { preview, watched, opened } = setUp({ first: RUNNING });
@@ -230,7 +259,7 @@ describe('RunPreviews', () => {
 
       expect(previews.runFor('me/app')).toBe(preview);
       expect(previews.runFor('me/app').status()).toEqual(STARTING);
-      expect(previews.runFor('me/other').status()).toEqual(STOPPED);
+      expect(previews.runFor('me/other').status()).toEqual(CHECKING);
     });
 
     it('keeps a start going when the screen that began it goes, and opens the site once for the next', () => {

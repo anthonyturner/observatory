@@ -48,3 +48,18 @@ export interface PullPreview {
   /** The newest deployment of the commit to each environment, newest first. */
   readonly deployments: readonly DeploymentView[];
 }
+
+/** A project's production site. */
+export interface LiveSite {
+  /** `owner/name`. */
+  readonly repo: string;
+  readonly url: string;
+}
+
+/** What `GET /api/live-sites` returns: the production site of each project that has one. */
+export interface LiveSitesReport {
+  readonly generatedAt: string;
+  readonly sites: readonly LiveSite[];
+  /** How many repositories GitHub would not answer for, whose site may be missing from `sites`. */
+  readonly unreadCount: number;
+}

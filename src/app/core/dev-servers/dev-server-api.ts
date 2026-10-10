@@ -39,6 +39,8 @@ export function devServerStatusOf(body: unknown): DevServerStatus | null {
         : null;
     case 'failed':
       return isText(body['reason']) ? { state: 'failed', reason: body['reason'] } : null;
+    case 'unavailable':
+      return isText(body['reason']) ? { state: 'unavailable', reason: body['reason'] } : null;
     default:
       return null;
   }

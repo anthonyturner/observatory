@@ -10,6 +10,8 @@ import {
 } from '../http/api-handler.ts';
 import type { ProjectsReport } from '../projects/project-types.ts';
 import { PREVIEW_PATH } from '../deployments/deployments-report.ts';
+import type { LiveSitesReport } from '../deployments/deployments-types.ts';
+import { LIVE_SITES_PATH } from '../deployments/live-site.ts';
 import { NEWS_PATH } from '../news/news-routes.ts';
 import { PRINCIPLES_PATH } from '../principles/principle-routes.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
@@ -57,6 +59,11 @@ function visibleProjects(report: ProjectsReport, shown: ReadonlySet<string>): Pr
     projects,
     directives: report.directives.filter((directive) => names.has(directive.project)),
   };
+}
+
+/** Only the production sites of the projects a visitor may see. */
+function visibleSites(report: LiveSitesReport, shown: ReadonlySet<string>): LiveSitesReport {
+  return { ...report, sites: report.sites.filter((site) => shown.has(site.repo.toLowerCase())) };
 }
 
 /**
@@ -113,6 +120,8 @@ export function visitorRoutes(
       '/api/deployments': async (query) => reads.deployments(await visibleRepo(query)),
       [PREVIEW_PATH]: async (query) =>
         reads.pullPreview(await visibleRepo(query), commitShaFrom(query.get('sha'))),
+      // The same addresses the Deployments tab shows, for the repositories a visitor may see.
+      [LIVE_SITES_PATH]: async () => visibleSites(await reads.liveSites(), await visible()),
       '/api/milestones': async (query) => reads.milestones(await visibleRepo(query)),
       '/api/issues': async (query) => reads.issues(await visibleRepo(query)),
       '/api/issue': async (query) =>

@@ -19,6 +19,8 @@ interface Setting {
   readonly command?: RunCommand | null;
   readonly listing?: Promise<void>;
   readonly ports?: readonly number[];
+  /** The registry cannot read the projects. */
+  readonly lookupFails?: boolean;
 }
 
 function setUp(setting: Setting = {}) {
@@ -41,9 +43,10 @@ function setUp(setting: Setting = {}) {
   const kills = fakeKiller(processes);
   const servers = new DevServers({
     checkouts: {
-      list: async () => {
+      find: async (repo) => {
         await listing;
-        return checkouts;
+        if (setting.lookupFails) throw new Error('GitHub could not be read');
+        return checkouts.find((each) => each.repo === repo.toLowerCase()) ?? null;
       },
     },
     commands: {
@@ -108,7 +111,7 @@ describe('DevServers', () => {
     assert.deepEqual(status, { repo: 'me/app', state: 'starting' });
     assert.deepEqual(launches, [{ folder: 'E:/repos/app', command: 'npm run dev', port: PORT }]);
     assert.deepEqual(asked, [{ repo: 'me/app', folder: 'E:/repos/app' }]);
-    assert.deepEqual(servers.status('me/app'), status);
+    assert.deepEqual(await servers.status('me/app'), status);
   });
 
   it('gives each server its own free port', async () => {
@@ -145,12 +148,12 @@ describe('DevServers', () => {
 
     await poll();
     assert.deepEqual(probed, ['http://localhost:5173/']);
-    assert.equal(servers.status('me/app').state, 'starting', 'nothing answers yet');
+    assert.equal((await servers.status('me/app')).state, 'starting', 'nothing answers yet');
 
     answering.add('http://localhost:5173/');
     await poll();
 
-    assert.deepEqual(servers.status('me/app'), running('http://localhost:5173/'));
+    assert.deepEqual(await servers.status('me/app'), running('http://localhost:5173/'));
   });
 
   it('stops polling once the site answers', async () => {
@@ -162,7 +165,7 @@ describe('DevServers', () => {
 
     await poll();
 
-    assert.equal(servers.status('me/app').state, 'running');
+    assert.equal((await servers.status('me/app')).state, 'running');
     assert.ok(timers.every((timer) => timer.cancelled));
   });
 
@@ -180,7 +183,7 @@ describe('DevServers', () => {
     await poll();
 
     assert.deepEqual(probed, ['http://localhost:5173/']);
-    assert.deepEqual(servers.status('me/app'), running('http://localhost:5173/'));
+    assert.deepEqual(await servers.status('me/app'), running('http://localhost:5173/'));
   });
 
   it('falls back to the first printed address when no line is labelled Local:, after a short wait', async () => {
@@ -194,7 +197,7 @@ describe('DevServers', () => {
     assert.deepEqual(probed, []);
     await pollTimes(1);
 
-    assert.deepEqual(servers.status('me/app'), running('http://localhost:3001/'));
+    assert.deepEqual(await servers.status('me/app'), running('http://localhost:3001/'));
   });
 
   it('falls back to the assigned port when the server prints no address but listens on it', async () => {
@@ -203,11 +206,11 @@ describe('DevServers', () => {
     answering.add(LOCAL);
 
     await pollTimes(2);
-    assert.equal(servers.status('me/app').state, 'starting');
+    assert.equal((await servers.status('me/app')).state, 'starting');
     await pollTimes(1);
 
     assert.deepEqual(probed, [LOCAL]);
-    assert.deepEqual(servers.status('me/app'), running(LOCAL));
+    assert.deepEqual(await servers.status('me/app'), running(LOCAL));
   });
 
   it('stays starting, however long, while the assigned port does not answer', async () => {
@@ -216,7 +219,7 @@ describe('DevServers', () => {
 
     await pollTimes(10);
 
-    assert.equal(servers.status('me/app').state, 'starting');
+    assert.equal((await servers.status('me/app')).state, 'starting');
     assert.equal(probed.length, 8, 'one try for each poll after the wait');
   });
 
@@ -228,13 +231,13 @@ describe('DevServers', () => {
     const status = await servers.start('me/app');
     assert.equal(status.state, 'starting');
     await poll();
-    assert.equal(servers.status('me/app').state, 'starting');
+    assert.equal((await servers.status('me/app')).state, 'starting');
     answering.add('https://app.test:8443/');
     await poll();
 
     assert.deepEqual(launches, [{ folder: 'E:/repos/app', command: 'make serve', port: PORT }]);
     assert.deepEqual(probed, ['https://app.test:8443/', 'https://app.test:8443/']);
-    assert.deepEqual(servers.status('me/app'), running('https://app.test:8443/'));
+    assert.deepEqual(await servers.status('me/app'), running('https://app.test:8443/'));
   });
 
   it('reads the address from stderr too, and from a line that arrives in pieces', async () => {
@@ -247,7 +250,7 @@ describe('DevServers', () => {
     await settle();
     await poll();
 
-    assert.deepEqual(servers.status('me/app'), running('http://localhost:4200/'));
+    assert.deepEqual(await servers.status('me/app'), running('http://localhost:4200/'));
   });
 
   it('keeps reading output after the address, so a full pipe cannot stall the server', async () => {
@@ -312,7 +315,7 @@ describe('DevServers', () => {
 
     assert.deepEqual(status, stoppedApp);
     assert.deepEqual(stopped, [300]);
-    assert.deepEqual(servers.status('me/app'), stoppedApp);
+    assert.deepEqual(await servers.status('me/app'), stoppedApp);
   });
 
   it('does not report running, or poll again, when stopped while a probe was still out', async () => {
@@ -327,7 +330,7 @@ describe('DevServers', () => {
     servers.stop('me/app');
     await settle();
 
-    assert.equal(servers.status('me/app').state, 'stopped');
+    assert.equal((await servers.status('me/app')).state, 'stopped');
     assert.equal(timers.length, scheduled);
   });
 
@@ -345,7 +348,7 @@ describe('DevServers', () => {
     servers.stop('me/app');
     await settle();
 
-    assert.equal(servers.status('me/app').state, 'stopped');
+    assert.equal((await servers.status('me/app')).state, 'stopped');
   });
 
   it('starts a fresh server after a stop', async () => {
@@ -370,7 +373,7 @@ describe('DevServers', () => {
 
     assert.equal((await starting).state, 'stopped');
     assert.deepEqual(launches, []);
-    assert.equal(servers.status('me/app').state, 'stopped');
+    assert.equal((await servers.status('me/app')).state, 'stopped');
   });
 
   it('says how a server ended, with its last words, and lets Run start it again', async () => {
@@ -382,7 +385,7 @@ describe('DevServers', () => {
     processes[0]?.end(1);
     await settle();
 
-    assert.deepEqual(servers.status('me/app'), {
+    assert.deepEqual(await servers.status('me/app'), {
       repo: 'me/app',
       state: 'failed',
       reason:
@@ -390,7 +393,7 @@ describe('DevServers', () => {
     });
     await servers.start('me/app');
     assert.equal(launches.length, 2);
-    assert.equal(servers.status('me/app').state, 'starting');
+    assert.equal((await servers.status('me/app')).state, 'starting');
   });
 
   it('reports a server that ends after it was running as failed, and does not kill it again', async () => {
@@ -404,7 +407,7 @@ describe('DevServers', () => {
     processes[0]?.end(0);
     await settle();
 
-    assert.equal(servers.status('me/app').state, 'failed');
+    assert.equal((await servers.status('me/app')).state, 'failed');
     servers.stop('me/app');
     assert.deepEqual(stopped, []);
   });
@@ -415,11 +418,11 @@ describe('DevServers', () => {
     processes[0]?.exitLeavingOutputOpen(1);
     processes[0]?.print('Error: EADDRINUSE');
     await settle();
-    assert.equal(servers.status('me/app').state, 'starting');
+    assert.equal((await servers.status('me/app')).state, 'starting');
 
     timers.findLast((timer) => timer.ms === OUTPUT_GRACE_MS && !timer.cancelled)?.run();
 
-    assert.deepEqual(servers.status('me/app'), {
+    assert.deepEqual(await servers.status('me/app'), {
       repo: 'me/app',
       state: 'failed',
       reason: 'The dev server exited with code 1. Its last output: "Error: EADDRINUSE"',
@@ -435,7 +438,7 @@ describe('DevServers', () => {
     await settle();
     await settle();
 
-    assert.deepEqual(servers.status('me/app'), {
+    assert.deepEqual(await servers.status('me/app'), {
       repo: 'me/app',
       state: 'failed',
       reason: 'The dev server exited with code 1. Its last output: "last words"',
@@ -470,7 +473,7 @@ describe('DevServers', () => {
 
     processes[0]?.fail(new Error('spawn ENOENT'));
 
-    assert.deepEqual(servers.status('me/app'), {
+    assert.deepEqual(await servers.status('me/app'), {
       repo: 'me/app',
       state: 'failed',
       reason: 'Could not start "npm run dev": spawn ENOENT',
@@ -482,8 +485,20 @@ describe('DevServers', () => {
 
     const status = await servers.start('me/app');
 
-    assert.deepEqual(status, { repo: 'me/app', state: 'failed', reason: NO_CHECKOUT });
+    assert.deepEqual(status, { repo: 'me/app', state: 'unavailable', reason: NO_CHECKOUT });
     assert.deepEqual(launches, []);
+    assert.deepEqual(await servers.status('me/app'), status, 'and is not kept as a failure');
+  });
+
+  it('reports a project with no checkout as unavailable, and one with a checkout as stopped', async () => {
+    const { servers } = setUp({ checkouts: [APP] });
+
+    assert.deepEqual(await servers.status('me/app'), stoppedApp);
+    assert.deepEqual(await servers.status('me/site'), {
+      repo: 'me/site',
+      state: 'unavailable',
+      reason: NO_CHECKOUT,
+    });
   });
 
   it('says why a project with no runnable script cannot run, and starts nothing', async () => {
@@ -495,12 +510,23 @@ describe('DevServers', () => {
     assert.deepEqual(launches, []);
   });
 
+  it('reports a project as stopped, not as an error, when its checkout could not be looked up', async () => {
+    const { servers } = setUp({ lookupFails: true });
+    const logged = console.error;
+    console.error = () => undefined;
+    try {
+      assert.deepEqual(await servers.status('me/app'), stoppedApp);
+    } finally {
+      console.error = logged;
+    }
+  });
+
   it('forgets a project that could not run when asked to stop it', async () => {
-    const { servers } = setUp({ checkouts: [] });
+    const { servers } = setUp({ command: null });
     await servers.start('me/app');
 
     assert.deepEqual(servers.stop('me/app'), stoppedApp);
-    assert.equal(servers.status('me/app').state, 'stopped');
+    assert.equal((await servers.status('me/app')).state, 'stopped');
   });
 
   it('gives up on a server whose site never answers, says where it looked and the last line, and stops its tree', async () => {
@@ -513,7 +539,7 @@ describe('DevServers', () => {
 
     limit()?.run();
 
-    assert.deepEqual(servers.status('me/app'), {
+    assert.deepEqual(await servers.status('me/app'), {
       repo: 'me/app',
       state: 'failed',
       reason: `Nothing answered at ${LOCAL} within two minutes, so the server was stopped. Its last output: "? Would you like to use a different port? (Y/n)". If the site is elsewhere, add a "url" for it to ~/.claude/observatory/run.json.`,
@@ -527,7 +553,7 @@ describe('DevServers', () => {
 
     limit()?.run();
 
-    assert.deepEqual(servers.status('me/app'), {
+    assert.deepEqual(await servers.status('me/app'), {
       repo: 'me/app',
       state: 'failed',
       reason: NO_SITE,
@@ -561,6 +587,6 @@ describe('DevServers', () => {
     servers.shutdown();
 
     assert.deepEqual(stoppedNow, [300]);
-    assert.equal(servers.status('me/app').state, 'stopped');
+    assert.equal((await servers.status('me/app')).state, 'stopped');
   });
 });

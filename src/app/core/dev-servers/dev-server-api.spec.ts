@@ -21,6 +21,10 @@ describe('devServerStatusOf', () => {
       state: 'failed',
       reason: 'No script.',
     });
+    expect(devServerStatusOf({ state: 'unavailable', reason: 'No checkout.' })).toEqual({
+      state: 'unavailable',
+      reason: 'No checkout.',
+    });
   });
 
   it('refuses anything else, including a running server with no address', () => {
@@ -29,6 +33,8 @@ describe('devServerStatusOf', () => {
     expect(devServerStatusOf({ state: 'running', url: 'javascript:alert(1)' })).toBeNull();
     expect(devServerStatusOf({ state: 'running', url: 'file:///etc/passwd' })).toBeNull();
     expect(devServerStatusOf({ state: 'failed', reason: '' })).toBeNull();
+    expect(devServerStatusOf({ state: 'unavailable' })).toBeNull();
+    expect(devServerStatusOf({ state: 'checking' })).toBeNull();
     expect(devServerStatusOf({ state: 'paused' })).toBeNull();
   });
 });

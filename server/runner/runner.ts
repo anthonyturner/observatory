@@ -37,7 +37,7 @@ export interface RunnerDependencies {
   /** Null when Claude Code is not installed: every offer then says why. */
   readonly launch: Launch | null;
   readonly killer: ProcessTreeKiller;
-  readonly checkouts: CheckoutRegistry;
+  readonly checkouts: Pick<CheckoutRegistry, 'list'>;
   readonly clock: () => number;
   readonly limits?: RunLimits;
 }

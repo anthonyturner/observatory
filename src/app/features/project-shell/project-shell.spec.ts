@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Routes, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
+import { LiveSites } from '../../core/deployments/live-sites';
 import { DEV_SERVER_API, DevServerApi } from '../../core/dev-servers/dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from '../../core/dev-servers/dev-server.types';
 import { RunPreviews, STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
@@ -52,7 +53,11 @@ async function setUp() {
   TestBed.configureTestingModule({
     providers: [
       provideRouter(ROUTES),
-      { provide: ViewerSession, useValue: { isConfirmedLocal: signal(true) } },
+      {
+        provide: ViewerSession,
+        useValue: { isConfirmedLocal: signal(true), isConfirmedHosted: signal(false) },
+      },
+      { provide: LiveSites, useValue: { load: () => undefined, urlFor: () => null } },
       { provide: DEV_SERVER_API, useValue: api },
       {
         provide: SITE_OPENER,

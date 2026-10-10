@@ -18,7 +18,12 @@ import {
   isReportBuilding,
   pullPreview,
 } from '../deployments/deployments-report.ts';
-import type { DeploymentsReport, PullPreview } from '../deployments/deployments-types.ts';
+import { liveSitesLifetime, liveSitesReport } from '../deployments/live-site.ts';
+import type {
+  DeploymentsReport,
+  LiveSitesReport,
+  PullPreview,
+} from '../deployments/deployments-types.ts';
 import { insightsReport, isCounting } from '../insights/insights-report.ts';
 import { milestonesReport } from '../milestones/milestones-report.ts';
 import type { MilestonesReport } from '../milestones/milestones-types.ts';
@@ -106,6 +111,8 @@ const INBOX_TTL_MS = 60_000;
 
 /** The projects report's one key in its cache. */
 const ALL_PROJECTS = 'all';
+/** The live sites' one key in their cache. */
+const ALL_LIVE_SITES = 'all';
 /** The inbox's one key in its cache: there is one account's. */
 const ONE_INBOX = 'inbox';
 
@@ -191,6 +198,8 @@ export interface ApiReads {
   forgetDeployments(repo: string): void;
   /** What one commit, a pull request's head, was deployed as. */
   pullPreview(repo: string, sha: string): Promise<PullPreview>;
+  /** The production site of every project that has one, read together. */
+  liveSites(): Promise<LiveSitesReport>;
   /** Open and lately closed milestones with their progress, and the latest discussions. */
   milestones(repo: string): Promise<MilestonesReport>;
   /** The next read of these milestones and discussions goes to GitHub, not the cache. */
@@ -301,6 +310,10 @@ export function cachedReads(sources: ReadSources): ApiReads {
     },
     (preview) => (isPreviewUnsettled(preview) ? BUILDING_TTL_MS : DEPLOYMENTS_TTL_MS),
   );
+  const liveSitesOf = keyedCache(
+    async () => liveSitesReport(github, await github.ownedRepos(await github.viewer())),
+    liveSitesLifetime,
+  );
   const milestonesOf = keyedCache((repo) => milestonesReport(github, repo), MILESTONES_TTL_MS);
   const inboxOf = keyedCache(() => inboxReport(github, new Date()), INBOX_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
@@ -347,6 +360,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     deployments: (repo) => deploymentsOf.read(repo),
     forgetDeployments: (repo) => deploymentsOf.forget(repo),
     pullPreview: (repo, sha) => previewOf.read(commitKey(repo, sha)),
+    liveSites: () => liveSitesOf.read(ALL_LIVE_SITES),
     milestones: (repo) => milestonesOf.read(repo),
     forgetMilestones: (repo) => milestonesOf.forget(repo),
     inbox: () => inboxOf.read(ONE_INBOX),

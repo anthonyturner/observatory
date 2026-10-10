@@ -41,6 +41,13 @@ const reads = {
   }),
   deployments: async (repo: string) => ({ repo, environments: [] }),
   pullPreview: async (repo: string, sha: string) => ({ repo, sha, deployments: [] }),
+  liveSites: async () => ({
+    generatedAt: '2026-10-10T09:00:00.000Z',
+    sites: [
+      { repo: 'me/app', url: 'https://app.example.com' },
+      { repo: 'Me/Secret', url: 'https://secret.example.com' },
+    ],
+  }),
   milestones: async (repo: string) => ({ repo, milestones: { open: [] } }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
@@ -151,6 +158,16 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/deployments/preview?repo=me/app&sha=nope')).status, 400);
     assert.equal((await get(handle, '/api/milestones?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/milestones?repo=me/secret')).status, 404);
+  });
+
+  it('gives a visitor the production sites of the repositories they may see, and no others', async () => {
+    const response = await get(visitor(false), '/api/live-sites');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      generatedAt: '2026-10-10T09:00:00.000Z',
+      sites: [{ repo: 'me/app', url: 'https://app.example.com' }],
+    });
   });
 
   it('gives a visitor a repository’s insights without its traffic', async () => {

@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
+import { LiveSites } from '../../core/deployments/live-sites';
 import { DEV_SERVER_API, DevServerApi } from '../../core/dev-servers/dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from '../../core/dev-servers/dev-server.types';
 import { RUNNING_POLL_MS, STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
@@ -9,14 +10,35 @@ import { ViewerSession } from '../../core/session/viewer-session';
 import { RunPreviewButton } from './run-preview-button';
 
 const RUNNING: DevServerStatus = { state: 'running', url: 'http://localhost:5173/' };
+const NO_CHECKOUT: DevServerStatus = {
+  state: 'unavailable',
+  reason: 'There is no local checkout of this project on this machine.',
+};
+const LIVE = 'https://app.example.com';
 
 function setUp(options: {
   isLocal?: boolean;
+  isHosted?: boolean;
+  /** Whether the API has yet to answer the first status read. */
+  isUnanswered?: boolean;
+  /** Whether the sites have been read; they have, unless said otherwise. */
+  isSitesRead?: boolean;
+  /** The production site of `me/app`, once the sites are read. */
+  liveUrl?: string | null;
   status?: DevServerStatus;
   start?: DevServerStatus;
   blocksTabs?: boolean;
 }) {
-  const { isLocal = true, status = STOPPED, start = STARTING, blocksTabs = false } = options;
+  const {
+    isLocal = true,
+    isHosted = false,
+    isUnanswered = false,
+    isSitesRead = true,
+    liveUrl = null,
+    status = STOPPED,
+    start = STARTING,
+    blocksTabs = false,
+  } = options;
   const calls: string[] = [];
   const asked: string[] = [];
   const polls: DevServerStatus[] = [];
@@ -24,7 +46,7 @@ function setUp(options: {
     status: (repo) => {
       calls.push('status');
       asked.push(repo);
-      return of(polls.shift() ?? status);
+      return isUnanswered ? NEVER : of(polls.shift() ?? status);
     },
     start: () => {
       calls.push('start');
@@ -36,9 +58,19 @@ function setUp(options: {
     },
   };
   const isConfirmedLocal = signal(isLocal);
+  const isConfirmedHosted = signal(isHosted);
+  const liveSites = signal(liveUrl);
   TestBed.configureTestingModule({
     providers: [
-      { provide: ViewerSession, useValue: { isConfirmedLocal } },
+      { provide: ViewerSession, useValue: { isConfirmedLocal, isConfirmedHosted } },
+      {
+        provide: LiveSites,
+        useValue: {
+          load: () => calls.push('load sites'),
+          isRead: signal(isSitesRead),
+          urlFor: (repo: string) => (repo === 'me/app' ? liveSites() : null),
+        },
+      },
       { provide: DEV_SERVER_API, useValue: api },
       {
         provide: SITE_OPENER,
@@ -66,7 +98,7 @@ function setUp(options: {
       );
     return { fixture, element, settle, labels };
   };
-  return { ...mount('me/app'), mount, calls, asked, polls, isConfirmedLocal };
+  return { ...mount('me/app'), mount, calls, asked, polls, isConfirmedLocal, liveSites };
 }
 
 describe('RunPreviewButton', () => {
@@ -258,5 +290,109 @@ describe('RunPreviewButton', () => {
 
     expect(element.children.length).toBe(0);
     expect(asked).toEqual([]);
+  });
+});
+
+describe('RunPreviewButton: Run or Live site', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const liveLink = (element: HTMLElement) =>
+    Array.from(element.querySelectorAll('a')).find((link) =>
+      link.textContent?.includes('Live site'),
+    );
+
+  describe('on the owner’s machine, in a project with a checkout', () => {
+    it('shows Run, and no Live site, whether or not the project has a production site', () => {
+      for (const liveUrl of [LIVE, null]) {
+        TestBed.resetTestingModule();
+        const { labels, calls } = setUp({ liveUrl });
+
+        expect(labels()).toEqual(['▶ Run']);
+        expect(calls).not.toContain('load sites');
+      }
+    });
+
+    it('keeps Run’s own Open link when its server is up, with no Live site beside it', () => {
+      const { labels } = setUp({ status: RUNNING, liveUrl: LIVE });
+
+      expect(labels()).toEqual(['Open ↗', '■ Stop']);
+    });
+  });
+
+  describe('on the owner’s machine, in a project with no checkout', () => {
+    it('shows Live site, and no Run, when the project has a production site', () => {
+      const { labels, element } = setUp({ status: NO_CHECKOUT, liveUrl: LIVE });
+
+      expect(labels()).toEqual(['Live site ↗']);
+      const link = liveLink(element);
+      expect(link?.getAttribute('href')).toBe(LIVE);
+      expect(link?.getAttribute('target')).toBe('_blank');
+      expect(link?.getAttribute('rel')).toContain('noopener');
+      expect(link?.getAttribute('aria-label')).toBe('Live site of me/app in a new tab');
+    });
+
+    it('says why it can’t be run, as a quiet note with no link, when it has no production site', () => {
+      const { labels, element, calls } = setUp({ status: NO_CHECKOUT, liveUrl: null });
+
+      expect(labels()).toEqual([]);
+      const note = element.querySelector('[role="status"]');
+      expect(note?.textContent).toBe('There is no local checkout of this project on this machine.');
+      expect(note?.classList.contains('problem')).toBe(false);
+      expect(calls).toContain('load sites');
+    });
+
+    it('holds the note back until the sites are read, so it never gives way to a link', () => {
+      const { element } = setUp({ status: NO_CHECKOUT, liveUrl: null, isSitesRead: false });
+
+      expect(element.children.length).toBe(0);
+    });
+
+    it('has a link and no note when there is a production site', () => {
+      const { element } = setUp({ status: NO_CHECKOUT, liveUrl: LIVE });
+
+      expect(element.querySelector('[role="status"]')).toBeNull();
+    });
+
+    it('shows Live site once the sites are read', () => {
+      const { labels, liveSites, settle } = setUp({ status: NO_CHECKOUT, liveUrl: null });
+      expect(labels()).toEqual([]);
+
+      liveSites.set(LIVE);
+      settle();
+
+      expect(labels()).toEqual(['Live site ↗']);
+    });
+
+    it('shows neither Run nor the link before the API has said whether there is a checkout', () => {
+      const { element, calls } = setUp({ isUnanswered: true, liveUrl: LIVE });
+
+      expect(element.children.length).toBe(0);
+      expect(calls).toEqual(['status']);
+    });
+  });
+
+  describe('on the hosted site, as its owner or a visitor', () => {
+    it('shows Live site, and never asks for a dev server, when the project has a production site', () => {
+      const { labels, element, calls } = setUp({ isLocal: false, isHosted: true, liveUrl: LIVE });
+
+      expect(labels()).toEqual(['Live site ↗']);
+      expect(liveLink(element)?.getAttribute('href')).toBe(LIVE);
+      expect(calls).toEqual(['load sites']);
+    });
+
+    it('shows nothing at all when it has none', () => {
+      const { element, calls } = setUp({ isLocal: false, isHosted: true, liveUrl: null });
+
+      expect(element.children.length).toBe(0);
+      expect(calls).toEqual(['load sites']);
+    });
+  });
+
+  it('shows nothing, and reads no sites, until the API has said who is looking', () => {
+    const { element, calls } = setUp({ isLocal: false, isHosted: false, liveUrl: LIVE });
+
+    expect(element.children.length).toBe(0);
+    expect(calls).toEqual([]);
   });
 });

@@ -20,14 +20,14 @@ export const ENVIRONMENT_LIMIT = 6;
 const PREVIEW_LIMIT = 20;
 const PRODUCTION = /prod/i;
 
-const isProductionName = (name: string): boolean => PRODUCTION.test(name);
+export const isProductionName = (name: string): boolean => PRODUCTION.test(name);
 
 /**
  * Every environment's name: production first, then the ones the newest
  * deployments went to, most recent first, then any others GitHub keeps for
  * the repository. Where it keeps none, the deployments' names are all there are.
  */
-async function environmentNames(github: DeploymentReader, repo: string): Promise<string[]> {
+export async function environmentNames(github: DeploymentReader, repo: string): Promise<string[]> {
   const [recent, configured] = await Promise.all([
     github.deployments(repo, { limit: NAMING_LIMIT }),
     github.environments(repo).catch((error: unknown) => {

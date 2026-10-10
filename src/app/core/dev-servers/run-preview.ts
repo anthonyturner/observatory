@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, Signal, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, Subscription, expand, switchMap, timer } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
-import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
+import { CHECKING, DevServerStatus, STARTING } from './dev-server.types';
 import { SITE_OPENER, SiteOpener } from './site-opener';
 
 /** How often a starting server is asked whether its site is up yet. */
@@ -39,7 +39,7 @@ export interface RunPreview {
 type Follow = 'read' | 'run' | 'stop';
 
 class RunState implements RunPreview {
-  private readonly current = signal<DevServerStatus>(STOPPED);
+  private readonly current = signal<DevServerStatus>(CHECKING);
   private readonly blocked = signal(false);
   private following: Subscription | null = null;
   private watchers = 0;

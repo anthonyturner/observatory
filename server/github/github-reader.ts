@@ -4,9 +4,11 @@ export interface RepoRef {
   readonly nameWithOwner: string;
   /** Unknown counts as private wherever a visitor might see it. */
   readonly isPrivate: boolean;
+  /** The website the owner set on the repository; null or empty when none. */
+  readonly homepageUrl?: string | null;
 }
 
-export const REPO_FIELDS: readonly string[] = ['name', 'nameWithOwner', 'isPrivate'];
+export const REPO_FIELDS: readonly string[] = ['name', 'nameWithOwner', 'isPrivate', 'homepageUrl'];
 
 /** One check or status on a pull request's head commit. */
 export interface CheckRun {

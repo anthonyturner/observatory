@@ -58,6 +58,15 @@ describe('withArchitectureRoutes', () => {
     assert.equal(rendered[0]?.project, 'me/app');
   });
 
+  it('lets the viewer page run its own script but call nothing, even this API', async () => {
+    const response = await setup().get(ARCHITECTURE_HTML_PATH, '?repo=me/app');
+
+    const policy = response.headers.get('content-security-policy') ?? '';
+    assert.match(policy, /script-src 'unsafe-inline'/);
+    assert.match(policy, /connect-src 'none'/);
+    assert.match(policy, /default-src 'none'/);
+  });
+
   it('answers 404 when there is no clone, and 400 for a repo that is not owner/name', async () => {
     const { get } = setup();
 

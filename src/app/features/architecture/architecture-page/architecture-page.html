@@ -9,32 +9,36 @@
       <span class="stamp">{{ stamp() }}</span>
     </div>
   </div>
-  <ul class="legend" aria-label="Link kinds">
-    @for (kind of linkKinds; track kind) {
-      <li [attr.data-link]="kind"><span class="swatch" aria-hidden="true"></span>{{ kind }}</li>
-    }
-  </ul>
-  <div class="views" role="group" aria-label="View">
-    <button
-      type="button"
-      class="abtn"
-      [attr.aria-pressed]="view() === 'star'"
-      (click)="view.set('star')"
-    >
-      Star system
-    </button>
-    <button
-      type="button"
-      class="abtn"
-      [attr.aria-pressed]="view() === 'uml'"
-      (click)="view.set('uml')"
-    >
-      UML
-    </button>
-    <button type="button" class="abtn quiet" (click)="refresh()">Refresh</button>
-    @if (hasMap()) {
-      <a class="abtn" [href]="fullMapUrl()" target="_blank" rel="noopener">Open full map</a>
-    }
+  <div class="tools">
+    <div class="controls">
+      <div class="views" role="group" aria-label="View">
+        <button
+          type="button"
+          class="abtn"
+          [attr.aria-pressed]="view() === 'star'"
+          (click)="view.set('star')"
+        >
+          Star system
+        </button>
+        <button
+          type="button"
+          class="abtn"
+          [attr.aria-pressed]="view() === 'uml'"
+          (click)="view.set('uml')"
+        >
+          UML
+        </button>
+      </div>
+      <button type="button" class="abtn quiet" (click)="refresh()">Refresh</button>
+      @if (hasMap()) {
+        <a class="abtn" [href]="fullMapUrl()" target="_blank" rel="noopener">Open full map</a>
+      }
+    </div>
+    <ul class="legend" aria-label="Link kinds">
+      @for (kind of linkKinds; track kind) {
+        <li [attr.data-link]="kind"><span class="swatch" aria-hidden="true"></span>{{ kind }}</li>
+      }
+    </ul>
   </div>
 </header>
 

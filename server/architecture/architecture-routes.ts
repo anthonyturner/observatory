@@ -8,6 +8,23 @@ export const ARCHITECTURE_PATH = '/api/architecture';
 export const ARCHITECTURE_HTML_PATH = '/api/architecture/html';
 
 /**
+ * The page is served from the API's own origin, and it draws names read from a
+ * clone that may not be the owner's. It needs only its inline script and styles
+ * and a blob worker for layout, so nothing else is allowed: a name that somehow
+ * ran as script still could not call this API.
+ */
+const PAGE_POLICY = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline'",
+  "style-src 'unsafe-inline'",
+  'worker-src blob:',
+  'img-src data:',
+  "connect-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ');
+
+/**
  * `table` with a repository's architecture map, as JSON and as the one-file
  * viewer page:
  *
@@ -32,7 +49,11 @@ export function withArchitectureRoutes(
       },
       [ARCHITECTURE_HTML_PATH]: async (query) =>
         new Response(await render(await maps.read(repoNameFrom(query.get('repo')))), {
-          headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+          headers: {
+            'content-type': 'text/html; charset=utf-8',
+            'cache-control': 'no-store',
+            'content-security-policy': PAGE_POLICY,
+          },
         }),
     },
   };

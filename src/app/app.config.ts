@@ -5,7 +5,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withRouterConfig } from '@angular/router';
 import { routes } from './app.routes';
 import { provideJevHold } from './core/agent-speech/provide-jev-hold';
 import { ASK_FEED_CHANNEL } from './core/assistant/ask-feed';
@@ -19,7 +19,8 @@ import { TAB_BADGES } from './shared/project-tabs/tab-badge';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    // A project's screens read `owner` and `repo` from the shell route above them.
+    provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' })),
     provideHttpClient(withFetch()),
     ASK_FEED_CHANNEL,
     REVIEW_QUEUE_SHORTCUTS,

@@ -65,13 +65,10 @@ const planets = (element: HTMLElement) => [
 ];
 
 describe('DepthPage', () => {
-  it('draws every module of the project as a planet, on the Depth tab', () => {
+  it('draws every module of the project as a planet', () => {
     const { element } = readyPage();
 
     expect(element.querySelector('h1')?.textContent).toBe('Depth');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/depth');
     expect(planets(element)).toHaveLength(4);
     expect(element.querySelector('.stamp')?.textContent).toContain('me/app · 4 modules');
   });

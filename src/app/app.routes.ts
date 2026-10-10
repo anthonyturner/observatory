@@ -49,73 +49,84 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'p/:owner/:repo/releases',
-    title: 'Releases · Observatory',
-    loadComponent: () =>
-      import('./features/releases/releases-page/releases-page').then((m) => m.ReleasesPage),
-  },
-  {
-    path: 'p/:owner/:repo/actions',
-    title: 'Actions · Observatory',
-    loadComponent: () =>
-      import('./features/actions/actions-page/actions-page').then((m) => m.ActionsPage),
-  },
-  {
-    path: 'p/:owner/:repo/journal',
-    title: 'Journal · Observatory',
-    loadComponent: () =>
-      import('./features/journal/journal-page/journal-page').then((m) => m.JournalPage),
-  },
-  {
-    path: 'p/:owner/:repo/depth',
-    title: 'Depth · Observatory',
-    loadComponent: () => import('./features/depth/depth-page/depth-page').then((m) => m.DepthPage),
-  },
-  {
-    path: 'p/:owner/:repo/architecture',
-    title: 'Architecture · Observatory',
-    loadComponent: () =>
-      import('./features/architecture/architecture-page/architecture-page').then(
-        (m) => m.ArchitecturePage,
-      ),
-  },
-  {
-    path: 'p/:owner/:repo/security',
-    title: 'Security · Observatory',
-    loadComponent: () =>
-      import('./features/security/security-page/security-page').then((m) => m.SecurityPage),
-  },
-  {
-    path: 'p/:owner/:repo/insights',
-    title: 'Insights · Observatory',
-    loadComponent: () =>
-      import('./features/insights/insights-page/insights-page').then((m) => m.InsightsPage),
-  },
-  {
-    path: 'p/:owner/:repo/deployments',
-    title: 'Deployments · Observatory',
-    loadComponent: () =>
-      import('./features/deployments/deployments-page/deployments-page').then(
-        (m) => m.DeploymentsPage,
-      ),
-  },
-  {
-    path: 'p/:owner/:repo/milestones',
-    title: 'Milestones · Observatory',
-    loadComponent: () =>
-      import('./features/milestones/milestones-page/milestones-page').then((m) => m.MilestonesPage),
-  },
-  {
-    matcher: libraryMatcher,
-    title: 'Library · Observatory',
-    loadComponent: () =>
-      import('./features/library/library-page/library-page').then((m) => m.LibraryPage),
-  },
-  {
     path: 'p/:owner/:repo',
-    title: 'Review Queue · Observatory',
     loadComponent: () =>
-      import('./features/starmap/starmap-page/starmap-page').then((m) => m.StarmapPage),
+      import('./features/project-shell/project-shell').then((m) => m.ProjectShell),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        title: 'Review Queue · Observatory',
+        loadComponent: () =>
+          import('./features/starmap/starmap-page/starmap-page').then((m) => m.StarmapPage),
+      },
+      {
+        path: 'releases',
+        title: 'Releases · Observatory',
+        loadComponent: () =>
+          import('./features/releases/releases-page/releases-page').then((m) => m.ReleasesPage),
+      },
+      {
+        path: 'actions',
+        title: 'Actions · Observatory',
+        loadComponent: () =>
+          import('./features/actions/actions-page/actions-page').then((m) => m.ActionsPage),
+      },
+      {
+        path: 'journal',
+        title: 'Journal · Observatory',
+        loadComponent: () =>
+          import('./features/journal/journal-page/journal-page').then((m) => m.JournalPage),
+      },
+      {
+        matcher: libraryMatcher,
+        title: 'Library · Observatory',
+        loadComponent: () =>
+          import('./features/library/library-page/library-page').then((m) => m.LibraryPage),
+      },
+      {
+        path: 'depth',
+        title: 'Depth · Observatory',
+        loadComponent: () =>
+          import('./features/depth/depth-page/depth-page').then((m) => m.DepthPage),
+      },
+      {
+        path: 'architecture',
+        title: 'Architecture · Observatory',
+        loadComponent: () =>
+          import('./features/architecture/architecture-page/architecture-page').then(
+            (m) => m.ArchitecturePage,
+          ),
+      },
+      {
+        path: 'security',
+        title: 'Security · Observatory',
+        loadComponent: () =>
+          import('./features/security/security-page/security-page').then((m) => m.SecurityPage),
+      },
+      {
+        path: 'insights',
+        title: 'Insights · Observatory',
+        loadComponent: () =>
+          import('./features/insights/insights-page/insights-page').then((m) => m.InsightsPage),
+      },
+      {
+        path: 'deployments',
+        title: 'Deployments · Observatory',
+        loadComponent: () =>
+          import('./features/deployments/deployments-page/deployments-page').then(
+            (m) => m.DeploymentsPage,
+          ),
+      },
+      {
+        path: 'milestones',
+        title: 'Milestones · Observatory',
+        loadComponent: () =>
+          import('./features/milestones/milestones-page/milestones-page').then(
+            (m) => m.MilestonesPage,
+          ),
+      },
+    ],
   },
   { path: '**', redirectTo: '' },
 ];

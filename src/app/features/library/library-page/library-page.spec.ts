@@ -87,9 +87,6 @@ describe('LibraryPage', () => {
 
     expect(element.querySelector('.hud h1')?.textContent).toBe('Library');
     expect(element.querySelector('.stamp')?.textContent).toBe('me/app · 3 pages');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/library');
     const current = element.querySelector('app-library-index a[aria-current="page"]');
     expect(current?.textContent).toContain('Rules');
     expect(current?.getAttribute('href')).toBe('/p/me/app/library/docs/rules');

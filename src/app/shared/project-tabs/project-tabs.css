@@ -1,12 +1,8 @@
 /* Sits beside the up-link and matches its pill; the current screen carries a
    bar under it, so it never rests on colour alone. */
 :host {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
+  display: block;
   width: fit-content;
-  max-width: 100%;
 }
 
 nav {

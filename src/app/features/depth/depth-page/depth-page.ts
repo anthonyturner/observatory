@@ -6,8 +6,7 @@ import { DepthFeed } from '../../../core/depth/depth-feed';
 import { depthChart } from '../../../core/depth/depth-chart';
 import { modulesMatching, verdictCounts } from '../../../core/depth/depth-modules';
 import { DepthModule, Verdict } from '../../../core/depth/depth.types';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { PageMessage } from '../../releases/releases-page/releases-words';
 import { DepthDetail } from '../depth-detail/depth-detail';
 import { DepthList } from '../depth-list/depth-list';
@@ -39,7 +38,7 @@ const CHIP_LABELS: readonly (readonly [Verdict | null, string])[] = [
  */
 @Component({
   selector: 'app-depth-page',
-  imports: [UpLink, ProjectTabs, DepthMap, DepthList, DepthDetail],
+  imports: [ProjectBarRoom, DepthMap, DepthList, DepthDetail],
   providers: [DepthFeed],
   templateUrl: './depth-page.html',
   styleUrls: ['../../releases/releases-page/releases-page.css', './depth-page.css'],

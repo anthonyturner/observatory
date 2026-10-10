@@ -4,8 +4,7 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 import { map } from 'rxjs';
 import { SecurityFeed } from '../../../core/security/security-feed';
 import { worstSeverity } from '../../../core/security/security-report';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { SkyInsets } from '../../releases/release-sky/release-sky';
 import { PageMessage } from '../../releases/releases-page/releases-words';
 import { AlertList } from '../alert-list/alert-list';
@@ -37,7 +36,7 @@ const repoOf = (params: ParamMap): string =>
  */
 @Component({
   selector: 'app-security-page',
-  imports: [UpLink, ProjectTabs, AlertSources, AlertList, HazardSky],
+  imports: [ProjectBarRoom, AlertSources, AlertList, HazardSky],
   providers: [SecurityFeed],
   templateUrl: './security-page.html',
   styleUrls: ['../../releases/releases-page/releases-page.css', './security-page.css'],

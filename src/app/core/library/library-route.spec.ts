@@ -6,19 +6,18 @@ const segments = (path: string): UrlSegment[] =>
 
 describe('libraryMatcher', () => {
   it('matches the Library with or without a page, joining a page’s folders', () => {
-    const page = libraryMatcher(segments('p/me/app/library/docs/stack/angular'));
-    const first = libraryMatcher(segments('p/me/app/library'));
+    const page = libraryMatcher(segments('library/docs/stack/angular'));
+    const first = libraryMatcher(segments('library'));
 
-    expect(page?.posParams?.['owner'].path).toBe('me');
-    expect(page?.posParams?.['repo'].path).toBe('app');
     expect(page?.posParams?.['page'].path).toBe('docs/stack/angular');
     expect(first?.posParams?.['page'].path).toBe('');
   });
 
   it('leaves every other project screen alone', () => {
-    for (const path of ['p/me/app', 'p/me/app/releases', 'x/me/app/library']) {
+    for (const path of ['releases', 'releases/library', 'libraries']) {
       expect(libraryMatcher(segments(path)), path).toBeNull();
     }
+    expect(libraryMatcher([])).toBeNull();
   });
 });
 

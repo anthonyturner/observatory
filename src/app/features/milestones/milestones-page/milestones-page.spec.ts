@@ -7,7 +7,6 @@ import { of } from 'rxjs';
 import { BARE_REPORT, RAW_REPORT } from '../../../core/milestones/testing/milestones-fixture';
 import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
-import { QUIET_TABS } from '../../../shared/project-tabs/quiet-tabs';
 import { MilestonesPage } from './milestones-page';
 
 function render(body: object = RAW_REPORT, width = 1400) {
@@ -22,7 +21,6 @@ function render(body: object = RAW_REPORT, width = 1400) {
       },
       { provide: ELEMENT_SIZE, useValue: () => of({ width, height: 900 }) },
       { provide: PlanetPortraits, useValue: { painter: () => signal(null) } },
-      { provide: QUIET_TABS, useValue: [] },
     ],
   });
   const fixture = TestBed.createComponent(MilestonesPage);
@@ -37,14 +35,11 @@ const text = (element: Element | null | undefined): string =>
   element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
 describe('MilestonesPage', () => {
-  it('opens on the sky under the Milestones tab, each planet a link to its milestone', () => {
+  it('opens on the sky, each planet a link to its milestone', () => {
     const { element } = render();
 
     expect(element.querySelector('h1')?.textContent).toBe('Milestones');
     expect(element.querySelector('.stamp')?.textContent).toBe('me/app · 3 open milestones');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/milestones');
     const planets = [...element.querySelectorAll<HTMLAnchorElement>('app-transit-sky a.body')];
     expect(planets.map((planet) => planet.getAttribute('href'))).toEqual([
       'https://github.com/me/app/milestone/1',

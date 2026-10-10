@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { LegendChip, fmtN } from '../starmap-view';
 
 /** The top of the star map: the way up to the orrery and across to the
@@ -8,7 +7,7 @@ import { LegendChip, fmtN } from '../starmap-view';
  *  legend that narrows it. */
 @Component({
   selector: 'app-starmap-header',
-  imports: [UpLink, ProjectTabs],
+  imports: [ProjectBarRoom],
   templateUrl: './starmap-header.html',
   styleUrl: './starmap-header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

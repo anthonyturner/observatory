@@ -62,13 +62,10 @@ function readyPage() {
 }
 
 describe('ArchitecturePage', () => {
-  it('charts the classes of the project on its Architecture tab', () => {
+  it('charts the classes of the project', () => {
     const { element } = readyPage();
 
     expect(element.querySelector('h1')?.textContent).toBe('Architecture');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/architecture');
     expect(element.querySelector('.stamp')?.textContent).toContain('me/app · 2 nodes · 1 link');
     expect(element.querySelector('app-star-view')).not.toBeNull();
     expect(element.querySelector('.facts h2')?.textContent).toBe('ClockService');

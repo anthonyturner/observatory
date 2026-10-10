@@ -56,9 +56,6 @@ describe('ReleasesPage', () => {
 
     expect(element.querySelector('h1')?.textContent).toBe('Releases');
     expect(element.querySelector('.note')?.textContent).toContain('once one is cut');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/releases');
     const comet = element.querySelector<HTMLButtonElement>('app-release-sky .body');
     expect(comet?.getAttribute('aria-label')).toContain('Unreleased');
     expect(comet?.getAttribute('aria-pressed')).toBe('true');

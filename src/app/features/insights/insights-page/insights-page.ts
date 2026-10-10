@@ -5,8 +5,7 @@ import { map } from 'rxjs';
 import { AgentsFeed } from '../../../core/agents/agents-report';
 import { InsightsFeed } from '../../../core/insights/insights-feed';
 import { isCounting } from '../../../core/insights/insights-report';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { CommitStars } from '../commit-stars/commit-stars';
 import { InsightsSections } from '../insights-sections/insights-sections';
 import { COUNTING_NOTE, insightsStamp, stateMessage } from '../insights-words';
@@ -21,7 +20,7 @@ const repoOf = (params: ParamMap): string =>
  */
 @Component({
   selector: 'app-insights-page',
-  imports: [UpLink, ProjectTabs, CommitStars, InsightsSections],
+  imports: [ProjectBarRoom, CommitStars, InsightsSections],
   providers: [InsightsFeed, AgentsFeed],
   templateUrl: './insights-page.html',
   styleUrls: ['../../releases/releases-page/releases-page.css', './insights-page.css'],

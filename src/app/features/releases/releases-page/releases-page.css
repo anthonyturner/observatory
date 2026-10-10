@@ -10,26 +10,13 @@
   top: 0;
   left: 0;
   right: 0;
-  padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 0;
+  padding: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)) 20px 0;
   pointer-events: none;
   z-index: 5;
 }
 
 .hud > * {
   pointer-events: auto;
-}
-
-.way {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
-  width: fit-content;
-  margin-bottom: 9px;
-}
-
-.way app-up-link {
-  margin-bottom: 0;
 }
 
 .brand {

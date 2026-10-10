@@ -1,0 +1,6 @@
+<div class="bar" #bar>
+  <app-up-link to="/orrery" label="All projects" [guide]="guide()" />
+  <app-project-tabs [repo]="repo()" [current]="currentTab()" />
+  <app-run-preview-button [repo]="repo()" />
+</div>
+<router-outlet />

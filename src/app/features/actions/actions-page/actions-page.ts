@@ -21,8 +21,7 @@ import {
 } from '../../../core/actions/run-filter';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { SkyInsets } from '../../releases/release-sky/release-sky';
 import { PageMessage } from '../../releases/releases-page/releases-words';
 import { OUTCOME_WORDS, ciHealthWords } from '../actions-words';
@@ -74,7 +73,7 @@ const sameJobsKey = (a: JobsKey, b: JobsKey): boolean =>
  */
 @Component({
   selector: 'app-actions-page',
-  imports: [UpLink, ProjectTabs, RunSky, RunList, RunDetailPanel],
+  imports: [ProjectBarRoom, RunSky, RunList, RunDetailPanel],
   providers: [ActionsFeed, RunJobsFeed],
   templateUrl: './actions-page.html',
   styleUrls: ['../../releases/releases-page/releases-page.css', './actions-page.css'],

@@ -68,9 +68,6 @@ describe('SecurityPage', () => {
 
     expect(element.querySelector('h1')?.textContent).toBe('Security');
     expect(element.querySelector('.stamp')?.textContent).toBe('me/app · 2 open alerts');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/security');
     const rows = [...element.querySelectorAll('app-alert-list a')];
     expect(rows.map((row) => row.querySelector('b')?.textContent)).toEqual([
       'Advisory 8',

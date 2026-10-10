@@ -1,0 +1,30 @@
+/* The bar floats over the page like the page's own header does, one layer above it
+   (the page header is 5) and below the status strip (7) and the sheets (8 and up).
+   Each page leaves room for it where its header begins. */
+:host {
+  display: contents;
+}
+
+.bar {
+  position: fixed;
+  top: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
+  left: 20px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  width: fit-content;
+  max-width: calc(100% - 40px);
+}
+
+.bar app-up-link {
+  margin-bottom: 0;
+}
+
+@media (max-width: 720px) {
+  .bar {
+    left: 16px;
+    max-width: calc(100% - 32px);
+  }
+}

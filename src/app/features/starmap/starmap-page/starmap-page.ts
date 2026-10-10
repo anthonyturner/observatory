@@ -746,7 +746,15 @@ export class StarmapPage {
   /** Reads an issue in the issue window; one window, this or a PR screen, at a time. */
   protected openIssue(number: number): void {
     this.sheetPull.set(null);
+    this.closeCards();
     this.issues.windowIssue.set(number);
+  }
+
+  /** Closes every hover card; a full screen or issue window opening takes their place. */
+  private closeCards(): void {
+    this.openPull.set(null);
+    this.selectedComet.set(null);
+    this.issues.picked.set(null);
   }
 
   /** A legend chip narrows the sky to itself; pressing it again shows everything. */
@@ -784,7 +792,7 @@ export class StarmapPage {
   /** A click on the sky: a star opens its pull request's screen; empty sky closes its card. */
   protected pick(number: number | null): void {
     this.selectedComet.set(null);
-    this.openPull.set(number);
+    this.openPull.set(null);
     const item = this.skyItems().find((each) => each.pr === number);
     if (!item) return;
     this.sound.ping(BLOCKED.has(item.bucket), item.pr);
@@ -811,8 +819,6 @@ export class StarmapPage {
 
   /** A click on a comet opens its issue, with the soft tone a picked star gives. */
   protected pickComet(comet: Comet): void {
-    this.openPull.set(null);
-    this.selectedComet.set(comet);
     this.sound.ping(false);
     this.openIssue(comet.issue);
   }
@@ -1065,6 +1071,7 @@ export class StarmapPage {
   openSheet(number: number): void {
     this.sprint.markReviewed(number);
     this.issues.windowIssue.set(null);
+    this.closeCards();
     this.sheetLookedSha.set(this.items().find((each) => each.number === number)?.lookedSha ?? null);
     this.sheetPull.set(number);
   }

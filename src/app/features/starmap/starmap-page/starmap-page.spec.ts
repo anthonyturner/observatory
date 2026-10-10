@@ -308,16 +308,13 @@ describe('StarmapPage', () => {
     fixture.detectChanges();
     http.expectOne('/api/issue?repo=me/a&number=1');
     expect(element.querySelector('app-issue-window')).not.toBeNull();
+    expect(element.querySelector('app-issue-card')).toBeNull();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
     expect(element.querySelector('app-issue-window')).toBeNull();
-    expect(element.querySelector('app-issue-card')).not.toBeNull();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    fixture.detectChanges();
-    expect(element.querySelector('app-issue-card')).toBeNull();
   });
 
-  it('previews a star’s card, and its full screen from Open; Esc closes them in turn', () => {
+  it('previews a star’s card, and its full screen from Open in its place; Esc closes it', () => {
     const { fixture, element, http, button } = render();
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
@@ -331,14 +328,11 @@ describe('StarmapPage', () => {
     http.expectOne('/api/edit?repo=me/a&number=7');
     http.expectOne('/api/labels?repo=me/a');
     expect(element.querySelector('app-pr-screen')).not.toBeNull();
+    expect(element.querySelector('app-star-card')).toBeNull();
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
     expect(element.querySelector('app-pr-screen')).toBeNull();
-    expect(element.querySelector('.prno')).not.toBeNull();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    fixture.detectChanges();
-    expect(element.querySelector('.prno')).toBeNull();
   });
 
   it('snoozes a pull request for a week from its card, then reads the queue again', () => {
@@ -407,7 +401,29 @@ describe('StarmapPage', () => {
 
     sky.previewed.emit(9);
     fixture.detectChanges();
-    expect(element.querySelector('.prno')?.textContent).toBe('#7');
+    expect(element.querySelector('app-star-card')).toBeNull();
+  });
+
+  it('closes a comet’s hover card when its Open button opens the issue window', () => {
+    const { fixture, element, http, button } = render();
+    const sky = fixture.debugElement.query(By.directive(StarmapSky))
+      .componentInstance as StarmapSky;
+    sky.previewedComet.emit({
+      issue: 4,
+      title: 'Stalled',
+      url: 'https://github.com/me/a/issues/4',
+      labels: [],
+      ageDays: 3,
+      idleDays: 2,
+    });
+    fixture.detectChanges();
+
+    button('Open')?.click();
+    fixture.detectChanges();
+
+    http.expectOne('/api/issue?repo=me/a&number=4');
+    expect(element.querySelector('app-issue-window')).not.toBeNull();
+    expect(element.querySelector('app-comet-card')).toBeNull();
   });
 
   it('opens a clicked comet’s issue, pinging softly as a star does', () => {

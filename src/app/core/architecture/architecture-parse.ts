@@ -4,32 +4,52 @@ import {
   ArchitectureEdge,
   ArchitectureMap,
   ArchitectureNode,
+  ArchitectureRuntime,
   EDGE_KINDS,
   INJECTION_STYLES,
   NODE_KINDS,
+  NODE_MARKS,
 } from './architecture.types';
 
 const isKind = oneOf(NODE_KINDS);
 const isEdgeKind = oneOf(EDGE_KINDS);
 const isStyle = oneOf(INJECTION_STYLES);
+const isMark = oneOf(NODE_MARKS);
 const isString = (value: unknown): value is string => typeof value === 'string';
 const textOrNull = (value: unknown): string | null => (isText(value) ? value : null);
+const markOrNull = (value: unknown): ArchitectureNode['marks'][number] | null =>
+  isMark(value) ? value : null;
 
-function parseArea(value: unknown): ArchitectureArea | null {
+function parseRuntime(value: unknown): ArchitectureRuntime | null {
   if (!isObject(value)) return null;
   const id = fieldOf(value, 'id', isText);
   const label = fieldOf(value, 'label', isText);
   return id && label ? { id, label } : null;
 }
 
+function parseArea(value: unknown): ArchitectureArea | null {
+  if (!isObject(value)) return null;
+  const id = fieldOf(value, 'id', isText);
+  const label = fieldOf(value, 'label', isText);
+  return id && label ? { id, label, runtime: fieldOf(value, 'runtime', isString) ?? '' } : null;
+}
+
+function parseEndpoint(value: unknown): ArchitectureNode['endpoint'] {
+  if (!isObject(value)) return null;
+  const method = fieldOf(value, 'method', isText);
+  const path = fieldOf(value, 'path', isText);
+  return method && path ? { method, path } : null;
+}
+
+/** A node outside the project has no file, so an empty one is kept; only a missing one is not. */
 function parseNode(value: unknown): ArchitectureNode | null {
   if (!isObject(value)) return null;
   const id = fieldOf(value, 'id', isText);
   const name = fieldOf(value, 'name', isText);
   const kind = fieldOf(value, 'kind', isKind);
-  const file = fieldOf(value, 'file', isText);
+  const file = fieldOf(value, 'file', isString);
   const area = fieldOf(value, 'area', isText);
-  if (!id || !name || !kind || !file || !area) return null;
+  if (!id || !name || !kind || file === undefined || !area) return null;
   return {
     id,
     name,
@@ -39,6 +59,8 @@ function parseNode(value: unknown): ArchitectureNode | null {
     group: fieldOf(value, 'group', isString) ?? '',
     providedIn: textOrNull(value['providedIn']),
     windows: listOf(value['windows'], textOrNull),
+    marks: listOf(value['marks'], markOrNull),
+    endpoint: parseEndpoint(value['endpoint']),
   };
 }
 
@@ -73,6 +95,7 @@ export function parseArchitecture(body: unknown): ArchitectureMap | null {
   return {
     project: fieldOf(body, 'project', isText) ?? '',
     scannedAt: fieldOf(body, 'scannedAt', isText) ?? '',
+    runtimes: listOf(body['runtimes'], parseRuntime),
     areas: areasWithNodes(nodes, body['areas']),
     windows: listOf(body['windows'], textOrNull),
     nodes,

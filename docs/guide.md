@@ -641,19 +641,28 @@ with a copy of the project there.
 
 A map of the project's code, scanned from its clone on your computer each time
 you open the tab (a scan takes a few seconds, and Observatory keeps it for a few
-minutes), drawn two ways:
+minutes), drawn two ways. It charts Angular classes, plain TypeScript files
+(modules), the routes of an API server and the outside web services and programs
+the code reaches, so a project with no Angular code still has a map:
 
 - **Star system.** The node you pick sits at the centre as a star; everything
-  it connects to orbits as a lit world. A hot spot (depended on by many) is a
-  flaring red giant; components keep a ring; unused code has a dashed outline.
-- **UML.** The same connections as a diagram.
+  it connects to orbits as a lit world. A hot spot (one of the most often changed
+  files) is a flaring red giant; unused code (nothing depends on it and nothing
+  starts it) has a dashed outline. The ring round a world names its kind: a
+  hollow ring for a component, a plain silver ring for a module, a thick ticked
+  coral ring for a route, a dashed lilac ring for an outside service.
+- **UML.** The same connections as a diagram, each box with a coloured strip
+  down its edge in its kind's colour.
 
-Search by name, filter by area or window, and use the **Hot spots** and
-**Unused** chips. The legend names each kind of link, and a card describes the
+Search by name, filter by area (grouped by where it runs: the browser app, the
+API server, web services, programs) or window, and use the **Hot spots** and
+**Unused** chips. The two legends name the kinds of node and link the project
+has. Links that carry a request at run time (requests, handles, reaches and
+spawns) are thicker and brighter than the code links. A card describes the
 centre node. **Refresh** scans the clone again. **Open full map** opens the
-project in a page of its own that also charts plain TypeScript files, routes and
-outside services. A project with no clone here says so. **Only on your own
-computer.**
+project in a page of its own that charts every part at once. A project with no
+clone here says so, and one the scan finds nothing in says that. **Only on your
+own computer.**
 
 ### Security
 

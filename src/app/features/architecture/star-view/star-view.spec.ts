@@ -1,30 +1,36 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { graphOf, neighbourhoodOf } from '../../../core/architecture/architecture-graph';
-import { ArchitectureNode } from '../../../core/architecture/architecture.types';
+import { ArchitectureNode, NodeKind } from '../../../core/architecture/architecture.types';
 import { StarSystem, starSystem } from '../../../core/architecture/star-layout';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
 import { PortraitPainter } from '../../../shared/planets/planet-portrait.types';
 import { StarView } from './star-view';
 
-const node = (name: string): ArchitectureNode => ({
+const node = (name: string, kind: NodeKind = 'service'): ArchitectureNode => ({
   id: name,
   name,
-  kind: 'service',
+  kind,
   file: `core/${name}.ts`,
   area: 'core',
   group: '',
   providedIn: null,
   windows: [],
+  marks: [],
+  endpoint: null,
 });
 
-function rosterSystem(): StarSystem {
+function rosterSystem(kinds: Partial<Record<string, NodeKind>> = {}): StarSystem {
+  const nodes = ['RosterService', 'ClockService', 'MatchService'].map((name) =>
+    node(name, kinds[name]),
+  );
   const graph = graphOf({
     project: '',
     scannedAt: '',
-    areas: [{ id: 'core', label: 'Core' }],
+    runtimes: [],
+    areas: [{ id: 'core', label: 'Core', runtime: 'browser' }],
     windows: [],
-    nodes: [node('RosterService'), node('ClockService'), node('MatchService')],
+    nodes,
     edges: [
       { from: 'RosterService', to: 'ClockService', kind: 'injects', how: 'inject', members: [] },
       { from: 'MatchService', to: 'RosterService', kind: 'injects', how: 'inject', members: [] },
@@ -32,15 +38,15 @@ function rosterSystem(): StarSystem {
   });
   const around = neighbourhoodOf(graph, 'RosterService', { area: null, window: null });
   if (!around) throw new Error('no RosterService');
-  return starSystem(around, [{ id: 'core', label: 'Core' }]);
+  return starSystem(around, [{ id: 'core', label: 'Core', runtime: 'browser' }]);
 }
 
-function mount(painter: PortraitPainter | null) {
+function mount(painter: PortraitPainter | null, system = rosterSystem()) {
   TestBed.configureTestingModule({
     providers: [{ provide: PlanetPortraits, useValue: { painter: () => signal(painter) } }],
   });
   const fixture = TestBed.createComponent(StarView);
-  fixture.componentRef.setInput('system', rosterSystem());
+  fixture.componentRef.setInput('system', system);
   fixture.detectChanges();
   return fixture;
 }
@@ -55,6 +61,19 @@ const fakePainter = (): PortraitPainter => ({
 });
 
 describe('StarView', () => {
+  it('marks each planet with its kind and names the kind in its tooltip', () => {
+    const system = rosterSystem({ ClockService: 'external', MatchService: 'route' });
+    const host = mount(null, system).nativeElement as HTMLElement;
+    const planets = Array.from(host.querySelectorAll('.planet'), (planet) => [
+      planet.getAttribute('data-kind'),
+      planet.querySelector('title')?.textContent?.replace(/\s+/g, ' ').trim(),
+    ]);
+    expect(planets).toEqual([
+      ['external', 'ClockService · outside service · injects'],
+      ['route', 'MatchService · route · injects'],
+    ]);
+  });
+
   it('draws flat bodies while there is no painter', () => {
     const host = render(null);
     expect(host.querySelectorAll('image')).toHaveLength(0);

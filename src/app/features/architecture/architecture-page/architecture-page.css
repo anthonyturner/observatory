@@ -141,6 +141,26 @@ a.abtn {
   background: var(--link-calls);
 }
 
+.legend [data-link='imports'] .swatch {
+  background: var(--link-imports);
+}
+
+.legend [data-link='requests'] .swatch {
+  background: var(--link-requests);
+}
+
+.legend [data-link='handles'] .swatch {
+  background: var(--link-handles);
+}
+
+.legend [data-link='reaches'] .swatch {
+  background: var(--link-reaches);
+}
+
+.legend [data-link='spawns'] .swatch {
+  background: var(--link-spawns);
+}
+
 .stage[data-view='uml'] {
   padding: 8px 24px 24px;
   overflow: auto;

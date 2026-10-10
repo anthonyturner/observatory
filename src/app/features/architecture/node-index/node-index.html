@@ -14,8 +14,12 @@
   <span>Area</span>
   <select #choice (change)="area.set(choice.value || null)">
     <option value="" [selected]="area() === null">All areas</option>
-    @for (option of areas(); track option.id) {
-      <option [value]="option.id" [selected]="area() === option.id">{{ option.label }}</option>
+    @for (group of areaGroups(); track group.label) {
+      <optgroup [label]="group.label">
+        @for (option of group.areas; track option.id) {
+          <option [value]="option.id" [selected]="area() === option.id">{{ option.label }}</option>
+        }
+      </optgroup>
     }
   </select>
 </label>
@@ -37,7 +41,7 @@
   <button
     type="button"
     data-heat="hot"
-    title="Depended on by many nodes: a change here is felt widely"
+    title="Among the most often changed files"
     [attr.aria-pressed]="heat() === 'hot'"
     (click)="heat.set('hot')"
   >
@@ -62,13 +66,11 @@
       <button
         type="button"
         class="row"
-        [attr.data-heat]="entry.heat"
-        [attr.data-kind]="entry.node.kind"
-        [title]="entry.node.file"
+        [title]="entry.node.file || entry.kindLabel"
         [attr.aria-current]="entry.node.id === selected() ? 'true' : null"
         (click)="pick.emit(entry.node.id)"
       >
-        <span class="dot" aria-hidden="true"></span>
+        <app-kind-dot [kind]="entry.node.kind" [heat]="entry.heat" />
         <span class="name">{{ entry.node.name }}</span>
         <span class="uses" [title]="'Depended on by ' + entry.dependents">{{
           entry.dependents

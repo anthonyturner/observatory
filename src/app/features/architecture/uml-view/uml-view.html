@@ -32,6 +32,7 @@
       role="button"
       tabindex="0"
       [attr.data-role]="box.role"
+      [attr.data-kind]="box.entry.node.kind"
       [attr.data-heat]="box.entry.heat"
       [attr.transform]="'translate(' + box.x + ' ' + box.y + ')'"
       [attr.aria-label]="'Centre on ' + box.entry.node.name"
@@ -43,6 +44,7 @@
         }}{{ box.relation ? ' · ' + box.relation : '' }}
       </title>
       <rect class="frame" rx="8" [attr.width]="boxWidth" [attr.height]="box.height" />
+      <rect class="accent" y="10" width="4" [attr.height]="accentHeight" rx="2" />
       <text class="stereotype" x="12" y="18">{{ box.stereotype }}</text>
       <text class="title" x="12" y="37">{{ box.title }}</text>
       @if (box.lines.length) {

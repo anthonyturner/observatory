@@ -8,8 +8,8 @@ import {
 import { DEPENDENCIES_LABEL, starSystem } from './star-layout';
 
 const AREAS: ArchitectureArea[] = [
-  { id: 'core', label: 'Core' },
-  { id: 'ui', label: 'Interface' },
+  { id: 'core', label: 'Core', runtime: 'browser' },
+  { id: 'ui', label: 'Interface', runtime: 'browser' },
 ];
 
 const node = (name: string, area = 'core'): ArchitectureNode => ({
@@ -21,6 +21,8 @@ const node = (name: string, area = 'core'): ArchitectureNode => ({
   group: '',
   providedIn: null,
   windows: [],
+  marks: [],
+  endpoint: null,
 });
 
 const edge = (
@@ -40,6 +42,7 @@ function systemAround(centre: string, nodes: ArchitectureNode[], edges: Architec
   const graph = graphOf({
     project: '',
     scannedAt: '',
+    runtimes: [],
     areas: AREAS,
     windows: [],
     nodes,

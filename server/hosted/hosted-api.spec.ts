@@ -225,8 +225,9 @@ describe('hostedApi', () => {
       assert.equal((await asOwner(method, '/api/crew')).status, 404, `crew ${method}`);
     }
     for (const method of ['GET', 'POST', 'DELETE']) {
-      const path = '/api/dev-servers?repo=me/app';
-      assert.equal((await asOwner(method, path)).status, 404, `dev-servers ${method}`);
+      for (const path of ['/api/dev-servers?repo=me/app', '/api/dev-servers?repo=me/app&pull=4']) {
+        assert.equal((await asOwner(method, path)).status, 404, `dev-servers ${method} ${path}`);
+      }
     }
   });
 

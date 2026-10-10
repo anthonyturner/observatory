@@ -70,9 +70,6 @@ describe('InsightsPage', () => {
 
     expect(element.querySelector('h1')?.textContent).toBe('Insights');
     expect(element.querySelector('.stamp')?.textContent).toBe('me/app · 13 commits in 12 weeks');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/insights');
     expect(headings(element)).toEqual([
       'Commits',
       'Cycle time',

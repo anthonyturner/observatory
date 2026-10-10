@@ -62,9 +62,6 @@ describe('JournalPage', () => {
     fixture.detectChanges();
 
     expect(element.querySelector('h1')?.textContent).toBe('Journal');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/journal');
     const links = [...element.querySelectorAll('app-journal-entry header a')];
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       'https://github.com/me/app/pull/9#issuecomment-9',

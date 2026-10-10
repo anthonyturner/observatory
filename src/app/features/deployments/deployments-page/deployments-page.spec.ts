@@ -32,14 +32,11 @@ function render(body: object = RAW_REPORT) {
 }
 
 describe('DeploymentsPage', () => {
-  it('opens on the sky under the Deployments tab, each light a link to its site', () => {
+  it('opens on the sky, each light a link to its site', () => {
     const { element } = render();
 
     expect(element.querySelector('h1')?.textContent).toBe('Deployments');
     expect(element.querySelector('.stamp')?.textContent).toBe('me/app · 2 environments');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/deployments');
     const lights = [...element.querySelectorAll<HTMLAnchorElement>('app-launch-sky a.body')];
     expect(lights.map((light) => light.getAttribute('href'))[0]).toBe('https://app-5.vercel.app');
     expect(lights[0].getAttribute('aria-label')).toContain('Production, ready');

@@ -81,7 +81,7 @@ function render(canWrite: boolean) {
       { provide: PlanetPortraits, useValue: { painter: () => signal(null) } },
       {
         provide: ViewerSession,
-        useValue: { canWrite: signal(canWrite), isConfirmedLocal: signal(false) },
+        useValue: { canWrite: signal(canWrite) },
       },
     ],
   });
@@ -96,14 +96,11 @@ function render(canWrite: boolean) {
 }
 
 describe('ActionsPage', () => {
-  it('opens on the newest failure with its failed steps linked, under the Actions tab', () => {
+  it('opens on the newest failure with its failed steps linked', () => {
     const { element } = render(true);
 
     expect(element.querySelector('h1')?.textContent).toBe('Actions');
     expect(element.querySelector('.health')?.textContent).toContain('main is failing (CI)');
-    expect(
-      element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href'),
-    ).toBe('/p/me/app/actions');
     expect(element.querySelector('app-run-detail h2')?.textContent).toBe('Change 1');
     expect(element.querySelector('.steps a')?.getAttribute('href')).toBe(
       'https://github.com/me/app/actions/runs/1/job/5#step:3:1',

@@ -4,8 +4,7 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 import { map } from 'rxjs';
 import { DeploymentsFeed } from '../../../core/deployments/deployments-feed';
 import { DeployOutcome } from '../../../core/deployments/deployments-report';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { SkyInsets } from '../../releases/release-sky/release-sky';
 import { DeployList } from '../deploy-list/deploy-list';
 import { outcomeColour } from '../deploy-look';
@@ -28,7 +27,7 @@ const repoOf = (params: ParamMap): string =>
  */
 @Component({
   selector: 'app-deployments-page',
-  imports: [UpLink, ProjectTabs, LaunchSky, DeployList],
+  imports: [ProjectBarRoom, LaunchSky, DeployList],
   providers: [DeploymentsFeed],
   templateUrl: './deployments-page.html',
   styleUrls: ['../../releases/releases-page/releases-page.css', './deployments-page.css'],

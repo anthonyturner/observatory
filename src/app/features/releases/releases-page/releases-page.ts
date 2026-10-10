@@ -12,8 +12,7 @@ import { map } from 'rxjs';
 import { ReleaseTimeline, releaseTimeline } from '../../../core/releases/release-timeline';
 import { ReleasesFeed } from '../../../core/releases/releases-feed';
 import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { ReleaseDetailPanel } from '../release-detail/release-detail';
 import { detailOf, firstPick } from '../release-detail/release-detail-view';
 import { ReleaseList } from '../release-list/release-list';
@@ -41,7 +40,7 @@ const repoOf = (params: ParamMap): string =>
  */
 @Component({
   selector: 'app-releases-page',
-  imports: [UpLink, ProjectTabs, ReleaseSky, ReleaseList, ReleaseDetailPanel],
+  imports: [ProjectBarRoom, ReleaseSky, ReleaseList, ReleaseDetailPanel],
   providers: [ReleasesFeed],
   templateUrl: './releases-page.html',
   styleUrl: './releases-page.css',

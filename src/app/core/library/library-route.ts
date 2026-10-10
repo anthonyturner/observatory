@@ -2,25 +2,19 @@ import { UrlMatchResult, UrlSegment } from '@angular/router';
 
 const PROJECT = 'p';
 const LIBRARY = 'library';
-/** `p`, owner, name, `library`. */
-const LIBRARY_DEPTH = 4;
 
 /**
- * `/p/:owner/:repo/library/<page>`, where a page from `docs/` keeps its
- * folders as path segments, so its address reads like the file's path. The
- * segments after `library` arrive joined as the `page` parameter.
+ * `/p/:owner/:repo/library/<page>`, matched below the project's route, where a
+ * page from `docs/` keeps its folders as path segments, so its address reads
+ * like the file's path. The segments after `library` arrive joined as the
+ * `page` parameter.
  */
 export function libraryMatcher(segments: UrlSegment[]): UrlMatchResult | null {
-  if (segments.length < LIBRARY_DEPTH) return null;
-  const [project, owner, repo, library, ...page] = segments;
-  if (project.path !== PROJECT || library.path !== LIBRARY) return null;
+  const [library, ...page] = segments;
+  if (library?.path !== LIBRARY) return null;
   return {
     consumed: segments,
-    posParams: {
-      owner,
-      repo,
-      page: new UrlSegment(page.map((segment) => segment.path).join('/'), {}),
-    },
+    posParams: { page: new UrlSegment(page.map((segment) => segment.path).join('/'), {}) },
   };
 }
 

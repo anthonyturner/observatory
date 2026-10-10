@@ -14,9 +14,8 @@ import { distinctUntilChanged, map } from 'rxjs';
 import { LibraryFeed } from '../../../core/library/library-feed';
 import { pageTextOf, searchTerms } from '../../../core/library/library-search';
 import { MotionPreference } from '../../../core/motion/motion-preference';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { plural } from '../../../shared/text/plural';
-import { UpLink } from '../../../shared/up-link/up-link';
 import { DocArticle } from '../doc-article/doc-article';
 import { HEADING_ID_PREFIX } from '../doc-blocks/doc-blocks';
 import { LibraryIndex } from '../library-index/library-index';
@@ -37,7 +36,7 @@ const NO_PAGE: PageMessage = {
  */
 @Component({
   selector: 'app-library-page',
-  imports: [UpLink, ProjectTabs, LibraryIndex, DocArticle],
+  imports: [ProjectBarRoom, LibraryIndex, DocArticle],
   providers: [LibraryFeed],
   templateUrl: './library-page.html',
   styleUrls: ['../../releases/releases-page/releases-page.css', './library-page.css'],

@@ -4,8 +4,7 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 import { map } from 'rxjs';
 import { JournalFeed } from '../../../core/journal/journal-feed';
 import { PrincipleOfDay } from '../../../core/principles/principle-of-day';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { JournalEntryCard } from '../journal-entry/journal-entry';
 import { PrincipleTitles, cardsOf, chipsOf } from './journal-view';
 import { filterWords, journalStamp, stateMessage } from './journal-words';
@@ -20,7 +19,7 @@ const repoOf = (params: ParamMap): string =>
  */
 @Component({
   selector: 'app-journal-page',
-  imports: [UpLink, ProjectTabs, JournalEntryCard],
+  imports: [ProjectBarRoom, JournalEntryCard],
   providers: [JournalFeed],
   templateUrl: './journal-page.html',
   styleUrls: ['../../releases/releases-page/releases-page.css', './journal-page.css'],

@@ -20,9 +20,8 @@ import { ArchitectureMap } from '../../../core/architecture/architecture.types';
 import { Legend, legendOf } from '../../../core/architecture/kind-look';
 import { starSystem } from '../../../core/architecture/star-layout';
 import { umlDiagram } from '../../../core/architecture/uml-layout';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { plural } from '../../../shared/text/plural';
-import { UpLink } from '../../../shared/up-link/up-link';
 import { KindDot } from '../kind-dot/kind-dot';
 import { NodeIndex } from '../node-index/node-index';
 import { StarView } from '../star-view/star-view';
@@ -70,7 +69,7 @@ function stampOf(repo: string, map: ArchitectureMap | null): string {
  */
 @Component({
   selector: 'app-architecture-page',
-  imports: [UpLink, ProjectTabs, KindDot, NodeIndex, StarView, UmlView],
+  imports: [ProjectBarRoom, KindDot, NodeIndex, StarView, UmlView],
   providers: [ArchitectureFeed],
   templateUrl: './architecture-page.html',
   styleUrl: './architecture-page.css',

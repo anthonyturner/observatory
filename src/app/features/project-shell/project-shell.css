@@ -1,0 +1,23 @@
+/* The bar floats over the screen below it. A screen is a fixed layer of its own, so nothing
+   inside one can rise above the bar: a panel or card that would reach the bar starts below it
+   instead, by `--project-bar-height`, which the shell publishes. */
+:host {
+  display: contents;
+}
+
+.bar {
+  position: fixed;
+  top: var(--page-inset-top);
+  left: var(--page-inset-x);
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  width: fit-content;
+  max-width: calc(100% - 2 * var(--page-inset-x));
+}
+
+.bar app-up-link {
+  margin-bottom: 0;
+}

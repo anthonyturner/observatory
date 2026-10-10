@@ -13,7 +13,7 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 14px;
-  padding: calc(18px + var(--status-strip-height, 0px)) 20px 12px;
+  padding: var(--page-inset-top) var(--page-inset-x) 12px;
 }
 
 .brand {
@@ -32,19 +32,6 @@ h1 {
   letter-spacing: 0.015em;
   line-height: 1;
   color: var(--ink);
-}
-
-.way {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
-  width: fit-content;
-  margin-bottom: 9px;
-}
-
-.way app-up-link {
-  margin-bottom: 0;
 }
 
 .stamp {

@@ -12,8 +12,7 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 import { map } from 'rxjs';
 import { MilestonesFeed } from '../../../core/milestones/milestones-feed';
 import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { SkyInsets } from '../../releases/release-sky/release-sky';
 import { DiscussionList } from '../discussion-list/discussion-list';
 import { DUE_STATES, dueColour } from '../milestone-look';
@@ -51,7 +50,7 @@ const repoOf = (params: ParamMap): string =>
  */
 @Component({
   selector: 'app-milestones-page',
-  imports: [NgTemplateOutlet, UpLink, ProjectTabs, TransitSky, MilestoneList, DiscussionList],
+  imports: [NgTemplateOutlet, ProjectBarRoom, TransitSky, MilestoneList, DiscussionList],
   providers: [MilestonesFeed],
   templateUrl: './milestones-page.html',
   styleUrls: ['../../releases/releases-page/releases-page.css', './milestones-page.css'],

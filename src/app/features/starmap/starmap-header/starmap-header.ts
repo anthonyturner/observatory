@@ -1,20 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { ProjectTabs } from '../../../shared/project-tabs/project-tabs';
-import { UpLink } from '../../../shared/up-link/up-link';
+import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { LegendChip, fmtN } from '../starmap-view';
 
-/** The top of the star map: the way up to the orrery and across to the
- *  project's other screens, the title, what the sky is and how old, and the
- *  legend that narrows it. */
+/** The top of the star map: room for the project bar, the title, what the sky is
+ *  and how old, and the legend that narrows it. */
 @Component({
   selector: 'app-starmap-header',
-  imports: [UpLink, ProjectTabs],
+  imports: [ProjectBarRoom],
   templateUrl: './starmap-header.html',
   styleUrl: './starmap-header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StarmapHeader {
-  /** `owner/name`, for the project's other screens. */
+  /** `owner/name`. */
   readonly repo = input.required<string>();
   readonly repoName = computed(()=> this.repo().split('/').pop() ?? '');
   readonly title = input.required<string>();

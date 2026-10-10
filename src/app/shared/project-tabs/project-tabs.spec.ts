@@ -1,9 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { RunPreviewButton } from '../run-preview-button/run-preview-button';
-import { PROJECT_TABS, ProjectTabs, projectTabLink } from './project-tabs';
+import { ViewerSession } from '../../core/session/viewer-session';
+import {
+  PROJECT_TABS,
+  ProjectTabs,
+  guidePartOf,
+  projectTabAt,
+  projectTabLink,
+} from './project-tabs';
 import { QuietTab } from './quiet-tab';
 import { QUIET_TABS } from './quiet-tabs';
 import { TAB_BADGES, TabBadge } from './tab-badge';
@@ -16,18 +21,48 @@ describe('projectTabLink', () => {
   });
 });
 
+describe('projectTabAt', () => {
+  it('finds the screen below a project’s route, the Queue at the route itself', () => {
+    expect(projectTabAt('')?.id).toBe('queue');
+    expect(projectTabAt('security')?.id).toBe('security');
+    expect(projectTabAt('nowhere')).toBeUndefined();
+  });
+});
+
+describe('guidePartOf', () => {
+  it('names a screen’s part of the Guide after the screen, the Queue’s after the Review Queue', () => {
+    const part = (path: string): string | undefined => {
+      const tab = projectTabAt(path);
+      return tab && guidePartOf(tab);
+    };
+
+    expect(part('')).toBe('review-queue');
+    expect(part('releases')).toBe('releases');
+  });
+});
+
 describe('ProjectTabs', () => {
-  it('carries the project’s Run button beside the screens, on every one of them', () => {
+  it('only navigates: it asks nothing of the viewer’s session and carries no Run button', () => {
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: QUIET_TABS, useValue: [] }],
+      providers: [
+        provideRouter([]),
+        { provide: QUIET_TABS, useValue: [] },
+        {
+          provide: ViewerSession,
+          useFactory: () => {
+            throw new Error('ProjectTabs must not depend on the session');
+          },
+        },
+      ],
     });
     const fixture = TestBed.createComponent(ProjectTabs);
     fixture.componentRef.setInput('repo', 'me/app');
     fixture.componentRef.setInput('current', 'security');
     fixture.detectChanges();
 
-    const button = fixture.debugElement.query(By.directive(RunPreviewButton));
-    expect((button.componentInstance as RunPreviewButton).repo()).toBe('me/app');
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('app-run-preview-button')).toBeNull();
+    expect(host.querySelectorAll('a')).toHaveLength(PROJECT_TABS.length);
   });
 
   it('links every screen of the project and marks the current one as the page', () => {

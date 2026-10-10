@@ -1,0 +1,7 @@
+:host {
+  display: block;
+  width: var(--project-bar-width, 0px);
+  max-width: 100%;
+  height: var(--project-bar-height, 0px);
+  margin-bottom: 9px;
+}

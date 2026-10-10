@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- **Run** keeps its state when you switch between a project's screens. Before, every tab rebuilt it, so leaving a screen while the server was still starting closed the wait, and the site never opened in its new tab. Now the tabs and **Run** sit in one bar above the screens that stays put as you move between them ([#599](https://github.com/anthonyturner/observatory/issues/599)).
 - **Run** no longer stalls when the project's usual port is taken, and no longer opens a blank tab. Observatory gives the server a free port, and opens the site in a new tab only once it answers; if your browser blocks that tab, **Open ↗** stays and says how to allow pop-ups. A server that stalls or quits now reports its last line of output instead of a `run.json` hint, and a `run.json` command can use `{port}` for the port it is given ([#600](https://github.com/anthonyturner/observatory/issues/600)).
 - A pull request's diff and each commit's changes now wrap long lines instead of running off the right edge. Unticking **Wrap long lines** scrolls them sideways again, and every diff remembers that choice ([#605](https://github.com/anthonyturner/observatory/issues/605)).
 - On the Review Queue, opening a pull request's screen or an issue's window, with **Open** on its hover card or any other way, now closes the hover card instead of leaving it open underneath ([#603](https://github.com/anthonyturner/observatory/issues/603)).

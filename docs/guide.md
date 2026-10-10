@@ -572,7 +572,8 @@ Click a card to light only that agent's stars.
 ## Project tabs
 
 Each project has these screens beside its Review Queue, in the row of tabs at
-the top.
+the top. The row, with the way back to All projects and the Run button beside it,
+stays put as you switch screens, so a server that is still starting carries on.
 
 Beside the tabs, and on the project's card on Home, is a **Run** button. It
 starts the project's dev server in its clone on your computer (the project's

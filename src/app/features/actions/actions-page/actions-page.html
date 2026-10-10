@@ -32,10 +32,7 @@
 }
 
 <header class="hud">
-  <div class="way">
-    <app-up-link to="/orrery" label="All projects" guide="actions" />
-    <app-project-tabs [repo]="repo()" current="actions" />
-  </div>
+  <app-project-bar-room />
   <div class="brand">
     <h1>Actions</h1>
     <span class="stamp">{{ stamp() }}</span>

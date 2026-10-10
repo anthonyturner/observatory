@@ -3,19 +3,6 @@
   display: block;
 }
 
-/* The way up and the project's screens share one row. */
-.way {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
-  margin-bottom: 9px;
-}
-
-.way app-up-link {
-  margin-bottom: 0;
-}
-
 .brand {
   display: flex;
   flex-wrap: wrap;
@@ -177,7 +164,7 @@ h1 {
     column-gap: 14px;
   }
 
-  .way {
+  app-project-bar-room {
     margin-bottom: 0;
   }
 

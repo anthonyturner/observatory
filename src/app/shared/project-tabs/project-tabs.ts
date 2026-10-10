@@ -3,7 +3,6 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Observable, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { plural } from '../text/plural';
-import { RunPreviewButton } from '../run-preview-button/run-preview-button';
 import { QuietTab } from './quiet-tab';
 import { QUIET_TABS } from './quiet-tabs';
 import { TAB_BADGES, TabBadge } from './tab-badge';
@@ -50,6 +49,14 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
   { id: 'deployments', label: 'Deployments', path: 'deployments' },
   MILESTONES_TAB,
 ];
+
+/** The tab at `path` below a project's route, if there is one. */
+export const projectTabAt = (path: string): ProjectTab | undefined =>
+  PROJECT_TABS.find((tab) => tab.path === path);
+
+/** The anchor of a tab's part of the Guide: the tab's id, except the Review Queue's own name. */
+export const guidePartOf = (tab: ProjectTab): string =>
+  tab.id === 'queue' ? 'review-queue' : tab.id;
 
 /** Where a tab lives for one repository, `owner/name`. */
 export const projectTabLink = (repo: string, tab: ProjectTab): string =>
@@ -113,11 +120,11 @@ function quietIds(tabs: readonly QuietTab[], repo: string): Observable<ReadonlyS
   );
 }
 
-/** The row of a project's screens, on every one of them: links, the current one marked as the page,
- *  and beside them the project's Run button. */
+/** The row of a project's screens: links, the current one marked as the page. It only navigates;
+ *  the project's other controls sit beside it in the project shell. */
 @Component({
   selector: 'app-project-tabs',
-  imports: [RouterLink, RunPreviewButton],
+  imports: [RouterLink],
   templateUrl: './project-tabs.html',
   styleUrl: './project-tabs.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

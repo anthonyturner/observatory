@@ -1,12 +1,12 @@
 @if (view(); as shown) {
-  <div class="run" role="group" [attr.aria-label]="'Site of ' + repo()">
+  <div class="run" role="group" [attr.aria-label]="labels().group">
     @if (shown.canRun) {
-      <button type="button" [attr.aria-label]="'Run ' + repo()" (click)="run()">
-        <span aria-hidden="true">&#9654;</span> Run
+      <button type="button" [attr.aria-label]="labels().run" (click)="run()">
+        <span aria-hidden="true">&#9654;</span> {{ labels().runText }}
       </button>
     }
-    @if (shown.isStarting) {
-      <button type="button" disabled>Starting…</button>
+    @if (shown.progress) {
+      <button type="button" disabled>{{ shown.progress }}</button>
     }
     @if (shown.openUrl; as url) {
       <a
@@ -14,7 +14,7 @@
         target="_blank"
         rel="noopener noreferrer"
         (click)="openedByHand()"
-        [attr.aria-label]="'Open ' + repo() + ' in a new tab'"
+        [attr.aria-label]="labels().open"
         >Open <span aria-hidden="true">&#8599;</span></a
       >
     }
@@ -27,8 +27,13 @@
         >Live site <span aria-hidden="true">&#8599;</span></a
       >
     }
+    @if (shown.canRemove) {
+      <button type="button" [attr.aria-label]="labels().remove" (click)="stop()">
+        <span aria-hidden="true">&#10005;</span> Remove
+      </button>
+    }
     @if (shown.canStop) {
-      <button type="button" [attr.aria-label]="'Stop ' + repo()" (click)="stop()">
+      <button type="button" [attr.aria-label]="labels().stop" (click)="stop()">
         <span aria-hidden="true">&#9632;</span> Stop
       </button>
     }

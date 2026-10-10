@@ -2,12 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { Observable, map, of, timer } from 'rxjs';
 import { CHECKING } from './dev-server.types';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
-import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
+import { DevServerStatus, DevTarget, FETCHING, STARTING, STOPPED } from './dev-server.types';
 import { SITE_OPENER } from './site-opener';
 import { RUNNING_POLL_MS, RunPreviews, STATUS_POLL_MS } from './run-preview';
 
 const RUNNING: DevServerStatus = { state: 'running', url: 'http://localhost:5173/' };
 const OPENS_SITE = 'opens http://localhost:5173/';
+
+const nameOf = ({ repo, pull }: DevTarget): string =>
+  pull === undefined ? repo : `${repo}#${pull}`;
 
 interface Answers {
   readonly start?: DevServerStatus;
@@ -23,16 +26,16 @@ function setUp(answers: Answers = {}) {
   const polls: DevServerStatus[] = [first];
   const log: string[] = [];
   const api: DevServerApi = {
-    status: (repo) => {
-      log.push(`status ${repo}`);
+    status: (target) => {
+      log.push(`status ${nameOf(target)}`);
       return of(polls.shift() ?? STOPPED);
     },
-    start: (repo) => {
-      log.push(`start ${repo}`);
+    start: (target) => {
+      log.push(`start ${nameOf(target)}`);
       return of(start);
     },
-    stop: (repo): Observable<DevServerStatus> => {
-      log.push(`stop ${repo}`);
+    stop: (target): Observable<DevServerStatus> => {
+      log.push(`stop ${nameOf(target)}`);
       return stopTakes === undefined ? of(STOPPED) : timer(stopTakes).pipe(map(() => STOPPED));
     },
   };
@@ -387,6 +390,49 @@ describe('RunPreviews', () => {
 
       expect(other.status()).toEqual(STOPPED);
       expect(log).toEqual(['status me/other', 'start me/app']);
+    });
+
+    it('keys a pull request’s preview apart from the project’s own and from other pull requests', () => {
+      const { previews, preview, log } = setUp();
+      const pull = previews.runFor('me/app', 7);
+      const another = previews.runFor('me/app', 8);
+      pull.watch();
+      another.watch();
+      log.length = 0;
+
+      pull.run();
+
+      expect(pull).not.toBe(preview);
+      expect(pull).not.toBe(another);
+      expect(previews.runFor('me/app', 7)).toBe(pull);
+      expect(log).toEqual(['start me/app#7']);
+      expect(pull.status()).toEqual(STARTING);
+      expect(preview.status()).toEqual(STOPPED);
+      expect(another.status()).toEqual(STOPPED);
+    });
+
+    it('starts a pull request from fetching, asks for its status and stops it by its number, and opens its site once', () => {
+      const { previews, log, polls, opened } = setUp({ start: FETCHING });
+      const pull = previews.runFor('me/app', 7);
+      pull.watch();
+      polls.push({ state: 'starting', phase: 'installing' }, RUNNING);
+      log.length = 0;
+
+      pull.run();
+      expect(pull.status()).toEqual(FETCHING);
+      vi.advanceTimersByTime(STATUS_POLL_MS);
+      expect(pull.status()).toEqual({ state: 'starting', phase: 'installing' });
+      vi.advanceTimersByTime(STATUS_POLL_MS);
+      pull.stop();
+
+      expect(log).toEqual([
+        'start me/app#7',
+        'status me/app#7',
+        'status me/app#7',
+        OPENS_SITE,
+        'stop me/app#7',
+      ]);
+      expect(opened()).toEqual([OPENS_SITE]);
     });
   });
 });

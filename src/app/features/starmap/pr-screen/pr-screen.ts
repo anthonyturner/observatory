@@ -15,6 +15,7 @@ import { QueueBucket } from '../../../core/queue/queue-report';
 import { LandedBase } from '../../../core/queue/stacks';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { Draggable } from '../../../shared/draggable/draggable';
+import { RunPreviewButton } from '../../../shared/run-preview-button/run-preview-button';
 import { BUCKET_LOOK } from '../../queue/queue-view';
 import { SheetDiffTab } from './sheet-diff-tab/sheet-diff-tab';
 import { SheetEditor } from './sheet-editor/sheet-editor';
@@ -53,6 +54,7 @@ const TYPING = 'input, textarea, select';
     Draggable,
     SheetHeader,
     SheetMarkdown,
+    RunPreviewButton,
     SheetPreview,
     SheetRows,
     SheetCommits,

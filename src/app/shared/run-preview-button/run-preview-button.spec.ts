@@ -3,7 +3,13 @@ import { TestBed } from '@angular/core/testing';
 import { NEVER, of } from 'rxjs';
 import { LiveSites } from '../../core/deployments/live-sites';
 import { DEV_SERVER_API, DevServerApi } from '../../core/dev-servers/dev-server-api';
-import { DevServerStatus, STARTING, STOPPED } from '../../core/dev-servers/dev-server.types';
+import {
+  DevServerStatus,
+  DevTarget,
+  FETCHING,
+  STARTING,
+  STOPPED,
+} from '../../core/dev-servers/dev-server.types';
 import { RUNNING_POLL_MS, STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
 import { SITE_OPENER } from '../../core/dev-servers/site-opener';
 import { ViewerSession } from '../../core/session/viewer-session';
@@ -15,6 +21,9 @@ const NO_CHECKOUT: DevServerStatus = {
   reason: 'There is no local checkout of this project on this machine.',
 };
 const LIVE = 'https://app.example.com';
+
+const nameOf = ({ repo, pull }: DevTarget): string =>
+  pull === undefined ? repo : `${repo}#${pull}`;
 
 function setUp(options: {
   isLocal?: boolean;
@@ -43,17 +52,17 @@ function setUp(options: {
   const asked: string[] = [];
   const polls: DevServerStatus[] = [];
   const api: DevServerApi = {
-    status: (repo) => {
+    status: (target) => {
       calls.push('status');
-      asked.push(repo);
+      asked.push(nameOf(target));
       return isUnanswered ? NEVER : of(polls.shift() ?? status);
     },
-    start: () => {
-      calls.push('start');
+    start: (target) => {
+      calls.push(target.pull === undefined ? 'start' : `start ${nameOf(target)}`);
       return of(start);
     },
-    stop: () => {
-      calls.push('stop');
+    stop: (target) => {
+      calls.push(target.pull === undefined ? 'stop' : `stop ${nameOf(target)}`);
       return of(STOPPED);
     },
   };
@@ -83,9 +92,10 @@ function setUp(options: {
       },
     ],
   });
-  const mount = (repo: string) => {
+  const mount = (repo: string, pull?: number) => {
     const fixture = TestBed.createComponent(RunPreviewButton);
     fixture.componentRef.setInput('repo', repo);
+    if (pull !== undefined) fixture.componentRef.setInput('pull', pull);
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
     const settle = (): void => {
@@ -393,6 +403,152 @@ describe('RunPreviewButton: Run or Live site', () => {
     const { element, calls } = setUp({ isLocal: false, isHosted: false, liveUrl: LIVE });
 
     expect(element.children.length).toBe(0);
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('RunPreviewButton: Preview this PR', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('offers Preview this PR for a pull request whose server is not running, and asks about that pull request only', () => {
+    const { mount, asked } = setUp({});
+    asked.length = 0;
+
+    const preview = mount('me/app', 7);
+
+    expect(preview.labels()).toEqual(['▶ Preview this PR']);
+    expect(preview.element.querySelector('button')?.getAttribute('aria-label')).toBe(
+      'Preview pull request 7 of me/app',
+    );
+    expect(preview.element.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe(
+      'Preview of pull request 7 of me/app',
+    );
+    expect(asked).toEqual(['me/app#7']);
+  });
+
+  it('shows Fetching, Installing and Starting in turn, then Open and Stop', () => {
+    const { mount, polls, calls } = setUp({ start: FETCHING });
+    const preview = mount('me/app', 7);
+    polls.push({ state: 'starting', phase: 'installing' }, STARTING, RUNNING);
+
+    preview.element.querySelector('button')?.click();
+    preview.settle();
+    expect(preview.labels()).toEqual(['Fetching…', '■ Stop']);
+    expect(preview.element.querySelector('[role="status"]')?.textContent).toContain(
+      'Fetching the pull request',
+    );
+
+    vi.advanceTimersByTime(STATUS_POLL_MS);
+    preview.settle();
+    expect(preview.labels()).toEqual(['Installing…', '■ Stop']);
+    expect(preview.element.querySelector('[role="status"]')?.textContent).toContain(
+      'Installing dependencies',
+    );
+
+    vi.advanceTimersByTime(STATUS_POLL_MS);
+    preview.settle();
+    expect(preview.labels()).toEqual(['Starting…', '■ Stop']);
+
+    vi.advanceTimersByTime(STATUS_POLL_MS);
+    preview.settle();
+    expect(preview.labels()).toEqual(['Open ↗', '■ Stop']);
+    expect(preview.element.querySelector('a')?.getAttribute('aria-label')).toBe(
+      'Open the preview of pull request 7 in a new tab',
+    );
+    expect(calls).toContain('start me/app#7');
+    expect(calls.filter((call) => call.startsWith('opens'))).toEqual([
+      'opens http://localhost:5173/',
+    ]);
+  });
+
+  it('stops the pull request’s preview, and puts the button back', () => {
+    const { mount, calls } = setUp({ status: RUNNING });
+    const preview = mount('me/app', 7);
+    expect(preview.labels()).toEqual(['Open ↗', '■ Stop']);
+    expect(preview.element.querySelectorAll('button')[0]?.getAttribute('aria-label')).toBe(
+      'Stop the preview of pull request 7',
+    );
+
+    preview.element.querySelector('button')?.click();
+    preview.settle();
+
+    expect(calls).toContain('stop me/app#7');
+    expect(preview.labels()).toEqual(['▶ Preview this PR']);
+  });
+
+  it('says why a preview failed, with the install’s own last line, and offers it again', () => {
+    const reason =
+      'Installing the dependencies (npm ci) exited with code 1. Its last output: "npm error 404"';
+    const { mount } = setUp({ start: { state: 'failed', reason } });
+    const preview = mount('me/app', 7);
+
+    preview.element.querySelector('button')?.click();
+    preview.settle();
+
+    expect(preview.labels()).toEqual(['▶ Preview this PR', '✕ Remove']);
+    expect(preview.element.querySelector('[role="status"]')?.textContent).toBe(reason);
+  });
+
+  it('offers Remove beside Preview this PR when the preview failed, since its worktree is still on disk, and Remove stops it', () => {
+    const reason = 'Installing the dependencies of pull request 7 (npm ci) exited with code 1.';
+    const { mount, calls } = setUp({ status: { state: 'failed', reason } });
+    const preview = mount('me/app', 7);
+
+    expect(preview.labels()).toEqual(['▶ Preview this PR', '✕ Remove']);
+    const remove = preview.element.querySelectorAll('button')[1];
+    expect(remove?.getAttribute('aria-label')).toBe('Remove the preview of pull request 7');
+    remove?.click();
+    preview.settle();
+
+    expect(calls).toContain('stop me/app#7');
+    expect(preview.labels()).toEqual(['▶ Preview this PR']);
+  });
+
+  it('offers no Remove for a project’s own failed Run, which leaves nothing on disk', () => {
+    const { labels } = setUp({ status: { state: 'failed', reason: 'No script.' } });
+
+    expect(labels()).toEqual(['▶ Run']);
+  });
+
+  it('keeps a pull request’s preview apart from the project’s own Run', () => {
+    const { labels, mount, element, settle } = setUp({ start: FETCHING });
+    const preview = mount('me/app', 7);
+
+    preview.element.querySelector('button')?.click();
+    preview.settle();
+    settle();
+
+    expect(preview.labels()).toEqual(['Fetching…', '■ Stop']);
+    expect(labels()).toEqual(['▶ Run']);
+    expect(element.querySelector('button')?.textContent).toContain('Run');
+  });
+
+  it('is not there when the project has no checkout, with no live site to stand in for it', () => {
+    const { mount } = setUp({ status: NO_CHECKOUT, liveUrl: LIVE });
+
+    const preview = mount('me/app', 7);
+
+    expect(preview.element.children.length).toBe(0);
+  });
+
+  it('is not there on the hosted site, and asks for nothing', () => {
+    const { mount, calls } = setUp({ isLocal: false, isHosted: true, liveUrl: LIVE });
+    calls.length = 0;
+
+    const preview = mount('me/app', 7);
+
+    expect(preview.element.children.length).toBe(0);
+    expect(calls).toEqual([]);
+  });
+
+  it('shows nothing until the API has confirmed this machine', () => {
+    const { mount, calls } = setUp({ isLocal: false });
+    calls.length = 0;
+
+    const preview = mount('me/app', 7);
+
+    expect(preview.element.children.length).toBe(0);
     expect(calls).toEqual([]);
   });
 });

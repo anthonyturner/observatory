@@ -52,7 +52,7 @@ read-only view for visitors who aren't you.
 | Inbox                                                        | Yes               | Yes                      | No                              |
 | Jev, voice, mail, skills and tasks                           | Yes               | No                       | No                              |
 | Agents, crews, satellites                                    | Yes               | No                       | No                              |
-| Run button (starts a project's dev server)                   | Yes               | No                       | No                              |
+| Run and Preview this PR (start a dev server)                 | Yes               | No                       | No                              |
 | Live site link (a project's production site)                 | Without a clone   | Yes                      | Public projects only            |
 | Usage and triage                                             | Yes               | Yes                      | No                              |
 
@@ -523,7 +523,8 @@ Opening a pull request shows it in full without leaving Observatory:
   went, and the review decision. Merge with squash, a merge commit or rebase,
   after one Confirm. It merges only the commit you saw.
 - **Preview.** A link to the pull request's preview deployment, where there is
-  one.
+  one. On your own computer, beside it, **Preview this PR** runs the pull
+  request itself (see [Preview this PR](#preview-this-pr)).
 - **Pipeline.** When agents worked on it, each run as a bar in time.
 
 A dotted line ties the open screen to its star. Merging and editing are yours
@@ -603,6 +604,42 @@ hosted site, and on your computer a quiet note saying it has no clone here. A
 project you can run shows only **Run**. Observatory
 looks every project's site up together, once in a while, so Home does not wait
 for it.
+
+### Preview this PR
+
+On your own computer, a pull request's screen has a **Preview this PR** button
+for a project with a clone here. It runs the pull request's branch, not the
+branch your clone has checked out, and opens the site in a new tab once it
+answers.
+
+- Observatory fetches the branch (a pull request from a fork works too) and
+  checks it out in a folder of its own,
+  `.claude/worktrees/observatory-pr-<number>` inside your clone. It is a
+  separate git worktree on a detached head, so no branch appears in your
+  repository and your own checkout is left alone. Observatory marks the
+  worktrees it makes and only ever touches those: one of your own is never
+  reused, refreshed or removed. The folder is
+  added to the clone's `.git/info/exclude`, so `git status` stays clean.
+- It then installs the dependencies there (`npm ci` when the project has a
+  `package-lock.json`, else `npm install`) and starts the dev server as **Run**
+  does, with the same port, address and `run.json` rules. The button reads
+  **Fetching…**, **Installing…** and **Starting…**. The first install can take a
+  few minutes; the two-minute wait for the site starts only once the server
+  does.
+- The clone's `.env` files (`.env`, `.env.local` and the like) are copied in,
+  since git does not carry them. Nothing is ever linked from your clone.
+- **Stop** ends the server and everything it started, then removes the
+  worktree. If the install or the server fails, the button says why and shows
+  the last line of output, with **Remove** beside it to clear the worktree away.
+  Pressing Preview again reuses the worktree, refreshes it to the pull request's
+  latest commit, and installs again only if the dependencies changed. A
+  worktree you edited by hand is not refreshed over: Remove it first.
+- Quitting Observatory ends the servers but keeps the worktrees, so a restart
+  starts fast. When a preview starts, the worktrees of closed or merged pull
+  requests are removed.
+
+Like Run, it exists only on your own computer; the hosted site and preview
+visitors never see it.
 
 ### Releases
 

@@ -12,7 +12,17 @@ function setUp() {
 describe('devServerStatusOf', () => {
   it('reads each state', () => {
     expect(devServerStatusOf({ repo: 'me/app', state: 'stopped' })).toEqual({ state: 'stopped' });
-    expect(devServerStatusOf({ state: 'starting' })).toEqual({ state: 'starting' });
+    expect(devServerStatusOf({ state: 'starting' })).toEqual({
+      state: 'starting',
+      phase: 'starting',
+    });
+    for (const phase of ['fetching', 'installing', 'starting']) {
+      expect(devServerStatusOf({ state: 'starting', phase })).toEqual({ state: 'starting', phase });
+    }
+    expect(devServerStatusOf({ state: 'starting', phase: 'dancing' })).toEqual({
+      state: 'starting',
+      phase: 'starting',
+    });
     expect(devServerStatusOf({ state: 'running', url: 'http://localhost:5173/' })).toEqual({
       state: 'running',
       url: 'http://localhost:5173/',
@@ -44,20 +54,20 @@ describe('HttpDevServerApi', () => {
     const { api, http } = setUp();
     const seen: DevServerStatus[] = [];
 
-    api.status('me/app').subscribe((status) => seen.push(status));
+    api.status({ repo: 'me/app' }).subscribe((status) => seen.push(status));
     const request = http.expectOne((each) => each.url === '/api/dev-servers');
     request.flush({ repo: 'me/app', state: 'starting' });
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('repo')).toBe('me/app');
-    expect(seen).toEqual([{ state: 'starting' }]);
+    expect(seen).toEqual([{ state: 'starting', phase: 'starting' }]);
   });
 
   it('starts a server with the write header and the repo in the body', () => {
     const { api, http } = setUp();
     const seen: DevServerStatus[] = [];
 
-    api.start('me/app').subscribe((status) => seen.push(status));
+    api.start({ repo: 'me/app' }).subscribe((status) => seen.push(status));
     const request = http.expectOne('/api/dev-servers');
     request.flush({ state: 'running', url: 'http://localhost:5173/' });
 
@@ -71,7 +81,7 @@ describe('HttpDevServerApi', () => {
     const { api, http } = setUp();
     const seen: DevServerStatus[] = [];
 
-    api.stop('me/app').subscribe((status) => seen.push(status));
+    api.stop({ repo: 'me/app' }).subscribe((status) => seen.push(status));
     const request = http.expectOne((each) => each.url === '/api/dev-servers');
     request.flush({ state: 'stopped' });
 
@@ -85,7 +95,7 @@ describe('HttpDevServerApi', () => {
     const { api, http } = setUp();
     const seen: DevServerStatus[] = [];
 
-    api.start('me/app').subscribe((status) => seen.push(status));
+    api.start({ repo: 'me/app' }).subscribe((status) => seen.push(status));
     http
       .expectOne('/api/dev-servers')
       .flush({ error: 'forbidden' }, { status: 403, statusText: 'Forbidden' });
@@ -97,11 +107,42 @@ describe('HttpDevServerApi', () => {
     const { api, http } = setUp();
     const seen: DevServerStatus[] = [];
 
-    api.status('me/app').subscribe((status) => seen.push(status));
+    api.status({ repo: 'me/app' }).subscribe((status) => seen.push(status));
     http.expectOne((each) => each.url === '/api/dev-servers').error(new ProgressEvent('error'));
-    api.status('me/app').subscribe((status) => seen.push(status));
+    api.status({ repo: 'me/app' }).subscribe((status) => seen.push(status));
     http.expectOne((each) => each.url === '/api/dev-servers').flush('<html>');
 
     expect(seen.map((status) => status.state)).toEqual(['failed', 'failed']);
+  });
+
+  it('names a pull request by its number in every call', () => {
+    const { api, http } = setUp();
+    const target = { repo: 'me/app', pull: 12 };
+
+    api.status(target).subscribe();
+    const status = http.expectOne((each) => each.url === '/api/dev-servers');
+    status.flush({ state: 'stopped' });
+    api.start(target).subscribe();
+    const start = http.expectOne('/api/dev-servers');
+    start.flush({ state: 'starting', phase: 'fetching' });
+    api.stop(target).subscribe();
+    const stop = http.expectOne((each) => each.url === '/api/dev-servers');
+    stop.flush({ state: 'stopped' });
+
+    expect(status.request.params.get('repo')).toBe('me/app');
+    expect(status.request.params.get('pull')).toBe('12');
+    expect(start.request.body).toEqual({ repo: 'me/app', pull: 12 });
+    expect(stop.request.params.get('pull')).toBe('12');
+    expect(stop.request.headers.get('x-observatory')).toBe('1');
+  });
+
+  it('sends no pull request for the project’s own server', () => {
+    const { api, http } = setUp();
+
+    api.status({ repo: 'me/app' }).subscribe();
+    const status = http.expectOne((each) => each.url === '/api/dev-servers');
+    status.flush({ state: 'stopped' });
+
+    expect(status.request.params.has('pull')).toBe(false);
   });
 });

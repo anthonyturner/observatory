@@ -111,6 +111,7 @@ const runner = localRunner({
 const devServers = localDevServers({
   projects: async () => (await reads.projects()).projects,
   clones,
+  isPullOpen: async (repo, pull) => (await reads.pullState(repo, pull)).state === 'OPEN',
 });
 shutDownWithProcess(runner, devServers);
 

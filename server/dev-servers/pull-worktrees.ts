@@ -44,6 +44,9 @@ const DEPENDENCY_FILES = ['package.json', 'package-lock.json'];
 /** npm writes this when an install completes, so a folder with it holds a whole one. */
 const INSTALLED_MARKER = join('node_modules', '.package-lock.json');
 
+/** A full commit hash, which cannot be read as an option when it is passed to git. */
+const COMMIT_HASH = /^[0-9a-f]{40,64}$/;
+
 const GIT_LIMIT_MS = 2 * 60_000;
 /** A cold install of a large project is slow; this is separate from the server's own start limit. */
 const INSTALL_LIMIT_MS = 10 * 60_000;
@@ -207,7 +210,7 @@ export class PullWorktrees {
     }
     const head = await this.git(['-C', clone, 'rev-parse', '--verify', 'FETCH_HEAD'], GIT_LIMIT_MS);
     const sha = head.stdout.trim();
-    return head.code === 0 && sha
+    return head.code === 0 && COMMIT_HASH.test(sha)
       ? { sha }
       : { why: describeFailure(`Reading the head of pull request ${pull}`, head, GIT_LIMIT_MS) };
   }

@@ -293,6 +293,20 @@ describe('PullWorktrees.prepare', () => {
     assert.ok(!log.some((line) => line.includes('worktree add')));
   });
 
+  it('refuses to pass git a head that is not a commit hash', async () => {
+    const { worktrees, request, log } = setUp({
+      respond: (call) =>
+        call.tool === 'git' && call.args.includes('FETCH_HEAD')
+          ? done('--upload-pack=calc')
+          : undefined,
+    });
+
+    const prepared = await worktrees.prepare(request());
+
+    assert.ok('why' in prepared);
+    assert.ok(!log.some((line) => line.includes('worktree add') || line.includes('checkout')));
+  });
+
   it('says the install failed, with its last output line', async () => {
     const { worktrees, request } = setUp({
       files: { [join(FOLDER, 'package.json')]: '{}', [join(FOLDER, 'package-lock.json')]: '{}' },

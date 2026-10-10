@@ -515,6 +515,8 @@ Opening a pull request shows it in full without leaving Observatory:
   changes later comes back unticked.
 - **Since last look.** The Diff tab opens on just the changes since you last
   looked, with a switch to the full diff.
+- **Wrap long lines.** Diffs wrap long lines so you read them without
+  scrolling sideways. Untick the box to scroll instead; every diff remembers.
 - **Merge box.** Along the foot: whether it is a draft, conflicts, how checks
   went, and the review decision. Merge with squash, a merge commit or rebase,
   after one Confirm. It merges only the commit you saw.

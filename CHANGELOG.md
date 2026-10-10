@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- **Run** no longer stalls when the project's usual port is taken, and no longer opens a blank tab. Observatory gives the server a free port, and opens the site in a new tab only once it answers; if your browser blocks that tab, **Open ↗** stays and says how to allow pop-ups. A server that stalls or quits now reports its last line of output instead of a `run.json` hint, and a `run.json` command can use `{port}` for the port it is given ([#600](https://github.com/anthonyturner/observatory/issues/600)).
 - A project's Architecture scan now reads the whole Angular source root, not only `src/app`, so an app that keeps its code in folders such as `src/ui` and `src/domain` no longer maps as a few nodes ([#591](https://github.com/anthonyturner/observatory/issues/591)).
 - An open window now says whether it holds an issue or a pull request: its header starts with **Issue** or **Pull request**, before the state. Before, only the colour hinted at it, and an issue's colour and a pull request's could look alike ([#583](https://github.com/anthonyturner/observatory/issues/583)).
 - On the hosted site, a visitor who opens a pull request's screen sees it read-only: no **Edit** tab, merge box or crew control. The API already refused their changes, so nothing on GitHub could change, but the controls looked usable and failed when pressed ([#580](https://github.com/anthonyturner/observatory/issues/580)).

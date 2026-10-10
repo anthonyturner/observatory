@@ -38,13 +38,25 @@ server, through one module, `server/dev-servers/`, on these terms:
   `npm run dev`, else `npm start`, chosen from the checkout's `package.json`.
   Never text from a request. The server's own credentials are removed from the
   environment, as for a run.
-- **Address.** An address the server prints whose parsed host is `localhost`,
-  `127.0.0.1` or `[::1]`, with a port, terminal colour codes and trailing
-  punctuation stripped. One on a line labelled `Local:` wins; otherwise the
-  first one printed is used after a short wait. A script that runs several
-  servers (an API and a site) may still pick the wrong one: give it a `url` in
-  `run.json`, which always wins. A server that prints none within two minutes is
-  stopped and says so.
+- **Port.** Observatory picks a free loopback port for every start and hands it
+  over as `PORT` in the environment. The two npm scripts also get
+  `-- --port <n>` when the script starts with a dev CLI known to take it
+  (`ng serve`, `vite`, `next dev`, `astro dev`, `nuxt dev`, `webpack serve` and
+  a few more); a `run.json` command gets it where it writes `{port}`. A busy
+  default port can then never stall a start behind a prompt. Angular's
+  analytics question and Create React App's browser window are switched off in
+  the environment too.
+- **Address.** The owner's `url` from `run.json` always wins. Otherwise an
+  address the server prints whose parsed host is `localhost`, `127.0.0.1` or
+  `[::1]`, with a port, terminal colour codes and trailing punctuation
+  stripped: one on a line labelled `Local:` wins; else the first one printed,
+  after a short wait; else the port Observatory assigned. A script that runs
+  several servers (an API and a site) may still pick the wrong one: give it a
+  `url`.
+- **Running.** A server is `running` only once an HTTP GET to its address is
+  answered, with any status; a refused connection means not yet. This holds for
+  a `run.json` `url` too. One whose site does not answer within two minutes is
+  stopped, and the reason is the server's last line of output.
 - **Limits.** One server per project; starting again returns the running one.
   Stop ends the whole process tree (`taskkill /T /F` on Windows, the process
   group elsewhere), and so does the API exiting.
@@ -64,7 +76,10 @@ server, through one module, `server/dev-servers/`, on these terms:
   owner can write, but running code needs this machine; the hosted site would
   need a runner holding the owner's code. Rejected as in ADR-0005.
 - **Keep a fixed port per project.** It would collide with Observatory itself
-  and with other projects. Reading the printed address needs no configuration.
+  and with other projects.
+- **Answer the server's "use a different port?" question on its stdin.** The
+  wording differs by tool and a wrong answer hangs the start again; choosing the
+  port first removes the question.
 
 ## Consequences
 
@@ -74,11 +89,10 @@ server, through one module, `server/dev-servers/`, on these terms:
   - The local API is now a second way to run code. **Accepted risk**, as in
     ADR-0005: any other program or account on this machine can reach the port
     and start the dev server of a project that has a checkout here.
-  - A dev server keeps running until stopped or the API exits. One the owner
-    started by hand on the same port will clash, and the new one fails with its
-    own words.
-  - A server that prints no localhost address needs a `url` in `run.json`, and
-    is reported as running as soon as it starts, whether or not it is listening.
+  - A dev server keeps running until stopped or the API exits.
+  - A script that is not a known dev CLI and ignores `PORT` listens where it
+    likes; Observatory finds it only if it prints a localhost address. Otherwise
+    give it a `{port}` or a `url` in `run.json`.
   - A kill can fail; Stop then reports nothing more than the API can know.
 - **What now has to be true.**
   - Only `server/main.ts` creates the dev servers; `server/hosted/` and `api/`

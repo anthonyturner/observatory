@@ -23,8 +23,10 @@ interface PreviewView {
 }
 
 const WEB_SCHEME = /^https?:\/\//;
+const TAB_BLOCKED_NOTE =
+  'Your browser blocked the new tab — allow pop-ups for Observatory to open sites automatically.';
 
-function viewOf(status: DevServerStatus): PreviewView {
+function viewOf(status: DevServerStatus, isTabBlocked: boolean): PreviewView {
   const none = { canRun: false, isStarting: false, openUrl: null, canStop: false };
   switch (status.state) {
     case 'stopped':
@@ -44,17 +46,18 @@ function viewOf(status: DevServerStatus): PreviewView {
         ...none,
         openUrl: status.url,
         canStop: true,
-        note: `Running at ${status.url.replace(WEB_SCHEME, '')}`,
+        note: isTabBlocked ? TAB_BLOCKED_NOTE : `Running at ${status.url.replace(WEB_SCHEME, '')}`,
         isProblem: false,
       };
   }
 }
 
 /**
- * Runs a project's dev server on this machine and opens its site in a new tab:
- * Run, then Starting, then Open and Stop. It is there only once the API has
- * confirmed this is the owner's own machine (ADR-0006, ADR-0010); a hosted
- * session never sees it or asks for it.
+ * Runs a project's dev server on this machine and opens its site in a new tab
+ * once the site answers: Run, then Starting, then Open and Stop. If the browser
+ * blocks the tab, Open stays and a note says how to allow it. It is there only
+ * once the API has confirmed this is the owner's own machine (ADR-0006,
+ * ADR-0010); a hosted session never sees it or asks for it.
  */
 @Component({
   selector: 'app-run-preview-button',
@@ -69,7 +72,9 @@ export class RunPreviewButton {
 
   private readonly preview = inject(RunPreview);
   protected readonly isLocal = inject(ViewerSession).isConfirmedLocal;
-  protected readonly view = computed(() => viewOf(this.preview.status()));
+  protected readonly view = computed(() =>
+    viewOf(this.preview.status(), this.preview.isTabBlocked()),
+  );
 
   constructor() {
     effect(() => {

@@ -3,15 +3,20 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from '../../core/dev-servers/dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from '../../core/dev-servers/dev-server.types';
-import { PREVIEW_TABS } from '../../core/dev-servers/preview-tab';
 import { STATUS_POLL_MS } from '../../core/dev-servers/run-preview';
+import { SITE_OPENER } from '../../core/dev-servers/site-opener';
 import { ViewerSession } from '../../core/session/viewer-session';
 import { RunPreviewButton } from './run-preview-button';
 
 const RUNNING: DevServerStatus = { state: 'running', url: 'http://localhost:5173/' };
 
-function setUp(options: { isLocal?: boolean; status?: DevServerStatus; start?: DevServerStatus }) {
-  const { isLocal = true, status = STOPPED, start = STARTING } = options;
+function setUp(options: {
+  isLocal?: boolean;
+  status?: DevServerStatus;
+  start?: DevServerStatus;
+  blocksTabs?: boolean;
+}) {
+  const { isLocal = true, status = STOPPED, start = STARTING, blocksTabs = false } = options;
   const calls: string[] = [];
   const polls: DevServerStatus[] = [];
   const api: DevServerApi = {
@@ -34,8 +39,13 @@ function setUp(options: { isLocal?: boolean; status?: DevServerStatus; start?: D
       { provide: ViewerSession, useValue: { isConfirmedLocal } },
       { provide: DEV_SERVER_API, useValue: api },
       {
-        provide: PREVIEW_TABS,
-        useValue: { open: () => ({ show: () => undefined, close: () => undefined }) },
+        provide: SITE_OPENER,
+        useValue: {
+          open: (url: string) => {
+            calls.push(`opens ${url}`);
+            return !blocksTabs;
+          },
+        },
       },
     ],
   });
@@ -95,8 +105,29 @@ describe('RunPreviewButton', () => {
     expect(open?.getAttribute('target')).toBe('_blank');
     expect(open?.getAttribute('rel')).toContain('noopener');
     expect(element.querySelector('[role="status"]')?.textContent).toContain('localhost:5173');
-    expect(calls[0]).toBe('status');
-    expect(calls[1]).toBe('start');
+    expect(calls).toEqual(['status', 'start', 'status', 'status', 'opens http://localhost:5173/']);
+  });
+
+  it('opens no tab at the click', () => {
+    const { calls, element, settle } = setUp({});
+
+    element.querySelector('button')?.click();
+    settle();
+
+    expect(calls).toEqual(['status', 'start']);
+  });
+
+  it('keeps Open and says how to allow pop-ups when the browser blocked the tab', () => {
+    const { labels, element, settle } = setUp({ start: RUNNING, blocksTabs: true });
+
+    element.querySelector('button')?.click();
+    settle();
+
+    expect(labels()).toEqual(['Open ↗', '■ Stop']);
+    expect(element.querySelector('a')?.getAttribute('href')).toBe('http://localhost:5173/');
+    expect(element.querySelector('[role="status"]')?.textContent).toBe(
+      'Your browser blocked the new tab — allow pop-ups for Observatory to open sites automatically.',
+    );
   });
 
   it('shows a server that was already running as Open and Stop, and Stop puts Run back', () => {

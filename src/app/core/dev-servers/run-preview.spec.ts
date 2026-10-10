@@ -2,14 +2,21 @@ import { TestBed } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
 import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
-import { PREVIEW_TABS } from './preview-tab';
+import { SITE_OPENER } from './site-opener';
 import { RUNNING_POLL_MS, RunPreview, STATUS_POLL_MS } from './run-preview';
 
 const RUNNING: DevServerStatus = { state: 'running', url: 'http://localhost:5173/' };
+const OPENS_SITE = 'opens http://localhost:5173/';
+
+interface Answers {
+  readonly start?: DevServerStatus;
+  readonly first?: DevServerStatus;
+  readonly blocksTabs?: boolean;
+}
 
 /** A preview already watching `me/app`, where the server first reads as `first`. */
-function setUp(answers: { start?: DevServerStatus; first?: DevServerStatus } = {}) {
-  const { start = STARTING, first = STOPPED } = answers;
+function setUp(answers: Answers = {}) {
+  const { start = STARTING, first = STOPPED, blocksTabs = false } = answers;
   const polls: DevServerStatus[] = [first];
   const log: string[] = [];
   const api: DevServerApi = {
@@ -31,14 +38,11 @@ function setUp(answers: { start?: DevServerStatus; first?: DevServerStatus } = {
       RunPreview,
       { provide: DEV_SERVER_API, useValue: api },
       {
-        provide: PREVIEW_TABS,
+        provide: SITE_OPENER,
         useValue: {
-          open: () => {
-            log.push('open tab');
-            return {
-              show: (url: string) => log.push(`tab shows ${url}`),
-              close: () => log.push('tab closed'),
-            };
+          open: (url: string) => {
+            log.push(`opens ${url}`);
+            return !blocksTabs;
           },
         },
       },
@@ -48,7 +52,8 @@ function setUp(answers: { start?: DevServerStatus; first?: DevServerStatus } = {
   preview.watch('me/app');
   const watched = [...log];
   log.length = 0;
-  return { preview, log, polls, watched };
+  const opened = (): string[] => log.filter((entry) => entry.startsWith('opens'));
+  return { preview, log, polls, watched, opened };
 }
 
 describe('RunPreview', () => {
@@ -56,34 +61,67 @@ describe('RunPreview', () => {
   afterEach(() => vi.useRealTimers());
 
   it('shows a server that is already running, without opening a tab', () => {
-    const { preview, watched } = setUp({ first: RUNNING });
+    const { preview, watched, opened } = setUp({ first: RUNNING });
 
     expect(preview.status()).toEqual(RUNNING);
     expect(watched).toEqual(['status me/app']);
+    expect(opened()).toEqual([]);
   });
 
-  it('opens the tab at the click, then points it at the site once the server reports one', () => {
+  it('opens no tab at the click, and opens the site once the server reports it running', () => {
     const { preview, log, polls } = setUp();
     polls.push(STARTING, RUNNING);
 
     preview.run();
 
-    expect(log).toEqual(['open tab', 'start me/app']);
+    expect(log).toEqual(['start me/app']);
     expect(preview.status()).toEqual(STARTING);
 
     vi.advanceTimersByTime(STATUS_POLL_MS);
     expect(preview.status()).toEqual(STARTING);
-    expect(log).not.toContain('tab shows http://localhost:5173/');
+    expect(log).not.toContain(OPENS_SITE);
 
     vi.advanceTimersByTime(STATUS_POLL_MS);
     expect(preview.status()).toEqual(RUNNING);
-    expect(log).toEqual([
-      'open tab',
-      'start me/app',
-      'status me/app',
-      'status me/app',
-      'tab shows http://localhost:5173/',
-    ]);
+    expect(preview.isTabBlocked()).toBe(false);
+    expect(log).toEqual(['start me/app', 'status me/app', 'status me/app', OPENS_SITE]);
+  });
+
+  it('opens the site once, however long the server then runs', () => {
+    const { preview, polls, opened } = setUp({ start: RUNNING });
+    preview.run();
+    polls.push(RUNNING, RUNNING);
+
+    vi.advanceTimersByTime(RUNNING_POLL_MS * 2);
+
+    expect(opened()).toEqual([OPENS_SITE]);
+  });
+
+  it('opens the site at once when the server was already running', () => {
+    const { preview, log } = setUp({ start: RUNNING });
+
+    preview.run();
+
+    expect(log).toEqual(['start me/app', OPENS_SITE]);
+    expect(preview.status()).toEqual(RUNNING);
+  });
+
+  it('says the browser blocked the tab, and leaves the site running to open by hand', () => {
+    const { preview } = setUp({ start: RUNNING, blocksTabs: true });
+
+    preview.run();
+
+    expect(preview.status()).toEqual(RUNNING);
+    expect(preview.isTabBlocked()).toBe(true);
+  });
+
+  it('forgets a block when the server is stopped', () => {
+    const { preview } = setUp({ start: RUNNING, blocksTabs: true });
+    preview.run();
+
+    preview.stop();
+
+    expect(preview.isTabBlocked()).toBe(false);
   });
 
   it('keeps asking, slowly, once the server is up', () => {
@@ -114,57 +152,50 @@ describe('RunPreview', () => {
     expect(log).toEqual([]);
   });
 
-  it('does not touch a tab for a server that was already running when the page opened', () => {
-    const { preview, log, polls } = setUp({ first: RUNNING });
+  it('opens nothing for a server that was running when the page opened, or that then stops', () => {
+    const { preview, polls, opened } = setUp({ first: RUNNING });
     polls.push(STOPPED);
 
     vi.advanceTimersByTime(RUNNING_POLL_MS);
 
     expect(preview.status()).toEqual(STOPPED);
-    expect(log).not.toContain('tab closed');
+    expect(opened()).toEqual([]);
   });
 
-  it('opens the site at once when the server was already running', () => {
-    const { preview, log } = setUp({ start: RUNNING });
-
-    preview.run();
-
-    expect(log).toEqual(['open tab', 'start me/app', 'tab shows http://localhost:5173/']);
-    expect(preview.status()).toEqual(RUNNING);
-  });
-
-  it('closes the tab and says why when the server could not start', () => {
+  it('opens nothing, and says why, when the server could not start', () => {
     const failed: DevServerStatus = { state: 'failed', reason: 'No script.' };
     const { preview, log } = setUp({ start: failed });
 
     preview.run();
 
     expect(preview.status()).toEqual(failed);
-    expect(log).toEqual(['open tab', 'start me/app', 'tab closed']);
+    expect(log).toEqual(['start me/app']);
   });
 
-  it('closes the tab and says why when the server ends while it is starting', () => {
+  it('opens nothing when the server ends while it is starting', () => {
     const failed: DevServerStatus = { state: 'failed', reason: 'It exited.' };
-    const { preview, log, polls } = setUp();
+    const { preview, polls, opened } = setUp();
     polls.push(failed);
 
     preview.run();
     vi.advanceTimersByTime(STATUS_POLL_MS);
 
     expect(preview.status()).toEqual(failed);
-    expect(log.at(-1)).toBe('tab closed');
+    expect(opened()).toEqual([]);
   });
 
-  it('stops the server, and the tab waiting for it, and the polling', () => {
-    const { preview, log } = setUp();
+  it('stops the server and the polling, and opens nothing for a server it had been waiting on', () => {
+    const { preview, log, polls, opened } = setUp();
     preview.run();
     log.length = 0;
+    polls.push(RUNNING);
 
     preview.stop();
     vi.advanceTimersByTime(STATUS_POLL_MS * 3);
 
     expect(preview.status()).toEqual(STOPPED);
-    expect(log).toEqual(['stop me/app', 'tab closed']);
+    expect(log).toEqual(['stop me/app']);
+    expect(opened()).toEqual([]);
   });
 
   it('stops polling when its owner goes', () => {
@@ -175,7 +206,7 @@ describe('RunPreview', () => {
     TestBed.resetTestingModule();
     vi.advanceTimersByTime(STATUS_POLL_MS * 3);
 
-    expect(log).toEqual(['tab closed']);
+    expect(log).toEqual([]);
     expect(preview.status()).toEqual(STARTING);
   });
 });

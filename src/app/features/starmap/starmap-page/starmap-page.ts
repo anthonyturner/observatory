@@ -109,11 +109,11 @@ const TOP_INSET = 140;
 const TOP_INSET_WITH_DOCK = 205;
 /** The review queue's search box, under its legend. */
 const SEARCH_HEIGHT = 44;
-/** The work-in-progress notice, under the search. */
-const WIP_NOTICE_HEIGHT = 56;
 const BOTTOM_INSET = 70;
 /** With a chart along the bottom, as the Log Sky's meteor record. */
 const BOTTOM_INSET_WITH_STRIP = 200;
+/** The work-in-progress notice, above the tools. */
+const WIP_NOTICE_HEIGHT = 56;
 /** Past this width a panel down the right edge takes its own column. */
 const SIDE_PANEL_MIN_WIDTH = 900;
 /** The changes panel's width and the gap beside it. */
@@ -648,10 +648,10 @@ export class StarmapPage {
     return {
       top: this.docked()
         ? TOP_INSET_WITH_DOCK
-        : TOP_INSET +
-          (this.chart() === 'prs' ? SEARCH_HEIGHT : 0) +
-          (this.showWipNotice() ? WIP_NOTICE_HEIGHT : 0),
-      bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
+        : TOP_INSET + (this.chart() === 'prs' ? SEARCH_HEIGHT : 0),
+      bottom:
+        (this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET) +
+        (this.showWipNotice() ? WIP_NOTICE_HEIGHT : 0),
       side: !wide
         ? 0
         : this.showPlan() || this.showAgents() || this.showDone()

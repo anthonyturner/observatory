@@ -211,7 +211,7 @@ describe('StarmapPage', () => {
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
 
-    expect(element.querySelector('app-wip-notice')?.textContent).toContain(
+    expect(element.querySelector('.hud.bottom app-wip-notice')?.textContent).toContain(
       '3 open, past your limit of 2',
     );
     expect(sky.cometsFaded()).toBe(true);

@@ -99,9 +99,6 @@
   />
   @if (chart() === 'prs') {
     <app-starmap-search [suggestions]="suggestions()" [miss]="searchMiss()" (find)="find($event)" />
-    @if (showWipNotice()) {
-      <app-wip-notice [check]="wip()" />
-    }
   }
   @if (docked()) {
     <div class="issuedock"><app-issue-bar /></div>
@@ -131,6 +128,9 @@
       [filter]="logs.filter()"
       [traced]="logs.traced()?.fault ?? null"
     />
+  }
+  @if (showWipNotice()) {
+    <app-wip-notice [check]="wip()" />
   }
   <app-starmap-tools
     [repo]="repo()"

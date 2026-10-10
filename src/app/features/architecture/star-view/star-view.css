@@ -32,8 +32,7 @@ svg:focus-visible {
   gap: 6px;
 }
 
-.zoom .abtn:first-child,
-.zoom .abtn:nth-child(2) {
+.zoom .step {
   min-width: 34px;
   font-size: 16px;
   line-height: 1;

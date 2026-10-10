@@ -91,8 +91,10 @@
 </svg>
 
 <div class="zoom" role="group" aria-label="Zoom">
-  <button type="button" class="abtn" aria-label="Zoom in" (click)="camera.zoomIn()">+</button>
-  <button type="button" class="abtn" aria-label="Zoom out" (click)="camera.zoomOut()">−</button>
+  <button type="button" class="abtn step" aria-label="Zoom in" (click)="camera.zoomIn()">+</button>
+  <button type="button" class="abtn step" aria-label="Zoom out" (click)="camera.zoomOut()">
+    −
+  </button>
   <button type="button" class="abtn" title="Show the whole system" (click)="camera.fit()">
     Fit
   </button>

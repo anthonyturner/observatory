@@ -1,5 +1,5 @@
 @if (view(); as shown) {
-  <div class="run" role="group" [attr.aria-label]="'Dev server for ' + repo()">
+  <div class="run" role="group" [attr.aria-label]="'Site of ' + repo()">
     @if (shown.canRun) {
       <button type="button" [attr.aria-label]="'Run ' + repo()" (click)="run()">
         <span aria-hidden="true">&#9654;</span> Run
@@ -16,6 +16,15 @@
         (click)="openedByHand()"
         [attr.aria-label]="'Open ' + repo() + ' in a new tab'"
         >Open <span aria-hidden="true">&#8599;</span></a
+      >
+    }
+    @if (shown.liveUrl; as url) {
+      <a
+        [href]="url"
+        target="_blank"
+        rel="noopener noreferrer"
+        [attr.aria-label]="'Live site of ' + repo() + ' in a new tab'"
+        >Live site <span aria-hidden="true">&#8599;</span></a
       >
     }
     @if (shown.canStop) {

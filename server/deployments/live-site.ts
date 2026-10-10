@@ -28,7 +28,9 @@ export async function liveSiteUrl(github: DeploymentReader, repo: string): Promi
   const production = (await environmentNames(github, repo)).filter(isProductionName);
   const marks = (
     await Promise.all(
-      production.map((name) => github.deployments(repo, { environment: name, limit: LIVE_SITE_SCAN })),
+      production.map((name) =>
+        github.deployments(repo, { environment: name, limit: LIVE_SITE_SCAN }),
+      ),
     )
   )
     .flat()

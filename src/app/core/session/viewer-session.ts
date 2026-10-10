@@ -51,6 +51,12 @@ export class ViewerSession {
   /** True only once the API has said this is the owner's machine, never on
    *  `access`'s assumption, for what must not happen anywhere else. */
   readonly isConfirmedLocal = computed(() => this.answer()?.access === 'local');
+  /** True only once the API has said this is the hosted site, signed in as its owner or
+   *  looking at the preview; not while it has yet to answer. */
+  readonly isConfirmedHosted = computed(() => {
+    const access = this.answer()?.access;
+    return access === 'owner' || access === 'visitor';
+  });
   /** Whether this viewer may change anything, such as triage. */
   readonly canWrite = computed(() => this.access() === 'local' || this.access() === 'owner');
   readonly isVisitor = computed(() => this.access() === 'visitor');

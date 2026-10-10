@@ -7,57 +7,69 @@ import {
   input,
   untracked,
 } from '@angular/core';
+import { LiveSites } from '../../core/deployments/live-sites';
 import { DevServerStatus } from '../../core/dev-servers/dev-server.types';
 import { RunPreviews } from '../../core/dev-servers/run-preview';
 import { ViewerSession } from '../../core/session/viewer-session';
 
-/** What the buttons and the note beside them show for one status. */
+/** What the buttons and the note beside them show. */
 interface PreviewView {
   readonly canRun: boolean;
   readonly isStarting: boolean;
   /** Where the running site is; null until it is. */
   readonly openUrl: string | null;
   readonly canStop: boolean;
+  /** The project's production site, offered where it cannot be run here; null otherwise. */
+  readonly liveUrl: string | null;
   readonly note: string;
   readonly isProblem: boolean;
 }
+
+const NOTHING = {
+  canRun: false,
+  isStarting: false,
+  openUrl: null,
+  canStop: false,
+  liveUrl: null,
+  note: '',
+  isProblem: false,
+};
 
 const WEB_SCHEME = /^https?:\/\//;
 const TAB_BLOCKED_NOTE =
   'Your browser blocked the new tab — allow pop-ups for Observatory to open sites automatically.';
 
-function viewOf(status: DevServerStatus, isTabBlocked: boolean): PreviewView {
-  const none = { canRun: false, isStarting: false, openUrl: null, canStop: false };
+/** What a server this machine can run shows; null while it has yet to say whether it can. */
+function runViewOf(status: DevServerStatus, isTabBlocked: boolean): PreviewView | null {
   switch (status.state) {
+    case 'checking':
+    case 'unavailable':
+      return null;
     case 'stopped':
-      return { ...none, canRun: true, note: '', isProblem: false };
+      return { ...NOTHING, canRun: true };
     case 'failed':
-      return { ...none, canRun: true, note: status.reason, isProblem: true };
+      return { ...NOTHING, canRun: true, note: status.reason, isProblem: true };
     case 'starting':
-      return {
-        ...none,
-        isStarting: true,
-        canStop: true,
-        note: 'Starting the dev server…',
-        isProblem: false,
-      };
+      return { ...NOTHING, isStarting: true, canStop: true, note: 'Starting the dev server…' };
     case 'running':
       return {
-        ...none,
+        ...NOTHING,
         openUrl: status.url,
         canStop: true,
         note: isTabBlocked ? TAB_BLOCKED_NOTE : `Running at ${status.url.replace(WEB_SCHEME, '')}`,
-        isProblem: false,
       };
   }
 }
 
 /**
- * Runs a project's dev server on this machine and opens its site in a new tab
- * once the site answers: Run, then Starting, then Open and Stop. If the browser
- * blocks the tab, Open stays and a note says how to allow it. It is there only
- * once the API has confirmed this is the owner's own machine (ADR-0006,
- * ADR-0010); a hosted session never sees it or asks for it.
+ * How to see a project's site, and the one place that decides it. On the
+ * owner's own machine, once the API has confirmed it (ADR-0006, ADR-0010), a
+ * project with a checkout is run: Run, then Starting, then Open and Stop, the
+ * site opening in a new tab once it answers. If the browser blocks the tab,
+ * Open stays and a note says how to allow it. Where it cannot be run, on the
+ * hosted site or for a project this machine has no checkout of, it is a link to
+ * the project's production site, or nothing when it has none. Beside a Run the
+ * link would be a second way to open a site, so it is not shown.
  */
 @Component({
   selector: 'app-run-preview-button',
@@ -71,20 +83,32 @@ export class RunPreviewButton {
 
   private readonly previews = inject(RunPreviews);
   private readonly isLocal = inject(ViewerSession).isConfirmedLocal;
+  private readonly isHosted = inject(ViewerSession).isConfirmedHosted;
+  private readonly liveSites = inject(LiveSites);
   /** The project's shared Run state; none unless this is the owner's own machine. */
   private readonly preview = computed(() =>
     this.isLocal() ? this.previews.runFor(this.repo()) : null,
   );
-  /** What to show; null where there is no Run to show. */
-  protected readonly view = computed(() => {
+  /** Whether the production site stands in for a Run that is not to be had. */
+  private readonly offersLiveSite = computed(
+    () => this.isHosted() || this.preview()?.status().state === 'unavailable',
+  );
+  /** What to show; null where there is nothing to show. */
+  protected readonly view = computed((): PreviewView | null => {
     const preview = this.preview();
-    return preview && viewOf(preview.status(), preview.isTabBlocked());
+    const run = preview && runViewOf(preview.status(), preview.isTabBlocked());
+    if (run) return run;
+    const liveUrl = this.offersLiveSite() ? this.liveSites.urlFor(this.repo()) : null;
+    return liveUrl ? { ...NOTHING, liveUrl } : null;
   });
 
   constructor() {
     effect((onCleanup) => {
       const preview = this.preview();
       if (preview) onCleanup(untracked(() => preview.watch()));
+    });
+    effect(() => {
+      if (this.offersLiveSite()) untracked(() => this.liveSites.load());
     });
   }
 

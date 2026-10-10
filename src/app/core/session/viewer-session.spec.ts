@@ -49,6 +49,23 @@ describe('ViewerSession', () => {
     expect(failed.session.isConfirmedLocal()).toBe(false);
   });
 
+  it('confirms the hosted site only once the API says so, for its owner and for a visitor', () => {
+    const undecided = setUp();
+    expect(undecided.session.isConfirmedHosted()).toBe(false);
+    undecided.answer({ access: 'owner', signIn: '/api/auth/login' });
+    expect(undecided.session.isConfirmedHosted()).toBe(true);
+
+    TestBed.resetTestingModule();
+    const visitor = setUp();
+    visitor.answer({ access: 'visitor', signIn: '/api/auth/login' });
+    expect(visitor.session.isConfirmedHosted()).toBe(true);
+
+    TestBed.resetTestingModule();
+    const local = setUp();
+    local.answer({ access: 'local', signIn: null });
+    expect(local.session.isConfirmedHosted()).toBe(false);
+  });
+
   it('lets this machine and the signed-in owner write', () => {
     const { session, answer } = setUp();
 

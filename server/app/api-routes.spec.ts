@@ -71,6 +71,10 @@ const reads = {
   deployments: async (repo: string) => ({ repo, environments: [] }),
   forgetDeployments: (repo: string) => forgotten.push(`deployments ${repo}`),
   pullPreview: async (repo: string, sha: string) => ({ repo, sha, deployments: [] }),
+  liveSites: async () => ({
+    generatedAt: 'x',
+    sites: [{ repo: 'me/app', url: 'https://app.test' }],
+  }),
   milestones: async (repo: string) => ({ repo, milestones: { open: [] } }),
   forgetMilestones: (repo: string) => forgotten.push(`milestones ${repo}`),
   logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
@@ -182,6 +186,13 @@ describe('ownerRoutes', () => {
       repo: 'me/app',
       sha: sha.toLowerCase(),
       deployments: [],
+    });
+  });
+
+  it('reads every project’s production site in one call', async () => {
+    assert.deepEqual(await get('/api/live-sites'), {
+      generatedAt: 'x',
+      sites: [{ repo: 'me/app', url: 'https://app.test' }],
     });
   });
 

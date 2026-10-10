@@ -62,6 +62,11 @@ a:focus-visible {
   overflow-wrap: anywhere;
 }
 
+/* A link with nothing to say beside it takes no gap in the row. */
+.note:empty {
+  display: none;
+}
+
 /* Said in words as well as colour, so it never rests on colour alone. */
 .note.problem {
   color: var(--bad-soft);

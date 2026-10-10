@@ -53,6 +53,7 @@ read-only view for visitors who aren't you.
 | Jev, voice, mail, skills and tasks                           | Yes               | No                       | No                              |
 | Agents, crews, satellites                                    | Yes               | No                       | No                              |
 | Run button (starts a project's dev server)                   | Yes               | No                       | No                              |
+| Live site link (a project's production site)                 | Without a clone   | Yes                      | Public projects only            |
 | Usage and triage                                             | Yes               | Yes                      | No                              |
 
 A preview visitor can look but never change anything: no snoozing, no merging,
@@ -137,7 +138,8 @@ pointing at a project plays its little motif.
 - Links to the project's PRs, Issues, Logs and Usage, an **Actions** link whose
   dot says whether its main branch's checks are passing, failing or running,
   and a GitHub link.
-- A **Run** button (see [Project tabs](#project-tabs)).
+- A **Run** button, or a **Live site ↗** link where a project can't be run here (see
+  [Project tabs](#project-tabs)).
 - "Counts unknown, not zero" when GitHub couldn't be read for it.
 
 The **Notify me** box in the Projects heading sends a desktop notification
@@ -582,13 +584,23 @@ holds never stalls it, and opens the site in a new tab once the site answers.
 It reads **Starting…** while it waits, then **Open ↗** and **Stop**; if your
 browser blocks the new tab, **Open ↗** stays and a note says to allow pop-ups
 for Observatory. Pressing Run again reuses the running server, and Stop ends it
-and everything it started. A project with no clone here, or no script, says why,
+and everything it started. A project with no script says why,
 and a server that stalls or quits says its last line of output. To run
 something else, or to say where the site is (a script that starts an API and a
 site together can fool the address Observatory picks), add the project to
 `~/.claude/observatory/run.json`, as `{"owner/name": {"command": "...", "url":
 "..."}}`; write `{port}` in the command where it takes its port.
 **Only on your own computer:** the hosted site has no Run button.
+
+Where a project can't be run, **Run** gives way to **Live site ↗**, a link that
+opens the project's production site in a new tab. That is the case on the
+hosted site, for you and for preview visitors, and on your own computer for a
+project with no clone here (Run is hidden rather than left to fail when
+pressed). The link goes to the latest production deployment that went live, as
+GitHub's deployments record it, never a preview or a failed build; a project
+with none shows nothing. A project you can run shows only **Run**. Observatory
+looks every project's site up together, once in a while, so Home does not wait
+for it.
 
 ### Releases
 

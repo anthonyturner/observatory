@@ -105,10 +105,7 @@ export class PrScreen {
   });
   protected readonly unreachable = computed(() => this.feed.state().status === 'unreachable');
   protected readonly shownBucket = computed(() => this.bucket() ?? this.detail()?.bucket ?? null);
-  protected readonly kicker = computed(() => {
-    const bucket = this.shownBucket();
-    return bucket ? kickerOf(bucket) : '';
-  });
+  protected readonly kicker = computed(() => kickerOf(this.shownBucket()));
   protected readonly colour = computed(() => {
     const bucket = this.shownBucket();
     return bucket ? BUCKET_LOOK[bucket].color : 'var(--flow)';

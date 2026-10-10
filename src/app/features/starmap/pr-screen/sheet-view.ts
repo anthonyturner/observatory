@@ -80,10 +80,15 @@ export function routeOf(detail: PullDetail, locale?: string): Route {
   };
 }
 
-/** "Vagrans — no issue linked": the bucket's star name and what it means. */
-export function kickerOf(bucket: QueueBucket): string {
+/** What this screen shows, named first so a pull request never passes for an issue. */
+const KIND = 'Pull request';
+
+/** "Pull request · Vagrans — no issue linked": the kind, then the bucket's star
+ *  name and what it means; just the kind while the bucket is unknown. */
+export function kickerOf(bucket: QueueBucket | null): string {
+  if (!bucket) return KIND;
   const look = BUCKET_LOOK[bucket];
-  return `${look.name} — ${look.meaning.toLowerCase()}`;
+  return `${KIND} · ${look.name} — ${look.meaning.toLowerCase()}`;
 }
 
 const HEX_COLOUR = /^[0-9a-f]{6}$/i;

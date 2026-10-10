@@ -5,11 +5,24 @@ import { daysSince } from '../issue-list';
 /** What the window knows of an issue: the list's row until its own read arrives. */
 export type IssueInfo = Partial<Issue> & { readonly number: number };
 
-/** The kicker at the top: its words carry the state, its colour only echoes it. */
+/** The kicker at the top: it names the kind first, so an issue never passes
+ *  for a pull request; its words carry the state, its colour only echoes it. */
 export interface Kicker {
   readonly text: string;
+  /** The state in a word, such as `Comet`, for the bar a phone pins; null when unknown. */
+  readonly state: string | null;
   readonly colour: string;
   /** The words' own ink, when it differs from the window's colour. */
+  readonly ink: string | null;
+}
+
+/** What this window shows, in the words the pull request screen's "Pull request" mirrors. */
+const KIND = 'Issue';
+
+interface StateLook {
+  readonly state: string;
+  readonly detail: string | null;
+  readonly colour: string;
   readonly ink: string | null;
 }
 
@@ -18,40 +31,53 @@ const isAbandoned = (reason: string | null | undefined): boolean =>
   reason === 'NOT_PLANNED' || reason === 'DUPLICATE';
 
 /** pr-starmap's issue states, first match wins; purple is left out, because it
- *  already means an edit is pending. */
-export function kickerOf(info: IssueInfo): Kicker {
+ *  already means an edit is pending. Null when the row has not said yet. */
+function stateLookOf(info: IssueInfo): StateLook | null {
   const { closedAt, stateReason, comet, prs } = info;
   if (closedAt && isAbandoned(stateReason)) {
     const how = stateReason === 'DUPLICATE' ? 'duplicate' : 'not planned';
     return {
-      text: `Closed — ${how} · ${formatDay(closedAt)}`,
+      state: 'Closed',
+      detail: `${how} · ${formatDay(closedAt)}`,
       colour: 'var(--faint)',
       ink: 'var(--muted)',
     };
   }
   if (closedAt) {
-    return { text: `Completed — closed ${formatDay(closedAt)}`, colour: 'var(--ok)', ink: null };
+    return {
+      state: 'Completed',
+      detail: `closed ${formatDay(closedAt)}`,
+      colour: 'var(--ok)',
+      ink: null,
+    };
   }
   if (comet) {
     return {
-      text: 'Comet — no pull request closes it',
+      state: 'Comet',
+      detail: 'no pull request closes it',
       colour: 'var(--count-unclaimed)',
       ink: null,
     };
   }
   if (prs?.length) {
-    return {
-      text: `Open — ${plural(prs.length, 'pull request')} on it`,
-      colour: 'var(--flow)',
-      ink: null,
-    };
+    const detail = `${plural(prs.length, 'pull request')} on it`;
+    return { state: 'Open', detail, colour: 'var(--flow)', ink: null };
   }
-  return { text: closedAt === null ? 'Open' : 'Issue', colour: 'var(--flow)', ink: null };
+  return closedAt === null
+    ? { state: 'Open', detail: null, colour: 'var(--flow)', ink: null }
+    : null;
 }
 
-/** "#12 · Open", for the thin bar a phone pins at the top. */
+export function kickerOf(info: IssueInfo): Kicker {
+  const look = stateLookOf(info);
+  if (!look) return { text: KIND, state: null, colour: 'var(--flow)', ink: null };
+  const said = look.detail ? `${look.state} — ${look.detail}` : look.state;
+  return { text: `${KIND} · ${said}`, state: look.state, colour: look.colour, ink: look.ink };
+}
+
+/** "Issue #12 · Open", for the thin bar a phone pins at the top. */
 export const barLabelOf = (number: number, kicker: Kicker): string =>
-  `#${number} · ${kicker.text.split(' — ')[0]}`;
+  kicker.state ? `${KIND} #${number} · ${kicker.state}` : `${KIND} #${number}`;
 
 /** A deleted account comes as null, or as `app/` from the token reader, which
  *  reads an author it cannot place as an app; GitHub shows it as ghost. */

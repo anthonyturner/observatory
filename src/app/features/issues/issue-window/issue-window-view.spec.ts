@@ -8,31 +8,34 @@ describe('kickerOf', () => {
     const closedAt = '2026-09-20T12:00:00Z';
 
     expect(kickerOf(anIssue(1, { closedAt, stateReason: 'NOT_PLANNED' }))).toEqual({
-      text: expect.stringMatching(/^Closed — not planned · /),
+      text: expect.stringMatching(/^Issue · Closed — not planned · /),
+      state: 'Closed',
       colour: 'var(--faint)',
       ink: 'var(--muted)',
     });
     expect(kickerOf(anIssue(1, { closedAt, stateReason: 'DUPLICATE' })).text).toMatch(
-      /^Closed — duplicate · /,
+      /^Issue · Closed — duplicate · /,
     );
     expect(kickerOf(anIssue(1, { closedAt, stateReason: 'COMPLETED' }))).toEqual({
-      text: expect.stringMatching(/^Completed — closed /),
+      text: expect.stringMatching(/^Issue · Completed — closed /),
+      state: 'Completed',
       colour: 'var(--ok)',
       ink: null,
     });
   });
 
   it('names an open issue by who is on it', () => {
-    expect(kickerOf(anIssue(1)).text).toBe('Comet — no pull request closes it');
+    expect(kickerOf(anIssue(1)).text).toBe('Issue · Comet — no pull request closes it');
     expect(kickerOf(anIssue(1, { comet: false, prs: [4, 5] })).text).toBe(
-      'Open — 2 pull requests on it',
+      'Issue · Open — 2 pull requests on it',
     );
-    expect(kickerOf(anIssue(1, { comet: false })).text).toBe('Open');
+    expect(kickerOf(anIssue(1, { comet: false })).text).toBe('Issue · Open');
     expect(kickerOf({ number: 1 }).text).toBe('Issue');
   });
 
-  it('shortens to the state for the bar a phone pins', () => {
-    expect(barLabelOf(12, kickerOf(anIssue(12)))).toBe('#12 · Comet');
+  it('shortens to the kind and state for the bar a phone pins', () => {
+    expect(barLabelOf(12, kickerOf(anIssue(12)))).toBe('Issue #12 · Comet');
+    expect(barLabelOf(12, kickerOf({ number: 12 }))).toBe('Issue #12');
   });
 });
 

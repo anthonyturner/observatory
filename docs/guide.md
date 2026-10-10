@@ -446,7 +446,8 @@ The search box finds finished work too.
 
 - **Comet.** An open issue no pull request closes: work nobody has picked up.
   Its head grows with age, its tail with how long it has sat untouched. Click
-  one to read the issue.
+  one to read the issue. Every window names what it holds first, **Issue** or
+  **Pull request**, before its state, because the colours alone can look alike.
 - **Fading comets.** Past a work-in-progress limit (8 open pull requests,
   drafts aside, changed with **wip** in the tools), the comets fade and a note
   suggests finishing something before starting more. Nothing is blocked.

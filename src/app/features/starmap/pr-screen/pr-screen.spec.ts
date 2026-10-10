@@ -104,7 +104,9 @@ describe('PrScreen', () => {
     const { element, open, visible } = render();
     open();
 
-    expect(element.querySelector('.kicker')?.textContent).toBe('Vagrans — no issue linked');
+    expect(element.querySelector('.kicker')?.textContent).toBe(
+      'Pull request · Vagrans — no issue linked',
+    );
     expect(element.querySelector('h2')?.textContent).toContain('#572');
     expect(element.querySelector('.route')?.textContent).toContain('draft');
     expect(visible()?.querySelector('h3')?.textContent).toBe('Summary');

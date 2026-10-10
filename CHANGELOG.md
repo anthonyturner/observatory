@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- An open window now says whether it holds an issue or a pull request: its header starts with **Issue** or **Pull request**, before the state. Before, only the colour hinted at it, and an issue's colour and a pull request's could look alike ([#583](https://github.com/anthonyturner/observatory/issues/583)).
 - On the hosted site, a visitor who opens a pull request's screen sees it read-only: no **Edit** tab, merge box or crew control. The API already refused their changes, so nothing on GitHub could change, but the controls looked usable and failed when pressed ([#580](https://github.com/anthonyturner/observatory/issues/580)).
 
 ### Removed

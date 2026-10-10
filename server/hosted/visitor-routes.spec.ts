@@ -9,10 +9,15 @@ const owner: RouteTable = {
     '/api/usage': async () => ({ secret: 'usage' }),
     '/api/logs': async () => ({ faults: [{ text: 'mail bob@example.com bounced' }] }),
     '/api/something-new': async () => ({ owner: 'only' }),
+    '/api/dev-servers': async () => ({ state: 'running' }),
     '/api/news': async () => ({ ai: [], engineering: [] }),
     '/api/principles': async () => ({ principles: [], today: 0 }),
   },
-  post: { '/api/triage': async () => ({}), '/api/another-write': async () => ({}) },
+  post: {
+    '/api/triage': async () => ({}),
+    '/api/another-write': async () => ({}),
+    '/api/dev-servers': async () => ({ state: 'starting' }),
+  },
 };
 
 const reads = {
@@ -62,7 +67,7 @@ describe('visitorRoutes', () => {
   it('refuses every route it does not open, a new one included', async () => {
     const handle = visitor(false);
 
-    for (const path of ['/api/something-new', '/api/logs']) {
+    for (const path of ['/api/something-new', '/api/logs', '/api/dev-servers']) {
       const response = await get(handle, path);
       assert.equal(response.status, 403, path);
       assert.deepEqual(await response.json(), { error: PREVIEW_ONLY });
@@ -99,7 +104,7 @@ describe('visitorRoutes', () => {
 
   it('refuses every write', async () => {
     const handle = visitor(false);
-    for (const path of ['/api/triage', '/api/another-write']) {
+    for (const path of ['/api/triage', '/api/another-write', '/api/dev-servers']) {
       const response = await handle(
         new Request(`https://x${path}`, {
           method: 'POST',

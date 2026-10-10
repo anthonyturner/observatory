@@ -51,7 +51,7 @@ export function cmdArg(arg: string): string {
   return CMD_PLAIN.test(arg) ? arg : `"${arg}"`;
 }
 
-const withoutCredentials = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv =>
+export const withoutCredentials = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv =>
   Object.fromEntries(Object.entries(env).filter(([name]) => !WITHHELD_ENV.has(name.toUpperCase())));
 
 /** A batch shim starts only through cmd.exe, as one line of fixed flags. That
@@ -62,7 +62,7 @@ const commandLine = (
 ): [string, readonly string[]] =>
   claude.isShim ? [`"${claude.file}" ${args.map(cmdArg).join(' ')}`, []] : [claude.file, args];
 
-function asRunProcess(child: ChildProcess): RunProcess {
+export function asRunProcess(child: ChildProcess): RunProcess {
   const { stdin, stdout, stderr } = child;
   if (!stdin || !stdout || !stderr) throw new Error('Claude Code started without its pipes');
   return {
@@ -78,7 +78,7 @@ function asRunProcess(child: ChildProcess): RunProcess {
   };
 }
 
-const NODE_CONTEXT: LaunchContext = { spawn, platform: process.platform, env: process.env };
+export const NODE_CONTEXT: LaunchContext = { spawn, platform: process.platform, env: process.env };
 
 /** Starts `claude` with CLAUDE_ARGS, or null when there is no `claude` to start. */
 export function claudeLauncher(

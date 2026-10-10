@@ -28,10 +28,16 @@ export function localRunner(sources: LocalRunnerSources): Runner {
   });
 }
 
-/** A run would outlive this process unless it is killed on the way out, so every
- *  way out goes through `exit`, where the runner kills it. */
-export function shutDownWithProcess(runner: Runner): void {
-  process.on('exit', () => runner.shutdown());
+/** Something started on this machine that must not outlive the API. */
+export interface ShutsDown {
+  /** Kills what it started, at once: it runs from `exit`, where nothing asynchronous can. */
+  shutdown(): void;
+}
+
+/** A run or a dev server would outlive this process unless it is killed on the way out,
+ *  so every way out goes through `exit`, where each of `started` kills its own. */
+export function shutDownWithProcess(...started: readonly ShutsDown[]): void {
+  process.on('exit', () => started.forEach((each) => each.shutdown()));
   for (const signal of EXIT_SIGNALS) {
     const number = constants.signals[signal];
     if (number) process.on(signal, () => process.exit(SIGNAL_EXIT_BASE + number));

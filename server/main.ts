@@ -32,6 +32,8 @@ import { findClaude } from './runner/claude-command.ts';
 import { localRunner, shutDownWithProcess } from './runner/local-runner.ts';
 import { withRunsRoutes } from './runner/runs-routes.ts';
 import { withCrewRoutes } from './crew/crew-routes.ts';
+import { withDevServerRoutes } from './dev-servers/dev-servers-routes.ts';
+import { localDevServers } from './dev-servers/local-dev-servers.ts';
 import { withRerunRoute } from './queue/rerun-routes.ts';
 import { withActionsRerunRoute } from './actions/actions-rerun.ts';
 import { withInboxRoutes } from './inbox/inbox-routes.ts';
@@ -105,7 +107,12 @@ const runner = localRunner({
   projects: async () => (await reads.projects()).projects,
   clones,
 });
-shutDownWithProcess(runner);
+// Dev servers are started here for the same reason: only this server may run a project's code (ADR-0010).
+const devServers = localDevServers({
+  projects: async () => (await reads.projects()).projects,
+  clones,
+});
+shutDownWithProcess(runner, devServers);
 
 // Jev thinks on the owner's Claude Code subscription when there is a
 // `claude` to start; OpenRouter is left for a machine without one.
@@ -166,13 +173,16 @@ const ownerAndFeedRoutes = withLiveAgentFeedRoute(
   agentFeedReader(),
 );
 
-// Only this server reads a clone on this machine; the hosted API has no such route.
-const ownerTable = withArchitectureRoutes(
-  withDepthRoutes(
-    withPrincipleRoutes(withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader())),
-    depthReports(clones),
+// Only this server reads a clone on this machine or runs one; the hosted API has no such route.
+const ownerTable = withDevServerRoutes(
+  withArchitectureRoutes(
+    withDepthRoutes(
+      withPrincipleRoutes(withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader())),
+      depthReports(clones),
+    ),
+    architectureMaps(clones),
   ),
-  architectureMaps(clones),
+  devServers,
 );
 
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it

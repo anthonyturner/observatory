@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, Signal, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, map, of } from 'rxjs';
 import { isObject, isText, listOf } from '../json/json-fields';
@@ -31,7 +31,11 @@ export class LiveSites {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
   private readonly sites = signal<SitesByRepo>(new Map());
+  private readonly settled = signal(false);
   private isRequested = false;
+
+  /** Whether a read has ended, so that a project with no site is known to have none. */
+  readonly isRead: Signal<boolean> = this.settled.asReadonly();
 
   /** Starts the one read, unless it has started. One that failed is tried again by the next screen to ask. */
   load(): void {
@@ -47,7 +51,10 @@ export class LiveSites {
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((sites) => this.sites.set(sites));
+      .subscribe((sites) => {
+        this.sites.set(sites);
+        this.settled.set(true);
+      });
   }
 
   /** `repo`'s production site, or null where it has none or the sites are not read yet. */

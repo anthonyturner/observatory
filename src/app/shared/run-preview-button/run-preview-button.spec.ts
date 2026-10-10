@@ -21,6 +21,8 @@ function setUp(options: {
   isHosted?: boolean;
   /** Whether the API has yet to answer the first status read. */
   isUnanswered?: boolean;
+  /** Whether the sites have been read; they have, unless said otherwise. */
+  isSitesRead?: boolean;
   /** The production site of `me/app`, once the sites are read. */
   liveUrl?: string | null;
   status?: DevServerStatus;
@@ -31,6 +33,7 @@ function setUp(options: {
     isLocal = true,
     isHosted = false,
     isUnanswered = false,
+    isSitesRead = true,
     liveUrl = null,
     status = STOPPED,
     start = STARTING,
@@ -64,6 +67,7 @@ function setUp(options: {
         provide: LiveSites,
         useValue: {
           load: () => calls.push('load sites'),
+          isRead: signal(isSitesRead),
           urlFor: (repo: string) => (repo === 'me/app' ? liveSites() : null),
         },
       },
@@ -328,11 +332,26 @@ describe('RunPreviewButton: Run or Live site', () => {
       expect(link?.getAttribute('aria-label')).toBe('Live site of me/app in a new tab');
     });
 
-    it('shows nothing at all when it has none', () => {
-      const { element, calls } = setUp({ status: NO_CHECKOUT, liveUrl: null });
+    it('says why it can’t be run, as a quiet note with no link, when it has no production site', () => {
+      const { labels, element, calls } = setUp({ status: NO_CHECKOUT, liveUrl: null });
+
+      expect(labels()).toEqual([]);
+      const note = element.querySelector('[role="status"]');
+      expect(note?.textContent).toBe('There is no local checkout of this project on this machine.');
+      expect(note?.classList.contains('problem')).toBe(false);
+      expect(calls).toContain('load sites');
+    });
+
+    it('holds the note back until the sites are read, so it never gives way to a link', () => {
+      const { element } = setUp({ status: NO_CHECKOUT, liveUrl: null, isSitesRead: false });
 
       expect(element.children.length).toBe(0);
-      expect(calls).toContain('load sites');
+    });
+
+    it('has a link and no note when there is a production site', () => {
+      const { element } = setUp({ status: NO_CHECKOUT, liveUrl: LIVE });
+
+      expect(element.querySelector('[role="status"]')).toBeNull();
     });
 
     it('shows Live site once the sites are read', () => {

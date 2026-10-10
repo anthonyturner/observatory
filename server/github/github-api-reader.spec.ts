@@ -90,7 +90,7 @@ describe('githubApiReader against recorded GitHub replies', () => {
 });
 
 describe('githubApiReader where GitHub has no recording to replay', () => {
-  it('reads every page of repositories, keeping whether each is private', async () => {
+  it('reads every page of repositories, keeping whether each is private and its homepage', async () => {
     const page = (names: string[], next: string | null) => ({
       data: {
         repositoryOwner: {
@@ -100,6 +100,7 @@ describe('githubApiReader where GitHub has no recording to replay', () => {
               name,
               nameWithOwner: `me/${name}`,
               isPrivate: name === 'secret',
+              homepageUrl: name === 'app' ? 'https://app.example.com' : null,
             })),
           },
         },
@@ -108,8 +109,13 @@ describe('githubApiReader where GitHub has no recording to replay', () => {
     const { reader, sent } = replaying([page(['app'], 'c1'), page(['secret'], null)]);
 
     assert.deepEqual(await reader.ownedRepos('me'), [
-      { name: 'app', nameWithOwner: 'me/app', isPrivate: false },
-      { name: 'secret', nameWithOwner: 'me/secret', isPrivate: true },
+      {
+        name: 'app',
+        nameWithOwner: 'me/app',
+        isPrivate: false,
+        homepageUrl: 'https://app.example.com',
+      },
+      { name: 'secret', nameWithOwner: 'me/secret', isPrivate: true, homepageUrl: null },
     ]);
     assert.equal(sent[1].variables['after'], 'c1');
   });

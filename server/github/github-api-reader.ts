@@ -331,6 +331,7 @@ async function ownedRepos(graphql: GraphQl, owner: string): Promise<RepoRef[]> {
                 name
                 nameWithOwner
                 isPrivate
+                homepageUrl
               }
             }
           }

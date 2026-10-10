@@ -18,7 +18,7 @@ import {
   isReportBuilding,
   pullPreview,
 } from '../deployments/deployments-report.ts';
-import { liveSitesReport } from '../deployments/live-site.ts';
+import { liveSitesLifetime, liveSitesReport } from '../deployments/live-site.ts';
 import type {
   DeploymentsReport,
   LiveSitesReport,
@@ -103,8 +103,6 @@ const COUNTING_TTL_MS = 20_000;
  *  turns green or red on screen within a poll or two of finishing. */
 const DEPLOYMENTS_TTL_MS = 2 * 60_000;
 const BUILDING_TTL_MS = 20_000;
-/** A production site moves rarely, and finding every project's costs a few requests apiece. */
-const LIVE_SITES_TTL_MS = 30 * 60_000;
 /** Milestones and discussions move a few times a day. Every project's tab strip asks whether
  *  there are any, so it is kept as long as the projects. */
 const MILESTONES_TTL_MS = 5 * 60_000;
@@ -313,12 +311,8 @@ export function cachedReads(sources: ReadSources): ApiReads {
     (preview) => (isPreviewUnsettled(preview) ? BUILDING_TTL_MS : DEPLOYMENTS_TTL_MS),
   );
   const liveSitesOf = keyedCache(
-    async () =>
-      liveSitesReport(
-        github,
-        (await projectsOf.read(ALL_PROJECTS)).projects.map((project) => project.repo),
-      ),
-    LIVE_SITES_TTL_MS,
+    async () => liveSitesReport(github, await github.ownedRepos(await github.viewer())),
+    liveSitesLifetime,
   );
   const milestonesOf = keyedCache((repo) => milestonesReport(github, repo), MILESTONES_TTL_MS);
   const inboxOf = keyedCache(() => inboxReport(github, new Date()), INBOX_TTL_MS);

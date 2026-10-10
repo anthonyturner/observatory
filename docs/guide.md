@@ -596,9 +596,11 @@ Where a project can't be run, **Run** gives way to **Live site ↗**, a link tha
 opens the project's production site in a new tab. That is the case on the
 hosted site, for you and for preview visitors, and on your own computer for a
 project with no clone here (Run is hidden rather than left to fail when
-pressed). The link goes to the latest production deployment that went live, as
-GitHub's deployments record it, never a preview or a failed build; a project
-with none shows nothing. A project you can run shows only **Run**. Observatory
+pressed). The link goes to the website set on the project's GitHub repository
+(its homepage); with none, to its latest production deployment that went live,
+never a preview or a failed build. A project with neither shows nothing on the
+hosted site, and on your computer a quiet note saying it has no clone here. A
+project you can run shows only **Run**. Observatory
 looks every project's site up together, once in a while, so Home does not wait
 for it.
 

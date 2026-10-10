@@ -32,6 +32,8 @@
         <span aria-hidden="true">&#9632;</span> Stop
       </button>
     }
-    <span class="note" [class.problem]="shown.isProblem" role="status">{{ shown.note }}</span>
+    @if (!shown.liveUrl) {
+      <span class="note" [class.problem]="shown.isProblem" role="status">{{ shown.note }}</span>
+    }
   </div>
 }

@@ -68,7 +68,8 @@ function runViewOf(status: DevServerStatus, isTabBlocked: boolean): PreviewView 
  * site opening in a new tab once it answers. If the browser blocks the tab,
  * Open stays and a note says how to allow it. Where it cannot be run, on the
  * hosted site or for a project this machine has no checkout of, it is a link to
- * the project's production site, or nothing when it has none. Beside a Run the
+ * the project's production site; with none, a project with no checkout says
+ * why it can't be run and a hosted one shows nothing. Beside a Run the
  * link would be a second way to open a site, so it is not shown.
  */
 @Component({
@@ -96,10 +97,16 @@ export class RunPreviewButton {
   /** What to show; null where there is nothing to show. */
   protected readonly view = computed((): PreviewView | null => {
     const preview = this.preview();
-    const run = preview && runViewOf(preview.status(), preview.isTabBlocked());
+    const status = preview?.status();
+    const run = preview && status && runViewOf(status, preview.isTabBlocked());
     if (run) return run;
-    const liveUrl = this.offersLiveSite() ? this.liveSites.urlFor(this.repo()) : null;
-    return liveUrl ? { ...NOTHING, liveUrl } : null;
+    if (!this.offersLiveSite()) return null;
+    const liveUrl = this.liveSites.urlFor(this.repo());
+    if (liveUrl) return { ...NOTHING, liveUrl };
+    // Said once the sites are read, or the reason would show and then give way to the link.
+    return status?.state === 'unavailable' && this.liveSites.isRead()
+      ? { ...NOTHING, note: status.reason }
+      : null;
   });
 
   constructor() {

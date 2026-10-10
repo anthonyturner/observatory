@@ -59,12 +59,23 @@ describe('LiveSites', () => {
     http.expectNone('/api/live-sites');
   });
 
+  it('is read only once a read has ended, whether it worked or failed', () => {
+    const { sites, http } = setUp();
+    expect(sites.isRead()).toBe(false);
+
+    sites.load();
+    expect(sites.isRead()).toBe(false);
+    http.expectOne('/api/live-sites').flush({ sites: [] });
+    expect(sites.isRead()).toBe(true);
+  });
+
   it('has no site for anyone when the read fails, and reads again for the next screen to ask', () => {
     const { sites, http } = setUp();
     sites.load();
     http.expectOne('/api/live-sites').flush('down', { status: 502, statusText: 'Bad Gateway' });
 
     expect(sites.urlFor('me/app')).toBeNull();
+    expect(sites.isRead()).toBe(true);
 
     sites.load();
     http.expectOne('/api/live-sites').flush({

@@ -137,9 +137,15 @@ export class DevServers implements DevServerControl {
   async status(repo: string): Promise<DevServerStatus> {
     const entry = this.entries.get(keyOf(repo));
     if (entry) return entry.status;
-    return (await this.dependencies.checkouts.find(repo))
-      ? stopped(repo)
-      : unavailable(repo, NO_CHECKOUT);
+    try {
+      return (await this.dependencies.checkouts.find(repo))
+        ? stopped(repo)
+        : unavailable(repo, NO_CHECKOUT);
+    } catch (error: unknown) {
+      // The projects could not be read, so whether there is a clone is not known: Run stays, and fails with its reason if pressed.
+      console.error(`Could not look up ${repo}'s checkout:`, error);
+      return stopped(repo);
+    }
   }
 
   stop(repo: string): DevServerStatus {

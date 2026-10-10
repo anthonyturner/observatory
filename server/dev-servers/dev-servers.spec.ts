@@ -19,6 +19,8 @@ interface Setting {
   readonly command?: RunCommand | null;
   readonly listing?: Promise<void>;
   readonly ports?: readonly number[];
+  /** The registry cannot read the projects. */
+  readonly lookupFails?: boolean;
 }
 
 function setUp(setting: Setting = {}) {
@@ -43,6 +45,7 @@ function setUp(setting: Setting = {}) {
     checkouts: {
       find: async (repo) => {
         await listing;
+        if (setting.lookupFails) throw new Error('GitHub could not be read');
         return checkouts.find((each) => each.repo === repo.toLowerCase()) ?? null;
       },
     },
@@ -505,6 +508,17 @@ describe('DevServers', () => {
 
     assert.deepEqual(status, { repo: 'me/app', state: 'failed', reason: NO_COMMAND });
     assert.deepEqual(launches, []);
+  });
+
+  it('reports a project as stopped, not as an error, when its checkout could not be looked up', async () => {
+    const { servers } = setUp({ lookupFails: true });
+    const logged = console.error;
+    console.error = () => undefined;
+    try {
+      assert.deepEqual(await servers.status('me/app'), stoppedApp);
+    } finally {
+      console.error = logged;
+    }
   });
 
   it('forgets a project that could not run when asked to stop it', async () => {

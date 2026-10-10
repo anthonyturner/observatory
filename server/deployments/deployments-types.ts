@@ -60,4 +60,6 @@ export interface LiveSite {
 export interface LiveSitesReport {
   readonly generatedAt: string;
   readonly sites: readonly LiveSite[];
+  /** How many repositories GitHub would not answer for, whose site may be missing from `sites`. */
+  readonly unreadCount: number;
 }

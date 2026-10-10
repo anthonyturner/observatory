@@ -6,7 +6,14 @@ import type {
   DeploymentReader,
   DeploymentState,
 } from '../github/deployment-reader.ts';
-import { LIVE_SITE_SCAN, liveSiteUrl, liveSitesReport } from './live-site.ts';
+import {
+  LIVE_SITES_RETRY_MS,
+  LIVE_SITES_TTL_MS,
+  LIVE_SITE_SCAN,
+  liveSiteUrl,
+  liveSitesLifetime,
+  liveSitesReport,
+} from './live-site.ts';
 
 const SHA = 'a'.repeat(40);
 const mark = (id: number, environment: string, minute: number): DeploymentMark => ({
@@ -143,42 +150,95 @@ describe('liveSiteUrl', () => {
 
 describe('liveSitesReport', () => {
   const NOW = Date.parse('2026-10-10T09:00:00Z');
+  const repo = (name: string, homepageUrl: string | null = null) => ({
+    nameWithOwner: `me/${name}`,
+    homepageUrl,
+  });
 
-  it('lists the production site of each repository that has one, in order', async () => {
+  it('lists the site of each repository that has one, in order', async () => {
     const live = fakeReader({ marks: [mark(1, 'Production', 10)] });
     const previewsOnly = fakeReader({ marks: [mark(2, 'Preview', 10)] });
     const github: DeploymentReader = {
       ...live,
-      deployments: (repo, query) =>
-        (repo === 'me/quiet' ? previewsOnly : live).deployments(repo, query),
+      deployments: (name, query) =>
+        (name === 'me/quiet' ? previewsOnly : live).deployments(name, query),
     };
 
-    const report = await liveSitesReport(github, ['me/app', 'me/quiet', 'me/site'], NOW);
+    const report = await liveSitesReport(github, [repo('app'), repo('quiet'), repo('site')], NOW);
 
     assert.equal(report.generatedAt, '2026-10-10T09:00:00.000Z');
     assert.deepEqual(report.sites, [
       { repo: 'me/app', url: siteOf(1) },
       { repo: 'me/site', url: siteOf(1) },
     ]);
+    assert.equal(report.unreadCount, 0);
   });
 
-  it('leaves out a repository GitHub will not answer for, and keeps the others', async () => {
+  it('prefers the owner’s homepage to the production deployment, and asks GitHub nothing for it', async () => {
+    const github = fakeReader({ marks: [mark(1, 'Production', 10)] });
+    const asked: string[] = [];
+    const counting: DeploymentReader = {
+      ...github,
+      environments: async (name) => (asked.push(name), []),
+      deployments: async (name, query) => (asked.push(name), github.deployments(name, query)),
+    };
+
+    const report = await liveSitesReport(
+      counting,
+      [repo('app', ' https://app.example.com '), repo('other')],
+      NOW,
+    );
+
+    assert.deepEqual(report.sites, [
+      { repo: 'me/app', url: 'https://app.example.com' },
+      { repo: 'me/other', url: siteOf(1) },
+    ]);
+    assert.ok(!asked.includes('me/app'), 'no deployment request for a repository with a homepage');
+  });
+
+  it('falls back to the deployment when the homepage is empty or not a web page', async () => {
+    const github = fakeReader({ marks: [mark(1, 'Production', 10)] });
+
+    const report = await liveSitesReport(
+      github,
+      [repo('a', ''), repo('b', 'javascript:alert(1)'), repo('c', 'ftp://files.example.com')],
+      NOW,
+    );
+
+    assert.deepEqual(
+      report.sites.map((site) => site.url),
+      [siteOf(1), siteOf(1), siteOf(1)],
+    );
+  });
+
+  it('leaves out a repository GitHub will not answer for, counts it, and keeps the others', async () => {
     const live = fakeReader({ marks: [mark(1, 'Production', 10)] });
     const github: DeploymentReader = {
       ...live,
-      deployments: async (repo, query) => {
-        if (repo === 'me/broken') throw new Error('HTTP 502');
-        return live.deployments(repo, query);
+      deployments: async (name, query) => {
+        if (name === 'me/broken') throw new Error('HTTP 502');
+        return live.deployments(name, query);
       },
     };
     const logged = console.error;
     console.error = () => undefined;
     try {
-      const report = await liveSitesReport(github, ['me/broken', 'me/app'], NOW);
+      const report = await liveSitesReport(github, [repo('broken'), repo('app')], NOW);
 
       assert.deepEqual(report.sites, [{ repo: 'me/app', url: siteOf(1) }]);
+      assert.equal(report.unreadCount, 1);
     } finally {
       console.error = logged;
     }
+  });
+});
+
+describe('liveSitesLifetime', () => {
+  it('keeps a complete report a long while, and one with an unread repository only briefly', () => {
+    const report = { generatedAt: 'x', sites: [], unreadCount: 0 };
+
+    assert.equal(liveSitesLifetime(report), LIVE_SITES_TTL_MS);
+    assert.equal(liveSitesLifetime({ ...report, unreadCount: 1 }), LIVE_SITES_RETRY_MS);
+    assert.ok(LIVE_SITES_RETRY_MS < LIVE_SITES_TTL_MS);
   });
 });

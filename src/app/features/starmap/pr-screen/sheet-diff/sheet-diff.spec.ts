@@ -174,16 +174,17 @@ describe('SheetDiff', () => {
       expect(rows[3].querySelector('.c')?.textContent).toBe('const total = cost * 2;');
     });
 
-    it('wraps long lines only when asked', () => {
+    it('wraps long lines until asked to scroll them sideways', () => {
       const { element, click } = open();
       const toggle = element.querySelector<HTMLInputElement>('.wrap-toggle input')!;
-      expect(element.querySelector('.wrap')).toBeNull();
-
-      click(toggle);
+      expect(toggle.checked).toBe(true);
       expect(element.querySelector('.wrap pre')).not.toBeNull();
 
       click(toggle);
       expect(element.querySelector('.wrap')).toBeNull();
+
+      click(toggle);
+      expect(element.querySelector('.wrap pre')).not.toBeNull();
     });
   });
 });

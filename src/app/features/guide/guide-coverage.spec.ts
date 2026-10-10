@@ -9,7 +9,7 @@ const QUEUE_TAB = 'queue';
 const QUEUE_PART = 'review-queue';
 
 /** The anchors screens and help cards link to that the tabs and help cards do not name. */
-const SCREEN_ANCHORS = ['home', 'orrery', 'inbox', 'agents', 'architecture'];
+const SCREEN_ANCHORS = ['home', 'orrery', 'inbox', 'agents'];
 
 /** Every part's and section's anchor in the real Guide. */
 function guideAnchors(): ReadonlySet<string> {

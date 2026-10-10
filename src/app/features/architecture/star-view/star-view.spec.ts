@@ -20,7 +20,6 @@ const node = (name: string): ArchitectureNode => ({
 
 function rosterSystem(): StarSystem {
   const graph = graphOf({
-    schema: 2,
     project: '',
     scannedAt: '',
     areas: [{ id: 'core', label: 'Core' }],

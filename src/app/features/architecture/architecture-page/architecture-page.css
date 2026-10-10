@@ -33,10 +33,17 @@ h1 {
   color: var(--ink);
 }
 
-.rescan {
-  margin: 6px 0 0;
-  color: var(--warm);
-  font-size: 12px;
+.way {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  width: fit-content;
+  margin-bottom: 9px;
+}
+
+.way app-up-link {
+  margin-bottom: 0;
 }
 
 .stamp {
@@ -50,6 +57,12 @@ h1 {
 .views {
   display: flex;
   gap: 8px;
+}
+
+a.abtn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 .views .abtn[aria-pressed='true'] {

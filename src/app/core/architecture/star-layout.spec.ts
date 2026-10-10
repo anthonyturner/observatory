@@ -38,7 +38,6 @@ const edge = (
 
 function systemAround(centre: string, nodes: ArchitectureNode[], edges: ArchitectureEdge[]) {
   const graph = graphOf({
-    schema: 2,
     project: '',
     scannedAt: '',
     areas: AREAS,

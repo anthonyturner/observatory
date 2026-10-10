@@ -49,7 +49,6 @@ const edge = (
 const EVERYWHERE: Scope = { area: null, window: null };
 
 const mapOf = (nodes: ArchitectureNode[], edges: ArchitectureEdge[] = []): ArchitectureMap => ({
-  schema: 2,
   project: 'clockwork',
   scannedAt: '',
   areas: [],

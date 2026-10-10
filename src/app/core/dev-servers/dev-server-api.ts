@@ -3,7 +3,7 @@ import { Injectable, InjectionToken, inject } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { isObject, isText } from '../json/json-fields';
 import { refusalOf } from '../runs/runs-api';
-import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
+import { DevServerStatus, DevTarget, STARTING, STOPPED, StartPhase } from './dev-server.types';
 
 /**
  * The local API's dev servers. Only the local site has them; the hosted one
@@ -11,10 +11,11 @@ import { DevServerStatus, STARTING, STOPPED } from './dev-server.types';
  * as a failed server whose reason says what went wrong.
  */
 export interface DevServerApi {
-  status(repo: string): Observable<DevServerStatus>;
-  /** Starts the project's dev server, or returns the one already running. */
-  start(repo: string): Observable<DevServerStatus>;
-  stop(repo: string): Observable<DevServerStatus>;
+  status(target: DevTarget): Observable<DevServerStatus>;
+  /** Starts the target's dev server, or returns the one already running. */
+  start(target: DevTarget): Observable<DevServerStatus>;
+  /** Ends it, and removes a pull request's worktree. */
+  stop(target: DevTarget): Observable<DevServerStatus>;
 }
 
 const DEV_SERVERS_URL = '/api/dev-servers';
@@ -24,6 +25,14 @@ const NOT_A_STATUS = 'The site sent something that is not a dev server status.';
 /** A site is opened by its address, so only a web address will do. */
 const WEB_ADDRESS = /^https?:\/\//i;
 const UNREACHABLE = 'Observatory’s API could not be reached.';
+const PHASES: readonly StartPhase[] = ['fetching', 'installing', 'starting'];
+
+const phaseOf = (value: unknown): StartPhase =>
+  PHASES.find((phase) => phase === value) ?? 'starting';
+
+/** The target as a query string reads it. */
+const paramsOf = ({ repo, pull }: DevTarget): Record<string, string> =>
+  pull === undefined ? { repo } : { repo, pull: String(pull) };
 
 /** The status in an API answer, or null when it is not one. */
 export function devServerStatusOf(body: unknown): DevServerStatus | null {
@@ -32,7 +41,9 @@ export function devServerStatusOf(body: unknown): DevServerStatus | null {
     case 'stopped':
       return STOPPED;
     case 'starting':
-      return STARTING;
+      return body['phase'] === undefined
+        ? STARTING
+        : { state: 'starting', phase: phaseOf(body['phase']) };
     case 'running':
       return isText(body['url']) && WEB_ADDRESS.test(body['url'])
         ? { state: 'running', url: body['url'] }
@@ -63,17 +74,20 @@ const asStatus = (answer: Observable<unknown>): Observable<DevServerStatus> =>
 export class HttpDevServerApi implements DevServerApi {
   private readonly http = inject(HttpClient);
 
-  status(repo: string): Observable<DevServerStatus> {
-    return asStatus(this.http.get<unknown>(DEV_SERVERS_URL, { params: { repo } }));
+  status(target: DevTarget): Observable<DevServerStatus> {
+    return asStatus(this.http.get<unknown>(DEV_SERVERS_URL, { params: paramsOf(target) }));
   }
 
-  start(repo: string): Observable<DevServerStatus> {
-    return asStatus(this.http.post<unknown>(DEV_SERVERS_URL, { repo }, { headers: WRITE_HEADERS }));
+  start(target: DevTarget): Observable<DevServerStatus> {
+    return asStatus(this.http.post<unknown>(DEV_SERVERS_URL, target, { headers: WRITE_HEADERS }));
   }
 
-  stop(repo: string): Observable<DevServerStatus> {
+  stop(target: DevTarget): Observable<DevServerStatus> {
     return asStatus(
-      this.http.delete<unknown>(DEV_SERVERS_URL, { params: { repo }, headers: WRITE_HEADERS }),
+      this.http.delete<unknown>(DEV_SERVERS_URL, {
+        params: paramsOf(target),
+        headers: WRITE_HEADERS,
+      }),
     );
   }
 }

@@ -25,6 +25,7 @@
       @if (detail(); as pull) {
         @switch (name) {
           @case ('overview') {
+            <app-run-preview-button class="preview" [repo]="repo()" [pull]="number()" />
             <app-sheet-preview [repo]="repo()" [sha]="pull.headOid" />
             <app-sheet-markdown [source]="pull.body" />
             @if (pull.bodyTruncated) {

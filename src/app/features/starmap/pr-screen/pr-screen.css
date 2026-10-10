@@ -46,6 +46,11 @@
   padding: 20px 22px 26px;
 }
 
+/* Nothing is drawn off the owner's own machine, and then it takes no room. */
+.preview:not(:empty) {
+  margin: 0 0 12px;
+}
+
 /* Holds only comments when no crew can be sent from here, and takes no room then. */
 .crew:not(:empty) {
   flex: none;

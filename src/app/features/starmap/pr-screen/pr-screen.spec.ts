@@ -1,6 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { Provider, signal } from '@angular/core';
+import { of } from 'rxjs';
+import { DEV_SERVER_API } from '../../../core/dev-servers/dev-server-api';
+import { STOPPED } from '../../../core/dev-servers/dev-server.types';
 import { TestBed } from '@angular/core/testing';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { PrScreen } from './pr-screen';
@@ -49,12 +52,24 @@ const detail = {
   fetchedAt: '2026-09-26T10:00:00Z',
 };
 
-function render(canWrite = true) {
+function render(canWrite = true, extra: Provider[] = []) {
   TestBed.configureTestingModule({
     providers: [
       provideHttpClient(),
       provideHttpClientTesting(),
-      ...(canWrite ? [] : [{ provide: ViewerSession, useValue: { canWrite: signal(false) } }]),
+      ...(canWrite
+        ? []
+        : [
+            {
+              provide: ViewerSession,
+              useValue: {
+                canWrite: signal(false),
+                isConfirmedLocal: signal(false),
+                isConfirmedHosted: signal(false),
+              },
+            },
+          ]),
+      ...extra,
     ],
   });
   const fixture = TestBed.createComponent(PrScreen);
@@ -160,6 +175,51 @@ describe('PrScreen', () => {
     expect(element.querySelector('app-merge-box')).toBeNull();
     expect(element.querySelector('app-crew-control')).toBeNull();
     http.expectNone('/api/edit?repo=me/app&number=572');
+  });
+
+  describe('Preview this PR', () => {
+    const session = (isLocal: boolean, isHosted: boolean): Provider[] => [
+      {
+        provide: ViewerSession,
+        useValue: {
+          canWrite: signal(true),
+          isConfirmedLocal: signal(isLocal),
+          isConfirmedHosted: signal(isHosted),
+        },
+      },
+      {
+        provide: DEV_SERVER_API,
+        useValue: { status: () => of(STOPPED), start: () => of(STOPPED), stop: () => of(STOPPED) },
+      },
+    ];
+    const previewButton = (element: HTMLElement) =>
+      Array.from(element.querySelectorAll('app-run-preview-button button')).find((button) =>
+        button.textContent?.includes('Preview this PR'),
+      );
+
+    it('offers Preview for this pull request on the owner’s machine, ahead of the deployments', () => {
+      const { element, open, visible } = render(true, session(true, false));
+      open();
+
+      expect(previewButton(element)?.getAttribute('aria-label')).toBe(
+        'Preview pull request 572 of me/app',
+      );
+      expect(visible()?.querySelector('app-run-preview-button')).not.toBeNull();
+    });
+
+    it('is not offered on the hosted site, or until the machine is confirmed as the owner’s own', () => {
+      for (const [isLocal, isHosted] of [
+        [false, true],
+        [false, false],
+      ]) {
+        TestBed.resetTestingModule();
+        const { element, open } = render(true, session(isLocal, isHosted));
+        open();
+
+        expect(previewButton(element)).toBeUndefined();
+        expect(element.querySelector('app-run-preview-button')?.children.length).toBe(0);
+      }
+    });
   });
 
   it('counts each tab and switches between them', () => {

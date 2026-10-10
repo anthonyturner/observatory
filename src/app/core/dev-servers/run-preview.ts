@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, Signal, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, Subscription, expand, switchMap, timer } from 'rxjs';
 import { DEV_SERVER_API, DevServerApi } from './dev-server-api';
-import { CHECKING, DevServerStatus, STARTING } from './dev-server.types';
+import { CHECKING, DevServerStatus, DevTarget, FETCHING, STARTING } from './dev-server.types';
 import { SITE_OPENER, SiteOpener } from './site-opener';
 
 /** How often a starting server is asked whether its site is up yet. */
@@ -17,11 +17,11 @@ interface RunPreviewDeps {
 }
 
 /**
- * One project's dev server as the buttons showing it need it: what it is doing
- * now, Run, which opens the site in a new tab once the server reports it is up,
- * and Stop. Every button for the project shares one, so a Run started on one
- * screen carries on, and opens the site once, after the button that started it
- * is gone.
+ * One target's dev server (a project's checkout, or one of its pull requests)
+ * as the buttons showing it need it: what it is doing now, Run, which opens the
+ * site in a new tab once the server reports it is up, and Stop. Every button
+ * for the target shares one, so a Run started on one screen carries on, and
+ * opens the site once, after the button that started it is gone.
  */
 export interface RunPreview {
   readonly status: Signal<DevServerStatus>;
@@ -52,13 +52,13 @@ class RunState implements RunPreview {
   readonly isTabBlocked = this.blocked.asReadonly();
 
   constructor(
-    private readonly repo: string,
+    private readonly target: DevTarget,
     private readonly deps: RunPreviewDeps,
   ) {}
 
   watch(): () => void {
     this.watchers++;
-    if (!this.isFollowing()) this.follow(this.deps.api.status(this.repo), 'read');
+    if (!this.isFollowing()) this.follow(this.deps.api.status(this.target), 'read');
     let released = false;
     return () => {
       if (released) return;
@@ -69,9 +69,9 @@ class RunState implements RunPreview {
   }
 
   run(): void {
-    this.current.set(STARTING);
+    this.current.set(this.target.pull === undefined ? STARTING : FETCHING);
     this.blocked.set(false);
-    this.follow(this.deps.api.start(this.repo), 'run');
+    this.follow(this.deps.api.start(this.target), 'run');
   }
 
   siteOpenedByHand(): void {
@@ -80,7 +80,7 @@ class RunState implements RunPreview {
 
   stop(): void {
     this.blocked.set(false);
-    this.follow(this.deps.api.stop(this.repo), 'stop');
+    this.follow(this.deps.api.stop(this.target), 'stop');
   }
 
   /**
@@ -128,7 +128,7 @@ class RunState implements RunPreview {
   }
 
   private askIn(ms: number): Observable<DevServerStatus> {
-    return timer(ms).pipe(switchMap(() => this.deps.api.status(this.repo)));
+    return timer(ms).pipe(switchMap(() => this.deps.api.status(this.target)));
   }
 
   private openIfAsked(status: DevServerStatus): void {
@@ -138,7 +138,7 @@ class RunState implements RunPreview {
   }
 }
 
-/** Every project's Run state, kept for the life of the app and keyed by `owner/name`. */
+/** Every target's Run state, kept for the life of the app. */
 @Injectable({ providedIn: 'root' })
 export class RunPreviews {
   private readonly deps: RunPreviewDeps = {
@@ -146,13 +146,15 @@ export class RunPreviews {
     opener: inject(SITE_OPENER),
     destroyRef: inject(DestroyRef),
   };
-  private readonly byRepo = new Map<string, RunPreview>();
+  private readonly byTarget = new Map<string, RunPreview>();
 
-  runFor(repo: string): RunPreview {
-    let preview = this.byRepo.get(repo);
+  /** The project `owner/name`'s own server, or with `pull` that pull request's. */
+  runFor(repo: string, pull?: number): RunPreview {
+    const key = pull === undefined ? repo : `${repo}#${pull}`;
+    let preview = this.byTarget.get(key);
     if (!preview) {
-      preview = new RunState(repo, this.deps);
-      this.byRepo.set(repo, preview);
+      preview = new RunState(pull === undefined ? { repo } : { repo, pull }, this.deps);
+      this.byTarget.set(key, preview);
     }
     return preview;
   }

@@ -56,3 +56,4 @@ ADR when the project decides differently.
 | [0008](0008-let-send-crew-start-a-run.md) | Let Send crew start a run from instructions the server writes | Accepted |
 | [0009](0009-run-read-only-git-in-folders-named-by-transcripts.md) | Run read-only git in folders named by session transcripts | Accepted |
 | [0010](0010-run-a-projects-dev-server-on-the-local-site-only.md) | Run a project's dev server on the local site only | Accepted |
+| [0011](0011-preview-a-pull-request-in-a-worktree-on-the-local-site-only.md) | Preview a pull request in a worktree, on the local site only | Accepted |

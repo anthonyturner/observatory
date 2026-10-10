@@ -1,8 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { graphOf, neighbourhoodOf } from '../../../core/architecture/architecture-graph';
 import { ArchitectureNode, NodeKind } from '../../../core/architecture/architecture.types';
 import { StarSystem, starSystem } from '../../../core/architecture/star-layout';
+import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
 import { PortraitPainter } from '../../../shared/planets/planet-portrait.types';
 import { StarView } from './star-view';
@@ -43,7 +45,10 @@ function rosterSystem(kinds: Partial<Record<string, NodeKind>> = {}): StarSystem
 
 function mount(painter: PortraitPainter | null, system = rosterSystem()) {
   TestBed.configureTestingModule({
-    providers: [{ provide: PlanetPortraits, useValue: { painter: () => signal(painter) } }],
+    providers: [
+      { provide: PlanetPortraits, useValue: { painter: () => signal(painter) } },
+      { provide: ELEMENT_SIZE, useValue: () => of({ width: 800, height: 600 }) },
+    ],
   });
   const fixture = TestBed.createComponent(StarView);
   fixture.componentRef.setInput('system', system);
@@ -110,6 +115,19 @@ describe('StarView', () => {
       .querySelector<SVGGElement>('.planet[aria-label="Centre on ClockService"]')
       ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(picked).toEqual(['ClockService']);
+  });
+
+  it('opens with the system placed in the frame and zoom buttons beside it', () => {
+    const host = render(null);
+    expect(host.querySelector('svg > g')?.getAttribute('transform')).toMatch(
+      /^translate\(400 300\)/,
+    );
+    expect(
+      Array.from(
+        host.querySelectorAll('.zoom button'),
+        (b) => b.getAttribute('aria-label') ?? b.textContent?.trim(),
+      ),
+    ).toEqual(['Zoom in', 'Zoom out', 'Fit', 'Reset']);
   });
 
   it('falls back to flat bodies when painting fails', () => {

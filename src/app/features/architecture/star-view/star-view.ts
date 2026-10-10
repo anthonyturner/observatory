@@ -11,6 +11,7 @@ import { Heat } from '../../../core/architecture/architecture-graph';
 import { AIR_TOKEN, planetLook } from '../../../core/architecture/planet-look';
 import { Planet, SUN_RADIUS, StarSystem } from '../../../core/architecture/star-layout';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { PanZoom } from '../../../shared/pan-zoom/pan-zoom';
 import { StarType } from '../../../shared/gl/star-shader';
 import { channelReader } from '../../../shared/night-sky/night-sky';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
@@ -20,7 +21,7 @@ import {
   WORLD_FRAME,
 } from '../../../shared/planets/planet-portrait.types';
 
-/** Image pixels per map unit: the map is usually drawn larger than its viewBox. */
+/** Image pixels per map unit, so a planet stays sharp when zoomed in a little. */
 const PIXELS_PER_UNIT = 3;
 const MAX_PIXELS = 256;
 /** Enough pictures for several systems; past it the cache starts over. */
@@ -40,6 +41,7 @@ interface Portraits {
 /** One node as a sun: what it depends on and what depends on it turn round it, a ring per area. */
 @Component({
   selector: 'app-star-view',
+  imports: [PanZoom],
   templateUrl: './star-view.html',
   styleUrl: './star-view.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

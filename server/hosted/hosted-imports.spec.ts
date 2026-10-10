@@ -8,8 +8,9 @@ const SERVER = dirname(dirname(fileURLToPath(import.meta.url)));
 const HOSTED_ENTRY = join(SERVER, '..', 'api', 'index.mjs');
 /** Only this machine's server may hold these: they sign in to the owner's own
  *  accounts, read and write files in the owner's home folder, hear its speakers,
- *  or read its Claude Code transcripts. */
-const LOCAL_ONLY = ['mail', 'agent-speech', 'sound-card', 'live-agents'].map(
+ *  read its Claude Code transcripts, or scan its clones into maps that name every
+ *  class of a possibly private repository. */
+const LOCAL_ONLY = ['mail', 'agent-speech', 'sound-card', 'live-agents', 'architecture'].map(
   (folder) => join(SERVER, folder) + sep,
 );
 /** A static `import … from './x.ts'` or `export … from` at the start of a line: the server has no dynamic imports. */

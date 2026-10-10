@@ -24,7 +24,7 @@ const edge = (from: string, to: string, extra: Record<string, unknown> = {}) => 
 });
 
 const body = (nodes: unknown[], edges: unknown[] = [], extra: Record<string, unknown> = {}) => ({
-  schema: 2,
+  schema: 3,
   project: 'clockwork',
   scannedAt: '2026-10-01T00:00:00Z',
   areas: [{ id: 'core', label: 'Core' }],
@@ -45,7 +45,6 @@ describe('parseArchitecture', () => {
     const map = parseArchitecture(
       body([node('ClockService'), node('AlarmHandler')], [edge('AlarmHandler', 'ClockService')]),
     );
-    expect(map?.schema).toBe(2);
     expect(map?.project).toBe('clockwork');
     expect(map?.areas).toEqual([{ id: 'core', label: 'Core' }]);
     expect(map?.windows).toEqual(['desktop']);
@@ -125,23 +124,30 @@ describe('parseArchitecture', () => {
     expect(map?.nodes[0]).toMatchObject({ group: '', providedIn: null, windows: [] });
   });
 
-  it('reads an old map whose nodes have no id and whose edges have no kind', () => {
-    const map = parseArchitecture({
-      project: 'clockwork',
-      scannedAt: '2026-10-01T00:00:00Z',
-      areas: [],
-      windows: [],
-      nodes: [
-        { name: 'ClockService', kind: 'service', file: 'core/clock.ts', area: 'core' },
-        { name: 'AlarmHandler', kind: 'handler', file: 'core/alarm.ts', area: 'core' },
-      ],
-      edges: [{ from: 'AlarmHandler', to: 'ClockService', how: 'inject', members: [] }],
-    });
-    expect(map?.schema).toBe(1);
-    expect(map?.nodes.map((n) => n.id)).toEqual(['ClockService', 'AlarmHandler']);
-    expect(map?.edges).toEqual([
-      { from: 'AlarmHandler', to: 'ClockService', kind: 'injects', how: 'inject', members: [] },
-    ]);
+  it('drops a node with no id and an edge with no kind', () => {
+    const map = parseArchitecture(
+      body(
+        [node('ClockService'), node('AlarmHandler'), node('Anon', { id: undefined })],
+        [
+          edge('AlarmHandler', 'ClockService', { kind: undefined }),
+          edge('ClockService', 'AlarmHandler'),
+        ],
+      ),
+    );
+    expect(map?.nodes.map((n) => n.name)).toEqual(['ClockService', 'AlarmHandler']);
+    expect(map?.edges.map((e) => e.from)).toEqual([idOf('ClockService')]);
+  });
+
+  it('keeps only the areas that hold a node it kept', () => {
+    const map = parseArchitecture(
+      body([node('ClockService')], [], {
+        areas: [
+          { id: 'core', label: 'Core' },
+          { id: 'server:app', label: 'App' },
+        ],
+      }),
+    );
+    expect(map?.areas).toEqual([{ id: 'core', label: 'Core' }]);
   });
 
   it('keeps a version 3 map’s classes and drops the nodes and links this page cannot draw', () => {

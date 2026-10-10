@@ -27,7 +27,7 @@ const JUMPS: readonly Jump[] = [
 ];
 
 /** A task's pill, jumps to Home's sections, the agents running now, the
- *  inbox, and the ways to the orrery, the architecture map and the guide.
+ *  inbox, and the ways to the orrery and the guide.
  *  The page's tools sit along the foot of the screen instead, as on every screen. */
 @Component({
   selector: 'app-top-nav',

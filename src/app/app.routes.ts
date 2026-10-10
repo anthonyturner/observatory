@@ -18,14 +18,6 @@ export const routes: Routes = [
       import('./features/orrery/orrery-page/orrery-page').then((m) => m.OrreryPage),
   },
   {
-    path: 'architecture',
-    title: 'Architecture · Observatory',
-    loadComponent: () =>
-      import('./features/architecture/architecture-page/architecture-page').then(
-        (m) => m.ArchitecturePage,
-      ),
-  },
-  {
     path: 'inbox',
     title: 'Inbox · Observatory',
     loadComponent: () => import('./features/inbox/inbox-page/inbox-page').then((m) => m.InboxPage),
@@ -78,6 +70,14 @@ export const routes: Routes = [
     path: 'p/:owner/:repo/depth',
     title: 'Depth · Observatory',
     loadComponent: () => import('./features/depth/depth-page/depth-page').then((m) => m.DepthPage),
+  },
+  {
+    path: 'p/:owner/:repo/architecture',
+    title: 'Architecture · Observatory',
+    loadComponent: () =>
+      import('./features/architecture/architecture-page/architecture-page').then(
+        (m) => m.ArchitecturePage,
+      ),
   },
   {
     path: 'p/:owner/:repo/security',

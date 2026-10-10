@@ -48,11 +48,10 @@ read-only view for visitors who aren't you.
 | Releases, Actions, Journal, Library, Deployments, Milestones | Yes               | Yes                      | Public projects only            |
 | Security                                                     | Yes               | Yes                      | Counts only, no alert details   |
 | Insights                                                     | Yes               | Yes                      | Everything but traffic          |
-| Depth                                                        | Yes               | No                       | No                              |
+| Depth, Architecture                                          | Yes               | No                       | No                              |
 | Inbox                                                        | Yes               | Yes                      | No                              |
 | Jev, voice, mail, skills and tasks                           | Yes               | No                       | No                              |
 | Agents, crews, satellites                                    | Yes               | No                       | No                              |
-| Architecture                                                 | Yes               | No                       | No                              |
 | Usage and triage                                             | Yes               | Yes                      | No                              |
 
 A preview visitor can look but never change anything: no snoozing, no merging,
@@ -66,8 +65,8 @@ unless you choose to show private projects too.
 - **The way back.** The small pill above each screen's title takes you up a
   level: to Home, or to **All projects** (the Orrery).
 - **Project tabs.** Each project's screens share one row of tabs: Queue,
-  Releases, Actions, Journal, Library, Depth, Security, Insights, Deployments
-  and Milestones. A tab can carry a count (Security shows open alerts), and a
+  Releases, Actions, Journal, Library, Depth, Architecture, Security, Insights,
+  Deployments and Milestones. A tab can carry a count (Security shows open alerts), and a
   tab with nothing in it for this project fades back, dimmed and in italics.
 - **Help card.** Press **?** on Home, the Orrery or the Review Queue for a
   short card about that screen. Each card links here for the longer story.
@@ -149,7 +148,7 @@ blocked pull requests across your projects) and **Documents** links.
 
 The top bar jumps to Home's sections (Mail, News, Projects, Agents) and links
 to the Agents screen (with how many sessions are running), the Inbox (with
-your unread count), the Orrery, Architecture and this Guide.
+your unread count), the Orrery and this Guide.
 
 ### Jev
 
@@ -638,6 +637,24 @@ to see its numbers, its verdict and the principle behind it. Filter by path or
 verdict, or switch to **List**, shallowest first. **Only on your own computer**,
 with a copy of the project there.
 
+### Architecture
+
+A map of the project's code, scanned from its clone on your computer each time
+you open the tab (a scan takes a few seconds, and Observatory keeps it for a few
+minutes), drawn two ways:
+
+- **Star system.** The node you pick sits at the centre as a star; everything
+  it connects to orbits as a lit world. A hot spot (depended on by many) is a
+  flaring red giant; components keep a ring; unused code has a dashed outline.
+- **UML.** The same connections as a diagram.
+
+Search by name, filter by area or window, and use the **Hot spots** and
+**Unused** chips. The legend names each kind of link, and a card describes the
+centre node. **Refresh** scans the clone again. **Open full map** opens the
+project in a page of its own that also charts plain TypeScript files, routes and
+outside services. A project with no clone here says so. **Only on your own
+computer.**
+
 ### Security
 
 The project's open Dependabot, code-scanning and secret-scanning alerts as one
@@ -736,18 +753,4 @@ Open an agent for its own page:
 - **Changes** shows the code it has changed so far, compared with where its
   branch left main, with a link to its pull request.
 
-**Only on your own computer.**
-
-### Architecture
-
-A map of a project's code, drawn two ways:
-
-- **Star system.** The node you pick sits at the centre as a star; everything
-  it connects to orbits as a lit world. A hot spot (depended on by many) is a
-  flaring red giant; components keep a ring; unused code has a dashed outline.
-- **UML.** The same connections as a diagram.
-
-Search by name, filter by area or window, and use the **Hot spots** and
-**Unused** chips. The legend names each kind of link, and a card describes the
-centre node. The map comes from a scan you run on your own computer.
 **Only on your own computer.**

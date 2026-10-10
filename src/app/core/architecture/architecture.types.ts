@@ -1,4 +1,7 @@
-/** What a node is, as the map colours and filters it. */
+/**
+ * What a node is, as the map colours and filters it. The scanner also maps
+ * plain modules, routes and outside services; this page draws only Angular's.
+ */
 export const NODE_KINDS = [
   'service',
   'component',
@@ -17,9 +20,6 @@ export type InjectionStyle = (typeof INJECTION_STYLES)[number];
 /** What an edge says `from` does with `to`, in the order the page names them. */
 export const EDGE_KINDS = ['injects', 'uses', 'provides', 'extends', 'calls'] as const;
 export type EdgeKind = (typeof EDGE_KINDS)[number];
-
-/** The map shape this page reads in full; an older one lacks component edges and windows. */
-export const MAP_SCHEMA = 2;
 
 /** One part of the mapped project: a ring in the star view, a choice in the area filter. */
 export interface ArchitectureArea {
@@ -50,9 +50,8 @@ export interface ArchitectureEdge {
   readonly members: readonly string[];
 }
 
-/** A project's nodes and how they depend on each other, as `npm run arch:scan` writes it. */
+/** A project's nodes and how they depend on each other, as `GET /api/architecture` serves it. */
 export interface ArchitectureMap {
-  readonly schema: number;
   readonly project: string;
   readonly scannedAt: string;
   readonly areas: readonly ArchitectureArea[];
@@ -61,7 +60,7 @@ export interface ArchitectureMap {
   readonly edges: readonly ArchitectureEdge[];
 }
 
-/** Where the map stands; `missing` is an API that answered but has no map to give. */
+/** Where the map stands; `missing` is an API that answered but has no clone of the project to scan. */
 export type ArchitectureState =
   | { readonly status: 'reading' | 'missing' | 'unreachable' }
   | { readonly status: 'ready'; readonly map: ArchitectureMap };

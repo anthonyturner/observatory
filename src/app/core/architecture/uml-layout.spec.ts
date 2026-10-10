@@ -35,7 +35,6 @@ const edge = (
 
 function diagramAround(centre: string, nodes: ArchitectureNode[], edges: ArchitectureEdge[]) {
   const graph = graphOf({
-    schema: 2,
     project: '',
     scannedAt: '',
     areas: AREAS,

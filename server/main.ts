@@ -51,7 +51,7 @@ import { cachedNews, withNewsRoutes } from './news/news-routes.ts';
 import { depthReports } from './depth/depth-report.ts';
 import { withDepthRoutes } from './depth/depth-routes.ts';
 import { withPrincipleRoutes } from './principles/principle-routes.ts';
-import { fileArchitecture } from './architecture/architecture-file.ts';
+import { architectureMaps } from './architecture/architecture-maps.ts';
 import { withArchitectureRoutes } from './architecture/architecture-routes.ts';
 import { imapInbox } from './mail/imap-inbox.ts';
 import { imapflowClient } from './mail/imapflow-client.ts';
@@ -166,10 +166,13 @@ const ownerAndFeedRoutes = withLiveAgentFeedRoute(
   agentFeedReader(),
 );
 
-// Only this server runs git in a folder on this machine; the hosted API has no such route.
-const ownerTable = withDepthRoutes(
-  withPrincipleRoutes(withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader())),
-  depthReports(clones),
+// Only this server reads a clone on this machine; the hosted API has no such route.
+const ownerTable = withArchitectureRoutes(
+  withDepthRoutes(
+    withPrincipleRoutes(withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader())),
+    depthReports(clones),
+  ),
+  architectureMaps(clones),
 );
 
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it
@@ -187,16 +190,13 @@ const server = createApiServer(
                     withCrewRoutes(
                       withRunsRoutes(
                         withNewsRoutes(
-                          withArchitectureRoutes(
-                            withAgentSpeechRoutes(
-                              withRiskRoutes(
-                                withLiveAgentsRoutes(ownerTable, liveAgentsSource),
-                                reads.pull,
-                                summaries,
-                              ),
-                              agentSpeech,
+                          withAgentSpeechRoutes(
+                            withRiskRoutes(
+                              withLiveAgentsRoutes(ownerTable, liveAgentsSource),
+                              reads.pull,
+                              summaries,
                             ),
-                            fileArchitecture(),
+                            agentSpeech,
                           ),
                           news,
                         ),

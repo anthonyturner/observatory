@@ -21,7 +21,7 @@ function setUp() {
       calls.push(`start ${repo}`);
       return running(repo);
     },
-    status: (repo) => {
+    status: async (repo) => {
       calls.push(`status ${repo}`);
       return running(repo);
     },

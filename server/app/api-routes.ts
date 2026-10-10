@@ -7,6 +7,7 @@ import type { RouteTable } from '../http/api-handler.ts';
 import { isFresh } from '../http/fresh-query.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { PREVIEW_PATH } from '../deployments/deployments-report.ts';
+import { LIVE_SITES_PATH } from '../deployments/live-site.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
@@ -65,6 +66,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
         return reads.deployments(repo);
       },
       [PREVIEW_PATH]: (query) => reads.pullPreview(repoOf(query), commitShaFrom(query.get('sha'))),
+      [LIVE_SITES_PATH]: () => reads.liveSites(),
       '/api/milestones': (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetMilestones(repo);

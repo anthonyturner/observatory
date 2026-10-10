@@ -32,7 +32,7 @@ const MAX_LINE_CHARS = 8 * 1024;
 
 /** What a dev-server manager needs from the machine; tests give their own. */
 export interface DevServerDependencies {
-  readonly checkouts: CheckoutRegistry;
+  readonly checkouts: Pick<CheckoutRegistry, 'find'>;
   readonly commands: RunCommands;
   readonly launch: DevLaunch;
   readonly killer: ProcessTreeKiller;
@@ -64,10 +64,15 @@ interface Launchable {
   readonly port: number;
 }
 
-type Plan = Launchable | { readonly why: string };
+type Plan = Launchable | { readonly why: string } | { readonly unavailable: string };
 
 const keyOf = (repo: string): string => repo.toLowerCase();
 const stopped = (repo: string): DevServerStatus => ({ repo, state: 'stopped' });
+const unavailable = (repo: string, reason: string): DevServerStatus => ({
+  repo,
+  state: 'unavailable',
+  reason,
+});
 const isAlive = (entry: Entry): boolean =>
   entry.status.state === 'starting' || entry.status.state === 'running';
 const quoted = (line: string): string => `"${line}"`;
@@ -116,6 +121,10 @@ export class DevServers implements DevServerControl {
     try {
       const plan = await this.plan(repo, entry);
       if (this.entries.get(key) !== entry) return stopped(repo);
+      if ('unavailable' in plan) {
+        this.entries.delete(key);
+        return unavailable(repo, plan.unavailable);
+      }
       if ('why' in plan) this.fail(entry, plan.why);
       else this.launch(entry, plan);
     } catch (error) {
@@ -125,8 +134,12 @@ export class DevServers implements DevServerControl {
     return entry.status;
   }
 
-  status(repo: string): DevServerStatus {
-    return this.entries.get(keyOf(repo))?.status ?? stopped(repo);
+  async status(repo: string): Promise<DevServerStatus> {
+    const entry = this.entries.get(keyOf(repo));
+    if (entry) return entry.status;
+    return (await this.dependencies.checkouts.find(repo))
+      ? stopped(repo)
+      : unavailable(repo, NO_CHECKOUT);
   }
 
   stop(repo: string): DevServerStatus {
@@ -149,10 +162,8 @@ export class DevServers implements DevServerControl {
   }
 
   private async plan(repo: string, entry: Entry): Promise<Plan> {
-    const wanted = keyOf(repo);
-    const checkouts = await this.dependencies.checkouts.list();
-    const checkout = checkouts.find((each) => keyOf(each.repo) === wanted);
-    if (!checkout) return { why: NO_CHECKOUT };
+    const checkout = await this.dependencies.checkouts.find(repo);
+    if (!checkout) return { unavailable: NO_CHECKOUT };
     const run = this.dependencies.commands.commandFor(repo, checkout.folder);
     if (!run) return { why: NO_COMMAND };
     const port = await this.reservePort(entry);

@@ -1,83 +1,104 @@
-<svg [attr.viewBox]="system().viewBox" role="group" aria-label="Star system of the centre node">
-  @for (orbit of system().orbits; track orbit.key) {
-    <circle class="ring" [attr.data-kind]="orbit.kind" [attr.r]="orbit.radius" />
-    @if (orbit.label) {
-      <text class="ring-label" [attr.y]="-orbit.radius - 8">{{ orbit.label }}</text>
-    }
-  }
-
-  @for (orbit of system().orbits; track orbit.key) {
-    <g class="orbit" [style.animation-duration.s]="orbit.period">
-      @for (planet of orbit.planets; track planet.entry.node.id) {
-        <line
-          class="spoke"
-          x1="0"
-          y1="0"
-          [attr.x2]="planet.x"
-          [attr.y2]="planet.y"
-          [attr.data-link]="planet.link"
-        />
+<svg
+  [appPanZoom]="system().world"
+  #camera="panZoom"
+  role="group"
+  aria-label="Star system of the centre node. Drag to move, scroll or use plus and minus to zoom."
+>
+  <g [attr.transform]="camera.transform()">
+    @for (orbit of system().orbits; track orbit.key) {
+      <circle class="ring" [attr.data-kind]="orbit.kind" [attr.r]="orbit.radius" />
+      @if (orbit.label) {
+        <text class="ring-label" [attr.y]="-orbit.radius - 8">{{ orbit.label }}</text>
       }
-      @for (planet of orbit.planets; track planet.entry.node.id) {
-        <g [attr.transform]="'translate(' + planet.x + ' ' + planet.y + ')'">
-          <!-- Turns with the orbit, so the lit side keeps facing the sun. -->
-          @if (portraits()?.planets?.get(planet.entry.node.id); as src) {
-            <circle class="backing" [attr.r]="planet.size" />
-            <image
-              class="portrait"
-              [attr.href]="src"
-              [attr.x]="-planet.size * worldFrame"
-              [attr.y]="-planet.size * worldFrame"
-              [attr.width]="planet.size * worldFrame * 2"
-              [attr.height]="planet.size * worldFrame * 2"
-            />
-          }
-          <g class="upright" [style.animation-duration.s]="orbit.period">
-            <g
-              class="planet"
-              role="button"
-              tabindex="0"
-              [attr.data-heat]="planet.entry.heat"
-              [attr.data-kind]="planet.entry.node.kind"
-              [attr.aria-label]="'Centre on ' + planet.entry.node.name"
-              (click)="pick.emit(planet.entry.node.id)"
-              (keydown.enter)="pick.emit(planet.entry.node.id)"
-            >
-              <title>
-                {{ planet.entry.node.name }} · {{ planet.entry.kindLabel }} · {{ planet.relation }}
-              </title>
-              <circle class="body" [attr.r]="planet.size" />
-              <g class="moons">
-                @for (moon of planet.moons; track moon.member) {
-                  <circle class="moon" r="2.4" [attr.cx]="moon.x" [attr.cy]="moon.y">
-                    <title>{{ moon.member }}</title>
-                  </circle>
-                }
+    }
+
+    @for (orbit of system().orbits; track orbit.key) {
+      <g class="orbit" [style.animation-duration.s]="orbit.period">
+        @for (planet of orbit.planets; track planet.entry.node.id) {
+          <line
+            class="spoke"
+            x1="0"
+            y1="0"
+            [attr.x2]="planet.x"
+            [attr.y2]="planet.y"
+            [attr.data-link]="planet.link"
+          />
+        }
+        @for (planet of orbit.planets; track planet.entry.node.id) {
+          <g [attr.transform]="'translate(' + planet.x + ' ' + planet.y + ')'">
+            <!-- Turns with the orbit, so the lit side keeps facing the sun. -->
+            @if (portraits()?.planets?.get(planet.entry.node.id); as src) {
+              <circle class="backing" [attr.r]="planet.size" />
+              <image
+                class="portrait"
+                [attr.href]="src"
+                [attr.x]="-planet.size * worldFrame"
+                [attr.y]="-planet.size * worldFrame"
+                [attr.width]="planet.size * worldFrame * 2"
+                [attr.height]="planet.size * worldFrame * 2"
+              />
+            }
+            <g class="upright" [style.animation-duration.s]="orbit.period">
+              <g
+                class="planet"
+                role="button"
+                tabindex="0"
+                [attr.data-heat]="planet.entry.heat"
+                [attr.data-kind]="planet.entry.node.kind"
+                [attr.aria-label]="'Centre on ' + planet.entry.node.name"
+                (click)="pick.emit(planet.entry.node.id)"
+                (keydown.enter)="pick.emit(planet.entry.node.id)"
+              >
+                <title>
+                  {{ planet.entry.node.name }} · {{ planet.entry.kindLabel }} ·
+                  {{ planet.relation }}
+                </title>
+                <circle class="body" [attr.r]="planet.size" />
+                <g class="moons">
+                  @for (moon of planet.moons; track moon.member) {
+                    <circle class="moon" r="2.4" [attr.cx]="moon.x" [attr.cy]="moon.y">
+                      <title>{{ moon.member }}</title>
+                    </circle>
+                  }
+                </g>
+                <text class="name" [attr.y]="planet.size + 22">{{ planet.entry.node.name }}</text>
               </g>
-              <text class="name" [attr.y]="planet.size + 22">{{ planet.entry.node.name }}</text>
             </g>
           </g>
-        </g>
-      }
-    </g>
-  }
-
-  <!-- Last, so the links run from under the sun rather than across its face. -->
-  <g class="sun" [attr.data-heat]="system().sun.heat">
-    @if (portraits(); as portraits) {
-      <circle class="backing" [attr.r]="sunRadius" />
-      <image
-        class="portrait"
-        [attr.href]="portraits.sun"
-        [attr.x]="-sunRadius * sunFrame"
-        [attr.y]="-sunRadius * sunFrame"
-        [attr.width]="sunRadius * sunFrame * 2"
-        [attr.height]="sunRadius * sunFrame * 2"
-      />
-    } @else {
-      <circle class="glow" [attr.r]="sunRadius * 2" />
-      <circle class="body" [attr.r]="sunRadius" />
+        }
+      </g>
     }
-    <text class="name" [attr.y]="sunRadius + 20">{{ system().sun.node.name }}</text>
+
+    <!-- Last, so the links run from under the sun rather than across its face. -->
+    <g class="sun" [attr.data-heat]="system().sun.heat">
+      @if (portraits(); as portraits) {
+        <circle class="backing" [attr.r]="sunRadius" />
+        <image
+          class="portrait"
+          [attr.href]="portraits.sun"
+          [attr.x]="-sunRadius * sunFrame"
+          [attr.y]="-sunRadius * sunFrame"
+          [attr.width]="sunRadius * sunFrame * 2"
+          [attr.height]="sunRadius * sunFrame * 2"
+        />
+      } @else {
+        <circle class="glow" [attr.r]="sunRadius * 2" />
+        <circle class="body" [attr.r]="sunRadius" />
+      }
+      <text class="name" [attr.y]="sunRadius + 20">{{ system().sun.node.name }}</text>
+    </g>
   </g>
 </svg>
+
+<div class="zoom" role="group" aria-label="Zoom">
+  <button type="button" class="abtn step" aria-label="Zoom in" (click)="camera.zoomIn()">+</button>
+  <button type="button" class="abtn step" aria-label="Zoom out" (click)="camera.zoomOut()">
+    −
+  </button>
+  <button type="button" class="abtn" title="Show the whole system" (click)="camera.fit()">
+    Fit
+  </button>
+  <button type="button" class="abtn" title="Back to the starting view" (click)="camera.reset()">
+    Reset
+  </button>
+</div>

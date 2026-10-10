@@ -1,3 +1,4 @@
+import { Area } from '../../shared/pan-zoom/viewport';
 import { MapEntry, Neighbour, Neighbourhood, linkOf, relationOf } from './architecture-graph';
 import { ArchitectureArea, EdgeKind } from './architecture.types';
 
@@ -39,7 +40,8 @@ export interface Orbit {
 export interface StarSystem {
   readonly sun: MapEntry;
   readonly orbits: readonly Orbit[];
-  readonly viewBox: string;
+  /** Everything drawn, the sun at its centre. */
+  readonly world: Area;
 }
 
 interface Band {
@@ -151,6 +153,6 @@ export function starSystem(
   return {
     sun: neighbourhood.centre,
     orbits,
-    viewBox: `${-extent} ${-extent} ${extent * 2} ${extent * 2}`,
+    world: { x: -extent, y: -extent, width: extent * 2, height: extent * 2 },
   };
 }

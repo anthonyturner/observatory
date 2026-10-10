@@ -3,7 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
+import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { PlanetPortraits } from '../../../shared/planets/planet-portraits';
 import { ArchitecturePage } from './architecture-page';
 
@@ -46,6 +47,7 @@ function render() {
       provideHttpClientTesting(),
       { provide: ActivatedRoute, useValue: { paramMap: params } },
       { provide: PlanetPortraits, useValue: { painter: () => signal(null) } },
+      { provide: ELEMENT_SIZE, useValue: () => of({ width: 800, height: 600 }) },
     ],
   });
   const fixture = TestBed.createComponent(ArchitecturePage);

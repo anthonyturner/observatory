@@ -1,4 +1,9 @@
-import { How, isHow } from './history-report';
+/** A merge commit, a squash, or closed unmerged. */
+export type How = 'merge' | 'squash' | 'closed';
+
+const HOWS: readonly unknown[] = ['merge', 'squash', 'closed'];
+
+export const isHow = (value: unknown): value is How => HOWS.includes(value);
 
 /** What became of a pull request's review threads. */
 export interface ThreadCounts {

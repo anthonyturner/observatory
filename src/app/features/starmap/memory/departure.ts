@@ -1,8 +1,8 @@
 import { PullState } from '../../../core/activity/activity-lookups';
 import { CrewMark } from '../../../core/crew/crew.types';
 import { Satellite } from '../../../core/live-agents/satellites';
-import { Fate, How } from '../../../core/queue/history-report';
-import { ThreadCounts } from '../../../core/queue/pull-ending';
+import { Fate } from '../../../core/queue/history-report';
+import { How, ThreadCounts } from '../../../core/queue/pull-ending';
 import { Meteor } from '../engine/meteor-layer';
 import { SkyItem } from '../engine/sky-model';
 import { IssuePlanet, issuePlanets } from '../engine/star-system';

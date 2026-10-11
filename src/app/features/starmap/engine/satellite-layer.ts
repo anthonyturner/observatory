@@ -1,5 +1,6 @@
 import { SATELLITE_RHYTHM, Satellite, SatelliteState } from '../../../core/live-agents/satellites';
 import { hashString } from '../../../core/orrery/world-layout';
+import { Undock, departedRadius, flightOf, flightPoint } from '../memory/undock';
 import { dopplerOf, listenerOf } from '../sound/doppler';
 import { starRadius } from './canvas-sky';
 import { labelLeft } from './done-layer';
@@ -36,6 +37,10 @@ const LIGHT: Readonly<Record<SatelliteState, string>> = {
   waiting: '#ffb347',
   quiet: '#8aa0c8',
 };
+
+/** The orbit's radius in pixels, for a star of `radius`: outside the crew ship's. */
+export const satelliteOrbit = (radius: number): number =>
+  Math.min(Math.max(radius * ORBIT_REACH, ORBIT_MIN_PX), ORBIT_MAX_PX);
 
 /** Which of the satellites sharing one orbit this is. */
 export interface Lane {
@@ -104,6 +109,11 @@ interface Drawn {
   readonly doppler: number;
 }
 
+interface Point {
+  readonly x: number;
+  readonly y: number;
+}
+
 /** Where a satellite was drawn, and when, on the scene's clock. */
 interface Seen {
   readonly x: number;
@@ -133,6 +143,7 @@ export class SatelliteLayer implements SkyLayer {
   private marks: readonly Satellite[] = [];
   private drawn: Drawn[] = [];
   private seen = new Map<string, Seen>();
+  private undocks: readonly Undock[] = [];
   private width = 0;
   private hovered: string | null = null;
 
@@ -140,6 +151,11 @@ export class SatelliteLayer implements SkyLayer {
 
   set(marks: readonly Satellite[]): void {
     this.marks = marks;
+  }
+
+  /** The satellites casting off from stars that have left, to fly to the parking orbit. */
+  setUndocks(undocks: readonly Undock[]): void {
+    this.undocks = undocks.filter((undock) => undock.kind === 'satellite');
   }
 
   /** How a satellite sounds, from where and how it was last drawn; centred and unshifted when not drawn. */
@@ -178,14 +194,19 @@ export class SatelliteLayer implements SkyLayer {
       mark,
       star: mark.pr === null ? undefined : f.stars.find((each) => each.item?.pr === mark.pr),
     }));
+    // One that is casting off already counts among the parked: that is where it is bound.
     const lanes = lanesOf(
       placed.map(({ mark, star }) => ({ key: mark.key, host: star ? mark.pr : null })),
     );
+    const casting = new Map(this.undocks.map((undock) => [undock.key, undock]));
+    const crowd = lanesOf(this.undocks.map((undock) => ({ key: undock.key, host: undock.pr })));
     for (const { mark, star } of placed) {
       const lane = lanes.get(mark.key) ?? { index: 0, count: 1 };
-      const at = star
-        ? this.aroundStar(f, star, lane)
-        : parkingPoint(lane, { width: f.width - sky.side, top: sky.top }, f.t, f.frozen);
+      const park = (): Point =>
+        parkingPoint(lane, { width: f.width - sky.side, top: sky.top }, f.t, f.frozen);
+      const at =
+        this.castingOff(f, casting.get(mark.key), crowd, park) ??
+        (star ? this.aroundStar(f, star, lane) : park());
       // A still sky parks them, and a frame after a stall measures no motion.
       const last = before.get(mark.key);
       const doppler =
@@ -214,14 +235,33 @@ export class SatelliteLayer implements SkyLayer {
     return best;
   }
 
-  private aroundStar(f: SkyFrame, star: SkyStar, lane: Lane): { x: number; y: number } {
-    const orbit = Math.min(
-      Math.max(starRadius(f, star, 1) * ORBIT_REACH, ORBIT_MIN_PX),
-      ORBIT_MAX_PX,
-    );
+  private aroundStar(f: SkyFrame, star: SkyStar, lane: Lane): Point {
+    const orbit = satelliteOrbit(starRadius(f, star, 1));
     const [x, y] = f.toScreen(star.ax, star.ay, star.az);
     const offset = orbitOffset(lane, orbit, f.t, f.frozen);
     return { x: x + offset.dx, y: y + offset.dy };
+  }
+
+  /**
+   * Where a satellite casting off from a star that has left is: circling the
+   * place the star stood until it goes, then flying from where it was to the
+   * parking orbit. Null when it is not casting off, is home, or motion is off.
+   */
+  private castingOff(
+    f: SkyFrame,
+    undock: Undock | undefined,
+    crowd: ReadonlyMap<string, Lane>,
+    park: () => Point,
+  ): Point | null {
+    if (!undock || f.frozen) return null;
+    const { stage, p, since } = flightOf(undock, f.wall);
+    if (stage === 'home') return null;
+    const orbit = satelliteOrbit(departedRadius(f.camera.current.scale));
+    const [x, y] = f.toScreen(undock.from.x, undock.from.y, undock.from.z);
+    const lane = crowd.get(undock.key) ?? { index: 0, count: 1 };
+    const offset = orbitOffset(lane, orbit, stage === 'docked' ? f.t : f.t - since, false);
+    const start = { x: x + offset.dx, y: y + offset.dy };
+    return stage === 'docked' ? start : flightPoint(start, park(), p);
   }
 }
 

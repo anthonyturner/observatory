@@ -13,6 +13,7 @@ function fakeScore() {
       void calls.push(`crackle ${pan} ${strength} ${seed} ${doppler}`),
     beep: (pan, hz, doppler) => void calls.push(`beep ${pan} ${hz} ${doppler}`),
     merge: ({ delayS, pan }) => void calls.push(`merge ${delayS} ${pan}`),
+    undock: ({ kind, delayS, pan }) => void calls.push(`undock ${kind} ${delayS} ${pan}`),
   };
   return { score, calls };
 }
@@ -79,6 +80,15 @@ describe('StarmapSound', () => {
     sound.merged({ delayS: 0.5, pan: 0.25, whoosh: [] });
 
     expect(calls.filter((c) => c.startsWith('merge'))).toEqual(['merge 0.5 0.25']);
+  });
+
+  it('runs an engine for a cast-off only while it plays', () => {
+    const { sound, calls } = setUp();
+    sound.undock({ kind: 'crew', delayS: 1, pan: -0.5 });
+    sound.toggle();
+    sound.undock({ kind: 'satellite', delayS: 0.5, pan: 0.25 });
+
+    expect(calls.filter((c) => c.startsWith('undock'))).toEqual(['undock satellite 0.5 0.25']);
   });
 
   it('remembers the volume and fades out when turned off', () => {

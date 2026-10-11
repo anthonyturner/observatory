@@ -10,6 +10,7 @@ import {
 import { SatelliteState } from '../../../core/live-agents/satellites';
 
 import { MergeCue } from '../memory/merge-supernova';
+import { UndockCue } from '../memory/undock';
 import { StarmapScore, WebAudioStarmapScore } from './starmap-score';
 
 /** Makes the score; a test provides one that needs no audio device. */
@@ -110,6 +111,11 @@ export class StarmapSound {
   /** A boom for a pull request that merged, only while the sound is on. */
   merged(cue: MergeCue): void {
     if (this.isOn()) this.score?.merge(cue);
+  }
+
+  /** An engine when a crew ship or satellite casts off from a star that left, only while the sound is on. */
+  undock(cue: UndockCue): void {
+    if (this.isOn()) this.score?.undock(cue);
   }
 
   private play(): void {

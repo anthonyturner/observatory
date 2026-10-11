@@ -430,6 +430,11 @@ Zoom in and each star shows more:
   small satellite with a blinking light: quick green while working, amber while
   waiting for you, slow grey when quiet. Hover one for its name.
 
+When a pull request merges or closes, the crew ship at its star and the
+satellites round it cast off one after another: the ship flies away and fades,
+each satellite flies to its place across the top of the sky, and with sound on
+each makes a short engine sound. With motion off they simply go.
+
 Crews and satellites are **only on your own computer**.
 
 ### The black hole

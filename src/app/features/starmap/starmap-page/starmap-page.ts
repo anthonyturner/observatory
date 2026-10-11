@@ -28,6 +28,7 @@ import { WeatherFeed } from '../../../core/queue/weather-feed';
 import { ViewerSession } from '../../../core/session/viewer-session';
 import { Clock } from '../../../core/time/clock';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { PageVisibility } from '../../../core/presence/page-visibility';
 import { UsageWatch } from '../../../core/usage/usage-watch';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { IssueBar } from '../../issues/issue-bar/issue-bar';
@@ -41,7 +42,8 @@ import { nurseryInputOf } from '../nursery/nursery-layout';
 import { Meteor, MeteorLanding, meteorsOf } from '../engine/meteor-layer';
 import { ChangesPanel } from '../memory/changes-panel/changes-panel';
 import { MemoryView } from '../memory/memory-view';
-import { EFFECTS, MemoryItem, knownFates } from '../memory/news';
+import { systemsOf } from '../memory/departure';
+import { EFFECTS, MemoryItem, knownEndings } from '../memory/news';
 import { Timeline } from '../memory/timeline/timeline';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
@@ -233,6 +235,7 @@ export class StarmapPage {
   private readonly blackHole = inject(BlackHoleSetting);
   private readonly wipLimit = inject(WipLimitSetting);
   private readonly route = inject(ActivatedRoute);
+  private readonly visibility = inject(PageVisibility);
   private readonly now = inject(Clock).now;
   private readonly window = inject(DOCUMENT).defaultView;
   private readonly destroyRef = inject(DestroyRef);
@@ -329,10 +332,12 @@ export class StarmapPage {
   protected readonly showWipNotice = computed(
     () => this.chart() === 'prs' && this.wip().isOver && !this.memory.replay(),
   );
-  /** The sky's news, as its layer reads it. */
+  /** The sky's news, as its layer reads it: what changed since you looked, and, on the live sky,
+   *  the pull requests that have left since. */
   protected readonly skyNews = computed(() => {
     const news = this.memory.news();
-    return { events: news.events, acknowledged: news.acknowledged };
+    const left = this.memory.replay() ? [] : this.memory.departures();
+    return { events: [...news.events, ...left], acknowledged: news.acknowledged };
   });
   protected readonly skyPairs = computed(() =>
     this.memory.replay() ? [] : (this.collisions.report()?.pairs ?? []).map(skyPairOf),
@@ -437,6 +442,26 @@ export class StarmapPage {
     }
     return null;
   });
+
+  /** What every pull request's star carries now, for when it leaves. */
+  private readonly systems = computed(() =>
+    systemsOf({
+      items: (this.report()?.items ?? []).map(skyItemOf),
+      crews: this.crewMarks(),
+      satellites: this.satellites(),
+      meteors: meteorsOf(this.repo(), this.items()),
+    }),
+  );
+  /** Whether the pull request sky is on screen for someone to see: not under a full
+   *  screen, another sky, a list, a replay or a hidden tab. */
+  private readonly skyInView = computed(
+    () =>
+      this.chart() === 'prs' &&
+      this.view() === 'map' &&
+      !this.coveredByScreen() &&
+      !this.memory.replay() &&
+      !this.visibility.isHidden(),
+  );
 
   private readonly readAt = computed(() => this.report()?.generatedAt ?? null);
   /** pr-starmap's changes panel: while there is unseen news on the queue's map. */
@@ -703,6 +728,25 @@ export class StarmapPage {
         this.sky()?.play(events);
       });
     });
+    // Every refresh, whoever left the queue is noticed with the system its star carried.
+    effect(() => {
+      const report = this.report();
+      const systems = this.systems();
+      if (!report || !this.memory.framesLoaded()) return;
+      untracked(() =>
+        this.memory.follow(
+          this.items().map(memoryItemOf),
+          new Set(report.items.map((item) => item.number)),
+          systems,
+        ),
+      );
+    });
+    // A departure plays once the sky is in view: at once, or when a screen over it closes.
+    effect(() => {
+      const sky = this.sky();
+      if (!sky || !this.skyInView() || !this.memory.waiting().length) return;
+      untracked(() => sky.play(this.memory.release()));
+    });
     // Replay lays the sky out before its news plays, as pr-starmap refreshed then played.
     this.memory.onPlay = (events) => setTimeout(() => this.sky()?.play(events));
     effect(() => {
@@ -926,7 +970,9 @@ export class StarmapPage {
 
   /** Where a pull request shown in replay stands today. */
   private fateNow(pr: number): string {
-    return knownFates(this.memory.frames(), this.memory.ledger()).get(pr) ?? 'no longer open';
+    return (
+      knownEndings(this.memory.frames(), this.memory.ledger()).get(pr)?.fate ?? 'no longer open'
+    );
   }
 
   /** A replayed pull request, filled out from the live queue while it is still open. */
@@ -1080,6 +1126,12 @@ export class StarmapPage {
   protected recordLook(number: number, sha: string): void {
     if (!this.session.canWrite() || this.memory.replay()) return;
     this.recordTriage(number, { action: 'look', sha });
+  }
+
+  /** GitHub took a merge made on the pull request's screen: read the queue now, so the
+   *  star leaves as soon as the screen lets the sky be seen. */
+  protected merged(): void {
+    this.feed.refresh(this.repo(), true);
   }
 
   /** Reads the queue again now, after GitHub took a rerun. */

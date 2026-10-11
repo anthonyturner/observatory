@@ -1,4 +1,5 @@
 import { PULL_BUCKETS, PullBucket } from '../projects/projects-report';
+import { How, isHow } from './pull-ending';
 
 /** One open pull request in a frame. */
 export interface FrameItem {
@@ -10,11 +11,6 @@ export interface FrameItem {
 }
 
 export type Fate = 'merged' | 'closed';
-
-/** A merge commit, a squash, or closed unmerged. */
-export type How = 'merge' | 'squash' | 'closed';
-
-const HOWS: readonly unknown[] = ['merge', 'squash', 'closed'];
 
 /** A pull request that left the queue since the frame before. */
 export interface Departed {
@@ -62,7 +58,7 @@ function parseDeparted(value: unknown): Departed | null {
     number: value['number'],
     title: titleOf(value),
     fate,
-    ...(HOWS.includes(how) && { how: how as How }),
+    ...(isHow(how) && { how }),
   };
 }
 

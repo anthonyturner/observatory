@@ -8,6 +8,10 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ## [Unreleased]
 
+### Changed
+
+- A pull request that merges or closes now leaves the Review Queue's sky at the next refresh, every refresh, not only once per visit; one you merge on its own screen leaves as soon as you close that screen. If the sky is not in view (a screen over it, another sky, the list or a hidden tab) the exit waits and plays when it is back. A squashed or rebased merge is now its own kind of news, and each exit carries a snapshot of the star's planets, crew ship, satellites and meteor for the endings to come ([#619](https://github.com/anthonyturner/observatory/issues/619)).
+
 ### Fixed
 
 - **Run** now carries on wherever the project is shown. Start it on a project's card on Home and open the project while the server is still starting, and the site still opens in its new tab, once, when it answers; before, the project's own **Run** began a fresh watch and the open was lost. The card and the project's bar now share one state ([#609](https://github.com/anthonyturner/observatory/issues/609)).

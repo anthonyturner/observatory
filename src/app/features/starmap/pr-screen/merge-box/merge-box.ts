@@ -45,6 +45,8 @@ export class MergeBox {
   readonly detail = input.required<PullDetail>();
   /** GitHub took a merge or a ready: the details should be read again. */
   readonly saved = output<void>();
+  /** GitHub took a merge: the pull request is leaving the queue. */
+  readonly merged = output<void>();
 
   private readonly edits = inject(PullEdits);
   private readonly choice = inject(MergeMethodChoice);
@@ -100,7 +102,7 @@ export class MergeBox {
     if (!this.canMerge()) return;
     this.confirming.set(false);
     const merge = { method: this.method(), headOid: this.detail().headOid };
-    this.send({ merge }, MERGED);
+    this.send({ merge }, MERGED, () => this.merged.emit());
   }
 
   protected markReady(): void {
@@ -116,7 +118,7 @@ export class MergeBox {
     this.cancel();
   }
 
-  private send(changes: EditChanges, didIt: Outcome): void {
+  private send(changes: EditChanges, didIt: Outcome, onDone?: () => void): void {
     this.problem.set(null);
     this.edits
       .save(changes)
@@ -124,7 +126,8 @@ export class MergeBox {
       .subscribe((sent) => {
         if (sent) this.saved.emit();
         const record = this.edits.last();
-        if (!didIt(record)) this.problem.set(sent ? (record?.message ?? '') : UNREACHABLE);
+        if (didIt(record)) onDone?.();
+        else this.problem.set(sent ? (record?.message ?? '') : UNREACHABLE);
       });
   }
 }

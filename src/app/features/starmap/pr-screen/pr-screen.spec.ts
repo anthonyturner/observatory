@@ -389,14 +389,49 @@ describe('PrScreen', () => {
     expect(box().querySelector('.ready')?.textContent).toContain('Ready for review');
   });
 
+  it('says the pull request is leaving the queue once GitHub took its merge', () => {
+    const { fixture, http, open, press } = render();
+    const leaving = vi.fn();
+    fixture.componentInstance.merged.subscribe(leaving);
+    open({ ...detail, isDraft: false });
+    press('.main');
+    press('.confirm');
+
+    expect(leaving).not.toHaveBeenCalled();
+    http.expectOne('/api/edit').flush(MERGED_RECORD);
+
+    expect(leaving).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not say it is leaving when the merge did not happen', () => {
+    const { fixture, http, open, press } = render();
+    const leaving = vi.fn();
+    fixture.componentInstance.merged.subscribe(leaving);
+    open({ ...detail, isDraft: false });
+    press('.main');
+    press('.confirm');
+
+    http.expectOne('/api/edit').flush({
+      ...MERGED_RECORD,
+      status: 'rejected',
+      message: 'not merged: the branch conflicts with its base',
+      applied: [],
+    });
+
+    expect(leaving).not.toHaveBeenCalled();
+  });
+
   it('marks a draft ready from the merge box, and lets it merge straight after', () => {
-    const { box, http, open, press, settle } = render();
+    const { fixture, box, http, open, press, settle } = render();
+    const leaving = vi.fn();
+    fixture.componentInstance.merged.subscribe(leaving);
     open();
     press('.ready');
 
     const sent = http.expectOne('/api/edit');
     expect(sent.request.body.changes).toEqual({ ready: true });
     sent.flush({ ...MERGED_RECORD, changes: { ready: true }, applied: ['ready'] });
+    expect(leaving).not.toHaveBeenCalled();
     http.expectOne('/api/pull?repo=me/app&number=572&fresh=1');
     settle();
     expect(box().querySelector('.ready')).toBeNull();

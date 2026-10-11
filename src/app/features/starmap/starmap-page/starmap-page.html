@@ -269,6 +269,7 @@
     [landed]="sheetLanded()"
     [flakyChecks]="sheetFlaky()"
     (closed)="sheetPull.set(null)"
+    (merged)="merged()"
     (looked)="recordLook(number, $event)"
   />
 }

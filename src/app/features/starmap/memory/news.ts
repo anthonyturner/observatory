@@ -1,14 +1,19 @@
+import { Lookup, PullState } from '../../../core/activity/activity-lookups';
 import { Frame } from '../../../core/queue/history-report';
 import { Ledger } from '../../../core/queue/ledger';
 import { rnd } from '../engine/rnd';
 import { BucketId, SkyCluster, WORLD } from '../engine/sky-model';
+import { Departure, EMPTY_SYSTEM, Ending, StarSystem, endingOf, endingOfPull } from './departure';
 import { MERGE_SPAN_S } from './merge-supernova';
 
 /* pr-starmap's memory, kept apart as it kept it: `diffItems` only compares,
    EFFECTS only says how each kind of change looks, and the panel, the timeline
    and replay only consume events. */
 
-export type ChangeKind = 'blocked' | 'opened' | 'merged' | 'unblocked' | 'closed' | 'left';
+/** `merged` is a merge commit, or a merge whose way nobody recorded; `squashed`
+ *  is a squash or a rebase, which leave their commits on the base alike. */
+export type ChangeKind =
+  'blocked' | 'opened' | 'merged' | 'squashed' | 'unblocked' | 'closed' | 'left';
 
 /** A pull request as the memory compares it. */
 export interface MemoryItem {
@@ -24,6 +29,8 @@ export interface NewsEvent {
   readonly pr: number;
   readonly title: string;
   readonly bucket: BucketId;
+  /** What a pull request that left the sky took with it; only on those that left. */
+  readonly departure?: Departure;
   /** When its burst starts, in wall seconds; set by `play`. */
   startAt?: number;
   /** Where a pull request that left crosses the sky from, and which way. */
@@ -82,8 +89,18 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     mark: null,
     flashesStill: true,
   },
-  unblocked: {
+  squashed: {
     rank: 3,
+    noun: 'squashed',
+    tag: 'squashed',
+    colour: '#5fe3a1',
+    onStar: false,
+    span: MERGE_SPAN_S,
+    mark: null,
+    flashesStill: true,
+  },
+  unblocked: {
+    rank: 4,
     noun: 'unblocked',
     tag: 'UNBLOCKED',
     colour: '#5fe3a1',
@@ -93,7 +110,7 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     flashesStill: false,
   },
   closed: {
-    rank: 4,
+    rank: 5,
     noun: 'closed unmerged',
     tag: 'closed',
     colour: '#8d9bc4',
@@ -103,7 +120,7 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     flashesStill: false,
   },
   left: {
-    rank: 5,
+    rank: 6,
     noun: 'left the queue',
     tag: 'left',
     colour: '#8d9bc4',
@@ -116,14 +133,76 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
 
 const BLOCKED: ReadonlySet<BucketId> = new Set(['conflicted', 'failing']);
 
+/** How an ending reads on the sky; a pull request that left with none known just left. */
+export function kindOf(ending: Ending | null): ChangeKind {
+  if (!ending) return 'left';
+  if (ending.fate === 'closed') return 'closed';
+  return ending.how === 'squash' ? 'squashed' : 'merged';
+}
+
+/** The pull requests in `before` that are not in `after`. */
+const departedFrom = (
+  before: readonly MemoryItem[],
+  after: readonly MemoryItem[],
+): MemoryItem[] => {
+  const now = new Set(after.map((i) => i.pr));
+  return before.filter((i) => !now.has(i.pr));
+};
+
+const worstFirst = (a: NewsEvent, b: NewsEvent): number =>
+  EFFECTS[a.kind].rank - EFFECTS[b.kind].rank || a.pr - b.pr;
+
+/** The news of pull requests that left, each with the system its star carried
+ *  and how it ended, where those are known. */
+export function departureEvents(
+  gone: readonly MemoryItem[],
+  endings: ReadonlyMap<number, Ending> = new Map(),
+  systems: ReadonlyMap<number, StarSystem> = new Map(),
+): NewsEvent[] {
+  return gone
+    .map((i): NewsEvent => {
+      const ending = endings.get(i.pr) ?? null;
+      return {
+        kind: kindOf(ending),
+        pr: i.pr,
+        title: i.title,
+        bucket: i.bucket,
+        departure: { system: systems.get(i.pr) ?? EMPTY_SYSTEM, ending },
+      };
+    })
+    .sort(worstFirst);
+}
+
+/**
+ * The news of `gone`, once GitHub has answered for each in turn. One it says is
+ * still open did not leave (the queue only stopped showing it) and is no news;
+ * one it could not answer for just left.
+ */
+export function departuresAnswered(
+  gone: readonly MemoryItem[],
+  answers: readonly Lookup<PullState>[],
+  systems: ReadonlyMap<number, StarSystem>,
+): NewsEvent[] {
+  const left: MemoryItem[] = [];
+  const endings = new Map<number, Ending>();
+  gone.forEach((each, i) => {
+    const answer = answers[i];
+    const ending = answer.status === 'found' ? endingOfPull(answer.value) : null;
+    if (answer.status === 'found' && !ending) return;
+    left.push(each);
+    if (ending) endings.set(each.pr, ending);
+  });
+  return departureEvents(left, endings, systems);
+}
+
 /** What changed between two queues: items in, events out, worst first. */
 export function diffItems(
   before: readonly MemoryItem[],
   after: readonly MemoryItem[],
-  fates: ReadonlyMap<number, 'merged' | 'closed'> = new Map(),
+  endings: ReadonlyMap<number, Ending> = new Map(),
+  systems: ReadonlyMap<number, StarSystem> = new Map(),
 ): NewsEvent[] {
   const was = new Map(before.map((i) => [i.pr, i]));
-  const now = new Map(after.map((i) => [i.pr, i]));
   const events: NewsEvent[] = [];
   for (const i of after) {
     const old = was.get(i.pr);
@@ -134,11 +213,8 @@ export function diffItems(
     else if (!BLOCKED.has(i.bucket) && BLOCKED.has(old.bucket))
       events.push({ kind: 'unblocked', ...event });
   }
-  for (const i of before) {
-    if (now.has(i.pr)) continue;
-    events.push({ kind: fates.get(i.pr) ?? 'left', pr: i.pr, title: i.title, bucket: i.bucket });
-  }
-  return events.sort((a, b) => EFFECTS[a.kind].rank - EFFECTS[b.kind].rank || a.pr - b.pr);
+  events.push(...departureEvents(departedFrom(before, after), endings, systems));
+  return events.sort(worstFirst);
 }
 
 /** A frame's items in the memory's shape. */
@@ -151,18 +227,17 @@ export const frameItems = (frame: Frame): MemoryItem[] =>
   }));
 
 /** How every pull request that left the queue left it: the frames' own records
- *  first, the ledger after. */
-export function knownFates(
-  frames: readonly Frame[],
-  ledger: Ledger | null,
-): Map<number, 'merged' | 'closed'> {
-  const fates = new Map<number, 'merged' | 'closed'>();
+ *  first, the ledger after. Neither knows the threads or the issues closed. */
+export function knownEndings(frames: readonly Frame[], ledger: Ledger | null): Map<number, Ending> {
+  const endings = new Map<number, Ending>();
   for (const row of ledger?.rows ?? []) {
-    for (const pr of row.closed) fates.set(pr, 'closed');
-    for (const pr of row.merged) fates.set(pr, 'merged');
+    for (const pr of row.closed) endings.set(pr, endingOf('closed'));
+    for (const pr of row.merged) endings.set(pr, endingOf('merged'));
   }
-  for (const f of frames) for (const d of f.departed) fates.set(d.number, d.fate);
-  return fates;
+  for (const f of frames) {
+    for (const d of f.departed) endings.set(d.number, endingOf(d.fate, d.how ?? null));
+  }
+  return endings;
 }
 
 /** The frame the live sky is compared with, and how to describe it. */

@@ -12,6 +12,9 @@ export const MERGE_SPAN_S = NOVA_S + STREAK_S;
 export const NOVA_FLASH = '#fff4cf';
 export const NOVA_RING = '#ffd36e';
 
+/** Whether a kind of news is a merge: a squash goes out like any other. */
+export const isMerge = (kind: string): boolean => kind === 'merged' || kind === 'squashed';
+
 /** The size a departed star is drawn at: it is gone, so there is none to measure. */
 export const DEPARTED_MAG = 7;
 
@@ -125,7 +128,7 @@ export function mergeCues(
 ): MergeCue[] {
   const listener = listenerOf(width, height);
   return events
-    .filter((ev) => ev.kind === 'merged' && ev.startAt != null)
+    .filter((ev) => isMerge(ev.kind) && ev.startAt != null)
     .slice(0, MAX_BOOMS)
     .map((ev) => {
       const from = { x: ev.fromX ?? 0, y: ev.fromY ?? 0, z: ev.fromZ ?? 0 };

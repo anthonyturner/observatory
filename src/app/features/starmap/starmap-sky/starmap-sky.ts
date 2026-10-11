@@ -413,14 +413,14 @@ export class StarmapSky {
     if (!this.hidden() && this.chart() === 'prs') {
       this.boom(events, engine, now);
       this.engines(leaving, engine, now);
-      this.announce(events, leaving);
+      this.emitSpeechHooks(events, leaving);
     }
     engine.kick();
   }
 
   /** Tells speech what the batch will do, in the order it is heard: the planets
    *  turning green, the stars going, then the ships casting off. */
-  private announce(events: readonly NewsEvent[], leaving: readonly Undock[]): void {
+  private emitSpeechHooks(events: readonly NewsEvent[], leaving: readonly Undock[]): void {
     const turning = resolutionsOf(events);
     if (turning.length) this.resolved.emit(turning);
     const exits = exitStartsOf(events);

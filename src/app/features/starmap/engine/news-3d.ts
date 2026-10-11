@@ -307,7 +307,7 @@ function collapse(ctx: Context): Effect3D {
  * The star cools to an ember where it stood, then sinks into the black hole.
  * With motion off the cooling alone plays.
  */
-function sinking(ctx: Context, request: NewsEffect3D): Effect3D {
+function sinking(ctx: Context): Effect3D {
   const { scene, kit, camera } = ctx;
   const own: Own = (resource) => kit.owned.own(resource);
   const group = new Group();
@@ -315,10 +315,14 @@ function sinking(ctx: Context, request: NewsEffect3D): Effect3D {
   const glow = flashMesh(own, '#ffffff');
   const halo = flashMesh(own, '#ffffff');
   group.add(halo, glow);
-  const show = (at: { x: number; y: number; z: number }, radius: number, look: EmberLook): void => {
+  const show = (
+    at: { x: number; y: number; z: number },
+    look: EmberLook,
+    onHead: NewsEffect3D['onHead'],
+  ): void => {
     group.visible = true;
     group.position.copy(vec(at.x, at.y, at.z));
-    const r = worldRadius(DEPARTED_MAG, at.z, camera) * radius;
+    const r = worldRadius(DEPARTED_MAG, at.z, camera) * look.radius;
     for (const [mesh, size, share] of [
       [glow, 1, 1],
       [halo, 1.9, 0.22],
@@ -327,21 +331,21 @@ function sinking(ctx: Context, request: NewsEffect3D): Effect3D {
       mesh.scale.setScalar(r * size);
       mesh.material.opacity = look.alpha * share;
     }
-    request.onHead?.(ctx.toScreen(at.x, at.y, at.z));
+    onHead?.(ctx.toScreen(at.x, at.y, at.z));
   };
   return {
-    update({ p, from, still }) {
+    update({ p, from, still, onHead }) {
       group.visible = false;
       const q = coolProgress(p);
       if (q !== null) {
         const look = coolLook(q);
-        show(from, look.radius, look);
+        show(from, look, onHead);
         return;
       }
       const s = sinkProgress(p);
       if (still || s <= 0) return;
       const look = sinkLook(s);
-      show(sinkHead(from, s), look.radius, look);
+      show(sinkHead(from, s), look, onHead);
     },
     dispose() {
       kit.owned.release(group);
@@ -381,7 +385,7 @@ export class NewsEffects3D {
     if (request.mode === 'squashed') {
       return thenStreak(this.ctx, request, collapse(this.ctx), squashStreakProgress);
     }
-    if (request.mode === 'closed') return sinking(this.ctx, request);
+    if (request.mode === 'closed') return sinking(this.ctx);
     return expanding(this.ctx, request);
   }
 

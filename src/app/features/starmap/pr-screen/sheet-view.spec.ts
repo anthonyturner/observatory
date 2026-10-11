@@ -1,6 +1,6 @@
 import { PullDetail } from '../../../core/queue/pull-detail';
 import { checkRows, commitRows, commitsNote, fileRows } from './sheet-rows/sheet-row';
-import { kickerOf, labelColour, resultClass, routeOf, tabCounts } from './sheet-view';
+import { kickerOf, labelColour, resultClass, routeOf, sheetTabs, tabCounts } from './sheet-view';
 
 const detail = {
   number: 572,
@@ -39,6 +39,27 @@ const detail = {
 } as unknown as PullDetail;
 
 describe('the PR screen’s view', () => {
+  it('offers Edit only to a viewer who may write', () => {
+    expect(sheetTabs(true, detail)).toEqual([
+      'overview',
+      'files',
+      'commits',
+      'checks',
+      'diff',
+      'edit',
+    ]);
+    expect(sheetTabs(false, detail)).toEqual(['overview', 'files', 'commits', 'checks', 'diff']);
+  });
+
+  it('drops Commits for a single commit, whose changes are the whole Diff', () => {
+    const single = { ...detail, commitsTotal: 1 };
+    expect(sheetTabs(true, single)).toEqual(['overview', 'files', 'checks', 'diff', 'edit']);
+  });
+
+  it('keeps Commits while the count is not yet known', () => {
+    expect(sheetTabs(false, null)).toEqual(['overview', 'files', 'commits', 'checks', 'diff']);
+  });
+
   it('counts files, commits and failed checks for the tabs', () => {
     expect(tabCounts(detail)).toEqual({
       overview: '',

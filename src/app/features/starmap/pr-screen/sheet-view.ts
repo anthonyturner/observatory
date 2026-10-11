@@ -4,8 +4,16 @@ import { BUCKET_LOOK } from '../../queue/queue-view';
 
 export const SHEET_TABS = ['overview', 'files', 'commits', 'checks', 'diff', 'edit'] as const;
 export type SheetTab = (typeof SHEET_TABS)[number];
-/** The tabs for a viewer who may not change the pull request: all but Edit. */
-export const READ_TABS: readonly SheetTab[] = SHEET_TABS.filter((tab) => tab !== 'edit');
+
+/** The tabs this viewer gets for this pull request: Edit only for one who may
+ *  change it, and Commits only once there are two to tell apart, since one
+ *  commit's changes are the whole Diff. */
+export function sheetTabs(canWrite: boolean, detail: PullDetail | null): readonly SheetTab[] {
+  const singleCommit = detail !== null && detail.commitsTotal <= 1;
+  return SHEET_TABS.filter(
+    (tab) => !(tab === 'edit' && !canWrite) && !(tab === 'commits' && singleCommit),
+  );
+}
 
 export const TAB_LABEL: Readonly<Record<SheetTab, string>> = {
   overview: 'Overview',

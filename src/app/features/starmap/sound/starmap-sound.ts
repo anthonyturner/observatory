@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { SatelliteState } from '../../../core/live-agents/satellites';
 
+import { SparkCue } from '../memory/comment-sparks';
 import { ExitCue } from '../memory/exits';
 import { UndockCue } from '../memory/undock';
 import { StarmapScore, WebAudioStarmapScore } from './starmap-score';
@@ -119,6 +120,11 @@ export class StarmapSound {
   /** An engine when a crew ship or satellite casts off from a star that left, only while the sound is on. */
   undock(cue: UndockCue): void {
     if (this.isOn()) this.score?.undock(cue);
+  }
+
+  /** The crackle of a leaving star's review threads peeling off, only while the sound is on. */
+  sparked(cue: SparkCue): void {
+    if (this.isOn()) this.score?.sparks(cue);
   }
 
   private play(): void {

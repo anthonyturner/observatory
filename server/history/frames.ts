@@ -1,3 +1,4 @@
+import type { How } from '../github/fate-reader.ts';
 import type { PullBucket } from '../projects/pull-counts.ts';
 import type { QueueReport } from '../queue/queue-report.ts';
 
@@ -17,6 +18,8 @@ export interface Departed {
   readonly number: number;
   readonly title: string;
   readonly fate: Fate;
+  /** Merge commit, squash or closed; absent in frames recorded before this was kept. */
+  readonly how?: How;
 }
 
 /** The queue as it stood at one refresh. GitHub keeps no history of

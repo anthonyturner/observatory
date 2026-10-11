@@ -28,7 +28,14 @@ export async function recordFrame(
   const fates = await mapWithLimit(leftSince(previous, items), FATE_CONCURRENCY, async (item) => {
     const pull = await github.pullState(report.repo, item.number).catch(() => null);
     const fate = fateFrom(pull?.state ?? '');
-    return fate ? { number: item.number, title: item.title, fate } : null;
+    return fate
+      ? {
+          number: item.number,
+          title: item.title,
+          fate,
+          ...(pull?.ending && { how: pull.ending.how }),
+        }
+      : null;
   });
   const frame: Frame = {
     at: new Date(now).toISOString(),

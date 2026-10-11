@@ -57,6 +57,22 @@ describe('fileHistoryStore', () => {
   });
 });
 
+describe('frames recorded before departures carried how', () => {
+  it('still load, and a frame with how keeps it', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'observatory-history-'));
+    const store = fileHistoryStore(dir);
+    const old = { ...frameAt(1), departed: [{ number: 4, title: 'old', fate: 'merged' }] };
+    const recent = {
+      ...frameAt(2),
+      departed: [{ number: 5, title: 'new', fate: 'merged', how: 'merge' }],
+    };
+    appendFileSync(join(dir, 'me__a.jsonl'), `${JSON.stringify(old)}\n`);
+    await store.append('me/a', recent as Frame);
+
+    assert.deepEqual(await store.read('me/a'), [old, recent]);
+  });
+});
+
 describe('storeHistoryStore', () => {
   it('keeps each repository’s frames as one document, oldest first', async () => {
     const backing = memoryStore();

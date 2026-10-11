@@ -5,7 +5,7 @@ import {
   readWorkflowRuns,
   readWorkflows,
 } from './actions-reader.ts';
-import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
+import { fateReader } from './fate-reader.ts';
 import type { GitHub } from './github.ts';
 import { PULL_REQUEST_FIELDS, type PullRequest, type RepoRef } from './github-reader.ts';
 import { readChangelog } from './changelog-reader.ts';
@@ -253,6 +253,7 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
     ...deploymentReader(getJson),
     ...milestoneReader(graphql),
     ...discussionReader(graphql),
+    ...fateReader(graphql),
     viewer: async () =>
       String(asNode(asNode(await graphql('query { viewer { login } }'))['viewer'])['login']),
     ownedRepos: (owner) => ownedRepos(graphql, owner),
@@ -288,8 +289,6 @@ export function githubApiReader(config: GraphQlConfig): GitHub {
       );
       return shaped<RawLabel>(nodesOf(repository['labels']));
     },
-    pullState: async (repo, pull) =>
-      shaped<PullState>([await onePull(repo, pull, PULL_STATE_FIELDS)])[0],
     mergeableOf: async (repo, pull) =>
       String((await onePull(repo, pull, ['mergeable']))['mergeable']),
     openIssueNumbers: async (repo) =>

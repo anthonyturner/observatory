@@ -81,21 +81,23 @@ const merger = gitPairMerger();
 const logsConfig = fileLogsConfig();
 const logFolder = fsLogFolder();
 const handoffs = fileHandoffStore();
+const store = fileStore();
+const edits = storeEditStore(store);
 const reads = cachedReads({
   github,
   history: fileHistoryStore(),
+  edits,
   collisions: (repo) => collisionsReport(github, clones, merger, repo),
   usage: () => usageReport(),
   agentUsage: () => agentUsageReport(),
   logs: (repo) => logsReport(logsConfig, logFolder, repo, new Date()),
   handoffs: async () => handoffs.read(),
 });
-const store = fileStore();
 const triage = storeTriageStore(store);
 const editor = pullEditor({
   writer: github,
   labels: (repo) => reads.labels(repo),
-  store: storeEditStore(store),
+  store: edits,
   changed: ({ repo, number }) => reads.forgetPull(repo, number),
   now: Date.now,
 });

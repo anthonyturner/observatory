@@ -11,7 +11,7 @@ import { readChangelog } from './changelog-reader.ts';
 import { readPullComments } from './comment-reader.ts';
 import { readCheckHistory } from './check-history.ts';
 import { ghCliInboxMarker, ghCliRerunner, ghCliWriter } from './gh-cli-writer.ts';
-import { PULL_STATE_FIELDS, type PullState } from './fate-reader.ts';
+import { fateReader } from './fate-reader.ts';
 import { type ListedFiles, pullFilesOf } from './listed-files.ts';
 import { readMergedPulls } from './merged-pull-reader.ts';
 import type { GitHub } from './github.ts';
@@ -87,6 +87,7 @@ export function ghCliReader(): GitHub {
     ...deploymentReader(getJson),
     ...milestoneReader(graphQl),
     ...discussionReader(graphQl),
+    ...fateReader(graphQl),
     viewer: async () => (await gh(['api', 'user', '--jq', '.login'])).trim(),
     ownedRepos: (owner) =>
       ghJson<RepoRef[]>([
@@ -250,16 +251,6 @@ export function ghCliReader(): GitHub {
           'number,files',
         ]),
       ),
-    pullState: (repo, pull) =>
-      ghJson<PullState>([
-        'pr',
-        'view',
-        String(pull),
-        '--repo',
-        repo,
-        '--json',
-        PULL_STATE_FIELDS.join(','),
-      ]),
     mergeableOf: async (repo, pull) =>
       (
         await ghJson<{ mergeable: string }>([

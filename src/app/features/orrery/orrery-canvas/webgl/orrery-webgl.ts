@@ -476,6 +476,10 @@ export class OrreryWebGL {
 
   /** Puts one of the world's city lights down, from scene time `time`, on the night side that faces us. */
   dimLight(repo: string, time: number): void {
+    // A world that is gone is never drawn again to retire its own, so finished ones go here.
+    for (const [key, { startedAt }] of this.dimmings) {
+      if (time - startedAt >= DIM_TOTAL_S) this.dimmings.delete(key);
+    }
     this.dimmings.set(repo, { startedAt: time, spot: null });
   }
 

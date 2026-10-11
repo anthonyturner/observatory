@@ -13,7 +13,6 @@ import {
   fateOf,
   ghostLook,
   meteorPull,
-  mixColour,
   planetOffset,
   planetPoses,
   resolutionsOf,
@@ -163,15 +162,6 @@ describe('where a planet stands', () => {
     expect(level.z).toBeCloseTo(0);
     expect(dropped.y - level.y).toBeCloseTo(30);
     expect(planetOffset({ angle: Math.PI / 2, orbit: 2, drop: 0 }, 10).z).toBeCloseTo(20);
-  });
-});
-
-describe('mixing a colour', () => {
-  it('runs from the first to the second and is clamped', () => {
-    expect(mixColour('#000000', '#ffffff', 0)).toBe('#000000');
-    expect(mixColour('#000000', '#ffffff', 1)).toBe('#ffffff');
-    expect(mixColour('#000000', '#ffffff', 0.5)).toBe('#808080');
-    expect(mixColour('#102030', '#ffffff', 5)).toBe('#ffffff');
   });
 });
 

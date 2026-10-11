@@ -1,7 +1,7 @@
 import { issuePlanets } from '../engine/star-system';
 import { SkyFrame } from '../engine/sky-frame';
 import { Meteor } from '../engine/meteor-layer';
-import { Departed, drawCompany } from './company-draw';
+import { Departed, drawCompany, mixColour } from './company-draw';
 import { Departure, EMPTY_SYSTEM, endingOf } from './departure';
 import { GLOW_S, PULL_AT_S, PULL_S } from './departure-company';
 import { PRELUDE_S } from './departure-exit';
@@ -121,5 +121,14 @@ describe('drawCompany', () => {
     // The light's halo and core, and the one planet's green halo and body.
     expect(circles).toHaveLength(2 + 2);
     expect(lines).toHaveLength(0);
+  });
+});
+
+describe('mixing a colour', () => {
+  it('runs from the first to the second and is clamped', () => {
+    expect(mixColour('#000000', '#ffffff', 0)).toBe('#000000');
+    expect(mixColour('#000000', '#ffffff', 1)).toBe('#ffffff');
+    expect(mixColour('#000000', '#ffffff', 0.5)).toBe('#808080');
+    expect(mixColour('#102030', '#ffffff', 5)).toBe('#ffffff');
   });
 });

@@ -135,21 +135,6 @@ export function planetOffset(
   };
 }
 
-/** A colour `share` (0 to 1) of the way from one hex colour to another. */
-export function mixColour(from: string, towards: string, share: number): string {
-  const channels = (hex: string): number[] =>
-    [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
-  const [a, b] = [channels(from), channels(towards)];
-  const k = unit(share);
-  return `#${a
-    .map((c, i) =>
-      Math.round(c + (b[i] - c) * k)
-        .toString(16)
-        .padStart(2, '0'),
-    )
-    .join('')}`;
-}
-
 /** The green a resolved issue glows: the sky's merged colour. */
 export const RESOLVED_GREEN = '#5fe3a1';
 

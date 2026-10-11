@@ -7,7 +7,6 @@ import {
   RESOLVED_GREEN,
   ghostLook,
   meteorPull,
-  mixColour,
   planetOffset,
   planetPoses,
 } from './departure-company';
@@ -34,6 +33,21 @@ const EMBER = '255, 170, 90';
 
 const channels = (hex: string): string =>
   [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16)).join(', ');
+
+/** A colour `share` (0 to 1) of the way from one hex colour to another. */
+export function mixColour(from: string, towards: string, share: number): string {
+  const channels = (hex: string): number[] =>
+    [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
+  const [a, b] = [channels(from), channels(towards)];
+  const k = Math.min(1, Math.max(0, share));
+  return `#${a
+    .map((c, i) =>
+      Math.round(c + (b[i] - c) * k)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+}
 
 const rgba = (hex: string, alpha: number): string => `rgba(${channels(hex)}, ${alpha})`;
 

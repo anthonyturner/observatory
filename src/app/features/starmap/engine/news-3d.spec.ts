@@ -1,4 +1,4 @@
-import { Group, Line, Mesh, Scene } from 'three';
+import { Group, Line, Mesh, Points, Scene } from 'three';
 import { COOL_S, EMBER_SPAN_S } from '../memory/closed-ember';
 import { PRELUDE_S } from '../memory/departure-exit';
 import { MERGE_SPAN_S } from '../memory/merge-supernova';
@@ -125,5 +125,51 @@ describe('the merge supernova in 3D', () => {
     effects.update([request('merged', 0.8)]);
     expect((scene.children[0] as Group).visible).toBe(false);
     expect(scene.children.some((child) => child instanceof Line)).toBe(true);
+  });
+});
+
+describe('review-thread sparks in 3D', () => {
+  const flying = [
+    { unresolved: true, x: 1, y: 2, z: 3, alpha: 1, size: 3 },
+    { unresolved: false, x: 4, y: 5, z: 6, alpha: 0.5, size: 2 },
+  ];
+
+  it.each(['merged', 'squashed', 'closed'] as const)(
+    'draws a %s exit’s sparks as points in red and gold, upright in the scene',
+    (mode) => {
+      const { scene, effects, request } = setUp();
+
+      effects.update([request(mode, 0.2, { sparks: flying })]);
+
+      const points = scene.children.find((child) => child instanceof Points) as Points;
+      const position = points.geometry.attributes['position'];
+      const colour = points.geometry.attributes['color'];
+      expect(points.geometry.drawRange.count).toBe(2);
+      expect([position.getX(0), position.getY(0), position.getZ(0)]).toEqual([1, -2, 3]);
+      expect(colour.getX(0)).toBeGreaterThan(colour.getZ(0));
+      expect(colour.getX(1)).toBeGreaterThan(colour.getZ(1));
+      expect(colour.getY(1)).toBeGreaterThan(colour.getY(0));
+    },
+  );
+
+  it('builds no points for an exit with no sparks, and shows none once they have landed', () => {
+    const { scene, effects, request } = setUp();
+
+    effects.update([request('merged', 0.2)]);
+    expect(scene.children.some((child) => child instanceof Points)).toBe(false);
+
+    effects.update([request('merged', 0.3, { sparks: flying })]);
+    effects.update([request('merged', 0.9, { sparks: [] })]);
+    const points = scene.children.find((child) => child instanceof Points) as Points;
+    expect(points.geometry.drawRange.count).toBe(0);
+  });
+
+  it('releases the points with the exit', () => {
+    const { scene, effects, request } = setUp();
+
+    effects.update([request('closed', 0.2, { sparks: flying })]);
+    effects.update([]);
+
+    expect(scene.children).toEqual([]);
   });
 });

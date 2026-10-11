@@ -463,3 +463,39 @@ describe('WebAudioStarmapScore.undock', () => {
     expect(starts.length).toBe(after);
   });
 });
+
+describe('WebAudioStarmapScore.sparks', () => {
+  const pops = [
+    { atS: 0, hz: 2800, unresolved: true },
+    { atS: 0.1, hz: 6200, unresolved: false },
+    { atS: 0.2, hz: 6000, unresolved: false },
+  ];
+
+  it('pops once for each spark, panned and timed from when the star begins to go', async () => {
+    const { context, starts, pans } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+    const panners = pans.length;
+
+    score.sparks({ delayS: 0.5, pan: 0.3, pops });
+
+    expect(starts.slice(before)).toEqual([10.5, 10.6, 10.7]);
+    expect(pans.slice(panners)).toEqual([0.3, 0.3, 0.3]);
+    score.stop();
+  });
+
+  it('plays nothing before it starts or after it stops', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+
+    score.sparks({ delayS: 0, pan: 0, pops });
+    expect(starts).toEqual([]);
+
+    await score.start();
+    score.stop();
+    const after = starts.length;
+    score.sparks({ delayS: 0, pan: 0, pops });
+    expect(starts.length).toBe(after);
+  });
+});

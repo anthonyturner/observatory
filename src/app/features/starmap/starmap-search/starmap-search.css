@@ -1,18 +1,28 @@
 :host {
   display: block;
-  margin-top: 12px;
+  width: 100%;
+  max-width: 460px;
 }
 
 form {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 7px;
-  max-width: 460px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-input,
-button {
+/* Holds the box, its find button and the list that drops from it. */
+.field {
+  --list-gap: 6px;
+  --find-size: 30px;
+  position: relative;
+  min-width: 0;
+}
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px var(--find-size) 6px 14px;
+  appearance: none;
   border: 1px solid var(--edge-soft);
   border-radius: 999px;
   background: var(--panel);
@@ -20,21 +30,6 @@ button {
   font: inherit;
   font-size: 12px;
   backdrop-filter: blur(14px) saturate(140%);
-}
-
-/* Holds the box and the list that drops from it. */
-.field {
-  --list-gap: 6px;
-  position: relative;
-  flex: 1 1 220px;
-  min-width: 0;
-}
-
-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 14px;
-  appearance: none;
 }
 
 /* Spans the gap between the box and its open list, so the pointer crossing it
@@ -108,34 +103,53 @@ input::placeholder {
   color: var(--faint);
 }
 
-button {
-  padding: 6px 16px;
+/* The icon sits over the box's right end, so Enter and a click both send the same form. */
+.find {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: var(--find-size);
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   color: var(--muted);
   cursor: pointer;
-  transition:
-    border-color 0.25s,
-    color 0.25s;
+  transition: color 0.25s;
 }
 
-button:hover {
-  border-color: var(--flow);
+.find svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.find:hover {
   color: var(--ink);
 }
 
 input:focus-visible,
-button:focus-visible {
+.find:focus-visible {
   outline: 2px solid var(--flow);
   outline-offset: 2px;
 }
 
 .miss {
-  flex-basis: 100%;
   color: var(--muted);
   font-size: 11.5px;
 }
 
-@media (max-width: 720px), (max-height: 500px) {
+/* The header's right column, which this matches (starmap-header.css), holds a compact box. */
+@media (min-width: 1200px) and (min-height: 501px) {
   :host {
-    margin-top: 4px;
+    max-width: 320px;
+  }
+
+  .miss {
+    text-align: right;
   }
 }

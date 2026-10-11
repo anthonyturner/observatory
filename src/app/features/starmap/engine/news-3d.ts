@@ -14,6 +14,7 @@ import {
   SphereGeometry,
   Vector3,
 } from 'three';
+import { MAX_SPARKS, sparkColour } from '../memory/comment-sparks';
 import { CameraController } from './camera-controller';
 import { Kit, vec } from './gpu-kit';
 import { rnd } from './rnd';
@@ -100,6 +101,16 @@ const shellMesh = (own: Own, colour: string): Mesh<SphereGeometry, ShaderMateria
     ),
   );
 
+/** Draws a material's points as discs, not squares. */
+const roundPoints = (material: PointsMaterial): void => {
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <clipping_planes_fragment>',
+      '#include <clipping_planes_fragment>\nif (length(gl_PointCoord - vec2(.5)) > .5) discard;',
+    );
+  };
+};
+
 function expanding(ctx: Context, request: NewsEffect3D): Effect3D {
   const { scene, kit, camera } = ctx;
   const own: Own = (resource) => kit.owned.own(resource);
@@ -133,12 +144,7 @@ function expanding(ctx: Context, request: NewsEffect3D): Effect3D {
       }),
     ),
   );
-  debris.material.onBeforeCompile = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <clipping_planes_fragment>',
-      '#include <clipping_planes_fragment>\nif (length(gl_PointCoord - vec2(.5)) > .5) discard;',
-    );
-  };
+  roundPoints(debris.material);
   group.add(debris);
   return {
     update({ p, star }) {
@@ -353,6 +359,60 @@ function sinking(ctx: Context): Effect3D {
   };
 }
 
+/**
+ * An exit with the review-thread sparks that peel off its star. The points are
+ * built when the first spark flies, and each spark fades by dimming its colour.
+ */
+function withSparks(ctx: Context, exit: Effect3D): Effect3D {
+  const { scene, kit } = ctx;
+  let sparks: Points<BufferGeometry, PointsMaterial> | null = null;
+  const build = (): Points<BufferGeometry, PointsMaterial> => {
+    const geometry = kit.owned.own(new BufferGeometry());
+    for (const name of ['position', 'color']) {
+      geometry.setAttribute(name, new Float32BufferAttribute(new Array(MAX_SPARKS * 3).fill(0), 3));
+    }
+    const material = kit.owned.own(
+      new PointsMaterial({
+        size: 3.5,
+        sizeAttenuation: false,
+        vertexColors: true,
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
+      }),
+    );
+    roundPoints(material);
+    const points = new Points(geometry, material);
+    points.frustumCulled = false;
+    scene.add(points);
+    return points;
+  };
+  return {
+    update(request) {
+      exit.update(request);
+      const flying = request.sparks ?? [];
+      if (!flying.length && !sparks) return;
+      sparks ??= build();
+      const position = sparks.geometry.attributes['position'];
+      const colour = sparks.geometry.attributes['color'];
+      const shown = Math.min(flying.length, MAX_SPARKS);
+      for (let i = 0; i < shown; i++) {
+        const spark = flying[i];
+        const ink = new Color(sparkColour(spark.unresolved)).multiplyScalar(spark.alpha * 2);
+        position.setXYZ(i, spark.x, -spark.y, spark.z);
+        colour.setXYZ(i, ink.r, ink.g, ink.b);
+      }
+      position.needsUpdate = true;
+      colour.needsUpdate = true;
+      sparks.geometry.setDrawRange(0, shown);
+    },
+    dispose() {
+      if (sparks) kit.owned.release(sparks);
+      exit.dispose();
+    },
+  };
+}
+
 /** Builds each burst as it starts, plays it, and releases it once it ends. */
 export class NewsEffects3D {
   private readonly playing = new Map<object, Effect3D>();
@@ -380,12 +440,14 @@ export class NewsEffects3D {
   private build(request: NewsEffect3D): Effect3D {
     if (request.mode === 'shooting') return shooting(this.ctx, request);
     if (request.mode === 'merged') {
-      return thenStreak(this.ctx, request, supernova(this.ctx), streakProgress);
+      const exit = thenStreak(this.ctx, request, supernova(this.ctx), streakProgress);
+      return withSparks(this.ctx, exit);
     }
     if (request.mode === 'squashed') {
-      return thenStreak(this.ctx, request, collapse(this.ctx), squashStreakProgress);
+      const exit = thenStreak(this.ctx, request, collapse(this.ctx), squashStreakProgress);
+      return withSparks(this.ctx, exit);
     }
-    if (request.mode === 'closed') return sinking(this.ctx);
+    if (request.mode === 'closed') return withSparks(this.ctx, sinking(this.ctx));
     return expanding(this.ctx, request);
   }
 

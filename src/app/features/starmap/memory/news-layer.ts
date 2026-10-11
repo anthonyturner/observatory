@@ -1,6 +1,7 @@
 import { rnd } from '../engine/rnd';
 import { NewsEffect3D, SkyFrame, SkyLayer } from '../engine/sky-frame';
 import { SkyStar } from '../engine/sky-model';
+import { sparkColour, sparksInFlight } from './comment-sparks';
 import { coolLook, coolProgress, sinkHead, sinkLook, sinkProgress } from './closed-ember';
 import { drawCompany } from './company-draw';
 import { DEPARTED_MAG, fromOf, streakTravel } from './departure-exit';
@@ -177,6 +178,17 @@ const circle = (
   c.stroke();
 };
 
+/** The review threads of a leaving pull request, as sparks peeling off its star. Motion only: a still sky has none. */
+function paintSparks(ev: NewsEvent, c: CanvasRenderingContext2D, f: SkyFrame): void {
+  const scale = Math.max(f.camera.current.scale, 0.42);
+  for (const spark of sparksInFlight(ev, f.wall)) {
+    const at = f.toScreen(spark.x, spark.y, spark.z);
+    const colour = sparkColour(spark.unresolved);
+    disc(c, at, spark.size * scale * 2.2, colour, spark.alpha * 0.25);
+    disc(c, at, spark.size * scale * 0.6, colour, spark.alpha);
+  }
+}
+
 /** A white-gold flash and one ring of dust where the star stood, then the streak.
  *  With motion off only a brief flash plays: no ring, no streak. */
 const burstMerged: Burst = (ev, star, p, c, at, r, f) => {
@@ -320,7 +332,10 @@ export class NewsLayer implements SkyLayer {
       c.save();
       if (!this.news.acknowledged && fx.mark && star) markRing(ev, f.t, c, at, r);
       const p = progress(ev, f);
-      if (bursts && p > 0 && p < 1) BURSTS[ev.kind](ev, star, p, c, at, r, f);
+      if (bursts && p > 0 && p < 1) {
+        BURSTS[ev.kind](ev, star, p, c, at, r, f);
+        if (!f.frozen) paintSparks(ev, c, f);
+      }
       c.restore();
     }
   }
@@ -400,6 +415,7 @@ export class NewsLayer implements SkyLayer {
         seed: ev.pr,
         from: { x: ev.fromX ?? 0, y: ev.fromY ?? 0, z: ev.fromZ ?? 0 },
         angle: ev.angle ?? 0,
+        sparks: f.frozen ? [] : sparksInFlight(ev, f.wall),
         onHead: (head) => (ev.head = head),
       });
     }

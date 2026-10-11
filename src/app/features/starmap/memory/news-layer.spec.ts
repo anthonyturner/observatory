@@ -1,8 +1,10 @@
 import { SkyFrame } from '../engine/sky-frame';
 import { issuePlanets } from '../engine/star-system';
 import { EMBER_SPAN_S } from './closed-ember';
+import { RESOLVED_SPARK, UNRESOLVED_SPARK } from './comment-sparks';
 import { EMPTY_SYSTEM, endingOf } from './departure';
 import { PRELUDE_S } from './departure-exit';
+import { exitBeat } from './exits';
 import { MERGE_SPAN_S } from './merge-supernova';
 import { NewsEvent } from './news';
 import { NewsLayer } from './news-layer';
@@ -123,5 +125,79 @@ describe('NewsLayer on the company of a leaving star', () => {
 
   it('draws nothing for news that is no exit, though it carries a departure', () => {
     expect(circles([{ ...withPlanet, kind: 'left' }], 'prs', 10.2)).toBe(0);
+  });
+});
+
+describe('NewsLayer on review-thread sparks', () => {
+  const sparked = (kind: NewsEvent['kind'], startAt: number): NewsEvent => ({
+    ...merge(startAt),
+    kind,
+    departure: {
+      system: EMPTY_SYSTEM,
+      ending: {
+        fate: 'merged',
+        how: 'merge',
+        threads: { resolved: 2, unresolved: 3 },
+        closes: null,
+      },
+    },
+  });
+  const layerOf = (...events: NewsEvent[]): NewsLayer => {
+    const layer = new NewsLayer();
+    layer.news = { events, acknowledged: false };
+    return layer;
+  };
+  const during = (event: NewsEvent): number => (exitBeat(event, 'begin') ?? 0) + 0.8;
+
+  it('hands the 3D scene the sparks in the air, timed from the exit’s beats', () => {
+    const event = sparked('merged', 10);
+    const layer = layerOf(event);
+
+    const end = exitBeat(event, 'end') ?? 0;
+
+    expect(layer.effects3D(frame(end - 0.01, false))[0].sparks).toEqual([]);
+    expect(layer.effects3D(frame(during(event), false))[0].sparks?.length).toBeGreaterThan(0);
+  });
+
+  it('shows none with motion off, or for a pull request with no threads to show', () => {
+    const event = sparked('closed', 10);
+
+    expect(layerOf(event).effects3D(frame(during(event), true))[0].sparks).toEqual([]);
+    expect(layerOf(merge(10)).effects3D(frame(during(merge(10)), false))[0].sparks).toEqual([]);
+  });
+
+  it('draws them on the 2D sky in red and gold, and not at all with motion off', () => {
+    const event = sparked('squashed', 10);
+    const inks = (frozen: boolean): string[] => {
+      const painted: string[] = [];
+      const ctx = new Proxy(
+        { fillStyle: '' },
+        {
+          get: (target, name) =>
+            name === 'fill'
+              ? () => painted.push(target.fillStyle)
+              : name in target
+                ? target[name as 'fillStyle']
+                : () => undefined,
+          set: (target, name, value) => {
+            (target as Record<string, unknown>)[name as string] = value;
+            return true;
+          },
+        },
+      ) as unknown as CanvasRenderingContext2D;
+      const f = {
+        ...frame(during(event), frozen),
+        renderer: 'canvas',
+        camera: { current: { scale: 1 } },
+        toScreen: (x: number, y: number) => [x, y],
+      } as unknown as SkyFrame;
+      layerOf(event).above(ctx, f);
+      return painted;
+    };
+
+    const moving = inks(false);
+    expect(moving).toContain(UNRESOLVED_SPARK);
+    expect(moving).toContain(RESOLVED_SPARK);
+    expect(inks(true)).not.toContain(UNRESOLVED_SPARK);
   });
 });

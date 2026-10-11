@@ -83,8 +83,8 @@ export interface ExitEvent {
   readonly fromY?: number;
   readonly fromZ?: number;
   readonly angle?: number;
-  /** What the star carried, and how it ended, where those are known. */
-  readonly departure?: Departure;
+  /** How the pull request ended, and what its star carried, where those are known. */
+  readonly departure?: Pick<Departure, 'ending'> & Partial<Pick<Departure, 'system'>>;
 }
 
 /** The sky a cue is heard against. */

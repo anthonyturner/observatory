@@ -27,6 +27,7 @@ import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
 import { Resolution, resolutionsOf } from '../memory/departure-company';
+import { sparkCues } from '../memory/comment-sparks';
 import { exitCues } from '../memory/exits';
 import { Undock, stillAway, undockCues, undocksOf } from '../memory/undock';
 import { Point } from '../sound/doppler';
@@ -436,6 +437,9 @@ export class StarmapSky {
     const frozen = engine.frozen;
     for (const cue of exitCues(events, { now, width, height, frozen, project })) {
       this.sound.exited(cue);
+    }
+    for (const cue of sparkCues(events, { now, width, frozen, project })) {
+      this.sound.sparked(cue);
     }
   }
 

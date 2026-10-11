@@ -42,13 +42,14 @@ export const NO_COMPANY: CompanyCue = { chimes: [], suction: null };
  */
 export function companyCue(ev: ExitEvent, scene: CueScene): CompanyCue {
   const { departure, startAt } = ev;
-  if (!departure || startAt == null) return NO_COMPANY;
+  const system = departure?.system;
+  if (!departure || !system || startAt == null) return NO_COMPANY;
   const from = fromOf(ev);
   const pan = panAt(scene.project(from.x, from.y, from.z).x, scene.width);
   const delay = (afterS: number): number => Math.max(0, startAt + afterS - scene.now);
-  const { meteor } = departure.system;
+  const { meteor } = system;
   return {
-    chimes: resolving(departure).map(({ index, atS }) => ({
+    chimes: resolving({ system, ending: departure.ending }).map(({ index, atS }) => ({
       delayS: delay(atS),
       pan,
       planet: index,

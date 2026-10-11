@@ -391,7 +391,7 @@ Each star is one open pull request.
 
 - **Colour** is why it is stuck: cannot merge, checks failing, mergeability
   unknown, no issue linked, waiting on you, or seen recently. Click a colour in
-  the legend at the top to show only that kind.
+  the legend at the top right to show only that kind.
 - **Size** is how long it has waited untouched.
 - **Kind**, as you zoom in:
   - a **deep giant throwing flares** is blocked, flaring more the longer it
@@ -468,7 +468,9 @@ The search box finds finished work too.
   **Pull request**, before its state, because the colours alone can look alike.
 - **Fading comets.** Past a work-in-progress limit (8 open pull requests,
   drafts aside, changed with **wip** in the tools), the comets fade and a note
-  suggests finishing something before starting more. Nothing is blocked.
+  at the top suggests finishing something before starting more. Close the note
+  with **×**; it stays closed until the open count or the limit changes.
+  Nothing is blocked.
 - **Binary stars.** Two stars joined by a twisted pair of strands close the
   same issue: usually the same work done twice.
 
@@ -497,9 +499,15 @@ commits since you looked) is pulled into the star's core, which flares. With
 sound on, a chime rings for each planet that turns green and a suction swells
 as the meteor falls in.
 
+Review threads leave with the star. Each peels off as a **spark**, **red** if the
+thread was still unresolved and **gold** if it was resolved, up to twelve in all
+(a pull request with more shows them in proportion), with a small crackle when
+sound is on: a low rasp for an open thread, a bright tick for a settled one. A
+pull request with no threads sheds none.
+
 With motion off, each plays only its first part: the flash, the collapsing core
-and its flash, or the cooling; the planets that turn green glow in place and
-fade, and nothing is pulled in.
+and its flash, or the cooling, and no sparks; the planets that turn green glow in
+place and fade, and nothing is pulled in.
 
 The changes panel lists them, and **Got it** clears the marks. A pull request
 that merges or closes while the page is open leaves at the next refresh, and
@@ -530,7 +538,8 @@ or press **Replay** to watch the sky change, **[** and **]** to step, and
 - **Sprint** time-boxes a review: pick 15, 25 or 45 minutes and the queue fills
   it with pull requests that fit. A timer counts down, and you get a summary at
   the end.
-- **Search** finds a pull request or issue by title or number.
+- **Search**, at the top right above the legend, finds a pull request or issue
+  by title or number. Press Enter or the magnifier to go.
 - **Triage.** Mark a pull request seen, snooze it, or dismiss it until it
   changes. Triage stays in Observatory; nothing is written to GitHub.
 - **Send crew.** On a conflicted or failing pull request, a Claude Code task

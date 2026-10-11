@@ -55,12 +55,20 @@ h1 {
   text-transform: uppercase;
 }
 
+/* Stacked under the title: the legend, then what the page projects in. */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
-  margin-top: 14px;
   max-width: 720px;
+  order: -1;
 }
 
 .lg {
@@ -121,12 +129,17 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-/* On a small screen, narrow or short, the header keeps to fixed rows: the stamp
-   to one line and the legend to one row that scrolls sideways, so neither wraps
-   down over the sky. The padding leaves room for the focus ring. */
+/* On a small screen, narrow or short, the header stacks under the title and keeps to fixed
+   rows: the stamp to one line and the legend to one row that scrolls sideways, so neither
+   wraps down over the sky. The padding leaves room for the focus ring. */
 @media (max-width: 720px), (max-height: 500px) {
   h1 {
     font-size: 24px;
+  }
+
+  .side {
+    gap: 4px;
+    margin-top: 4px;
   }
 
   .stamp {
@@ -142,7 +155,7 @@ h1 {
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
-    margin: 4px -6px 0;
+    margin: 0 -6px;
     padding: 6px;
   }
 
@@ -174,7 +187,38 @@ h1 {
     flex-wrap: nowrap;
   }
 
-  .legend {
+  .side {
     flex-basis: 100%;
+  }
+}
+
+/* Wide and tall enough, the legend and the page's search move to a column pinned top right, the
+   search above the legend, level with the title and below the project bar, which spans the
+   screen. Only the controls take the pointer; the sky shows through the rest. */
+@media (min-width: 1200px) and (min-height: 501px) {
+  .side {
+    position: fixed;
+    top: calc(var(--page-inset-top) + var(--project-bar-height, 0px) + 9px);
+    right: var(--page-inset-x);
+    align-items: flex-end;
+    gap: 10px;
+    width: 560px;
+    margin-top: 0;
+    pointer-events: none;
+  }
+
+  .side > * {
+    pointer-events: auto;
+  }
+
+  .legend {
+    justify-content: flex-end;
+    max-width: none;
+    order: 0;
+    pointer-events: none;
+  }
+
+  .lg {
+    pointer-events: auto;
   }
 }

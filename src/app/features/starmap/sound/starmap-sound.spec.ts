@@ -18,6 +18,7 @@ function fakeScore() {
     undock: ({ kind, delayS, pan }) => void calls.push(`undock ${kind} ${delayS} ${pan}`),
     chime: ({ delayS, pan, planet }) => void calls.push(`chime ${planet} ${delayS} ${pan}`),
     suction: ({ delayS, pan, strength }) => void calls.push(`suction ${delayS} ${pan} ${strength}`),
+    sparks: ({ delayS, pan, pops }) => void calls.push(`sparks ${delayS} ${pan} ${pops.length}`),
   };
   return { score, calls };
 }
@@ -130,6 +131,16 @@ describe('StarmapSound', () => {
     sound.undock({ kind: 'satellite', delayS: 0.5, pan: 0.25 });
 
     expect(calls.filter((c) => c.startsWith('undock'))).toEqual(['undock satellite 0.5 0.25']);
+  });
+
+  it('crackles for shed review threads only while it plays', () => {
+    const { sound, calls } = setUp();
+    const pops = [{ atS: 0, hz: 3000, unresolved: true }];
+    sound.sparked({ delayS: 1, pan: -0.5, pops });
+    sound.toggle();
+    sound.sparked({ delayS: 0.5, pan: 0.25, pops });
+
+    expect(calls.filter((c) => c.startsWith('sparks'))).toEqual(['sparks 0.5 0.25 1']);
   });
 
   it('remembers the volume and fades out when turned off', () => {

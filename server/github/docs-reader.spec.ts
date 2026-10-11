@@ -50,7 +50,7 @@ describe('readFileBytes', () => {
   const base64 = { encoding: 'base64', content: PNG.toString('base64') };
   const LIMIT = 1024;
 
-  it('reads a file’s bytes from its contents', async () => {
+  it('reads a fileâ€™s bytes from its contents', async () => {
     const asked: string[] = [];
     const get = async (path: string): Promise<unknown> => {
       asked.push(path);

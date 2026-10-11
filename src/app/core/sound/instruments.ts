@@ -234,3 +234,25 @@ export function barPad(rig: Rig, at: number, notes: readonly number[], barS: num
   );
   playFor(oscillators, [filter, gain], { at, end: at + barS * 1.1 });
 }
+
+export interface LampOut {
+  readonly at: number;
+  readonly pan: number;
+  readonly level: number;
+}
+
+/** A soft sine that sags a fourth and fades: a light winding down. */
+export function lampOut(rig: Rig, { at, pan, level }: LampOut): void {
+  const { context } = rig;
+  const decay = 0.7;
+  const oscillator = context.createOscillator();
+  oscillator.frequency.setValueAtTime(392, at);
+  oscillator.frequency.exponentialRampToValueAtTime(294, at + decay);
+  const gain = envelope(context, { at, attack: 0.02, level, end: at + decay });
+  const panner = context.createStereoPanner();
+  panner.pan.value = pan;
+  oscillator.connect(gain).connect(panner);
+  panner.connect(rig.bus);
+  panner.connect(rig.echo);
+  playFor([oscillator], [gain, panner], { at, end: at + decay + 0.05 });
+}

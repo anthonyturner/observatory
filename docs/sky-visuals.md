@@ -24,6 +24,8 @@ TypeScript and the shader only draws it.
 | Orrery       | Air colour       | Most urgent state          | severity colour (`severityOf`) |
 | Orrery       | City lights      | Open PRs, oldest idle days | `nightSide(project).lights`    |
 | Orrery       | Glowing fissures | Failing checks             | `nightSide(project).unrest`    |
+| Orrery       | Light dims       | A merge seen in the ledger | `dimAt`, `dimSpot`             |
+| Orrery       | Speck flight     | A merge seen in the ledger | `flightAt`, `openDrops`        |
 | Orrery       | Ring             | Conflicted branches        | `world.hasRing`                |
 | Review Queue | Star type        | Bucket, idle days          | `starLook(star)`               |
 | Review Queue | Gas disc         | Lines changed, quick win   | `massOf(star)`                 |
@@ -90,6 +92,57 @@ noisy wander isn't reproduced, so a speck can sit just off the glow).
 Each speck is a near-white core in a faint halo of its project's world colour,
 fading in oldest first. A world in front hides it. Hover names it (project,
 number, merge date, title); click opens that project's review queue.
+
+### A merge as it happens (data: a new merge in a re-read ledger)
+
+Code: `core/orrery/merge-arrival.ts` holds the rules; `ShippedFeed` finds the
+merge, `ShippedLayer` flies the speck, `webgl/orrery-webgl.ts` (`dimLight`)
+dims the light.
+
+`ShippedFeed.observe` takes each reading of the projects. When a project's open
+count falls (`openDrops`) it reads that project's ledger again, and each merge
+the new ledger holds that the last did not goes out on `arrived$`, once. The
+drop only prompts the re-read: a pull request closed without merging announces
+nothing. The server keeps a ledger for ten minutes, so a re-read can predate the
+merge; the project stays owed a re-read at every later reading until a ledger cut
+after the reading that showed the drop (`generatedAt`) has come back. The first
+read of a project, and any merge older than the page, never animate.
+
+Two things happen, a beat apart:
+
+- **A city light dims.** `dimSpot` picks the night-side point nearest the viewer
+  (straight away from the sun when that faces us, else up to 1.35 rad toward us,
+  still dark) in the world's own ground, so it turns with the world. The surface
+  shader multiplies the towns round that spot by `1 − 0.9 × dim` within about 32
+  degrees. `dimAt` takes the light down in 0.5 s, holds it 3 s and brings it back
+  over 4 s, on the scene's time. The count's own effect on the lights
+  (`nightSide`) still applies after. 3D only: the Canvas fallback draws no city
+  lights, and the spot may fall where the world has none (open ocean), when only the speck shows.
+- **A speck flies.** 0.35 s later (`LAUNCH_LAG_S`) the speck leaves the world's
+  disc and flies 2.6 s (`FLIGHT_S`, eased by `flightAt`) along a gentle bow to its
+  own place in the band, with a short trail in the project's colour, then a ring
+  spreads from where it settles. It is not hoverable or clickable while in flight.
+  If its world or its place is not in view the speck just fades in as the others do.
+
+Reduced motion: no light dims, no speck flies, no sound; the speck simply appears.
+
+#### Cue table
+
+Every sound is a method of `OrreryScore` (`core/sound/orrery-score.ts`), played by
+`OrrerySynth`, laid out by `playArrival` on the picture's own clock, and tested
+with a fake `AudioContext`. Nothing plays with sound off; a merge marked while it
+was off is not replayed when it is switched on.
+
+| Sound        | When                               | Score method                           | Test                                 |
+| ------------ | ---------------------------------- | -------------------------------------- | ------------------------------------ |
+| Falling tone | The light dims, at the world's pan | `lightDims(pan, after)`                | `orrery-synth.spec.ts` (lightDims)   |
+| Rising glide | The speck flies, pan world to band | `speckFlies(from, to, seconds, after)` | `orrery-synth.spec.ts` (speckFlies)  |
+| Small bell   | The speck lands, at the band's pan | `speckLands(pan, after)`               | `orrery-synth.spec.ts` (speckLands)  |
+| Order, times | One merge                          | `playArrival(score, cue)`              | `orrery-score.spec.ts` (playArrival) |
+
+Pans come from the screen x of the world and of the landing (`screenPan`), read as
+the speck sets off, so the sound follows the picture and nothing plays for a merge
+that nothing shows.
 
 ### Lanes
 

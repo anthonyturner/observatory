@@ -489,8 +489,14 @@ looked:
   black hole, for one closed without merging, with a soft hush and a low breath
   that falls with it when sound is on.
 
+Review threads leave with the star. Each peels off as a **spark**, **red** if the
+thread was still unresolved and **gold** if it was resolved, up to twelve in all
+(a pull request with more shows them in proportion), with a small crackle when
+sound is on: a low rasp for an open thread, a bright tick for a settled one. A
+pull request with no threads sheds none.
+
 With motion off, each plays only its first part: the flash, the collapsing core
-and its flash, or the cooling.
+and its flash, or the cooling, and no sparks.
 
 The changes panel lists them, and **Got it** clears the marks. A pull request
 that merges or closes while the page is open leaves at the next refresh, and

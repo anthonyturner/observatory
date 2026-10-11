@@ -41,6 +41,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Squash collapse  | A squashed PR in the news  | `collapseLook`                 |
 | Review Queue | Ember sink       | A closed PR in the news    | `coolLook`, `sinkHead`         |
 | Review Queue | Fly home         | Crew, agents of a leaver   | `undocksOf`, `flightOf`        |
+| Review Queue | Comment sparks   | Review threads of a leaver | `sparksOf`, `sparksInFlight`   |
 | Review Queue | Doppler shift    | How a sound's source moves | `dopplerOf`, `dopplerFactor`   |
 | Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
@@ -545,6 +546,50 @@ with sound off.
 
 The first sound of each exit starts at `exitBeat(event, 'begin')`; the streak's
 whoosh and the ember's breath at `'turn'`.
+
+### Comment sparks (data: the review threads a pull request carried)
+
+Code: `features/starmap/memory/comment-sparks.ts` holds the rule; `news-layer.ts`
+draws it in Canvas, `engine/news-3d.ts` (`withSparks`) in WebGL, and
+`StarmapSound.sparked` plays the crackle.
+
+Review threads peel off a leaving star like debris: each thread is one spark,
+**red** (`UNRESOLVED_SPARK`) if it was unresolved and **gold** (`RESOLVED_SPARK`)
+if it was resolved. The counts are the real ones in the departure's
+`ending.threads` (GitHub's first 100 threads, read once when the pull request
+left). `sparkCounts` shows them as they are up to **`MAX_SPARKS` = 12** in all, to
+bound particle load; past that the twelve are shared in proportion, and a kind
+that has threads never drops to none. Threads that are unknown (`null`, as for a
+history frame or a failed lookup) or zero make **no sparks**; nothing is
+invented.
+
+`sparksOf(threads, pr)` seeds each spark's direction, reach (90 to 190 world
+units) and order from the pull request, so a replay peels them the same way.
+`sparksInFlight(event, wall)` is the one place that says where they are: each
+spark leaves `SPARK_S` = 1.3 s before it lands, peeling off one after another over
+0.4 s, starting at `exitBeat(event, 'begin')` and so moving with `PRELUDE_S` and
+with whatever is put ahead of the star. It slows as it goes and droops a little. Both
+renderers draw the same world points: Canvas as a dot with a soft halo, WebGL as
+additive points whose colour dims to fade. Every spark has landed before the
+exit's `endS` (tested for all three exits).
+
+Reduced motion: nothing peels, so there are no sparks and no crackle.
+
+#### Cue table
+
+The crackle is a method of `StarmapScore` (`sound/starmap-score.ts`), reached
+through `StarmapSound.sparked`, laid out by `sparkCues` on the picture's clock, and
+tested with a fake `AudioContext` that makes no sound. Nothing plays with sound off.
+
+| Sound   | When                                             | Score method               | Test                                 |
+| ------- | ------------------------------------------------ | -------------------------- | ------------------------------------ |
+| Crackle | Each spark peels off: a pop in the spark's pitch | `sparks(cue)`              | `starmap-score.spec.ts` (sparks)     |
+| Layout  | One refresh's stars, at most four, with threads  | `sparkCues(events, scene)` | `comment-sparks.spec.ts` (sparkCues) |
+
+An unresolved spark pops low (about 2.8 kHz high-passed noise) and a little louder;
+a resolved one pops bright (about 6.2 kHz) and softer, each shifted by up to 15% so
+no two are alike. The crackle starts at the exit's `'begin'` beat from the side of
+the screen the star stood on, and is separate from the exit's own four-sound cap.
 
 ### Departures (data: a pull request that left the sky)
 

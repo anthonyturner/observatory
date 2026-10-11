@@ -1,6 +1,7 @@
 import { lampOut, noiseBurst, pluck, suckIn, thump, whoosh } from '../../../core/sound/instruments';
 import { Rig } from '../../../core/sound/sound-rig';
 import { COOL_S, SINK_S, SinkCue } from '../memory/closed-ember';
+import { SparkCue } from '../memory/comment-sparks';
 import { STREAK_S } from '../memory/departure-exit';
 import { MergeCue, NOVA_S } from '../memory/merge-supernova';
 import { COLLAPSE_S, ImplosionCue } from '../memory/squash-collapse';
@@ -44,6 +45,11 @@ export interface StarmapScore {
   sink(cue: SinkCue): void;
   /** The engine of a crew ship or satellite casting off from a star that left, after the cue's delay. */
   undock(cue: UndockCue): void;
+  /**
+   * A crackle for the review threads shed from a leaving star, after the cue's
+   * delay, panned by it: one pop as each spark peels off, low for an open thread, bright for a settled one.
+   */
+  sparks(cue: SparkCue): void;
 }
 
 /** Loudness is heard as the square of the slider, so the gain follows it. */
@@ -69,6 +75,9 @@ const ENGINE: Readonly<
   crew: { seconds: 1.8, rumble: 0.09, whine: 0.05, from: 260, to: 820 },
   satellite: { seconds: 1.1, rumble: 0.04, whine: 0.025, from: 420, to: 1200 },
 };
+
+/** A spark's pop: quick and quiet, a little louder for a thread still open. */
+const SPARK_POP = { unresolved: 0.03, resolved: 0.02, decay: 0.035 } as const;
 
 /** An A major arpeggio climbing from A5, each note softer than the last. */
 const SHIMMER = [
@@ -281,6 +290,25 @@ export class WebAudioStarmapScore implements StarmapScore {
         { at: engine.seconds, freq: engine.to, pan },
       ],
     });
+  }
+
+  /** One pop for each thread's spark as it peels off, from the side the star stood on. */
+  sparks({ delayS, pan, pops }: SparkCue): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
+    const begin = ac.currentTime + delayS;
+    for (const { atS, hz, unresolved } of pops) {
+      noiseBurst(rig, {
+        at: begin + atS,
+        type: 'highpass',
+        freq: hz,
+        q: 1.2,
+        level: unresolved ? SPARK_POP.unresolved : SPARK_POP.resolved,
+        decay: SPARK_POP.decay,
+        pan,
+      });
+    }
   }
 
   /** The graph the shared instruments play into. */

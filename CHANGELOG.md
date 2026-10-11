@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Added
 
+- A pull request's review threads now peel off its star as sparks when it merges, is squashed or is closed: red for a thread still unresolved and gold for a resolved one, one per thread up to twelve (a pull request with more shows them in proportion), with a small crackle when sound is on. A pull request with no threads sheds none, and with motion off there are none ([#623](https://github.com/anthonyturner/observatory/issues/623)).
 - A round **♪** button in the bottom-right corner shows or hides the music player. Hidden, only the button is left, the music keeps playing, and the panels that sit above the player (Since you last looked, Agents, Done, Plan and the cards) move down to use the space. Your choice is remembered in this browser ([#639](https://github.com/anthonyturner/observatory/issues/639)).
 
 ### Changed

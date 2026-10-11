@@ -1,3 +1,4 @@
+import { FlyingSpark } from '../memory/comment-sparks';
 import { CameraController } from './camera-controller';
 import { FieldStar, SkyCluster, SkyStar } from './sky-model';
 
@@ -51,6 +52,8 @@ export interface NewsEffect3D {
   /** Where a crossing starts, in the world, and its heading. */
   readonly from: { readonly x: number; readonly y: number; readonly z: number };
   readonly angle: number;
+  /** The review-thread sparks in the air this frame, peeling off an exit's star. */
+  readonly sparks?: readonly FlyingSpark[];
   /** Told where a crossing's head is on screen, for its label. */
   readonly onHead?: (head: [number, number]) => void;
 }

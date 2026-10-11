@@ -120,8 +120,17 @@ function repoTarget(target: string, context: LinkContext, homes: LinkHomes): str
   if (path === null) return target;
   const page = context.pageBySource.get(path);
   if (page) return homes.pageUrl(page) + anchor;
-  if (homes.imageUrl && imageTypeOf(path)) return homes.imageUrl(path);
+  if (homes.imageUrl && imageTypeOf(path)) return homes.imageUrl(unescaped(path));
   return `${context.repoUrl}/${viewOf(pathPart)}/${context.branch}/${path}${anchor}`;
+}
+
+/** A link's path as the file name it stands for, `%20` and all; as written when it is not valid escaping. */
+function unescaped(path: string): string {
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
 }
 
 /** A link split into its path and its `?query` or `#anchor`, which keeps its mark. */

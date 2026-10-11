@@ -112,11 +112,11 @@ describe('rewriteRepoLinks', () => {
   it('points an image at the address its caller names, a video and other files at GitHub', () => {
     assert.equal(
       rewriteRepoLinks(
-        '![shot](docs/images/Shot.PNG?raw=true) <img src="./logo.svg"> [clip](demo.mp4)',
+        '![shot](docs/images/Shot.PNG?raw=true) <img src="./logo.svg"> [clip](demo.mp4) ![a](my%20shot.png)',
         context('README.md'),
         homes,
       ),
-      `![shot](/images/docs/images/Shot.PNG) <img src="/images/logo.svg"> [clip](${REPO}/raw/main/demo.mp4)`,
+      `![shot](/images/docs/images/Shot.PNG) <img src="/images/logo.svg"> [clip](${REPO}/raw/main/demo.mp4) ![a](/images/my shot.png)`,
     );
   });
 });

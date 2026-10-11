@@ -39,6 +39,7 @@ const bytesOf = (blob: unknown): Buffer | null =>
     ? Buffer.from(blob['content'], 'base64')
     : null;
 
+/** A file's bytes, from its contents or, past 1 MB, its blob; null for anything else or one over `maxBytes`. */
 export async function readFileBytes(
   get: JsonGet,
   repo: string,

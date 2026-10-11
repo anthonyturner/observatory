@@ -27,3 +27,9 @@ export function systemSoundOf(worlds: readonly OrreryWorld[], time: number): Sys
     blocked: voices.filter((voice) => voice.severity === 'blocked').length,
   };
 }
+
+/** Where a thing at screen x sounds: the left edge plays left, the right edge right, never hard. */
+export function screenPan(x: number, width: number): number {
+  const across = width > 0 ? (x / width) * 2 - 1 : 0;
+  return Math.min(Math.max(across, -1), 1) * MAX_PAN;
+}

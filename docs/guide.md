@@ -359,6 +359,16 @@ pull request merged in the last 60 days is a speck in its project's colour,
 oldest at one end of the band and newest at the other. Rest the pointer on one
 to see what it was; click it to open that project's Review Queue.
 
+When a pull request merges while the Orrery is open, the sky shows it: one city
+light on that project's world dims for a few seconds, and a speck flies from the
+world into the band. It happens when the project's open pull request count falls
+and its merged list shows a new merge, so a pull request closed without merging
+does nothing, and it can lag a few minutes behind the merge (Home's **Refresh**
+reads sooner). The lights go out on the night side, so they show only where that
+side faces you. With motion off the speck simply appears. With **Sound** on, the
+light and the speck each have a soft sound: a falling tone, a rising glide
+across the room, and a small bell where it lands.
+
 ### Using the Orrery
 
 - Point at a world for its card: its counts, a link to its Review Queue, and

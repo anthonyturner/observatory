@@ -25,6 +25,8 @@ import type { OrreryWebGL } from './webgl/orrery-webgl';
 import { CardHover } from './card-hover';
 import { ShippedItem } from '../../../core/orrery/shipped';
 import { ShippedLayer } from './shipped-layer';
+import { ArrivalCue } from '../../../core/sound/orrery-score';
+import { screenPan } from '../../../core/sound/orrery-listening';
 
 /** A speck whose project has no world on show: a cool white. */
 const SHIPPED_FALLBACK = '200, 215, 255';
@@ -72,6 +74,8 @@ export class OrreryCanvas {
   readonly shipped = input<readonly ShippedItem[]>([]);
   /** Asks to open a world's review queue: a click, or a second tap on a touch screen. */
   readonly open = output<string>();
+  /** A merge's speck has set off from its world: what the score plays for it. */
+  readonly launched = output<ArrivalCue>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly document = inject(DOCUMENT);
@@ -130,6 +134,12 @@ export class OrreryCanvas {
     });
     afterNextRender(() => this.start());
     inject(DestroyRef).onDestroy(() => this.stop());
+  }
+
+  /** A pull request has just merged: its world's city light dims and its speck flies into the Milky Way. */
+  arrive(item: ShippedItem): void {
+    this.shippedLayer.arrive(item);
+    this.loop?.kick();
   }
 
   zoomIn(): void {
@@ -260,7 +270,13 @@ export class OrreryCanvas {
       selectedKey: this.selected(),
     };
     this.drawn = this.drawFrame(ctx, frame);
-    this.shippedLayer.draw(ctx, frame, wall, this.drawn, this.colourOf);
+    for (const launch of this.shippedLayer.draw(ctx, frame, wall, this.drawn, this.colourOf)) {
+      this.webgl?.dimLight(launch.repo, time);
+      this.launched.emit({
+        fromPan: screenPan(launch.fromX, this.view.width),
+        toPan: screenPan(launch.toX, this.view.width),
+      });
+    }
     // Worlds move under a still pointer, so what it rests on can change.
     if (this.pointer && !this.press) this.hoverAt(this.pointer.x, this.pointer.y);
   }

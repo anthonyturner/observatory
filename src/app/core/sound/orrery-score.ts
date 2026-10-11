@@ -1,4 +1,5 @@
 import { SeverityId } from '../projects/severity';
+import { FLIGHT_S, LAUNCH_LAG_S } from '../orrery/merge-arrival';
 
 /* pr-starmap's orrery score: the system playing itself. Generated live, never
    a recording, and it carries the data:
@@ -157,4 +158,34 @@ export function motifFor(voice: WorldVoice, step: number): ScoreEvent[] {
     pan: voice.pan,
     level: 0.09,
   }));
+}
+
+/** A merge the Orrery marked, where the sound sits in the stereo field: −1 left to 1 right. */
+export interface ArrivalCue {
+  /** Where the dimmed world is on screen. */
+  readonly fromPan: number;
+  /** Where the speck comes down in the band. */
+  readonly toPan: number;
+}
+
+/**
+ * The Orrery's merge sounds, each a named method so the cue table in
+ * `docs/sky-visuals.md` can point at it. `after` is seconds from now on the
+ * audio clock. Quiet by design: a merge is good news, not an alarm.
+ */
+export interface OrreryScore {
+  /** A soft falling tone, as a lamp winding down: the city light going out. */
+  lightDims(pan: number, after?: number): void;
+  /** A thin rising glide, panned across the room: the speck on its way. */
+  speckFlies(fromPan: number, toPan: number, seconds: number, after?: number): void;
+  /** One small high bell: the speck settling in the band. */
+  speckLands(pan: number, after?: number): void;
+}
+
+/** Lays one merge on the score: the light goes, then the speck flies, then it lands. The
+ *  timings are the picture's (`merge-arrival.ts`), so ear and eye agree. */
+export function playArrival(score: OrreryScore, { fromPan, toPan }: ArrivalCue): void {
+  score.lightDims(fromPan);
+  score.speckFlies(fromPan, toPan, FLIGHT_S, LAUNCH_LAG_S);
+  score.speckLands(toPan, LAUNCH_LAG_S + FLIGHT_S);
 }

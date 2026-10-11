@@ -5,7 +5,9 @@ import {
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ShippedFeed } from '../../../core/orrery/shipped-feed';
 import { Router } from '@angular/router';
 import { orreryStamp } from '../../../core/orrery/orrery-stamp';
@@ -19,10 +21,11 @@ import { HelpCard } from '../../../shared/help/help-card';
 import { HelpShortcuts } from '../../../shared/help/help-shortcuts';
 import { UpLink } from '../../../shared/up-link/up-link';
 import { ORRERY_HELP_ENTRIES, ORRERY_HELP_KEYS } from '../orrery-help';
+import { ArrivalCue } from '../../../core/sound/orrery-score';
 import { OrreryCanvas } from '../orrery-canvas/orrery-canvas';
 import { OrreryTools } from '../orrery-tools/orrery-tools';
 import { WorldCard } from '../world-card/world-card';
-import { OrreryFocus, provideOrrerySound } from '../orrery-sound';
+import { OrreryCues, OrreryFocus, provideOrrerySound } from '../orrery-sound';
 
 /** What the page says in place of the system, by where the projects stand. */
 const WAITING_MESSAGE = {
@@ -46,6 +49,8 @@ export class OrreryPage {
   private readonly state = inject(PROJECTS_STATE);
   private readonly now = inject(Clock).now;
   private readonly projects = inject(PROJECTS);
+  private readonly cues = inject(OrreryCues);
+  private readonly canvas = viewChild.required(OrreryCanvas);
   /** What the shown projects merged lately, for the Milky Way. */
   protected readonly shipped = inject(ShippedFeed);
 
@@ -70,7 +75,20 @@ export class OrreryPage {
   });
 
   constructor() {
-    effect(() => this.shipped.load(this.projects().map((project) => project.repo)));
+    effect(() => {
+      const state = this.state();
+      if (state.status !== 'ready') return;
+      const readAt = Date.parse(state.report.generatedAt);
+      this.shipped.observe(state.report.projects, Number.isNaN(readAt) ? Date.now() : readAt);
+    });
+    this.shipped.arrived$
+      .pipe(takeUntilDestroyed())
+      .subscribe((item) => this.canvas().arrive(item));
+  }
+
+  /** The score plays a merge as its speck sets off, so the sound follows the picture. */
+  protected hear(cue: ArrivalCue): void {
+    this.cues.push(cue);
   }
 
   /** A world's review queue, one level down; Back returns here. */

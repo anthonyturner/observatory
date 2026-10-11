@@ -1,6 +1,6 @@
 import { layoutWorlds } from '../orrery/world-layout';
 import { ProjectSnapshot } from '../projects/project.types';
-import { systemSoundOf } from './orrery-listening';
+import { screenPan, systemSoundOf } from './orrery-listening';
 
 const COUNTS = { conflicted: 0, failing: 0, unknown: 0, unlinked: 0, unreviewed: 0, unclaimed: 0 };
 const project = (repo: string, overrides: Partial<ProjectSnapshot> = {}): ProjectSnapshot => ({
@@ -33,5 +33,15 @@ describe('systemSoundOf', () => {
       for (const v of systemSoundOf(worlds, time).voices)
         expect(Math.abs(v.pan)).toBeLessThanOrEqual(0.85);
     }
+  });
+});
+
+describe('screenPan', () => {
+  it('plays the left edge left and the right edge right, never hard, and the middle centred', () => {
+    expect(screenPan(0, 1000)).toBeCloseTo(-0.85);
+    expect(screenPan(1000, 1000)).toBeCloseTo(0.85);
+    expect(screenPan(500, 1000)).toBeCloseTo(0);
+    expect(screenPan(5000, 1000)).toBeCloseTo(0.85);
+    expect(screenPan(10, 0)).toBe(0);
   });
 });

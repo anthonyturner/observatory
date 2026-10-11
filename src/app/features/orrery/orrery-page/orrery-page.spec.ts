@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -104,5 +106,44 @@ describe('OrreryPage', () => {
     buttonNamed(element, 'Review queue')?.click();
 
     expect(navigate).toHaveBeenCalledWith('/p/me/a');
+  });
+
+  it('has its canvas fly a merge in when a project’s open count falls and its ledger shows one', () => {
+    const state = signal<ProjectsState>(ready([project('a', 3)]));
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: PROJECTS_STATE, useValue: state },
+      ],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(OrreryPage);
+    fixture.detectChanges();
+    const ledger = (merged: number[], generatedAt: string) => ({
+      generatedAt,
+      rows: [{ day: '2026-10-04', open: 0, opened: [], merged, closed: [] }],
+      titles: {},
+    });
+    http.expectOne('/api/ledger?repo=me/a').flush(ledger([], '2026-10-05T12:00:00Z'));
+    const canvas = fixture.debugElement.query(By.directive(OrreryCanvas));
+    const arrive = vi.spyOn(canvas.componentInstance as OrreryCanvas, 'arrive');
+
+    state.set({
+      status: 'ready',
+      report: {
+        generatedAt: new Date().toISOString(),
+        projects: [project('a', 2)],
+        directives: [],
+      },
+    });
+    fixture.detectChanges();
+    http
+      .expectOne('/api/ledger?repo=me/a')
+      .flush(ledger([5], new Date(Date.now() + 1000).toISOString()));
+
+    expect(arrive).toHaveBeenCalledTimes(1);
+    expect(arrive.mock.calls[0][0].key).toBe('me/a#5');
   });
 });

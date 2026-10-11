@@ -11,6 +11,7 @@ import type { EditStore } from '../edits/edit-store.ts';
 import type { HistoryStore } from '../history/history-store.ts';
 import { type Ledger, ledgerReport } from '../history/ledger.ts';
 import { type JournalReport, journalReport } from '../journal/journal-report.ts';
+import { type LibraryImage, libraryImage } from '../library/library-image.ts';
 import { libraryReport } from '../library/library-report.ts';
 import type { LibraryReport } from '../library/library-types.ts';
 import { inboxReport } from '../inbox/inbox-report.ts';
@@ -182,6 +183,8 @@ export interface ApiReads {
   journal(repo: string): Promise<JournalReport>;
   /** The wiki's pages, or the README and docs where there is no wiki. */
   library(repo: string): Promise<LibraryReport>;
+  /** One image file of the repository, at `ref` or its default branch. */
+  libraryImage(repo: string, ref: string | null, path: string): Promise<LibraryImage>;
   /** Workflows and their newest runs, with flaky runs tagged and the default branch's health. */
   actions(repo: string): Promise<ActionsReport>;
   /** The next read of these runs, and of the branch's health, goes to GitHub. */
@@ -352,6 +355,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     releases: cachedByKey((repo) => releasesReport(github, repo), RELEASES_TTL_MS),
     journal: cachedByKey((repo) => journalReport(github, repo), JOURNAL_TTL_MS),
     library: cachedByKey((repo) => libraryReport(github, repo), LIBRARY_TTL_MS),
+    libraryImage: (repo, ref, path) => libraryImage(github, repo, ref, path),
     actions: (repo) => actionsOf.read(repo),
     forgetActions: (repo) => {
       actionsOf.forget(repo);

@@ -64,6 +64,10 @@ const reads = {
   releases: async (repo: string) => ({ repo, source: 'none', releases: [] }),
   journal: async (repo: string) => ({ repo, entries: [] }),
   library: async (repo: string) => ({ repo, source: 'docs', pages: [] }),
+  libraryImage: async (repo: string, ref: string | null, path: string) => ({
+    bytes: Buffer.from(`${repo}@${ref}:${path}`),
+    type: 'image/png',
+  }),
   actions: async (repo: string) => ({ repo, runs: [] }),
   forgetActions: (repo: string) => forgotten.push(`actions ${repo}`),
   runJobs: async (repo: string, runId: number) => ({ repo, runId, jobs: [] }),

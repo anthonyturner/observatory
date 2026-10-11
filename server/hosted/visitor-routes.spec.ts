@@ -25,6 +25,7 @@ const reads = {
   releases: async (repo: string) => ({ repo, releases: [] }),
   journal: async (repo: string) => ({ repo, entries: [] }),
   library: async (repo: string) => ({ repo, pages: [] }),
+  libraryImage: async () => ({ bytes: Buffer.from('png'), type: 'image/png' }),
   actions: async (repo: string) => ({ repo, runs: [] }),
   runJobs: async (repo: string, runId: number) => ({ repo, runId, jobs: [] }),
   ciHealth: async (repo: string) => ({ repo, state: 'passing' }),
@@ -136,6 +137,8 @@ describe('visitorRoutes', () => {
     assert.equal((await get(handle, '/api/journal?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/library?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/library?repo=me/secret')).status, 404);
+    assert.equal((await get(handle, '/api/library/image?repo=me/app&path=a.png')).status, 200);
+    assert.equal((await get(handle, '/api/library/image?repo=me/secret&path=a.png')).status, 404);
     assert.equal((await get(handle, '/api/actions?repo=me/app')).status, 200);
     assert.equal((await get(handle, '/api/actions?repo=me/secret')).status, 404);
     assert.equal((await get(handle, '/api/actions/run?repo=me/app&run=5')).status, 200);

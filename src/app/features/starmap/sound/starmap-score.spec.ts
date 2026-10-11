@@ -248,7 +248,7 @@ describe('WebAudioStarmapScore.sink', () => {
     score.stop();
   });
 
-  it('lets the breath fall in pitch along the path, bent by each stop’s Doppler factor', async () => {
+  it('lets the breath fall in pitch along the path, bent by each stopï¿½s Doppler factor', async () => {
     const { context } = fakeAudio();
     const freqs: [number, number][] = [];
     const real = context.createBiquadFilter.bind(context);
@@ -342,6 +342,80 @@ describe('WebAudioStarmapScore.crackle', () => {
     const after = starts.length;
     score.crackle(0, 1, 1);
 
+    expect(starts.length).toBe(after);
+  });
+});
+
+describe('WebAudioStarmapScore.chime', () => {
+  it('rings a bell and a quieter octave, panned and after the delay, once the score is on', async () => {
+    const { context, starts, pans } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+    const panners = pans.length;
+
+    score.chime({ delayS: 0.3, pan: -0.4, planet: 1 });
+
+    const played = starts.slice(before);
+    expect(played.length).toBeGreaterThanOrEqual(2);
+    expect(played.every((at) => at >= 10.3)).toBe(true);
+    expect(pans.slice(panners).every((pan) => pan === -0.4)).toBe(true);
+    score.stop();
+  });
+
+  it('rings a note for every planet, even past the fourth', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+
+    for (const planet of [0, 1, 2, 3, 4]) score.chime({ delayS: 0, pan: 0, planet });
+
+    expect(starts.length).toBeGreaterThan(before);
+    score.stop();
+  });
+
+  it('plays nothing before it starts or after it stops', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+
+    score.chime({ delayS: 0, pan: 0, planet: 0 });
+    expect(starts).toEqual([]);
+
+    await score.start();
+    score.stop();
+    const after = starts.length;
+    score.chime({ delayS: 0, pan: 0, planet: 0 });
+    expect(starts.length).toBe(after);
+  });
+});
+
+describe('WebAudioStarmapScore.suction', () => {
+  it('swells a band of noise, panned and after the delay, once the score is on', async () => {
+    const { context, starts, pans } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+    const panners = pans.length;
+
+    score.suction({ delayS: 0.65, pan: 0.3, strength: 1 });
+
+    expect(starts.slice(before)).toEqual([10.65]);
+    expect(pans[panners]).toBe(0.3);
+    score.stop();
+  });
+
+  it('plays nothing before it starts or after it stops', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+
+    score.suction({ delayS: 0, pan: 0, strength: 0 });
+    expect(starts).toEqual([]);
+
+    await score.start();
+    score.stop();
+    const after = starts.length;
+    score.suction({ delayS: 0, pan: 0, strength: 0 });
     expect(starts.length).toBe(after);
   });
 });

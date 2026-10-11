@@ -26,6 +26,7 @@ import { PlanLayer, PlanMark } from '../engine/plan-layer';
 import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
+import { Resolution, resolutionsOf } from '../memory/departure-company';
 import { exitCues } from '../memory/exits';
 import { Undock, stillAway, undockCues, undocksOf } from '../memory/undock';
 import { Point } from '../sound/doppler';
@@ -188,6 +189,13 @@ export class StarmapSky {
    * `performance.now() / 1000` seconds), so a farewell can be timed to it.
    */
   readonly undocked = output<readonly Undock[]>();
+  /**
+   * A leaving star's planets are about to turn green, because the issues they
+   * stand for are closed: each pull request with the wall time (`startAt`, in
+   * `performance.now() / 1000` seconds) the first does, so a line such as
+   * "Resolved!" can be timed to it.
+   */
+  readonly resolved = output<readonly Resolution[]>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('sky');
   private readonly document = inject(DOCUMENT);
@@ -399,6 +407,8 @@ export class StarmapSky {
       this.boom(events, engine, now);
       this.engines(leaving, engine, now);
       if (leaving.length) this.undocked.emit(leaving);
+      const turning = resolutionsOf(events);
+      if (turning.length) this.resolved.emit(turning);
     }
     engine.kick();
   }

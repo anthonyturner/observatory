@@ -41,6 +41,8 @@ TypeScript and the shader only draws it.
 | Review Queue | Squash collapse  | A squashed PR in the news  | `collapseLook`                 |
 | Review Queue | Ember sink       | A closed PR in the news    | `coolLook`, `sinkHead`         |
 | Review Queue | Fly home         | Crew, agents of a leaver   | `undocksOf`, `flightOf`        |
+| Review Queue | Planets resolve  | A leaver's issues, ending  | `fateOf`, `planetPoses`        |
+| Review Queue | Meteor pulled in | A leaver's new commits     | `meteorPull`, `ghostLook`      |
 | Review Queue | Doppler shift    | How a sound's source moves | `dopplerOf`, `dopplerFactor`   |
 | Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
@@ -494,9 +496,9 @@ instead of keeping a clock of its own:
 - `exitBeat(event, 'begin' | 'turn' | 'end')` gives the same on the sky's wall
   clock from the event's `startAt`, or null for news with no exit or one not yet
   started.
-- `PRELUDE_S` (`departure-exit.ts`, 0 today) is the room before `beginS`: time
-  for a star's planets, meteors, crew and satellites to play before the star
-  itself goes. Raising it delays the supernova, collapse and ember, lengthens
+- `PRELUDE_S` (`departure-exit.ts`, `COMPANY_S` from `departure-company.ts`: 1.65 s
+  today) is the room before `beginS`: time for a star's planets and meteor to play
+  before the star itself goes (see **Planets resolve and meteors are pulled in**). Raising it delays the supernova, collapse and ember, lengthens
   each span (and so `Effect.span`), and moves every cue with them. The prelude
   is `startAt` to `exitBeat(event, 'begin')`.
 
@@ -508,7 +510,9 @@ With sound on, the star map's score plays one sound per exit, built from
 the prelude), a pan from the departure point's screen x kept within 0.8 either
 side, and the path of the second act projected through the active renderer. A
 cue exists only for an exit the news diff found and that has started, never on a
-timer, and at most four play per refresh in all, whichever way they left.
+timer, and at most four play per refresh in all, whichever way they left. The
+chimes and suction of a star's company ride on its exit's cue (`ExitCue.company`)
+and are counted with it.
 
 Each moving part is read along the path the sky draws it on: the streak by the
 same `streakHead` the 3D sky uses, the sink by `sinkHead`, each cut into eight
@@ -575,6 +579,64 @@ the sky to play and keeps it in `departures` while it plays. Merging on a pull
 request's screen reads the queue at once, so that star leaves as soon as the screen
 closes. They draw and sound as the exit for their ending (see **Exits**).
 
+### Planets resolve and meteors are pulled in (data: the company a leaving star kept, and how it ended)
+
+Code: `features/starmap/memory/departure-company.ts` holds the rule,
+`company-draw.ts` draws it, `company-cue.ts` sounds it; `NewsLayer.flat` calls the
+drawing. It is flat over both renderers, as the crew ships and meteors are, so
+the Canvas sky gains planet marks (a small lit sphere, with a green halo while it
+glows) and the 3D sky shows the very same picture over its scene.
+
+Before an exit's star goes, it holds for `PRELUDE_S` (= `COMPANY_S`, 1.65 s), and its
+company plays out where the star stood. The departed star is not in the sky, so
+for those seconds its last light (`ghostLook`, a warm white core and halo at the
+size an exit draws it) stands in, and the planets orbit it where they last
+drew (`issuePlanets`, drawn twice as big so they read).
+
+- **Resolve.** `fateOf(issue, ending)`: a planet resolves when the ending's fate
+  is `merged` and the issue is in `closes` (or `closes` is unknown, which a merge
+  nearly always means all of). Each planet starts 0.15 s after the one inside it,
+  glows green over 0.4 s (`GLOW_S`), then drifts outward and fades over 0.8 s
+  (`DRIFT_S`).
+- **Fall.** Every other planet (a closed pull request's, or one a merge left
+  open) is cut loose and falls, shrinking and fading, over 1 s (`FALL_S`): no
+  green. A leaver with no known ending (`left`) has no exit and none of this.
+- **Meteor.** The star's `system.meteor` is pulled into the core from 240 px
+  along the way it would have landed (`meteorHeading`, the same for a pull
+  request every time), falling faster as it comes, from 0.65 s for 0.8 s
+  (`meteorPull`); the core then flares for 0.2 s. It brightens and lengthens with
+  the commit count as a landing does (`meteorLook`).
+
+Reduced motion: nothing drifts, falls or is pulled in. A planet that resolves
+glows green in place and fades on the same clock; planets that would fall and the
+meteor are not drawn. The exit itself keeps its first act, as before.
+
+**The hook for "Resolved!".** `StarmapSky` emits `resolved` with a `Resolution`
+(`departure-company.ts`) for each leaving pull request whose planets turn green:
+`{ pr, issues, startAt }`, `issues` being the resolving issue numbers (innermost
+planet first) and `startAt` the wall time (`performance.now() / 1000` seconds) the
+first turns green. It fires as the sky plays the batch, once it is in view, and
+also with motion off, since the planets still turn green. Speech reads that and
+subtracts `performance.now() / 1000` to lead the line in; it keeps no clock of its
+own.
+
+#### Cue table
+
+Every sound is a method of `StarmapScore` (`sound/starmap-score.ts`), reached through
+`StarmapSound.exited`, built by `companyCue` and tested with a fake `AudioContext`
+(`starmap-score.spec.ts`, `company-cue.spec.ts`). Nothing plays with sound off.
+
+| Sound   | When                                                                   | Score method   | Cue (built by)                      |
+| ------- | ---------------------------------------------------------------------- | -------------- | ----------------------------------- |
+| Chime   | A planet turns green: a bell on its own note, and a quiet upper octave | `chime(cue)`   | `ChimeCue` (`companyCue.chimes`)    |
+| Suction | The meteor is pulled in: a swelling band of noise that stops short     | `suction(cue)` | `SuctionCue` (`companyCue.suction`) |
+
+Each chime sounds as its planet turns green, so a stagger of chimes climbs with the
+planets (E6, F#6, A6, C#7). A planet that falls makes no sound. With motion off
+the planets still glow, so they still chime, but nothing is pulled and the suction
+is left out. Neither is Doppler-shifted: the suction's own climb is its pitch
+motion.
+
 ### Crew ships and satellites fly home (data: the company a leaving star kept)
 
 Code: `features/starmap/memory/undock.ts` holds the rule; `engine/crew-layer.ts`
@@ -584,7 +646,8 @@ Canvas skies show the same flight; `StarmapSky.play` hands it to them.
 When a departure plays, the company its star kept casts off. `undocksOf` lists, for
 each event that carries a departure and has started, its crew ship (only a crew
 still at work: one back from its run has already flown) and then each of its
-satellites. The first casts off 0.3 s after the exit starts and the rest 0.18 s
+satellites. The first casts off 0.3 s after its star begins to go
+(`exitBeat(event, 'begin')`, so after the prelude) and the rest 0.18 s
 apart, each with the wall time it goes (`startAt`) and the world point its star
 stood at (`from`, the same point the exit's streak sets out from). Nothing is
 invented: only what the snapshot held, and only for an exit the news diff found.

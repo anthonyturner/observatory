@@ -2,8 +2,10 @@ import { rnd } from '../engine/rnd';
 import { NewsEffect3D, SkyFrame, SkyLayer } from '../engine/sky-frame';
 import { SkyStar } from '../engine/sky-model';
 import { coolLook, coolProgress, sinkHead, sinkLook, sinkProgress } from './closed-ember';
+import { drawCompany } from './company-draw';
 import { DEPARTED_MAG, fromOf, streakTravel } from './departure-exit';
 import { NOVA_FLASH, NOVA_RING, novaLook, novaProgress, streakProgress } from './merge-supernova';
+import { hasExit } from './exits';
 import { EFFECTS, NewsEvent } from './news';
 import {
   COLLAPSE_CORE,
@@ -320,6 +322,14 @@ export class NewsLayer implements SkyLayer {
       const p = progress(ev, f);
       if (bursts && p > 0 && p < 1) BURSTS[ev.kind](ev, star, p, c, at, r, f);
       c.restore();
+    }
+  }
+
+  /** The company of a star that is leaving, flat over both skies: it plays before the star goes. */
+  flat(c: CanvasRenderingContext2D, f: SkyFrame): void {
+    if (f.chart !== 'prs') return;
+    for (const ev of this.news.events) {
+      if (hasExit(ev.kind)) drawCompany(c, f, ev, departedAt(ev, f));
     }
   }
 

@@ -1,3 +1,4 @@
+import { CompanyCue, companyCue } from './company-cue';
 import { EMBER_ACTS, SinkCue, sinkCue } from './closed-ember';
 import { Acts, Beats, CueScene, ExitEvent, beatsOf } from './departure-exit';
 import { MERGE_ACTS, MergeCue, mergeCue } from './merge-supernova';
@@ -9,15 +10,18 @@ import { ImplosionCue, SQUASH_ACTS, implosionCue } from './squash-collapse';
    happen in step with an exit (a pull request's planets, a spoken line) reads
    its beats from here instead of keeping a clock of its own. */
 
-/** The sound of one exit, tagged by which exit it is. */
-export type ExitCue =
+/** The sound of one exit's own acts, tagged by which exit it is. */
+type ExitSound =
   | { readonly exit: 'merge'; readonly cue: MergeCue }
   | { readonly exit: 'implosion'; readonly cue: ImplosionCue }
   | { readonly exit: 'sink'; readonly cue: SinkCue };
 
+/** What is heard for one exit: its own acts, and the chimes and suction of the company its star kept. */
+export type ExitCue = ExitSound & { readonly company: CompanyCue };
+
 interface Exit {
   readonly acts: Acts;
-  readonly cue: (ev: ExitEvent, scene: CueScene) => ExitCue;
+  readonly cue: (ev: ExitEvent, scene: CueScene) => ExitSound;
 }
 
 const EXITS: ReadonlyMap<string, Exit> = new Map([
@@ -67,7 +71,9 @@ export function exitCues(events: readonly ExitEvent[], scene: CueScene): ExitCue
   return events
     .flatMap((ev) => {
       const exit = EXITS.get(ev.kind);
-      return exit && ev.startAt != null ? [exit.cue(ev, scene)] : [];
+      return exit && ev.startAt != null
+        ? [{ ...exit.cue(ev, scene), company: companyCue(ev, scene) }]
+        : [];
     })
     .slice(0, MAX_EXITS_HEARD);
 }

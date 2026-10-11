@@ -50,7 +50,7 @@ import {
 import { starLook } from './star-type';
 import { GALAXY_FRAGMENT, GALAXY_VERTEX } from './galaxy-shader';
 import { galaxyUniforms, galaxyView } from './galaxy-geometry';
-import { IssuePlanet, PLANET_TONE_COUNT, issuePlanets, massOf, systemTurn } from './star-system';
+import { IssuePlanet, PLANET_TONES, issuePlanets, massOf, systemTurn } from './star-system';
 import {
   DISC_FRAGMENT,
   DISC_QUAD_MARGIN,
@@ -73,8 +73,6 @@ const NEAR_DISC = 0.75;
 const FAR_CORE_PX = 2.5;
 const NEAR_CORE_PX = 8;
 
-/** Planets' tones: bare rock, dust, and a world with water. */
-const PLANET_TONES = ['#9aa3ad', '#b59a78', '#7fa9a6'];
 /** A planet is never smaller than this many screen pixels across. */
 const MIN_PLANET_PX = 1.2;
 /** The disc of gas starts this far out from the star's drawn disc. */
@@ -252,7 +250,7 @@ function buildScene3D(
     return disc;
   };
   const ball = owned.own(new SphereGeometry(1, 16, 12));
-  const tones = PLANET_TONES.slice(0, PLANET_TONE_COUNT).map((hex) => new Color(hex));
+  const tones = PLANET_TONES.map((hex) => new Color(hex));
   const planetsFor = (
     star: SkyStar,
   ): { planet: IssuePlanet; mesh: Mesh<SphereGeometry, ShaderMaterial> }[] =>

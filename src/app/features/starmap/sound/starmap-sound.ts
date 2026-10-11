@@ -108,12 +108,14 @@ export class StarmapSound {
     if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state], doppler);
   }
 
-  /** The sound of a pull request leaving, by how it ended, only while the sound is on. */
-  exited({ exit, cue }: ExitCue): void {
+  /** The sound of a pull request leaving, by how it ended, with the chimes and suction of the company its star kept; only while the sound is on. */
+  exited({ exit, cue, company }: ExitCue): void {
     if (!this.isOn()) return;
     if (exit === 'merge') this.score?.merge(cue);
     else if (exit === 'implosion') this.score?.implode(cue);
     else this.score?.sink(cue);
+    company.chimes.forEach((chime) => this.score?.chime(chime));
+    if (company.suction) this.score?.suction(company.suction);
   }
 
   /** An engine when a crew ship or satellite casts off from a star that left, only while the sound is on. */

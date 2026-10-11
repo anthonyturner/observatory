@@ -1,5 +1,7 @@
 import { WorldPoint } from '../engine/black-hole';
 import { Point, dopplerOf, listenerOf } from '../sound/doppler';
+import { COMPANY_S } from './departure-company';
+import { Departure } from './departure';
 
 /* What every exit shares. A pull request leaves in two acts: the star's last
    light (a supernova, a collapse, an ember cooling), then it goes (a streak, or
@@ -10,8 +12,9 @@ import { Point, dopplerOf, listenerOf } from '../sound/doppler';
  * Seconds an exit holds before its star begins to go, in front of the first
  * act: room for what orbits the star to play first. Every exit's span, progress
  * and cue reads it, so changing it moves the picture and the sound together.
+ * It is as long as the star's company takes to play (`departure-company.ts`).
  */
-export const PRELUDE_S = 0;
+export const PRELUDE_S = COMPANY_S;
 
 /** The size a departed star is drawn at: it is gone, so there is none to measure. */
 export const DEPARTED_MAG = 7;
@@ -80,6 +83,8 @@ export interface ExitEvent {
   readonly fromY?: number;
   readonly fromZ?: number;
   readonly angle?: number;
+  /** What the star carried, and how it ended, where those are known. */
+  readonly departure?: Departure;
 }
 
 /** The sky a cue is heard against. */

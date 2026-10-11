@@ -12,16 +12,19 @@ import {
   sinkProgress,
 } from './closed-ember';
 import { Point } from '../sound/doppler';
+import { PRELUDE_S } from './departure-exit';
 
 describe('the closed ember', () => {
   it('cools first, then sinks', () => {
-    const handover = COOL_S / EMBER_SPAN_S;
+    const through = (seconds: number): number => seconds / EMBER_SPAN_S;
+    const handover = through(PRELUDE_S + COOL_S);
 
-    expect(EMBER_SPAN_S).toBeCloseTo(COOL_S + SINK_S);
+    expect(EMBER_SPAN_S).toBeCloseTo(PRELUDE_S + COOL_S + SINK_S);
     expect(coolProgress(-0.1)).toBeNull();
-    expect(coolProgress(handover / 2)).toBeCloseTo(0.5);
+    expect(coolProgress(through(PRELUDE_S / 2))).toBeNull();
+    expect(coolProgress(through(PRELUDE_S + COOL_S / 2))).toBeCloseTo(0.5);
     expect(coolProgress(handover + 0.01)).toBeNull();
-    expect(sinkProgress(handover / 2)).toBe(0);
+    expect(sinkProgress(through(PRELUDE_S + COOL_S / 2))).toBe(0);
     expect(sinkProgress(1)).toBeCloseTo(1);
   });
 });
@@ -91,7 +94,10 @@ describe('sinkCue', () => {
   const closed = { kind: 'closed', startAt: 12, fromX: HOLE.x + 800, fromY: HOLE.y, fromZ: 0 };
 
   it('waits for the cooling and sits where it begins on screen', () => {
-    expect(sinkCue(closed, scene({ project: flat(250) }))).toMatchObject({ delayS: 2, pan: -0.5 });
+    expect(sinkCue(closed, scene({ project: flat(250) }))).toMatchObject({
+      delayS: 2 + PRELUDE_S,
+      pan: -0.5,
+    });
   });
 
   it('follows the ember down into the hole, panned by where it is drawn', () => {

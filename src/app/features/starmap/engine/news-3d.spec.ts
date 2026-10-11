@@ -1,5 +1,7 @@
 import { Group, Line, Mesh, Scene } from 'three';
 import { COOL_S, EMBER_SPAN_S } from '../memory/closed-ember';
+import { PRELUDE_S } from '../memory/departure-exit';
+import { MERGE_SPAN_S } from '../memory/merge-supernova';
 import { COLLAPSE_S, SQUASH_SPAN_S } from '../memory/squash-collapse';
 import { CameraController } from './camera-controller';
 import { HOLE } from './black-hole';
@@ -40,9 +42,9 @@ function setUp() {
 describe('the squash collapse in 3D', () => {
   it('shows the collapsing star where it stood, then hands over to the streak', () => {
     const { scene, effects, request } = setUp();
-    const handover = COLLAPSE_S / SQUASH_SPAN_S;
+    const collapsing = (PRELUDE_S + COLLAPSE_S / 2) / SQUASH_SPAN_S;
 
-    effects.update([request('squashed', handover / 2)]);
+    effects.update([request('squashed', collapsing)]);
     const [group] = scene.children as Group[];
     expect(group.visible).toBe(true);
     expect(group.position.x).toBe(HOLE.x + 600);
@@ -56,7 +58,7 @@ describe('the squash collapse in 3D', () => {
   it('keeps the ring and the streak out when motion is off', () => {
     const { scene, effects, request } = setUp();
 
-    effects.update([request('squashed', 0.1, { still: true })]);
+    effects.update([request('squashed', (PRELUDE_S + 0.1) / SQUASH_SPAN_S, { still: true })]);
     const group = scene.children[0] as Group;
     const meshes = group.children as Mesh[];
     expect(meshes.filter((mesh) => mesh.visible)).toHaveLength(2);
@@ -78,7 +80,7 @@ describe('the squash collapse in 3D', () => {
 describe('the closed ember in 3D', () => {
   it('cools where the star stood, then sinks toward the hole, naming its place for the label', () => {
     const { scene, effects, request, heads } = setUp();
-    const cooling = COOL_S / EMBER_SPAN_S / 2;
+    const cooling = (PRELUDE_S + COOL_S / 2) / EMBER_SPAN_S;
 
     effects.update([request('closed', cooling)]);
     const group = scene.children[0] as Group;
@@ -95,7 +97,7 @@ describe('the closed ember in 3D', () => {
   it('only cools when motion is off', () => {
     const { scene, effects, request } = setUp();
 
-    effects.update([request('closed', 0.1, { still: true })]);
+    effects.update([request('closed', (PRELUDE_S + 0.1) / EMBER_SPAN_S, { still: true })]);
     const group = scene.children[0] as Group;
     expect(group.visible).toBe(true);
 
@@ -117,7 +119,7 @@ describe('the merge supernova in 3D', () => {
   it('still goes off, then streaks, as it did before the other exits', () => {
     const { scene, effects, request } = setUp();
 
-    effects.update([request('merged', 0.1)]);
+    effects.update([request('merged', (PRELUDE_S + 0.1) / MERGE_SPAN_S)]);
     expect((scene.children[0] as Group).visible).toBe(true);
 
     effects.update([request('merged', 0.8)]);

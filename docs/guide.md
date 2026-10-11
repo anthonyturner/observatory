@@ -489,8 +489,17 @@ looked:
   black hole, for one closed without merging, with a soft hush and a low breath
   that falls with it when sound is on.
 
+Before the star goes, its company plays out where it stood. The planets of a
+merged pull request glow green, one after another, and drift off, because the
+issues they stand for are closed; if the merge left an issue open, or the pull
+request was closed, its planet falls back into the field instead. A meteor (new
+commits since you looked) is pulled into the star's core, which flares. With
+sound on, a chime rings for each planet that turns green and a suction swells
+as the meteor falls in.
+
 With motion off, each plays only its first part: the flash, the collapsing core
-and its flash, or the cooling.
+and its flash, or the cooling; the planets that turn green glow in place and
+fade, and nothing is pulled in.
 
 The changes panel lists them, and **Got it** clears the marks. A pull request
 that merges or closes while the page is open leaves at the next refresh, and

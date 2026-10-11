@@ -1,5 +1,20 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { StarmapHeader } from './starmap-header';
+
+@Component({
+  imports: [StarmapHeader],
+  template: `
+    <app-starmap-header repo="me/a" title="Review Queue" stamp="me/a · 2 open" [chips]="chips">
+      <p class="projected">search</p>
+    </app-starmap-header>
+  `,
+})
+class Host {
+  protected readonly chips = [
+    { id: 'conflicted', colour: '#ff6f5e', count: 1, text: 'cannot merge', live: true },
+  ];
+}
 
 function render() {
   const fixture = TestBed.createComponent(StarmapHeader);
@@ -35,6 +50,19 @@ describe('StarmapHeader', () => {
     expect(toggled).toEqual(['conflicted']);
     expect(live.textContent).toContain('1,234 cannot merge');
     expect(empty.dataset['empty']).toBe('1');
+  });
+
+  it('sets what the page projects in above the legend, apart from the title', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const side = element.querySelector('.side');
+
+    expect(Array.from(side?.children ?? []).map((child) => child.className)).toEqual([
+      'projected',
+      'legend',
+    ]);
+    expect(element.querySelector('.brand .projected')).toBeNull();
   });
 
   it('says when the sky has fogged over', () => {

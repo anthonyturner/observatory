@@ -107,7 +107,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'WIP limit',
-        'More than 8 open pull requests, drafts aside, is more work in progress than finishes well: past that the comets fade and a note under the search suggests finishing one before starting another. Nothing is blocked; the comets still open. Set the number with wip in the tools; get back within it and the comets brighten again.',
+        'More than 8 open pull requests, drafts aside, is more work in progress than finishes well: past that the comets fade and a note at the top, which you can close, suggests finishing one before starting another. Nothing is blocked; the comets still open. Set the number with wip in the tools; get back within it and the comets brighten again.',
       ],
       [
         'Fog',
@@ -166,7 +166,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'WIP limit',
-        'Past the limit set with wip in the tools (8 open pull requests, drafts aside, unless you change it), a note under the search suggests finishing one before starting another.',
+        'Past the limit set with wip in the tools (8 open pull requests, drafts aside, unless you change it), a note at the top, which you can close, suggests finishing one before starting another.',
       ],
     ],
   },

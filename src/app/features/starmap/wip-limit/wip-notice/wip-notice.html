@@ -1,4 +1,18 @@
-<p class="wip" role="status">
-  <strong>{{ check().open }} open</strong>, past your limit of {{ check().limit }}. Finishing one
-  before starting another keeps the queue moving, so the comets are faded for now.
-</p>
+@if (isShown()) {
+  <div class="wip readout">
+    <span class="readout__marker" aria-hidden="true"></span>
+    <p class="text" role="status">
+      <strong>{{ check().open }} open</strong>, past your limit of {{ check().limit }}. Finishing one
+      before starting another keeps the queue moving, so the comets are faded for now.
+    </p>
+    <button
+      type="button"
+      class="close"
+      aria-label="Close the work-in-progress notice"
+      title="Close"
+      (click)="close()"
+    >
+      <span aria-hidden="true">×</span>
+    </button>
+  </div>
+}

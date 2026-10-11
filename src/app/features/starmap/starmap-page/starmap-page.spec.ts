@@ -215,14 +215,14 @@ describe('StarmapPage', () => {
     const sky = fixture.debugElement.query(By.directive(StarmapSky))
       .componentInstance as StarmapSky;
 
-    expect(element.querySelector('.hud.bottom app-wip-notice')?.textContent).toContain(
+    expect(element.querySelector('app-wip-notice [role="status"]')?.textContent).toContain(
       '3 open, past your limit of 2',
     );
     expect(sky.cometsFaded()).toBe(true);
     TestBed.inject(WipLimitSetting).set(3);
     fixture.detectChanges();
 
-    expect(element.querySelector('app-wip-notice')).toBeNull();
+    expect(element.querySelector('app-wip-notice [role="status"]')).toBeNull();
     expect(sky.cometsFaded()).toBe(false);
   });
 

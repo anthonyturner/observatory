@@ -96,10 +96,16 @@
     [chips]="chart() === 'logs' ? logs.chips() : chips()"
     [filter]="chart() === 'logs' ? logs.filter() : legendFilter()"
     (toggled)="toggleFilter($event)"
-  />
-  @if (chart() === 'prs') {
-    <app-starmap-search [suggestions]="suggestions()" [miss]="searchMiss()" (find)="find($event)" />
-  }
+  >
+    @if (chart() === 'prs') {
+      <app-starmap-search
+        [suggestions]="suggestions()"
+        [miss]="searchMiss()"
+        (find)="find($event)"
+      />
+    }
+    <app-wip-notice [check]="wip()" [paused]="wipPaused()" />
+  </app-starmap-header>
   @if (docked()) {
     <div class="issuedock"><app-issue-bar /></div>
   }
@@ -128,9 +134,6 @@
       [filter]="logs.filter()"
       [traced]="logs.traced()?.fault ?? null"
     />
-  }
-  @if (showWipNotice()) {
-    <app-wip-notice [check]="wip()" />
   }
   <app-starmap-tools
     [repo]="repo()"

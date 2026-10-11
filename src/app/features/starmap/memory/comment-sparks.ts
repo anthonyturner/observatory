@@ -9,7 +9,7 @@ import { exitBeat } from './exits';
    unresolved and gold once resolved. Both skies and the crackle read the same
    rule from here, timed from the exit's own beats so they cannot drift. */
 
-/** The most sparks one star sheds: the thread counts are shown up to here, and bound the particle load. */
+/** The most sparks one star sheds: thread counts show as they are up to here, which bounds the particle load. */
 export const MAX_SPARKS = 12;
 
 export const UNRESOLVED_SPARK = '#ff6f5e';

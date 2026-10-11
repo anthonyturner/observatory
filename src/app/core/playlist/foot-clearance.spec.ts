@@ -37,6 +37,19 @@ describe('footClearanceOf', () => {
   });
 });
 
+describe('a player that is put away, leaving only its toggle', () => {
+  const TOGGLE = { width: 76, height: 54 };
+
+  it('leaves the tools beside the toggle, even on a phone', () => {
+    expect(footClearanceOf(TOGGLE, NOTHING_ABOVE, 1440)).toEqual({ right: 76, bottom: 0 });
+    expect(footClearanceOf(TOGGLE, NOTHING_ABOVE, 390)).toEqual({ right: 76, bottom: 0 });
+  });
+
+  it('reaches only the top of the toggle', () => {
+    expect(playlistReachOf(TOGGLE, NOTHING_ABOVE)).toBe(54);
+  });
+});
+
 describe('playlistReachOf', () => {
   it('reaches the top of the bar while nothing floats over it', () => {
     expect(playlistReachOf({ width: 560, height: 84 }, NOTHING_ABOVE)).toBe(84);

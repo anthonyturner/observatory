@@ -8,10 +8,14 @@
 }
 
 /* The playlist keeps the far end of every page's foot, clear of the page's own
-   tools at the near end. Only the bar takes the pointer. The bar gets the height
-   the browser's toolbars leave showing, less the playlist's foot and a margin
-   above, as --playlist-room. */
+   tools at the near end. Only the bar and its toggle take the pointer. The bar
+   gets the height the browser's toolbars leave showing, less the playlist's foot
+   and a margin above, as --playlist-room. The toggle sits at the bar's far end; the
+   video and track list reach over it, to the corner, by --playlist-toggle-reach. */
 .playlist {
+  --playlist-toggle-size: 36px;
+  --playlist-toggle-gap: 8px;
+  --playlist-toggle-reach: calc(var(--playlist-toggle-size) + var(--playlist-toggle-gap));
   --playlist-foot: calc(18px + env(safe-area-inset-bottom, 0px));
   --playlist-room: calc(100dvh - var(--playlist-foot) - 16px);
 
@@ -19,6 +23,10 @@
   right: 0;
   bottom: 0;
   z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--playlist-toggle-gap);
   padding: 0 max(20px, env(safe-area-inset-right, 0px)) var(--playlist-foot);
   pointer-events: none;
 }
@@ -49,6 +57,12 @@
     left: auto;
     padding-inline: max(20px, env(safe-area-inset-right, 0px));
   }
+}
+
+/* Put away, the footer is only the toggle, even on a phone, where it otherwise
+   runs the screen's width. */
+.playlist.playlist--away {
+  left: auto;
 }
 
 /* The status strip hangs from the top centre. Every page's top HUD sits

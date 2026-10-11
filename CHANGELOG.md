@@ -8,6 +8,10 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ## [Unreleased]
 
+### Added
+
+- A round **♪** button in the bottom-right corner shows or hides the music player. Hidden, only the button is left, the music keeps playing, and the panels that sit above the player (Since you last looked, Agents, Done, Plan and the cards) move down to use the space. Your choice is remembered in this browser ([#639](https://github.com/anthonyturner/observatory/issues/639)).
+
 ### Changed
 
 - Merged, squashed and closed pull requests now leave the Review Queue's sky in three different ways, each with its own sound. A merge keeps its supernova. A squashed or rebased one collapses: a blue-white ring falls in as the star shrinks to a point that flashes once, then it streaks away, with a rising sweep and a snap. A closed one cools to a glowing ember and sinks into the black hole, with a soft hush and a low breath that falls with it, instead of crossing the sky as a shooting star. They look the same in the 2D and 3D skies, and with motion off each plays only its first part ([#620](https://github.com/anthonyturner/observatory/pull/636)).

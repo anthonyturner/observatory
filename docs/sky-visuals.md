@@ -446,9 +446,10 @@ request there. Replay shows no chains: they are the queue as it is.
 open pull requests that are not drafts; snoozed and dismissed ones still count.
 Past the limit (8, set per browser with **wip** in the tools, `WipLimitSetting`,
 1 to 50), `CometLayer` draws the comets, their tails and labels at 30% opacity
-(`FADED_ALPHA`) and the page shows a note under the search. It is a nudge only:
-a faded comet still takes hover and clicks, and getting back within the limit,
-by a refresh or a raised limit, brightens them again.
+(`FADED_ALPHA`) and the page shows a note at the top. Closing it keeps it
+closed until the count or limit changes. It is a nudge only: a faded comet
+still takes hover and clicks, and getting back within the limit, by a refresh
+or a raised limit, brightens them again.
 
 ### Exits (data: how a pull request ended)
 

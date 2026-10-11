@@ -1,8 +1,8 @@
 <app-project-bar-room />
 <div class="brand">
   <div class="title">
-      <h1>{{ repoName() }}</h1>
-    </div>
+    <h1>{{ repoName() }}</h1>
+  </div>
   <h2>{{ title() }}</h2>
   <span class="stamp" [class.replaying]="replaying()">{{ stamp() }}</span>
   @if (stale(); as words) {
@@ -13,20 +13,23 @@
     >
   }
 </div>
-@if (chips().length) {
-  <div class="legend">
-    @for (chip of chips(); track chip.id) {
-      <button
-        type="button"
-        class="lg"
-        [style.--sev]="chip.colour"
-        [attr.data-empty]="chip.live ? '0' : '1'"
-        [attr.aria-pressed]="chip.pressed ?? filter() === chip.id"
-        [attr.title]="chip.title ?? null"
-        (click)="chip.live && toggled.emit(chip.id)"
-      >
-        <span class="dot"></span><b>{{ fmtN(chip.count) }}</b> {{ chip.text }}
-      </button>
-    }
-  </div>
-}
+<div class="side">
+  <ng-content />
+  @if (chips().length) {
+    <div class="legend">
+      @for (chip of chips(); track chip.id) {
+        <button
+          type="button"
+          class="lg"
+          [style.--sev]="chip.colour"
+          [attr.data-empty]="chip.live ? '0' : '1'"
+          [attr.aria-pressed]="chip.pressed ?? filter() === chip.id"
+          [attr.title]="chip.title ?? null"
+          (click)="chip.live && toggled.emit(chip.id)"
+        >
+          <span class="dot"></span><b>{{ fmtN(chip.count) }}</b> {{ chip.text }}
+        </button>
+      }
+    </div>
+  }
+</div>

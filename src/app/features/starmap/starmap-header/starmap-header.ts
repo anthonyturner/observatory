@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
 import { LegendChip, fmtN } from '../starmap-view';
 
-/** The top of the star map: room for the project bar, the title, what the sky is
- *  and how old, and the legend that narrows it. */
+/** The top of the star map: room for the project bar, the title, what the sky is and how old, and
+ *  the legend that narrows it. What the page projects in (its search and notices) joins the
+ *  legend; on a wide screen the two make a column at the top right, the search above the legend. */
 @Component({
   selector: 'app-starmap-header',
   imports: [ProjectBarRoom],

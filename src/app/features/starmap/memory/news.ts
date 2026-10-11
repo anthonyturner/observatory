@@ -141,7 +141,7 @@ export function kindOf(ending: Ending | null): ChangeKind {
 }
 
 /** The pull requests in `before` that are not in `after`. */
-export const departedFrom = (
+const departedFrom = (
   before: readonly MemoryItem[],
   after: readonly MemoryItem[],
 ): MemoryItem[] => {
@@ -194,9 +194,6 @@ export function departuresAnswered(
   });
   return departureEvents(left, endings, systems);
 }
-
-/** Whether a kind of change is a pull request leaving the sky rather than changing on it. */
-export const isDeparture = (kind: ChangeKind): boolean => !EFFECTS[kind].onStar;
 
 /** What changed between two queues: items in, events out, worst first. */
 export function diffItems(

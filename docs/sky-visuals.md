@@ -427,9 +427,11 @@ Code: `features/starmap/memory/departure.ts` holds the model; `news.ts` builds t
 events; `memory-view.ts` notices them.
 
 A pull request that leaves the queue is noticed on **every** refresh, not once per
-visit. `MemoryView.follow` compares each reading of the queue (hidden pull
-requests included, so a dismissed one is not a departure) with the one before and
-asks `/api/pull-state` once for each that is gone. The answer says whether it
+visit. `MemoryView.follow` compares each reading of the queue with the stars the
+one before had in the sky, and asks `/api/pull-state` once for each whose pull
+request the queue no longer lists. A pull request put away (dismissed or snoozed)
+is still listed, so it does not leave; one that merges while put away had no star
+to play. The answer says whether it
 `merged`, was `squashed` (a squash or a rebase) or `closed`, how its review
 threads stood and which issues it closed. A pull request GitHub says is still open
 is no news; one it cannot answer for just `left`. The visit's first reading is

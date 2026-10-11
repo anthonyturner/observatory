@@ -628,6 +628,15 @@ describe('StarmapPage', () => {
       ]);
     });
 
+    it('does not play for a pull request that was put away before it closed', () => {
+      const { http, play, readWithout } = leaving();
+
+      readWithout(11);
+
+      http.expectNone('/api/pull-state?repo=me/a&number=11');
+      expect(departures(play)).toEqual([]);
+    });
+
     it('takes along the system its star carried', () => {
       const { play, readWithout, answer } = leaving();
 

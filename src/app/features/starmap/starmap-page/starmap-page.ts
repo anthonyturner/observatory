@@ -733,7 +733,13 @@ export class StarmapPage {
       const report = this.report();
       const systems = this.systems();
       if (!report || !this.memory.framesLoaded()) return;
-      untracked(() => this.memory.follow(report.items.map(memoryItemOf), systems));
+      untracked(() =>
+        this.memory.follow(
+          this.items().map(memoryItemOf),
+          new Set(report.items.map((item) => item.number)),
+          systems,
+        ),
+      );
     });
     // A departure plays once the sky is in view: at once, or when a screen over it closes.
     effect(() => {
@@ -1122,13 +1128,13 @@ export class StarmapPage {
     this.recordTriage(number, { action: 'look', sha });
   }
 
-  /** Reads the queue again now, after GitHub took a rerun. */
   /** GitHub took a merge made on the pull request's screen: read the queue now, so the
    *  star leaves as soon as the screen lets the sky be seen. */
   protected merged(): void {
     this.feed.refresh(this.repo(), true);
   }
 
+  /** Reads the queue again now, after GitHub took a rerun. */
   protected refreshQueue(): void {
     this.feed.refresh(this.repo());
   }

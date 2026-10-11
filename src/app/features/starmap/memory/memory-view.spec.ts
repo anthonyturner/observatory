@@ -102,6 +102,13 @@ describe('MemoryView', () => {
 describe('MemoryView departures', () => {
   const queue = (...numbers: number[]): MemoryItem[] =>
     numbers.map((pr) => ({ pr, title: `#${pr}`, bucket: 'fresh', idleDays: 1 }));
+  /** A reading of the queue: `stars` are in the sky, `putAway` are listed but dismissed or snoozed. */
+  const read = (
+    memory: MemoryView,
+    stars: MemoryItem[],
+    systems = new Map<number, StarSystem>(),
+    putAway: number[] = [],
+  ): void => memory.follow(stars, new Set([...stars.map((s) => s.pr), ...putAway]), systems);
   const carrying = (pr: number): StarSystem => ({
     ...EMPTY_SYSTEM,
     meteor: { repo: 'me/a', pr, commits: 4 },
@@ -144,7 +151,7 @@ describe('MemoryView departures', () => {
   it('only sets the point to compare with on the first reading', () => {
     const { memory, asked } = setUpLive();
 
-    memory.follow(queue(1, 2), new Map());
+    read(memory, queue(1, 2), new Map());
 
     expect(memory.waiting()).toEqual([]);
     expect(asked).toEqual([]);
@@ -153,10 +160,10 @@ describe('MemoryView departures', () => {
   it('notices a pull request that left, asking GitHub once how it ended', () => {
     const { memory, asked, answers } = setUpLive();
     answers.set(2, of(squashed));
-    memory.follow(queue(1, 2), new Map([[2, carrying(2)]]));
+    read(memory, queue(1, 2), new Map([[2, carrying(2)]]));
 
-    memory.follow(queue(1), new Map());
-    memory.follow(queue(1), new Map());
+    read(memory, queue(1), new Map());
+    read(memory, queue(1), new Map());
 
     expect(asked).toEqual([['me/a', 2]]);
     const [event] = memory.waiting();
@@ -174,10 +181,10 @@ describe('MemoryView departures', () => {
     const { memory, answers } = setUpLive();
     answers.set(1, of(found({ state: 'CLOSED', title: '#1' })));
     answers.set(2, of(squashed));
-    memory.follow(queue(1, 2, 3), new Map());
+    read(memory, queue(1, 2, 3), new Map());
 
-    memory.follow(queue(2, 3), new Map());
-    memory.follow(queue(3), new Map());
+    read(memory, queue(2, 3), new Map());
+    read(memory, queue(3), new Map());
 
     expect(memory.waiting().map((e) => [e.kind, e.pr])).toEqual([
       ['closed', 1],
@@ -185,21 +192,41 @@ describe('MemoryView departures', () => {
     ]);
   });
 
+  it('lets a pull request put away stay out of the news, for it has not left', () => {
+    const { memory, asked } = setUpLive();
+    read(memory, queue(1, 2));
+
+    read(memory, queue(1), new Map(), [2]);
+
+    expect(asked).toEqual([]);
+    expect(memory.waiting()).toEqual([]);
+  });
+
+  it('has no exit for a pull request that was put away before it merged', () => {
+    const { memory, asked } = setUpLive();
+    read(memory, queue(1), new Map(), [2]);
+
+    read(memory, queue(1));
+
+    expect(asked).toEqual([]);
+    expect(memory.waiting()).toEqual([]);
+  });
+
   it('lets a pull request still open on GitHub stay out of the news', () => {
     const { memory, answers } = setUpLive();
     answers.set(2, of(found({ state: 'OPEN', title: '#2' })));
-    memory.follow(queue(1, 2), new Map());
+    read(memory, queue(1, 2), new Map());
 
-    memory.follow(queue(1), new Map());
+    read(memory, queue(1), new Map());
 
     expect(memory.waiting()).toEqual([]);
   });
 
   it('lets a pull request GitHub cannot be asked about simply leave', () => {
     const { memory } = setUpLive();
-    memory.follow(queue(1, 2), new Map());
+    read(memory, queue(1, 2), new Map());
 
-    memory.follow(queue(1), new Map());
+    read(memory, queue(1), new Map());
 
     expect(memory.waiting().map((e) => [e.kind, e.pr])).toEqual([['left', 2]]);
   });
@@ -207,8 +234,8 @@ describe('MemoryView departures', () => {
   it('hands what waits to the sky once, and keeps it for the sky to draw', () => {
     const { memory, answers } = setUpLive();
     answers.set(2, of(squashed));
-    memory.follow(queue(1, 2), new Map());
-    memory.follow(queue(1), new Map());
+    read(memory, queue(1, 2), new Map());
+    read(memory, queue(1), new Map());
 
     const released = memory.release();
 
@@ -223,8 +250,8 @@ describe('MemoryView departures', () => {
     const { memory, answers } = setUpLive();
     const late = new Subject<Lookup<PullState>>();
     answers.set(2, late);
-    memory.follow(queue(1, 2), new Map());
-    memory.follow(queue(1), new Map());
+    read(memory, queue(1, 2), new Map());
+    read(memory, queue(1), new Map());
 
     memory.watch('me/b');
     late.next(squashed);

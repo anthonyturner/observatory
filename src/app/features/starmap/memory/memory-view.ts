@@ -9,7 +9,6 @@ import {
   MemoryItem,
   NewsEvent,
   baseline,
-  departedFrom,
   departuresAnswered,
   diffItems,
   frameItems,
@@ -69,7 +68,7 @@ export class MemoryView {
   private repo = '';
   private snapshotAt: string | null = null;
   private announced = false;
-  private lastQueue: readonly MemoryItem[] | null = null;
+  private lastStars: readonly MemoryItem[] | null = null;
   private lastSystems: ReadonlyMap<number, StarSystem> = new Map();
   private reading = new Subscription();
   private liveNews: NewsState | null = null;
@@ -116,7 +115,7 @@ export class MemoryView {
     this.repo = repo;
     this.announced = false;
     this.snapshotAt = null;
-    this.lastQueue = null;
+    this.lastStars = null;
     this.lastSystems = new Map();
     this.reading.unsubscribe();
     this.reading = new Subscription();
@@ -149,17 +148,24 @@ export class MemoryView {
   }
 
   /**
-   * Every time the queue is read: whoever left it since the reading before is
-   * noticed now, not at the next visit. GitHub is asked once how each ended,
-   * and `systems` is what the stars carried, so the departure takes it along.
-   * The first reading only sets the point to compare with.
+   * Every time the queue is read: a star that was in the sky and whose pull
+   * request the queue no longer lists is a departure, noticed now rather than at
+   * the next visit. `stars` are the pull requests in the sky and `listed` every
+   * one the queue lists, so one put away (dismissed or snoozed) is not leaving.
+   * GitHub is asked once how each ended, and `systems` is what the stars carried,
+   * so the departure takes it along. The first reading only sets the point to
+   * compare with.
    */
-  follow(queue: readonly MemoryItem[], systems: ReadonlyMap<number, StarSystem>): void {
-    const before = this.lastQueue;
+  follow(
+    stars: readonly MemoryItem[],
+    listed: ReadonlySet<number>,
+    systems: ReadonlyMap<number, StarSystem>,
+  ): void {
+    const before = this.lastStars;
     const carried = this.lastSystems;
-    this.lastQueue = queue;
+    this.lastStars = stars;
     this.lastSystems = systems;
-    const gone = before ? departedFrom(before, queue) : [];
+    const gone = before?.filter((star) => !listed.has(star.pr)) ?? [];
     if (!gone.length) return;
     const repo = this.repo;
     this.reading.add(

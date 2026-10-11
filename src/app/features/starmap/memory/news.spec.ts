@@ -9,7 +9,6 @@ import {
   departuresAnswered,
   diffItems,
   frameItems,
-  isDeparture,
   kindOf,
   knownEndings,
   play,
@@ -67,11 +66,6 @@ describe('kindOf', () => {
     expect(kindOf(endingOf('merged'))).toBe('merged');
     expect(kindOf(endingOf('closed'))).toBe('closed');
     expect(kindOf(null)).toBe('left');
-  });
-
-  it('counts squashed with the other ways a pull request leaves the sky', () => {
-    expect(isDeparture('squashed')).toBe(true);
-    expect(isDeparture('blocked')).toBe(false);
   });
 });
 

@@ -14,6 +14,8 @@ import type { LiveSitesReport } from '../deployments/deployments-types.ts';
 import { LIVE_SITES_PATH } from '../deployments/live-site.ts';
 import { NEWS_PATH } from '../news/news-routes.ts';
 import { PRINCIPLES_PATH } from '../principles/principle-routes.ts';
+import { libraryImageResponse } from '../library/library-image.ts';
+import { LIBRARY_IMAGE_PATH } from '../library/library-types.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
@@ -108,6 +110,8 @@ export function visitorRoutes(
       '/api/releases': async (query) => reads.releases(await visibleRepo(query)),
       '/api/journal': async (query) => reads.journal(await visibleRepo(query)),
       '/api/library': async (query) => reads.library(await visibleRepo(query)),
+      [LIBRARY_IMAGE_PATH]: async (query) =>
+        libraryImageResponse(reads.libraryImage, await visibleRepo(query), query),
       '/api/actions': async (query) => reads.actions(await visibleRepo(query)),
       '/api/actions/run': async (query) =>
         reads.runJobs(await visibleRepo(query), runIdFrom(query.get('run'))),

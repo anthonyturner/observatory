@@ -10,6 +10,7 @@ function sources(wiki: Record<string, string>, files: Record<string, string>): L
     defaultBranch: async () => 'trunk',
     filePaths: async () => [...Object.keys(files), 'docs/images/a.png'],
     fileText: async (_repo, path) => files[path] ?? null,
+    fileBytes: async () => null,
   };
 }
 

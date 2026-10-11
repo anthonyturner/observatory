@@ -92,6 +92,23 @@ describe('docSpansOf', () => {
     ]);
   });
 
+  it('draws a repository image the API serves, and links to one', () => {
+    const src = '/api/library/image?repo=me%2Fapp&ref=main&path=docs%2Fsky.png';
+    expect(docSpansOf(`![The sky](${src}) [the sky](${src})`)).toEqual([
+      { kind: 'image', alt: 'The sky', src },
+      text(' '),
+      out(src, text('the sky')),
+    ]);
+  });
+
+  it('asks the API for nothing but its image route', () => {
+    expect(docSpansOf('![x](/api/projects) ![y](/api/library/other?path=a.png)')).toEqual([
+      text('x'),
+      text(' '),
+      text('y'),
+    ]);
+  });
+
   it('draws a linked image with its link', () => {
     const src = 'https://raw.githubusercontent.com/me/app/main/logo.png';
     expect(docSpansOf(`[![logo](${src})](https://x.dev)`)).toEqual([

@@ -29,3 +29,10 @@ export interface LibraryReport {
 /** A page's place in the app, `/p/owner/name/library/<slug>`, each part of the slug encoded. */
 export const libraryPath = (repo: string, slug: string): string =>
   `/p/${repo}/library/${slug.split('/').map(encodeURIComponent).join('/')}`;
+
+/** Where the API serves a repository's images, which GitHub's own raw URLs do not for a private one. */
+export const LIBRARY_IMAGE_PATH = '/api/library/image';
+
+/** An image in a repository at `ref`, as the API serves it. */
+export const libraryImagePath = (repo: string, ref: string, path: string): string =>
+  `${LIBRARY_IMAGE_PATH}?${new URLSearchParams({ repo, ref, path })}`;

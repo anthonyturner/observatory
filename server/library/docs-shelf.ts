@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import { rewriteRepoLinks } from '../wiki/wiki-links.ts';
 import { firstHeading } from '../wiki/wiki-pages.ts';
-import { type LibraryPage, libraryPath } from './library-types.ts';
+import { type LibraryPage, libraryImagePath, libraryPath } from './library-types.ts';
 
 /** The most files a docs Library reads; each costs a request. */
 export const DOC_PAGE_LIMIT = 100;
@@ -65,7 +65,10 @@ export function docPages(origin: DocsOrigin, files: readonly DocFile[]): Library
   const { repo, branch } = origin;
   const repoUrl = `https://github.com/${repo}`;
   const pageBySource = new Map(files.map(({ path }) => [path, slugOf(path)]));
-  const pageUrl = (slug: string): string => libraryPath(repo, slug);
+  const homes = {
+    pageUrl: (slug: string): string => libraryPath(repo, slug),
+    imageUrl: (path: string): string => libraryImagePath(repo, branch, path),
+  };
   return files.map(({ path, markdown }) => ({
     slug: slugOf(path),
     title: firstHeading(markdown) ?? humanized(slugOf(posix.basename(path))),
@@ -74,7 +77,7 @@ export function docPages(origin: DocsOrigin, files: readonly DocFile[]): Library
     markdown: rewriteRepoLinks(
       markdown.replace(/\r\n/g, '\n'),
       { repoUrl, branch, source: path, pageBySource },
-      pageUrl,
+      homes,
     ),
   }));
 }

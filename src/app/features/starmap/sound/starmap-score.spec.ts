@@ -345,3 +345,47 @@ describe('WebAudioStarmapScore.crackle', () => {
     expect(starts.length).toBe(after);
   });
 });
+
+describe('WebAudioStarmapScore.undock', () => {
+  it('plays a rumble and a whine, panned and after the delay, once the score is on', async () => {
+    const { context, starts, pans } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+    const panners = pans.length;
+
+    score.undock({ kind: 'crew', delayS: 0.4, pan: 0.5 });
+
+    const played = starts.slice(before);
+    expect(played).toHaveLength(2);
+    expect(played.every((at) => at === 10.4)).toBe(true);
+    expect(pans[panners]).toBe(0.5);
+    score.stop();
+  });
+
+  it('sounds for a satellite as well as a crew', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+
+    score.undock({ kind: 'satellite', delayS: 0, pan: 0 });
+
+    expect(starts.length - before).toBe(2);
+    score.stop();
+  });
+
+  it('plays nothing before it starts or after it stops', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+
+    score.undock({ kind: 'crew', delayS: 0, pan: 0 });
+    expect(starts).toEqual([]);
+
+    await score.start();
+    score.stop();
+    const after = starts.length;
+    score.undock({ kind: 'crew', delayS: 0, pan: 0 });
+    expect(starts.length).toBe(after);
+  });
+});

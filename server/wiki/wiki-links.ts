@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { imageTypeOf } from './image-types.ts';
 
 /** The repository the published files live in, and the branch links name. */
 export interface RepoLinks {
@@ -44,16 +45,20 @@ const HTML_LINK = /(\b(?:src|href)=")([^"]+)/g;
  * absolute GitHub URL. Code blocks and code spans are left as written.
  */
 export function rewriteLinks(markdown: string, context: LinkContext): string {
-  return rewriteRepoLinks(markdown, context, (page) => wikiPageUrl(context, page));
+  return rewriteRepoLinks(markdown, context, { pageUrl: (page) => wikiPageUrl(context, page) });
 }
 
-/** As `rewriteLinks`, with a published file's page at `pageUrl(page)` instead of on the wiki. */
-export function rewriteRepoLinks(
-  markdown: string,
-  context: LinkContext,
-  pageUrl: (page: string) => string,
-): string {
-  return rewriteTargets(markdown, (target) => repoTarget(target, context, pageUrl));
+/** Where a repository's links point instead of at GitHub. */
+export interface LinkHomes {
+  /** A published file's page. */
+  readonly pageUrl: (page: string) => string;
+  /** An image file, by its repository path; where absent, the file on GitHub. */
+  readonly imageUrl?: (path: string) => string;
+}
+
+/** As `rewriteLinks`, with a published file's page and an image at the addresses `homes` gives instead. */
+export function rewriteRepoLinks(markdown: string, context: LinkContext, homes: LinkHomes): string {
+  return rewriteTargets(markdown, (target) => repoTarget(target, context, homes));
 }
 
 /** Every link, image and HTML `src`/`href` target in the prose replaced by `resolve`'s answer. */
@@ -107,18 +112,15 @@ export const isAbsolute = (target: string): boolean => ABSOLUTE.test(target);
 export const isRawFile = (path: string): boolean =>
   RAW_EXTENSIONS.has(posix.extname(path).toLowerCase());
 
-/** Where one link target should point: a published file's page, else the file on GitHub. */
-function repoTarget(
-  target: string,
-  context: LinkContext,
-  pageUrl: (page: string) => string,
-): string {
+/** Where one link target should point: a published file's page, an image's own address, else the file on GitHub. */
+function repoTarget(target: string, context: LinkContext, homes: LinkHomes): string {
   if (isAbsolute(target)) return target;
   const [pathPart, anchor] = splitAnchor(target);
   const path = repoPath(pathPart, context.source);
   if (path === null) return target;
   const page = context.pageBySource.get(path);
-  if (page) return pageUrl(page) + anchor;
+  if (page) return homes.pageUrl(page) + anchor;
+  if (homes.imageUrl && imageTypeOf(path)) return homes.imageUrl(path);
   return `${context.repoUrl}/${viewOf(pathPart)}/${context.branch}/${path}${anchor}`;
 }
 

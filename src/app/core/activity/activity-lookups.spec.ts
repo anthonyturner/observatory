@@ -32,6 +32,33 @@ describe('ACTIVITY_LOOKUPS', () => {
     expect(seen).toEqual([{ status: 'found', value: { state: 'MERGED', title: 'Fold the bar' } }]);
   });
 
+  it('reads how a pull request ended, once the API says', () => {
+    const { lookups, http } = setUp();
+    const seen: Lookup<unknown>[] = [];
+    const ending = { how: 'squash', threads: { resolved: 2, unresolved: 0 }, closes: [3] };
+
+    lookups.pullState('me/alpha', 10).subscribe((lookup) => seen.push(lookup));
+    http
+      .expectOne('/api/pull-state?repo=me/alpha&number=10')
+      .flush({ state: 'MERGED', title: 'Fold the bar', ending });
+
+    expect(seen).toEqual([
+      { status: 'found', value: { state: 'MERGED', title: 'Fold the bar', ending } },
+    ]);
+  });
+
+  it('ignores an ending it cannot read rather than failing the lookup', () => {
+    const { lookups, http } = setUp();
+    const seen: Lookup<unknown>[] = [];
+
+    lookups.pullState('me/alpha', 10).subscribe((lookup) => seen.push(lookup));
+    http
+      .expectOne('/api/pull-state?repo=me/alpha&number=10')
+      .flush({ state: 'MERGED', title: 'Fold the bar', ending: { how: 'sideways' } });
+
+    expect(seen).toEqual([{ status: 'found', value: { state: 'MERGED', title: 'Fold the bar' } }]);
+  });
+
   it('reads an issue’s title, and that it is open', () => {
     const { lookups, http } = setUp();
     const seen: Lookup<unknown>[] = [];

@@ -4,6 +4,10 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
+import { PageVisibility } from '../../../core/presence/page-visibility';
+import { QueueFeed } from '../../../core/queue/queue-feed';
+import { signal } from '@angular/core';
+import type { MockInstance } from 'vitest';
 import { AMBIENT_PLAYER } from '../../../core/sound/sound-preference';
 import { anIssue } from '../../../core/issues/testing/issues-fixture';
 import { PrScreen } from '../pr-screen/pr-screen';
@@ -571,5 +575,89 @@ describe('StarmapPage', () => {
     expect(render(null, { issue: '12' }).element.querySelector('app-issue-window')).not.toBeNull();
     TestBed.resetTestingModule();
     expect(render(null, { pr: 'x' }).element.querySelector('app-pr-screen')).toBeNull();
+  });
+
+  describe('a pull request leaving the sky', () => {
+    const squashed = {
+      state: 'MERGED',
+      title: 'Change 7',
+      ending: { how: 'squash', threads: { resolved: 1, unresolved: 0 }, closes: [107] },
+    };
+
+    /** The page open on pull request 7, with the tab in view; the queue is then read again without it. */
+    function leaving(query: Record<string, string> = {}) {
+      TestBed.overrideProvider(PageVisibility, { useValue: { isHidden: signal(false) } });
+      const page = render(null, query);
+      page.http.expectOne('/api/history?repo=me/a').flush({ repo: 'me/a', frames: [] });
+      page.fixture.detectChanges();
+      const sky = page.fixture.debugElement.query(By.directive(StarmapSky))
+        .componentInstance as StarmapSky;
+      const play = vi.spyOn(sky, 'play');
+      const feed = page.fixture.debugElement.injector.get(QueueFeed);
+      const readWithout = (...gone: number[]) => {
+        feed.refresh('me/a');
+        page.http.expectOne('/api/queue?repo=me/a').flush({
+          generatedAt: new Date().toISOString(),
+          repo: 'me/a',
+          items: items.filter((each) => !gone.includes(each.number)),
+        });
+        page.fixture.detectChanges();
+      };
+      const answer = (number: number, body: object) => {
+        page.http.expectOne(`/api/pull-state?repo=me/a&number=${number}`).flush(body);
+        page.fixture.detectChanges();
+      };
+      return { ...page, play, readWithout, answer };
+    }
+
+    const departures = (play: MockInstance<StarmapSky['play']>) =>
+      play.mock.calls.flatMap(([events]) => events.map((each) => [each.kind, each.pr]));
+
+    it('plays on the refresh that notices it, and on every one after', () => {
+      const { play, readWithout, answer } = leaving();
+
+      readWithout(7);
+      answer(7, squashed);
+      expect(departures(play)).toEqual([['squashed', 7]]);
+
+      readWithout(7, 9);
+      answer(9, { state: 'CLOSED', title: 'Change 9' });
+      expect(departures(play)).toEqual([
+        ['squashed', 7],
+        ['closed', 9],
+      ]);
+    });
+
+    it('takes along the system its star carried', () => {
+      const { play, readWithout, answer } = leaving();
+
+      readWithout(7);
+      answer(7, squashed);
+
+      const [event] = play.mock.calls.flatMap(([events]) => events);
+      expect(event.departure?.system.planets.map((planet) => planet.issue)).toEqual([107]);
+      expect(event.departure?.ending?.closes).toEqual([107]);
+    });
+
+    it('holds one that left under a pull request’s screen until it closes', () => {
+      const { fixture, play, readWithout, answer } = leaving({ pr: '7' });
+
+      readWithout(7);
+      answer(7, squashed);
+      expect(departures(play)).toEqual([]);
+
+      fixture.debugElement.query(By.directive(PrScreen)).componentInstance.closed.emit();
+      fixture.detectChanges();
+
+      expect(departures(play)).toEqual([['squashed', 7]]);
+    });
+
+    it('reads the queue at once when the screen merges the pull request', () => {
+      const { fixture, http } = leaving({ pr: '7' });
+
+      fixture.debugElement.query(By.directive(PrScreen)).componentInstance.merged.emit();
+
+      http.expectOne('/api/queue?repo=me/a&fresh=1');
+    });
   });
 });

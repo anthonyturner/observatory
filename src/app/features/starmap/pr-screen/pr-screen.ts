@@ -87,6 +87,8 @@ export class PrScreen {
   /** Its failing checks known to be flaky, as the queue knows them. */
   readonly flakyChecks = input<readonly string[]>([]);
   readonly closed = output<void>();
+  /** GitHub took a merge made here: the pull request is leaving the queue. */
+  readonly merged = output<void>();
   /** The head of an open pull request as this screen shows it: it is being looked at. */
   readonly looked = output<string>();
 

@@ -16,6 +16,8 @@ export type How = 'merge' | 'squash' | 'closed';
 
 const HOWS: readonly unknown[] = ['merge', 'squash', 'closed'];
 
+export const isHow = (value: unknown): value is How => HOWS.includes(value);
+
 /** A pull request that left the queue since the frame before. */
 export interface Departed {
   readonly number: number;
@@ -62,7 +64,7 @@ function parseDeparted(value: unknown): Departed | null {
     number: value['number'],
     title: titleOf(value),
     fate,
-    ...(HOWS.includes(how) && { how: how as How }),
+    ...(isHow(how) && { how }),
   };
 }
 

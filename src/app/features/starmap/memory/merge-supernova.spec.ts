@@ -89,6 +89,11 @@ describe('mergeCues', () => {
     expect(blind.whoosh.every((stop) => stop.pan === 0)).toBe(true);
   });
 
+  it('cues a squash as it cues any other merge', () => {
+    expect(mergeCues([{ ...merged(11), kind: 'squashed' }], options(500))).toHaveLength(1);
+    expect(mergeCues([{ ...merged(11), kind: 'closed' }], options(500))).toEqual([]);
+  });
+
   it('cues only merges that have started playing, and not too many', () => {
     const news = [
       { kind: 'blocked', startAt: 10 },

@@ -406,7 +406,8 @@ boom and rumble, then four notes of an A major arpeggio fading away, built from
 `core/sound` (`thump`, `noiseBurst`, `pluck`). `mergeCues` decides when and
 where: the delay until the supernova starts and a pan from the departure point's
 screen x, kept within 0.8 either side. A cue exists only for a merge the news diff
-found, never on a timer, and at most four booms per refresh.
+found (`merged` or `squashed`, see `isMerge`), never on a timer, and at most four
+booms per refresh.
 
 After the boom, the streak gets a short whoosh (`whoosh` in `core/sound`):
 noise through a band-pass filter that glides, with the pan, along eight stretches
@@ -419,6 +420,34 @@ Reduced motion: only the brief flash plays (no ring, no streak), and the boom
 still does; the whoosh does not, since nothing moves. `Effect.flashesStill`
 marks the one burst a still sky keeps, and `SkyLayer.animating` keeps the loop
 drawing until it has played.
+
+### Departures (data: a pull request that left the sky)
+
+Code: `features/starmap/memory/departure.ts` holds the model; `news.ts` builds the
+events; `memory-view.ts` notices them.
+
+A pull request that leaves the queue is noticed on **every** refresh, not once per
+visit. `MemoryView.follow` compares each reading of the queue (hidden pull
+requests included, so a dismissed one is not a departure) with the one before and
+asks `/api/pull-state` once for each that is gone. The answer says whether it
+`merged`, was `squashed` (a squash or a rebase) or `closed`, how its review
+threads stood and which issues it closed. A pull request GitHub says is still open
+is no news; one it cannot answer for just `left`. The visit's first reading is
+announced against the baseline as before (`announce`), where the frames know the
+fate and way but not the threads.
+
+Each event of a pull request that left carries a `Departure`: a `StarSystem`, what
+its star carried when the sky last drew it (`planets` from `issuePlanets`, `crew`,
+`satellites`, the `meteor`), taken by `systemsOf` on every reading, and its
+`Ending` (`fate`, `how`, `threads`, `closes`, each null where nothing has said). Later
+looks and sounds read these and add no data of their own.
+
+A departure waits in `MemoryView.waiting` until the sky is in view (the queue's map,
+no screen or window over it, no replay, a visible tab), then `release` hands it to
+the sky to play and keeps it in `departures` while it plays. Merging on a pull
+request's screen reads the queue at once, so that star leaves as soon as the screen
+closes. They draw as a `merged`, a `squashed` and a `closed` event do today; each
+ending's own look is a later change.
 
 ### Doppler shift (data: how a moving sound's source moves)
 

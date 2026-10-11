@@ -71,7 +71,7 @@
       [landed]="landed()"
     />
     @if (detail(); as pull) {
-      <app-merge-box [detail]="pull" (saved)="refresh()" />
+      <app-merge-box [detail]="pull" (saved)="refresh()" (merged)="merged.emit()" />
     }
   }
 </div>

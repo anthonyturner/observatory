@@ -2,11 +2,14 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { InjectionToken, inject } from '@angular/core';
 import { Observable, catchError, map, of, timeout } from 'rxjs';
 import { ISSUE_URL, parseIssueDetail } from '../issues/issue-detail';
+import { PullEnding, parsePullEnding } from '../queue/pull-ending';
 
 /** Where one pull request stands, as `GET /api/pull-state` answers. */
 export interface PullState {
   readonly state: 'OPEN' | 'MERGED' | 'CLOSED';
   readonly title: string;
+  /** How it ended: present once it has merged or closed, and the API could read it. */
+  readonly ending?: PullEnding;
 }
 
 /** Where one issue stands, from `GET /api/issue`. */
@@ -59,9 +62,11 @@ type Parse<T> = (body: unknown) => T | null;
 /** Reads one pull request's state defensively; null when it is not one. */
 export function parsePullState(value: unknown): PullState | null {
   if (typeof value !== 'object' || value === null) return null;
-  const { state, title } = value as Record<string, unknown>;
+  const { state, title, ending } = value as Record<string, unknown>;
   const known = PULL_STATES.find((candidate) => candidate === state);
-  return known && typeof title === 'string' ? { state: known, title } : null;
+  if (!known || typeof title !== 'string') return null;
+  const read = parsePullEnding(ending);
+  return { state: known, title, ...(read && { ending: read }) };
 }
 
 function parseIssueState(body: unknown): IssueState | null {

@@ -467,9 +467,13 @@ looked:
 - **falling green rings** for one that got unblocked,
 - a **shooting star** for one closed,
 - a **supernova**, a white-gold flash and a ring of dust, for one merged, with
-  a deep boom when sound is on.
+  a deep boom when sound is on; one squashed or rebased goes out the same way.
 
-The changes panel lists them, and **Got it** clears the marks. The **timeline**
+The changes panel lists them, and **Got it** clears the marks. A pull request
+that merges or closes while the page is open leaves at the next refresh, and
+the one you merge on its own screen when you close it, instead of waiting for
+your next visit. Under a screen, another sky, the list or a hidden tab, it
+waits and plays when the sky is back in view. The **timeline**
 along the bottom shows open pull requests per day for 60 days; drag across it
 or press **Replay** to watch the sky change, **[** and **]** to step, and
 **Live** to come back.

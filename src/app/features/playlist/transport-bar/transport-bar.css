@@ -97,10 +97,11 @@
   font-size: 10px;
 }
 
-/* The track list and the video stack above the bar, clear of the page's tools. */
+/* The track list and the video stack above the bar, clear of the page's tools, and
+   over the toggle beside the bar to the corner. */
 .above {
   position: absolute;
-  right: 0;
+  right: calc(-1 * var(--playlist-toggle-reach, 0px));
   bottom: calc(100% + 8px);
   display: flex;
   flex-direction: column;
@@ -401,4 +402,20 @@ button:focus-visible {
   :host(.folded) {
     width: min(360px, calc(50vw - 2 * max(20px, env(safe-area-inset-right, 0px))));
   }
+}
+
+/* Put away, the bar leaves the layout but not the page: YouTube keeps playing in an
+   iframe that is clipped rather than removed. The video and list shrink to nothing
+   too, so the shell measures only the toggle. Last, to win over the sizes above. */
+:host(.away) {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+:host(.away) .above {
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }

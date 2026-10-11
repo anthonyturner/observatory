@@ -18,6 +18,7 @@ import { MusicSkyPresence } from '../../../core/music-sync/music-sky-presence';
 import { SoundSourceChoice } from '../../../core/music-sync/sources/sound-source-choice';
 import { clockOf, spokenClockOf } from '../../../core/playlist/clock-format';
 import { FavoritesStore } from '../../../core/playlist/favorites-store';
+import { PlayerVisibility } from '../../../core/playlist/player-visibility';
 import { PlaylistBarFold } from '../../../core/playlist/playlist-bar-fold';
 import { PlaylistLibrary } from '../../../core/playlist/playlist-library';
 import { StationId } from '../../../core/playlist/playlist-stations';
@@ -42,7 +43,8 @@ const FORWARD_STEP_S = 30;
  *  beat's strength, and the volume, with the track list above; folded, only the
  *  seek bar, the transport, the heart and the song's name stay. It plays instead of
  *  the page's score, never over it. The app shell shows it, so the music carries
- *  across pages. */
+ *  across pages. Put away with the toggle, it stays mounted and keeps playing, its
+ *  controls out of sight and reach. */
 @Component({
   selector: 'app-transport-bar',
   imports: [TrackList, SoundSourcePicker, VideoSizeButtons],
@@ -54,6 +56,8 @@ const FORWARD_STEP_S = 30;
     '(keydown.escape)': 'listOpen.set(false)',
     '[class.still]': 'motion.isStill()',
     '[class.folded]': 'fold.isFolded()',
+    '[class.away]': '!visibility.isShown()',
+    '[attr.inert]': 'visibility.isShown() ? null : ""',
   },
 })
 export class TransportBar {
@@ -74,6 +78,7 @@ export class TransportBar {
    *  page with a backdrop for it. */
   protected readonly sky = inject(MusicSkyPresence);
   protected readonly fold = inject(PlaylistBarFold);
+  protected readonly visibility = inject(PlayerVisibility);
   /** Null where no source can be heard, so Sync is left out. */
   protected readonly sync = computed((): SyncLabel | null => {
     const selected = this.soundSources.selected();

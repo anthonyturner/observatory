@@ -8,6 +8,10 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ## [Unreleased]
 
+### Added
+
+- A round **♪** button in the bottom-right corner shows or hides the music player. Hidden, only the button is left, the music keeps playing, and the panels that sit above the player (Since you last looked, Agents, Done, Plan and the cards) move down to use the space. Your choice is remembered in this browser ([#639](https://github.com/anthonyturner/observatory/issues/639)).
+
 ### Changed
 
 - A pull request that merges or closes now leaves the Review Queue's sky at the next refresh, every refresh, not only once per visit; one you merge on its own screen leaves as soon as you close that screen. If the sky is not in view (a screen over it, another sky, the list or a hidden tab) the exit waits and plays when it is back. A squashed or rebased merge is now its own kind of news, and each exit carries a snapshot of the star's planets, crew ship, satellites and meteor for the endings to come ([#619](https://github.com/anthonyturner/observatory/issues/619)).

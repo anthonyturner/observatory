@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- On a wide screen, the Review Queue's filter chips and its search move to the top right, the search above the chips, and the title keeps the top left; the **Go** button is now a magnifier inside the search box. The work-in-progress note moves up from the foot, to the top centre on the widest screens, with a **×** to close it, and stays closed until the open count or your limit changes. On a phone or a narrow window the header stacks as before ([#638](https://github.com/anthonyturner/observatory/issues/638)).
 - A pull request that merges or closes now leaves the Review Queue's sky at the next refresh, every refresh, not only once per visit; one you merge on its own screen leaves as soon as you close that screen. If the sky is not in view (a screen over it, another sky, the list or a hidden tab) the exit waits and plays when it is back. A squashed or rebased merge is now its own kind of news, and each exit carries a snapshot of the star's planets, crew ship, satellites and meteor for the endings to come ([#619](https://github.com/anthonyturner/observatory/issues/619)).
 
 ### Fixed

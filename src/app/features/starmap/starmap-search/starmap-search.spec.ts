@@ -33,6 +33,17 @@ describe('StarmapSearch', () => {
     expect(searched).toEqual(['#3']);
   });
 
+  it('searches what was typed when the find button is pressed', () => {
+    const { element, searched, typeIn } = render();
+    const button = element.querySelector<HTMLButtonElement>('button[type="submit"]');
+    typeIn('#3');
+
+    button?.click();
+
+    expect(button?.getAttribute('aria-label')).toBe('Find');
+    expect(searched).toEqual(['#3']);
+  });
+
   it('sends nothing for a blank box', () => {
     const { element, searched } = render();
     element.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));

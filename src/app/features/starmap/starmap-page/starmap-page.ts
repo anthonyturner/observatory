@@ -109,13 +109,11 @@ import {
 const TOP_INSET = 140;
 /** With the issue bar docked under the title, over the nursery. */
 const TOP_INSET_WITH_DOCK = 205;
-/** The review queue's search box, under its legend. */
+/** The review queue's search box, which a phone stacks under the legend. */
 const SEARCH_HEIGHT = 44;
 const BOTTOM_INSET = 70;
 /** With a chart along the bottom, as the Log Sky's meteor record. */
 const BOTTOM_INSET_WITH_STRIP = 200;
-/** The work-in-progress notice, above the tools. */
-const WIP_NOTICE_HEIGHT = 56;
 /** Past this width a panel down the right edge takes its own column. */
 const SIDE_PANEL_MIN_WIDTH = 900;
 /** The changes panel's width and the gap beside it. */
@@ -328,10 +326,8 @@ export class StarmapPage {
   protected readonly wip = computed(() =>
     wipCheck(this.report()?.items ?? [], this.wipLimit.limit()),
   );
-  /** The notice speaks for the live queue, so a replay hides it. */
-  protected readonly showWipNotice = computed(
-    () => this.chart() === 'prs' && this.wip().isOver && !this.memory.replay(),
-  );
+  /** The notice speaks for the live review queue, so another chart or a replay quiets it. */
+  protected readonly wipPaused = computed(() => this.chart() !== 'prs' || !!this.memory.replay());
   /** The sky's news, as its layer reads it: what changed since you looked, and, on the live sky,
    *  the pull requests that have left since. */
   protected readonly skyNews = computed(() => {
@@ -674,9 +670,7 @@ export class StarmapPage {
       top: this.docked()
         ? TOP_INSET_WITH_DOCK
         : TOP_INSET + (this.chart() === 'prs' ? SEARCH_HEIGHT : 0),
-      bottom:
-        (this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET) +
-        (this.showWipNotice() ? WIP_NOTICE_HEIGHT : 0),
+      bottom: this.showMeteors() || this.showTimeline() ? BOTTOM_INSET_WITH_STRIP : BOTTOM_INSET,
       side: !wide
         ? 0
         : this.showPlan() || this.showAgents() || this.showDone()

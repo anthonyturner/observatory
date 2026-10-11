@@ -512,7 +512,8 @@ or press **Replay** to watch the sky change, **[** and **]** to step, and
 Opening a pull request shows it in full without leaving Observatory:
 
 - **Overview, Files, Commits, Checks, Diff and Edit** tabs. Click a commit to
-  see its changes beneath it.
+  see its changes beneath it. A pull request with one commit has no Commits
+  tab, since Diff already shows that commit.
 - **Viewed** checkboxes fold files away as you review them, and a file that
   changes later comes back unticked.
 - **Since last look.** The Diff tab opens on just the changes since you last

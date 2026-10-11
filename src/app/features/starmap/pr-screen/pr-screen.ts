@@ -26,21 +26,16 @@ import { SheetPreview } from './sheet-preview/sheet-preview';
 import { SheetCommits } from './sheet-commits/sheet-commits';
 import { checkRows, fileRows } from './sheet-rows/sheet-row';
 import { SheetRows } from './sheet-rows/sheet-rows';
-import {
-  NO_COUNTS,
-  READ_TABS,
-  SHEET_TABS,
-  SheetTab,
-  kickerOf,
-  routeOf,
-  tabCounts,
-} from './sheet-view';
+import { NO_COUNTS, SheetTab, kickerOf, routeOf, sheetTabs, tabCounts } from './sheet-view';
 import { AgentLanes } from '../../../shared/agent-lanes/agent-lanes';
 import { CrewControl } from '../crew-control/crew-control';
 
 /** Where the screen is left when dragged, per viewer, as pr-starmap keeps it. */
 const PLACE_KEY = 'queue.sheetPos';
 const TYPING = 'input, textarea, select';
+
+const sameTabs = (a: readonly SheetTab[], b: readonly SheetTab[]): boolean =>
+  a.length === b.length && a.every((tab, index) => tab === b[index]);
 
 /**
  * pr-starmap's PR screen: one pull request's description, files, commits,
@@ -95,15 +90,21 @@ export class PrScreen {
 
   protected readonly placeKey = PLACE_KEY;
   protected readonly canWrite = inject(ViewerSession).canWrite;
-  protected readonly tabs = computed(() => (this.canWrite() ? SHEET_TABS : READ_TABS));
-  /** Each pull request opens on its description, as pr-starmap's screen does. */
-  protected readonly tab = linkedSignal<number, SheetTab>({
-    source: this.number,
-    computation: () => 'overview',
-  });
   protected readonly detail = computed(() => {
     const state = this.feed.state();
     return state.status === 'ready' ? state.detail : null;
+  });
+  protected readonly tabs = computed(() => sheetTabs(this.canWrite(), this.detail()), {
+    equal: sameTabs,
+  });
+  /** Each pull request opens on its description, as pr-starmap's screen does,
+   *  and falls back to it when a refresh takes the open tab away. */
+  protected readonly tab = linkedSignal<{ number: number; tabs: readonly SheetTab[] }, SheetTab>({
+    source: () => ({ number: this.number(), tabs: this.tabs() }),
+    computation: ({ number, tabs }, previous) =>
+      previous && previous.source.number === number && tabs.includes(previous.value)
+        ? previous.value
+        : 'overview',
   });
   protected readonly unreachable = computed(() => this.feed.state().status === 'unreachable');
   protected readonly shownBucket = computed(() => this.bucket() ?? this.detail()?.bucket ?? null);

@@ -21,6 +21,26 @@ describe('parseHistory', () => {
     expect(frames?.[0].departed).toEqual([{ number: 2, title: 'Two', fate: 'merged' }]);
   });
 
+  it('keeps how a pull request left, and ignores one it does not know', () => {
+    const frames = parseHistory({
+      frames: [
+        {
+          at: '2026-09-24T00:00:00Z',
+          items: [],
+          departed: [
+            { number: 1, title: 'One', fate: 'merged', how: 'squash' },
+            { number: 2, title: 'Two', fate: 'closed', how: 'sideways' },
+          ],
+        },
+      ],
+    });
+
+    expect(frames?.[0].departed).toEqual([
+      { number: 1, title: 'One', fate: 'merged', how: 'squash' },
+      { number: 2, title: 'Two', fate: 'closed' },
+    ]);
+  });
+
   it('drops frames without a time, and items or departures it cannot read', () => {
     const frames = parseHistory({
       frames: [

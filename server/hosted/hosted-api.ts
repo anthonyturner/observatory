@@ -110,12 +110,14 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
   // The hosted site charts the configured account, not whoever the token belongs to.
   const github: GitHub = { ...dependencies.github, viewer: async () => config.owner };
   const history = storeHistoryStore(store);
+  const edits = storeEditStore(store);
   const triage = storeTriageStore(store);
   const repos = ownedRepos(github, config);
   const reads = pushedReads(
     cachedReads({
       github,
       history,
+      edits,
       // No clone here: the pairs are worked out from the files pull requests share.
       collisions: (repo) => uncheckedCollisions(github, repo),
       usage: async () => usageFrom(await store.get(USAGE_KEY)),
@@ -130,7 +132,7 @@ function hostedHandler(config: HostedConfig, dependencies: HostedDependencies): 
   const editor = pullEditor({
     writer: github,
     labels: (repo) => reads.labels(repo),
-    store: storeEditStore(store),
+    store: edits,
     changed: ({ repo, number }) => reads.forgetPull(repo, number),
     now: Date.now,
   });

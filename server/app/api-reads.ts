@@ -6,6 +6,8 @@ import type { PullState } from '../github/fate-reader.ts';
 import type { GitHub } from '../github/github.ts';
 import type { RawLabel } from '../github/pull-reader.ts';
 import type { Frame } from '../history/frames.ts';
+import { fateWithAppMerges } from '../edits/app-merges.ts';
+import type { EditStore } from '../edits/edit-store.ts';
 import type { HistoryStore } from '../history/history-store.ts';
 import { type Ledger, ledgerReport } from '../history/ledger.ts';
 import { type JournalReport, journalReport } from '../journal/journal-report.ts';
@@ -120,6 +122,8 @@ const ONE_INBOX = 'inbox';
 export interface ReadSources {
   readonly github: GitHub;
   readonly history: HistoryStore;
+  /** The edits this app made, which know how it merged what it merged. */
+  readonly edits: EditStore;
   /** Which open pull requests would conflict with each other. */
   readonly collisions: (repo: string) => Promise<CollisionsReport>;
   /** Claude Code usage, or null where none has been read (hosted, before a push). */
@@ -217,11 +221,12 @@ export interface ApiReads {
 
 export function cachedReads(sources: ReadSources): ApiReads {
   const { github, history } = sources;
+  const fates = fateWithAppMerges(github, sources.edits);
   // Each read from GitHub may add a frame to the star map's memory. A failure to
   // record is logged, never passed on: the queue itself was read.
   const queueOf = keyedCache(async (repo) => {
     const report = await queueReport(github, repo);
-    await recordFrame(report, history, github, Date.now()).catch((error: unknown) =>
+    await recordFrame(report, history, fates, Date.now()).catch((error: unknown) =>
       console.error(`Could not record ${repo}'s history:`, error),
     );
     return report;
@@ -318,7 +323,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
   const inboxOf = keyedCache(() => inboxReport(github, new Date()), INBOX_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
     const [repo, number] = key.split('#');
-    return github.pullState(repo, Number(number));
+    return fates.pullState(repo, Number(number));
   }, PULL_TTL_MS);
 
   return {

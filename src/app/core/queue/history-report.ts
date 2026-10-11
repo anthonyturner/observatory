@@ -11,11 +11,18 @@ export interface FrameItem {
 
 export type Fate = 'merged' | 'closed';
 
+/** A merge commit, a squash, or closed unmerged. */
+export type How = 'merge' | 'squash' | 'closed';
+
+const HOWS: readonly unknown[] = ['merge', 'squash', 'closed'];
+
 /** A pull request that left the queue since the frame before. */
 export interface Departed {
   readonly number: number;
   readonly title: string;
   readonly fate: Fate;
+  /** Absent in frames recorded before the server kept it. */
+  readonly how?: How;
 }
 
 /** The queue as it stood at one refresh, as `GET /api/history` returns it. */
@@ -50,7 +57,13 @@ function parseDeparted(value: unknown): Departed | null {
   if (!isObject(value) || !isNumber(value['number'])) return null;
   const fate = value['fate'];
   if (fate !== 'merged' && fate !== 'closed') return null;
-  return { number: value['number'], title: titleOf(value), fate };
+  const how = value['how'];
+  return {
+    number: value['number'],
+    title: titleOf(value),
+    fate,
+    ...(HOWS.includes(how) && { how: how as How }),
+  };
 }
 
 const listOf = <T>(value: unknown, parse: (each: unknown) => T | null): T[] =>

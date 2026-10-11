@@ -430,6 +430,11 @@ Zoom in and each star shows more:
   small satellite with a blinking light: quick green while working, amber while
   waiting for you, slow grey when quiet. Hover one for its name.
 
+When a pull request merges or closes, the crew ship at its star and the
+satellites round it cast off one after another: the ship flies away and fades,
+each satellite flies to its place across the top of the sky, and with sound on
+each makes a short engine sound. With motion off they simply go.
+
 Crews and satellites are **only on your own computer**.
 
 ### The black hole
@@ -477,9 +482,17 @@ looked:
 - a **shockwave** for a pull request that became blocked,
 - a **white flash** for a new one,
 - **falling green rings** for one that got unblocked,
-- a **shooting star** for one closed,
-- a **supernova**, a white-gold flash and a ring of dust, for one merged, with
-  a deep boom when sound is on; one squashed or rebased goes out the same way.
+- a **supernova**, a white-gold flash and a ring of dust, then a streak, for one
+  merged, with a deep boom when sound is on,
+- a **collapse**, a blue-white ring falling in as the star shrinks to a point
+  that flashes once, then a streak, for one squashed or rebased, with a rising
+  sweep and a snap when sound is on,
+- a **cooling ember**, the star dulling to a glowing coal that sinks into the
+  black hole, for one closed without merging, with a soft hush and a low breath
+  that falls with it when sound is on.
+
+With motion off, each plays only its first part: the flash, the collapsing core
+and its flash, or the cooling.
 
 The changes panel lists them, and **Got it** clears the marks. A pull request
 that merges or closes while the page is open leaves at the next refresh, and

@@ -5,6 +5,8 @@ import { editRequestFrom, editTargetFrom } from '../edits/edit-request.ts';
 import type { PullEditor } from '../edits/pull-editor.ts';
 import type { RouteTable } from '../http/api-handler.ts';
 import { isFresh } from '../http/fresh-query.ts';
+import { libraryImageResponse } from '../library/library-image.ts';
+import { LIBRARY_IMAGE_PATH } from '../library/library-types.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { PREVIEW_PATH } from '../deployments/deployments-report.ts';
 import { LIVE_SITES_PATH } from '../deployments/live-site.ts';
@@ -47,6 +49,8 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
       '/api/releases': (query) => reads.releases(repoOf(query)),
       '/api/journal': (query) => reads.journal(repoOf(query)),
       '/api/library': (query) => reads.library(repoOf(query)),
+      [LIBRARY_IMAGE_PATH]: (query) =>
+        libraryImageResponse(reads.libraryImage, repoOf(query), query),
       '/api/actions': (query) => {
         const repo = repoOf(query);
         if (isFresh(query)) reads.forgetActions(repo);

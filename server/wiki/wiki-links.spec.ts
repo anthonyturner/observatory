@@ -92,15 +92,31 @@ describe('rewriteLinks', () => {
   });
 });
 
+const homes = {
+  pageUrl: (page: string) => `/library/${page}`,
+  imageUrl: (path: string) => `/images/${path}`,
+};
+
 describe('rewriteRepoLinks', () => {
   it('points a published file at the page its caller names, the rest as the wiki does', () => {
     assert.equal(
       rewriteRepoLinks(
         '[stack](docs/tech-stack.md#build) [rules](docs/rules.md)',
         context('README.md'),
-        (page) => `/library/${page}`,
+        homes,
       ),
       `[stack](/library/Tech-stack#build) [rules](${REPO}/blob/main/docs/rules.md)`,
+    );
+  });
+
+  it('points an image at the address its caller names, a video and other files at GitHub', () => {
+    assert.equal(
+      rewriteRepoLinks(
+        '![shot](docs/images/Shot.PNG?raw=true) <img src="./logo.svg"> [clip](demo.mp4) ![a](my%20shot.png)',
+        context('README.md'),
+        homes,
+      ),
+      `![shot](/images/docs/images/Shot.PNG) <img src="/images/logo.svg"> [clip](${REPO}/raw/main/demo.mp4) ![a](/images/my shot.png)`,
     );
   });
 });

@@ -32,7 +32,7 @@ import {
 import { PULL_DETAIL_FIELDS, type RawLabel, type RawPull } from './pull-reader.ts';
 import { QUEUE_PULL_FIELDS, type QueuePull } from './queue-reader.ts';
 import { readReleases, readTags } from './release-reader.ts';
-import { readFilePaths, readFileText } from './docs-reader.ts';
+import { readFileBytes, readFilePaths, readFileText } from './docs-reader.ts';
 import { rawWikiReader } from './wiki-reader.ts';
 import { securityReader } from './security-reader.ts';
 import { notificationReader } from './notification-reader.ts';
@@ -80,6 +80,7 @@ export function ghCliReader(): GitHub {
     defaultBranch: (repo) => readDefaultBranch(getJson, repo),
     filePaths: (repo, ref) => readFilePaths(getJson, repo, ref),
     fileText: (repo, path, ref) => readFileText(getJson, repo, path, ref),
+    fileBytes: (repo, path, ref, maxBytes) => readFileBytes(getJson, repo, path, ref, maxBytes),
     ...rawWikiReader(),
     ...securityReader(getJson),
     ...notificationReader(getJson),

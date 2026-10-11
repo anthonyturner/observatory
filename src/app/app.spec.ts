@@ -70,6 +70,23 @@ describe('App', () => {
     expect(foot?.classList).toContain('playlist--beside-dock');
   });
 
+  it('puts the playlist away to its toggle, and brings it back', () => {
+    const { fixture, element } = render();
+    const foot = element.querySelector('.playlist');
+    const toggle = element.querySelector<HTMLButtonElement>('app-player-toggle button');
+    expect(foot?.classList).not.toContain('playlist--away');
+    expect(foot?.querySelector('app-transport-bar')?.id).toBe('playlist-player');
+
+    toggle?.click();
+    fixture.detectChanges();
+    expect(foot?.classList).toContain('playlist--away');
+    expect(foot?.querySelector('app-player-toggle')).not.toBeNull();
+
+    toggle?.click();
+    fixture.detectChanges();
+    expect(foot?.classList).not.toContain('playlist--away');
+  });
+
   it("tells every page the playlist's size, for their tools to keep clear of it", async () => {
     const { fixture } = render();
     await fixture.whenStable();

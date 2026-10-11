@@ -3,7 +3,7 @@
  * ordinary text bindings, as `core/text/markdown.ts` does for a pull request's
  * description. A public wiki can be edited by people the owner does not know,
  * so none of a page's HTML is drawn, a link must go somewhere this allows, and
- * only an image GitHub hosts is loaded.
+ * only an image GitHub or this app's own API hosts is loaded.
  */
 import { splitBy } from '../text/markdown';
 import { DocImage, DocLink, DocLinkPart, DocSpan, DocText, LinkDefinitions } from './doc.types';
@@ -40,9 +40,14 @@ const OUT = /^(?:https?:|mailto:)/i;
 /** What a link to an image with no words of its own says. */
 const IMAGE_LABEL = 'image';
 const LIBRARY_PATH = /^\/p\/[^/?#]+\/[^/?#]+\/library(?:\/[^?#]*)?(?:#.*)?$/;
+/** A repository's image as Observatory's own API serves it, which is how a private one is read. */
+const LIBRARY_IMAGE = /^\/api\/library\/image\?/;
 /** Images GitHub serves itself: the reader's browser asks no one else for them. */
 const GITHUB_IMAGE =
   /^https:\/\/(?:github\.com\/[^/]+\/[^/]+\/raw\/|github\.com\/user-attachments\/|(?:raw|user-images|private-user-images|avatars)\.githubusercontent\.com\/)/;
+
+/** True for an image the page may draw: one GitHub hosts, or this app's own API serves. */
+const isDrawnImage = (src: string): boolean => GITHUB_IMAGE.test(src) || LIBRARY_IMAGE.test(src);
 
 function decoded(text: string): string {
   try {
@@ -61,7 +66,7 @@ export function docLinkOf(href: string): DocLink | null {
       ? { kind: 'page', path: href, fragment: null }
       : { kind: 'page', path: href.slice(0, at), fragment: decoded(href.slice(at + 1)) };
   }
-  return OUT.test(href) ? { kind: 'out', href } : null;
+  return OUT.test(href) || LIBRARY_IMAGE.test(href) ? { kind: 'out', href } : null;
 }
 
 /** Code spans held out of `text` as numbered marks, so nothing inside them is read as markdown. */
@@ -132,7 +137,7 @@ class InlineReader {
     const [whole, linkedAlt, linkedSrc, linkedHref, alt, src, label, href, auto] = match;
     if (linkedSrc !== undefined) {
       const words = this.released(linkedAlt);
-      const parts = GITHUB_IMAGE.test(linkedSrc)
+      const parts = isDrawnImage(linkedSrc)
         ? [imageOf(words, linkedSrc)]
         : this.texts(words || IMAGE_LABEL, style);
       return this.link(parts, linkedHref);
@@ -147,9 +152,9 @@ class InlineReader {
     return link ? [{ kind: 'link', link, parts }] : parts;
   }
 
-  /** A GitHub-hosted image is drawn; any other is a link to it, so the page asks no one else. */
+  /** An image GitHub or this app hosts is drawn; any other is a link to it, so the page asks no one else. */
   private lonelyImage(alt: string, src: string, style: Style): DocSpan[] {
-    if (GITHUB_IMAGE.test(src)) return [imageOf(alt, src)];
+    if (isDrawnImage(src)) return [imageOf(alt, src)];
     return this.link(this.texts(alt || IMAGE_LABEL, style), OUT.test(src) ? src : '');
   }
 

@@ -19,6 +19,7 @@ import { AudioTap, NoAudioError } from '../../../core/music-sync/sources/audio-t
 import { SOUND_SOURCES } from '../../../core/music-sync/sources/sound-sources';
 import { FakeSoundSource } from '../../../core/music-sync/sources/testing/fake-sound-source';
 import { FILE_SAVER, FileSaver } from '../../../core/files/file-saver';
+import { PlayerVisibility } from '../../../core/playlist/player-visibility';
 import { VideoBackground } from '../../../core/playlist/video-background';
 import { TransportBar } from './transport-bar';
 
@@ -521,6 +522,27 @@ describe('TransportBar', () => {
     fixture.detectChanges();
     expect(element.classList).not.toContain('folded');
     expect(button('Tracks')).toBeDefined();
+  });
+
+  it('is put away without leaving the page, so the music plays on', () => {
+    const { fixture, element, button, make, player } = render();
+    button('Play')?.click();
+    const screen = element.querySelector('.screen');
+    expect(element.hasAttribute('inert')).toBe(false);
+
+    TestBed.inject(PlayerVisibility).toggle();
+    fixture.detectChanges();
+    expect(element.classList).toContain('away');
+    expect(element.hasAttribute('inert')).toBe(true);
+    expect(element.querySelector('.screen')).toBe(screen);
+    expect(make).toHaveBeenCalledTimes(1);
+    expect(player.dispose).not.toHaveBeenCalled();
+
+    TestBed.inject(PlayerVisibility).toggle();
+    fixture.detectChanges();
+    expect(element.classList).not.toContain('away');
+    expect(element.hasAttribute('inert')).toBe(false);
+    expect(player.dispose).not.toHaveBeenCalled();
   });
 
   it('hides Sync, Video, Visual and Sky on a page without a music sky', () => {

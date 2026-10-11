@@ -12,8 +12,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 import { fromEvent, map, startWith, combineLatest } from 'rxjs';
 import { footClearanceOf, playlistReachOf } from './core/playlist/foot-clearance';
+import { PlayerVisibility } from './core/playlist/player-visibility';
 import { PlaylistPlacement } from './core/playlist/playlist-placement';
 import { NoticeStack } from './features/notices/notice-stack/notice-stack';
+import { PlayerToggle } from './features/playlist/player-toggle/player-toggle';
 import { TransportBar } from './features/playlist/transport-bar/transport-bar';
 import { UsageFact } from './features/usage-strip/usage-fact/usage-fact';
 import { ELEMENT_SIZE, ElementSize } from './shared/element-size/element-size';
@@ -30,13 +32,22 @@ const NO_SIZE: ElementSize = { width: 0, height: 0 };
  *  page's top HUD keeps below the status strip through `--status-strip-height`. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, PreviewBanner, TransportBar, NoticeStack, StatusStrip, UsageFact],
+  imports: [
+    RouterOutlet,
+    PreviewBanner,
+    TransportBar,
+    PlayerToggle,
+    NoticeStack,
+    StatusStrip,
+    UsageFact,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
   protected readonly placement = inject(PlaylistPlacement);
+  protected readonly visibility = inject(PlayerVisibility);
   private readonly foot = viewChild.required<ElementRef<HTMLElement>>('foot');
   private readonly strip = viewChild.required('strip', { read: ElementRef<HTMLElement> });
 

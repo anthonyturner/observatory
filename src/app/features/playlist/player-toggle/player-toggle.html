@@ -1,0 +1,11 @@
+<button
+  #button
+  type="button"
+  aria-label="Music player"
+  [attr.aria-controls]="controls()"
+  [attr.aria-expanded]="visibility.isShown()"
+  [title]="visibility.isShown() ? 'Hide the music player' : 'Show the music player'"
+  (click)="visibility.toggle()"
+>
+  <span aria-hidden="true">♪</span>
+</button>

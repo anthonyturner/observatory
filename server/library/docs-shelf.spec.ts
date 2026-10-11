@@ -68,7 +68,7 @@ describe('docPages', () => {
     assert.equal(page.url, 'https://github.com/me/app/blob/main/docs/stack/angular.md');
   });
 
-  it('points links between pages into the Library, and the rest at GitHub', () => {
+  it('points links between pages into the Library, images at the API, and the rest at GitHub', () => {
     const [readme] = docPages(ORIGIN, [
       {
         path: 'README.md',
@@ -81,7 +81,7 @@ describe('docPages', () => {
     assert.equal(
       readme.markdown,
       '[rules](/p/me/app/library/docs/rules#one)\n' +
-        '![sky](https://github.com/me/app/raw/main/docs/images/sky.png)' +
+        '![sky](/api/library/image?repo=me%2Fapp&ref=main&path=docs%2Fimages%2Fsky.png)' +
         ' [src](https://github.com/me/app/blob/main/src/app.ts) [#](#top)',
     );
   });

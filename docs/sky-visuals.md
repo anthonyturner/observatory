@@ -38,6 +38,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
 | Review Queue | Merge supernova  | A merged PR in the news    | `novaProgress`, `mergeCues`    |
+| Review Queue | Fly home         | Crew, agents of a leaver   | `undocksOf`, `flightOf`        |
 | Review Queue | Doppler shift    | How a sound's source moves | `dopplerOf`, `dopplerFactor`   |
 | Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
@@ -356,7 +357,9 @@ local runner's run list and tags a run as a crew by its prompt's first line;
 like the gas disc; with motion off it is parked up and to the right. When the
 run ends the ship flies off over 4 s and a green tick (done) or red cross (any
 other ending) stays by the star for 10 minutes. There is no 3D model: the ship
-stays a few pixels long at every zoom so it reads as a marker.
+stays a few pixels long at every zoom so it reads as a marker. A crew still at work
+when its pull request leaves the sky flies off too (see **Crew ships and satellites
+fly home**).
 
 ### Meteors (data: new commits since you looked)
 
@@ -403,6 +406,8 @@ wider (`lanesOf`, `orbitOffset`). The light blinks at the rate
 `SATELLITE_RHYTHM` gives its state, `isLit`: 0.6 s working, 1.4 s waiting,
 3 s quiet, each on its own phase, green, amber and grey. Motion off parks the
 satellites and holds the light steady. Hover names the agent and its state.
+When its pull request leaves the sky a satellite flies to the parking orbit rather than
+jumping there (see **Crew ships and satellites fly home**).
 
 With sound on, `SatelliteBeeper` (`sound/satellite-beeper.ts`) beeps for each at
 its state's period (1.5 s, 4 s, 9 s) through `StarmapScore.beep`: a brief,
@@ -503,6 +508,55 @@ the sky to play and keeps it in `departures` while it plays. Merging on a pull
 request's screen reads the queue at once, so that star leaves as soon as the screen
 closes. They draw as a `merged`, a `squashed` and a `closed` event do today; each
 ending's own look is a later change.
+
+### Crew ships and satellites fly home (data: the company a leaving star kept)
+
+Code: `features/starmap/memory/undock.ts` holds the rule; `engine/crew-layer.ts`
+and `engine/satellite-layer.ts` draw it, flat over both renderers, so the WebGL and
+Canvas skies show the same flight; `StarmapSky.play` hands it to them.
+
+When a departure plays, the company its star kept casts off. `undocksOf` lists, for
+each event that carries a departure and has started, its crew ship (only a crew
+still at work: one back from its run has already flown) and then each of its
+satellites. The first casts off 0.3 s after the exit starts and the rest 0.18 s
+apart, each with the wall time it goes (`startAt`) and the world point its star
+stood at (`from`, the same point the exit's streak sets out from). Nothing is
+invented: only what the snapshot held, and only for an exit the news diff found.
+
+- **Crew ship.** It circles the place the star stood until it goes, then takes the
+  existing fly-off (`flyOff`, 4 s, fading) outward from where it was on its orbit,
+  so it leaves without a jump. No tick or cross is left: the run is not what ended.
+- **Satellite.** It circles the same place, then flies 2.6 s to the parking orbit
+  (`parkingPoint`) it takes up anyway once its star is gone, eased by `flightPoint`
+  so it leaves slowly and arrives slowly. While it flies it counts among the parked
+  in `lanesOf`, so nothing shuffles when it lands, and its beep follows its Doppler
+  as it moves. One whose agent has since stopped is no longer drawn.
+
+Reduced motion: the layers draw no flight, so a crew ship goes with its star and a
+satellite parks at once, as before; no engine plays. `flightOf` and `stillAway`
+give the stage (`docked`, `flying`, `home`) from the wall clock alone.
+
+**The hook for farewells.** `StarmapSky` emits `undocked` with the `Undock`s of each
+batch as the sky plays them, once the sky is in view, each with the wall time
+(`startAt`, in `performance.now() / 1000` seconds) it casts off, its `kind`, `key`,
+`pr` and `name`. Speech reads that, never a timer of its own, and subtracts
+`performance.now() / 1000` from `startAt` to lead the line in.
+
+#### Cue table
+
+The engine is a method of `WebAudioStarmapScore` (`sound/starmap-score.ts`), reached
+through `StarmapSound.undock`, laid out by `undockCues` on the picture's clock and
+tested with a fake `AudioContext`. Nothing plays with sound off, or for a sky not
+in view.
+
+| Sound         | When                                  | Score method             | Test                             |
+| ------------- | ------------------------------------- | ------------------------ | -------------------------------- |
+| Engine        | A ship or satellite casts off         | `undock(cue)`            | `starmap-score.spec.ts` (undock) |
+| Order, timing | One refresh's cast-offs, at most four | `undockCues(undocks, …)` | `undock.spec.ts` (undockCues)    |
+
+The engine is a low rumble that warms up (low-passed noise sweeping upward) under a
+thin band-passed whine that climbs; a crew's is longer and louder, a satellite's
+shorter and softer. Each is panned by the screen x of the star's place.
 
 ### Doppler shift (data: how a moving sound's source moves)
 

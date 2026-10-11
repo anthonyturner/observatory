@@ -1,12 +1,15 @@
 import { AmbientPlayer } from './ambient-synth';
-import { bass, barPad, noiseBurst, pluck, thump } from './instruments';
+import { bass, barPad, lampOut, noiseBurst, pluck, thump, whoosh } from './instruments';
 import {
+  ArrivalCue,
   LOOP_STEPS,
+  OrreryScore,
   STEPS_PER_BAR,
   STEP_S,
   ScoreEvent,
   SystemSound,
   motifFor,
+  playArrival,
   stepEvents,
 } from './orrery-score';
 import { Rig, RoomShape, buildRig, fadeTo } from './sound-rig';
@@ -17,6 +20,8 @@ export interface OrreryListening {
   /** The world picked on the page, whose motif plays when it changes. */
   picked(): string | null;
   isHidden(): boolean;
+  /** The merges the picture marked since last asked, each given once. */
+  arrivals(): readonly ArrivalCue[];
 }
 
 /** A shorter room than Home's, with a dotted-eighth echo: the delay that
@@ -48,11 +53,19 @@ const FADE_OUT_S = 0.75;
 const SUSPEND_AFTER_MS = 1200;
 const MOTIF_LEAD_S = 0.02;
 
+/** The merge sounds sit under the music: a light going out, a speck flying, a bell. */
+const LAMP_LEVEL = 0.07;
+const FLIGHT_LEVEL = 0.045;
+const FLIGHT_FROM_HZ = 700;
+const FLIGHT_TO_HZ = 2600;
+const LANDING_LEVEL = 0.05;
+const LANDING_MIDI = 88;
+
 /** The glide when the volume slider moves, so dragging it never clicks. */
 const VOLUME_GLIDE_S = 0.04;
 
 /** pr-starmap's orrery score on the Web Audio API. */
-export class OrrerySynth implements AmbientPlayer {
+export class OrrerySynth implements AmbientPlayer, OrreryScore {
   private rig: Rig | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private suspendTimer: ReturnType<typeof setTimeout> | null = null;
@@ -76,6 +89,8 @@ export class OrrerySynth implements AmbientPlayer {
     this.nextAt = rig.context.currentTime + 0.06;
     this.step = 0;
     this.lastPicked = this.listening.picked();
+    // Merges marked while the sound was off are old news, not something to play on switching it on.
+    this.listening.arrivals();
     this.timer = setInterval(() => this.tick(), TICK_MS);
   }
 
@@ -84,6 +99,38 @@ export class OrrerySynth implements AmbientPlayer {
     const rig = this.rig;
     if (!rig) return;
     rig.out.gain.setTargetAtTime(orreryGain(this.volume), rig.context.currentTime, VOLUME_GLIDE_S);
+  }
+
+  lightDims(pan: number, after = 0): void {
+    const rig = this.rig;
+    if (rig) lampOut(rig, { at: rig.context.currentTime + after, pan, level: LAMP_LEVEL });
+  }
+
+  speckFlies(fromPan: number, toPan: number, seconds: number, after = 0): void {
+    const rig = this.rig;
+    if (!rig) return;
+    whoosh(rig, {
+      at: rig.context.currentTime + after,
+      seconds,
+      level: FLIGHT_LEVEL,
+      q: 4,
+      path: [
+        { at: 0, freq: FLIGHT_FROM_HZ, pan: fromPan },
+        { at: seconds, freq: FLIGHT_TO_HZ, pan: toPan },
+      ],
+    });
+  }
+
+  speckLands(pan: number, after = 0): void {
+    const rig = this.rig;
+    if (!rig) return;
+    pluck(rig, {
+      at: rig.context.currentTime + after,
+      midi: LANDING_MIDI,
+      severity: 'clear',
+      pan,
+      level: LANDING_LEVEL,
+    });
   }
 
   stop(): void {
@@ -117,6 +164,7 @@ export class OrrerySynth implements AmbientPlayer {
     const ahead = this.listening.isHidden() ? HIDDEN_LOOKAHEAD_S : LOOKAHEAD_S;
     const system = this.listening.system();
     this.playMotifIfPicked(rig, system);
+    for (const cue of this.listening.arrivals()) playArrival(this, cue);
     while (this.nextAt < now + ahead) {
       this.play(rig, stepEvents(this.step, system), this.nextAt);
       this.nextAt += STEP_S;

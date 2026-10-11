@@ -1,5 +1,6 @@
 import { OrreryCamera } from '../../../core/orrery/orrery-camera';
 import { ShippedItem } from '../../../core/orrery/shipped';
+import { FLIGHT_S, LAUNCH_LAG_S } from '../../../core/orrery/merge-arrival';
 import { SceneFrame } from './orrery-scene';
 import { ShippedLayer, placeShipped } from './shipped-layer';
 
@@ -76,5 +77,65 @@ describe('ShippedLayer', () => {
     layer.draw(recordingContext([]), frame, 0, [{ key: 'w', x, y, radius: 20 }], () => '1, 2, 3');
 
     expect(layer.pick(x, y)).toBeNull();
+  });
+});
+
+describe('ShippedLayer arrivals', () => {
+  const moving = { ...frame, isStill: false } as SceneFrame;
+  const home = { key: 'o/app', x: 300, y: 400, radius: 20 };
+  const colour = () => '1, 2, 3';
+
+  function setUp() {
+    const layer = new ShippedLayer();
+    const merged = item(9, 0);
+    layer.set([merged], NOW);
+    layer.arrive(merged);
+    return { layer, merged };
+  }
+
+  it('sets a new merge off from its world, and shows its speck only once it has landed', () => {
+    const { layer } = setUp();
+    const arcs: [number, number][] = [];
+
+    const launches = layer.draw(recordingContext(arcs), moving, 100, [home], colour);
+
+    expect(launches).toHaveLength(1);
+    expect(launches[0].repo).toBe('o/app');
+    expect(launches[0].fromX).toBe(300);
+    expect(layer.pick(launches[0].toX, 0)).toBeNull();
+
+    // Mid-flight it is drawn on its way, but is not yet something to point at.
+    layer.draw(recordingContext(arcs), moving, 100 + LAUNCH_LAG_S + FLIGHT_S / 2, [home], colour);
+    expect(arcs.length).toBeGreaterThan(0);
+    expect(layer.pick(launches[0].toX, 0)).toBeNull();
+
+    const landed: [number, number][] = [];
+    layer.draw(
+      recordingContext(landed),
+      moving,
+      100 + LAUNCH_LAG_S + FLIGHT_S + 0.1,
+      [home],
+      colour,
+    );
+    const [x, y] = landed[0];
+    expect(layer.pick(x, y)?.key).toBe('o/app#9');
+  });
+
+  it('launches each merge once', () => {
+    const { layer } = setUp();
+    layer.draw(recordingContext([]), moving, 100, [home], colour);
+
+    expect(layer.draw(recordingContext([]), moving, 100.5, [home], colour)).toEqual([]);
+  });
+
+  it('just shows the speck, with no flight, when motion is off or its world is not in view', () => {
+    const still = setUp();
+    expect(still.layer.draw(recordingContext([]), frame, 100, [home], colour)).toEqual([]);
+
+    const away = setUp();
+    expect(away.layer.draw(recordingContext([]), moving, 100, [], colour)).toEqual([]);
+    const arcs: [number, number][] = [];
+    away.layer.draw(recordingContext(arcs), moving, 110, [], colour);
+    expect(arcs.length).toBeGreaterThan(0);
   });
 });

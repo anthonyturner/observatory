@@ -10,7 +10,10 @@ import {
   motifFor,
   pulsesFor,
   stepEvents,
+  OrreryScore,
+  playArrival,
 } from './orrery-score';
+import { FLIGHT_S, LAUNCH_LAG_S } from '../orrery/merge-arrival';
 
 const voice = (key: string, overrides: Partial<WorldVoice> = {}): WorldVoice => ({
   key,
@@ -104,5 +107,30 @@ describe('motifFor', () => {
       CHORDS[0].map((n) => TONIC + 24 + n),
     );
     expect(motif.every((e) => (e as { severity: string }).severity === 'waiting')).toBe(true);
+  });
+});
+
+describe('playArrival', () => {
+  function recordingScore() {
+    const calls: string[] = [];
+    const score: OrreryScore = {
+      lightDims: (pan, after = 0) => void calls.push(`lightDims ${pan} +${after}`),
+      speckFlies: (from, to, seconds, after = 0) =>
+        void calls.push(`speckFlies ${from}>${to} ${seconds}s +${after}`),
+      speckLands: (pan, after = 0) => void calls.push(`speckLands ${pan} +${after}`),
+    };
+    return { calls, score };
+  }
+
+  it('dims the light, then sends the speck across the room, then lands it, on the picture’s clock', () => {
+    const { calls, score } = recordingScore();
+
+    playArrival(score, { fromPan: -0.5, toPan: 0.6 });
+
+    expect(calls).toEqual([
+      'lightDims -0.5 +0',
+      `speckFlies -0.5>0.6 ${FLIGHT_S}s +${LAUNCH_LAG_S}`,
+      `speckLands 0.6 +${LAUNCH_LAG_S + FLIGHT_S}`,
+    ]);
   });
 });

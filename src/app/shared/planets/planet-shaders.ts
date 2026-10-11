@@ -106,8 +106,8 @@ const CLOUDS = `uniform float cloudCover;
 export const SURFACE_FRAGMENT = `${SIMPLEX_GLSL} ${KINDS} ${CLOUDS}
   uniform mat4 modelMatrix;
   varying vec3 wp; varying vec3 wn; varying vec3 local;
-  uniform vec3 ink, sun, centre, ringNormal, parentCentre;
-  uniform float radius, hasRing, isMoon, parentRadius, tint, cloudTurn, lights, unrest, time;
+  uniform vec3 ink, sun, centre, ringNormal, parentCentre, dimSpot;
+  uniform float radius, hasRing, isMoon, parentRadius, tint, cloudTurn, lights, unrest, time, dim;
   void main() {
     // Relief: tilt the normal down the height's slope, measured a step either way.
     vec3 n = normalize(local);
@@ -161,6 +161,8 @@ export const SURFACE_FRAGMENT = `${SIMPLEX_GLSL} ${KINDS} ${CLOUDS}
     if (lights > 0. && (kind < .5 || kind > 1.5)) {
       float region = smoothstep(.52, .7, fbm(n * 2.2 + off + 13.) * .5 + .5 - (1. - lights) * .2);
       float towns = pow(max(snoise(n * 45. + off), 0.), 4.) * 3. + pow(max(snoise(n * 110. + off), 0.), 6.) * 2.;
+      // A merged pull request puts one city's lights down for a while: a cap round dimSpot.
+      towns *= 1. - dim * .9 * (1. - smoothstep(.15, .55, distance(n, dimSpot)));
       float cover = cloudCover > 0. ? cloudAt(turnY(n, cloudTurn)) : 0.;
       colour += vec3(1., .72, .38) * towns * region * (1. - wet) * lights * night * (1. - cover * .7) * 1.4;
     }

@@ -41,6 +41,7 @@ import {
 } from '../../../../core/orrery/world-layout';
 import { CLOUD_COVER, WorldKind, worldKind } from '../../../../core/orrery/world-kind';
 import { nightSide } from '../../../../core/orrery/world-night';
+import { DIM_TOTAL_S, dimAt, dimSpot } from '../../../../core/orrery/merge-arrival';
 import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { OrreryPalette } from '../orrery-palette';
 import { DIAL_BEYOND_ORBIT, SceneFrame } from '../orrery-scene';
@@ -104,6 +105,12 @@ interface WorldSystem {
   readonly colour: Color;
 }
 
+/** A world's city light put down by a merge: when, and where on its ground (once chosen). */
+interface Dimming {
+  readonly startedAt: number;
+  spot: Vector3 | null;
+}
+
 interface SceneModel {
   update(frame: SceneFrame): void;
 }
@@ -129,6 +136,8 @@ export class OrreryWebGL {
   private isDisposed = false;
   private readonly field: readonly FieldStar[] = starField(FIELD_STARS_3D, FIELD_SPREAD_3D);
   private model: SceneModel | null = null;
+  /** By repository, so a rebuild of the worlds in the middle of one does not lose it. */
+  private readonly dimmings = new Map<string, Dimming>();
   private isLost = false;
 
   /** Throws where WebGL cannot start or a shader will not compile; the caller keeps 2D. */
@@ -280,6 +289,8 @@ export class OrreryWebGL {
             cloudCover: { value: isMoon ? 0 : CLOUD_COVER[kind] },
             cloudTurn: { value: 0 },
             lights: { value: 0 },
+            dim: { value: 0 },
+            dimSpot: { value: new Vector3(0, 0, 1) },
             unrest: { value: 0 },
             time: { value: 0 },
             parentCentre: { value: new Vector3() },
@@ -463,6 +474,47 @@ export class OrreryWebGL {
     };
   }
 
+  /** Puts one of the world's city lights down, from scene time `time`, on the night side that faces us. */
+  dimLight(repo: string, time: number): void {
+    // A world that is gone is never drawn again to retire its own, so finished ones go here.
+    for (const [key, { startedAt }] of this.dimmings) {
+      if (time - startedAt >= DIM_TOTAL_S) this.dimmings.delete(key);
+    }
+    this.dimmings.set(repo, { startedAt: time, spot: null });
+  }
+
+  private updateDimming(system: WorldSystem, frame: SceneFrame): void {
+    const { world, group, body, surface } = system;
+    const repo = world.project.repo;
+    const dimming = this.dimmings.get(repo);
+    const elapsed = dimming ? frame.time - dimming.startedAt : DIM_TOTAL_S;
+    if (!dimming || elapsed >= DIM_TOTAL_S) {
+      this.dimmings.delete(repo);
+      surface.uniforms['dim'].value = 0;
+      return;
+    }
+    // Chosen on the first frame it is drawn, from where the world and the viewer are then.
+    dimming.spot ??= this.groundSpot(
+      group.position,
+      surface.uniforms['sun'].value,
+      body.rotation.y,
+    );
+    surface.uniforms['dimSpot'].value.copy(dimming.spot);
+    surface.uniforms['dim'].value = frame.isStill ? 0 : dimAt(elapsed);
+  }
+
+  /** The night-side point nearest the viewer, in the world's own coordinates. */
+  private groundSpot(centre: Vector3, sun: Vector3, turn: number): Vector3 {
+    const towardSun = sun.clone().sub(centre);
+    const towardViewer = this.camera.position.clone().sub(centre);
+    const [x, y, z] = dimSpot(
+      [towardSun.x, towardSun.y, towardSun.z],
+      [towardViewer.x, towardViewer.y, towardViewer.z],
+    );
+    // The ground turns about y; undo that turn to find the same point on the ground itself.
+    return new Vector3(x, y, z).applyAxisAngle(new Vector3(0, 1, 0), -turn);
+  }
+
   private updateSystem(system: WorldSystem, frame: SceneFrame, scale: number): void {
     const { world, group, body, surface, clouds, moons, orbit, colour } = system;
     const grow = growth(world, frame.sinceShown);
@@ -478,6 +530,7 @@ export class OrreryWebGL {
       surface.uniforms['cloudTurn'].value = body.rotation.y - clouds.rotation.y;
     }
     surface.uniforms['time'].value = frame.time;
+    this.updateDimming(system, frame);
     surface.uniforms['centre'].value.copy(group.position);
     surface.uniforms['radius'].value = radius;
     orbit.material.opacity = (isSelected ? 0.55 : 0.24) * grow;

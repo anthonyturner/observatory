@@ -170,7 +170,7 @@ describe('PrScreen', () => {
       each.textContent?.trim(),
     );
     expect(tabs.some((name) => name?.startsWith('Edit'))).toBe(false);
-    expect(tabs.length).toBe(5);
+    expect(tabs.length).toBe(4);
     expect(element.querySelector('app-sheet-editor')).toBeNull();
     expect(element.querySelector('app-merge-box')).toBeNull();
     expect(element.querySelector('app-crew-control')).toBeNull();
@@ -227,11 +227,43 @@ describe('PrScreen', () => {
     open();
 
     const counts = Array.from(element.querySelectorAll('.count')).map((each) => each.textContent);
-    expect(counts).toEqual(['', '1', '1', '1', '', '']);
+    expect(counts).toEqual(['', '1', '1', '', '']);
     tab('Files');
     expect(visible()?.textContent).toContain('src/a.ts');
     tab('Checks');
     expect(visible()?.textContent).toContain('success');
+  });
+
+  it('hides Commits for one commit, and leaves it for Overview when a refresh drops to one', () => {
+    const { fixture, element, http, open, tab, visible, settle } = render();
+    const names = () =>
+      Array.from(element.querySelectorAll('[role="tab"]'), (each) => each.textContent);
+    open();
+    expect(names().some((name) => name?.includes('Commits'))).toBe(false);
+
+    const second = { ...detail.commits[0], oid: '5f0d0cc', sha: '5f0d0cc', headline: 'first' };
+    fixture.componentInstance['refresh']();
+    http
+      .expectOne('/api/pull?repo=me/app&number=572&fresh=1')
+      .flush({
+        ...detail,
+        commits: [...detail.commits, second],
+        commitsTotal: 2,
+        fetchedAt: 'later',
+      });
+    fixture.componentInstance['showNewer']();
+    settle();
+    tab('Commits');
+    expect(visible()?.textContent).toContain('first');
+
+    fixture.componentInstance['refresh']();
+    http
+      .expectOne('/api/pull?repo=me/app&number=572&fresh=1')
+      .flush({ ...detail, fetchedAt: 'latest' });
+    fixture.componentInstance['showNewer']();
+    settle();
+    expect(names().some((name) => name?.includes('Commits'))).toBe(false);
+    expect(visible()?.querySelector('app-sheet-markdown')).not.toBeNull();
   });
 
   it('draws a diff file only when it is opened', () => {

@@ -712,7 +712,7 @@ Reduced motion: the layers draw no flight, so a crew ship goes with its star and
 satellite parks at once, as before; no engine plays. `flightOf` and `stillAway`
 give the stage (`docked`, `flying`, `home`) from the wall clock alone.
 
-**The hook for farewells** (said by Jev: see **Jev's voice in the sky**). `StarmapSky` emits `undocked` with the `Undock`s of each
+**The hook for farewells** (said by the crew: see **Jev's voice in the sky**). `StarmapSky` emits `undocked` with the `Undock`s of each
 batch as the sky plays them, once the sky is in view, each with the wall time
 (`startAt`, in `performance.now() / 1000` seconds) it casts off, its `kind`, `key`,
 `pr` and `name`. Speech reads that, never a timer of its own, and subtracts
@@ -762,34 +762,50 @@ finished (plus a 0.3 s gap), which is why the farewells wait behind the ending a
 only two fit. With motion off there are no farewells (nothing flies); "Resolved!" and
 the ending are still said.
 
-**Clips.** `LineClips.clipOf(text)` answers a clip or null, and when null queues it to
-be made, so a line is made once per voice (Kokoro, or one ElevenLabs voice) and not
-re-synthesised: ElevenLabs bills per character. While Speak is on and the starmap page
-is open, `SkyVoice` makes the standard lines ahead (`PREPARED_LINES`), again whenever
-the voice changes; the counted lines ("Three merged!") are made the first time they
-are wanted, which is too late for that one. Clips are made with `mayAsk: false`, so
+**Clips.** `LineClips.clipOf(text, role)` answers a clip or null, and when null queues
+it to be made, so a line is made once per voice (Kokoro's, or one ElevenLabs voice) and
+not re-synthesised: ElevenLabs bills per character. While Speak is on and the starmap
+page is open, `SkyVoice` makes the standard lines ahead (`JEV_PREPARED_LINES` in Jev's
+voice, `CREW_PREPARED_LINES` in the crew's), again whenever either voice changes; the
+counted lines ("Three merged!") are made the first time they are wanted, which is too late for that one. Clips are made with `mayAsk: false`, so
 the voice model's download question is never raised: a model that is not ready makes
 nothing and the sky is silent. They are kept for the visit only. The clip is played by
 `AnnouncementVoice.announceClip`, on the same terms as `announce` (dropped when a line
 is under way, cut off by a reply).
 
-**Adding a line.** Add it to `sky-lines.ts` (and to `PREPARED_LINES` if it is fixed),
-and say it from `SkyVoice` with its moment and tolerance. A separate voice for the
-crew is a follow-up (the Kokoro voice is fixed to `af_heart`, and `speak` takes no
-per-call voice).
+**The crew's voice.** Farewells are spoken by the ships and satellites, not Jev, so
+they use `role: 'crew'` (`VoiceRole`, in `voice-protocol.ts`); every other line is
+Jev's. A caller never names a voice: `SpeechEngine.synthesize(part, role)` lets each
+engine choose its own.
+
+| Engine     | Jev (unchanged)                      | Crew                                                                                                 |
+| ---------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Kokoro     | `af_heart`, a woman's American voice | `bm_george`, a man's British voice (in the pinned model's `voices/`; `kokoro-model.ts`)              |
+| ElevenLabs | The voice picked in the voice picker | The first voice the account lists that is not Jev's (`crewVoiceOf`); Jev's own if it is the only one |
+
+The crew voice is not a setting: it follows Jev's, so changing his voice can change
+the crew's. A crew line made in Jev's own voice shares his clip instead of being made
+twice. When ElevenLabs fails mid-line, Kokoro speaks the line in the same role.
+Kokoro fetches the small `bm_george` voice file, which the browser then keeps, the first
+time a farewell is made; that is a plain fetch, never a download question.
+
+**Adding a line.** Add it to `sky-lines.ts` (and to `JEV_PREPARED_LINES` or
+`CREW_PREPARED_LINES` if it is fixed), and say it from `SkyVoice` with its role,
+moment and tolerance.
 
 #### Cue table
 
 Tested with a fake speech engine and a fake output that make no sound
 (`line-clips.spec.ts`, `sky-voice.spec.ts`, `line-plan.spec.ts`, `sky-lines.spec.ts`,
-`spoken-replies.spec.ts`).
+`spoken-replies.spec.ts`, `kokoro-model.spec.ts`).
 
-| Sound         | When                          | Made by                            | Test                              |
-| ------------- | ----------------------------- | ---------------------------------- | --------------------------------- |
-| "Resolved!"   | The first planet turns green  | `SkyVoice.resolved`                | `sky-voice.spec.ts` ("Resolved!") |
-| Ending line   | The star begins to go         | `SkyVoice.exited`, `endingLine`    | `sky-voice.spec.ts` (the ending)  |
-| Farewell      | A ship or satellite casts off | `SkyVoice.undocked`, `farewellFor` | `sky-voice.spec.ts` (a farewell)  |
-| Order, timing | One refresh's lines           | `placeLines`                       | `line-plan.spec.ts`               |
+| Sound         | When                          | Made by                            | Test                                           |
+| ------------- | ----------------------------- | ---------------------------------- | ---------------------------------------------- |
+| "Resolved!"   | The first planet turns green  | `SkyVoice.resolved`                | `sky-voice.spec.ts` ("Resolved!")              |
+| Ending line   | The star begins to go         | `SkyVoice.exited`, `endingLine`    | `sky-voice.spec.ts` (the ending)               |
+| Farewell      | A ship or satellite casts off | `SkyVoice.undocked`, `farewellFor` | `sky-voice.spec.ts` (a farewell)               |
+| Crew voice    | Which voice speaks a role     | `kokoro-model.ts`, `crewVoiceOf`   | `kokoro-model.spec.ts`, `active-voice.spec.ts` |
+| Order, timing | One refresh's lines           | `placeLines`                       | `line-plan.spec.ts`                            |
 
 ### Doppler shift (data: how a moving sound's source moves)
 

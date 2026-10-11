@@ -66,6 +66,36 @@ describe('ActiveVoice', () => {
     expect(active.fallbackReason()).toBe(reason);
   });
 
+  describe('the crew’s voice', () => {
+    it('is the first the account lists that is not Jev’s', () => {
+      const { active, choice } = setUp(ELEVENLABS_ON);
+      choice.chooseVoice(RACHEL.id);
+      expect(active.elevenLabsVoiceFor('jev')).toEqual(RACHEL);
+      expect(active.elevenLabsVoiceFor('crew')).toEqual(ADAM);
+
+      choice.chooseVoice(ADAM.id);
+      expect(active.elevenLabsVoiceFor('jev')).toEqual(ADAM);
+      expect(active.elevenLabsVoiceFor('crew')).toEqual(RACHEL);
+    });
+
+    it('is Jev’s own while his is the only voice on the account', () => {
+      const { active } = setUp({
+        status: 'on',
+        voices: [RACHEL],
+        defaultVoice: RACHEL.id,
+        failed: null,
+      });
+      expect(active.elevenLabsVoiceFor('crew')).toEqual(RACHEL);
+    });
+
+    it.each<CatalogState>([{ status: 'reading' }, { status: 'off' }])(
+      'is none until the account’s voices are read, or where ElevenLabs is off (%o)',
+      (state) => {
+        expect(setUp(state).active.elevenLabsVoiceFor('crew')).toBeNull();
+      },
+    );
+  });
+
   it('keeps to Kokoro for the visit once ElevenLabs has failed', () => {
     const { active, choice } = setUp(ELEVENLABS_ON);
     choice.chooseEngine('elevenlabs');

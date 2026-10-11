@@ -511,7 +511,9 @@ few short lines as the sky changes, in the voice you picked:
   become one line: "Three merged!", "Three left the sky!" when they differ.
 - A short farewell from the first two ships or satellites that fly home, such as
   **"Goodbye!"**, **"To the lull!"** or **"Back to port, captain!"**. The same
-  ship always says the same one.
+  ship always says the same one, and in the crew's own voice, not Jev's: a man's
+  British voice on Kokoro, and on ElevenLabs the first voice on your account that
+  is not Jev's. You can't pick it separately.
 
 A line is said as the thing happens or not at all: if Jev is busy, you are
 talking, Agent Speak is speaking, or the line is not ready in time, it is

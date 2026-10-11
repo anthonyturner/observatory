@@ -2,6 +2,7 @@ import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { VoiceCatalog } from './voice-catalog';
 import { CatalogState, CatalogVoice } from './voice-catalog.types';
 import { VoiceChoice } from './voice-choice';
+import { VoiceRole } from './voice-protocol';
 
 /** Who reads replies now. An ElevenLabs voice is null until the account's
  *  voices are read. */
@@ -40,6 +41,13 @@ export function voiceToUse(chosen: string | null, catalog: CatalogState): Catalo
   return listed(chosen) ?? listed(catalog.defaultVoice) ?? null;
 }
 
+/** The crew's ElevenLabs voice: the first the account lists that is not Jev's,
+ *  so ships and satellites never sound like him. Jev's own while his is the only one. */
+export function crewVoiceOf(catalog: CatalogState, jev: CatalogVoice | null): CatalogVoice | null {
+  if (catalog.status !== 'on') return null;
+  return catalog.voices.find((voice) => voice.id !== jev?.id) ?? jev;
+}
+
 /** The voice replies are read in: the viewer's choice while ElevenLabs can
  *  speak, and Kokoro for the rest of the visit once it cannot. */
 @Injectable({ providedIn: 'root' })
@@ -50,6 +58,9 @@ export class ActiveVoice {
 
   readonly elevenLabsVoice: Signal<CatalogVoice | null> = computed(() =>
     voiceToUse(this.choice.voice(), this.catalog.state()),
+  );
+  private readonly crewVoice: Signal<CatalogVoice | null> = computed(() =>
+    crewVoiceOf(this.catalog.state(), this.elevenLabsVoice()),
   );
   /** Why ElevenLabs cannot speak on this visit; null while it can, or may. */
   readonly blocker: Signal<string | null> = computed(
@@ -64,6 +75,11 @@ export class ActiveVoice {
       ? { engine: 'elevenlabs', voice: this.elevenLabsVoice() }
       : KOKORO,
   );
+
+  /** The ElevenLabs voice that speaks `role`; null until the account's are read. */
+  elevenLabsVoiceFor(role: VoiceRole): CatalogVoice | null {
+    return role === 'crew' ? this.crewVoice() : this.elevenLabsVoice();
+  }
 
   /** ElevenLabs failed: Kokoro speaks for the rest of the visit. */
   fallBack(reason: string): void {

@@ -135,7 +135,7 @@ export class SpokenReplies implements ReplyVoice, AnnouncementVoice {
     if (!job) return;
     // Cut once warmed up: the picked voice is known by then.
     for (const part of this.engine.parts(text)) {
-      const clip = await this.engine.synthesize(part);
+      const clip = await this.engine.synthesize(part, 'jev');
       if (this.turn !== turn) return;
       job.play(clip);
     }

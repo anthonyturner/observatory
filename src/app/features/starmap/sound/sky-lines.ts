@@ -1,8 +1,9 @@
 import { hashString } from '../../../core/orrery/world-layout';
 import { ExitKind } from '../memory/exits';
 
-/* What Jev says as the sky changes. Every line is fixed, so each can be made
-   once and kept (see LineClips): nothing here names a pull request or an issue. */
+/* What Jev says as the sky changes, and the farewells of the crew. Every line
+   is fixed, so each can be made once and kept (see LineClips): nothing here
+   names a pull request or an issue. */
 
 export const RESOLVED_LINE = 'Resolved!';
 
@@ -47,9 +48,7 @@ export const FAREWELLS: readonly string[] = [
 /** A ship's or satellite's farewell, always the same one for the same key. */
 export const farewellFor = (key: string): string => FAREWELLS[hashString(key) % FAREWELLS.length];
 
-/** The lines worth making ahead, so the first one that is needed is ready. */
-export const PREPARED_LINES: readonly string[] = [
-  RESOLVED_LINE,
-  ...Object.values(ONE_ENDED),
-  ...FAREWELLS,
-];
+/** The lines worth making ahead, so the first one that is needed is ready:
+ *  Jev's, and the crew's own. */
+export const JEV_PREPARED_LINES: readonly string[] = [RESOLVED_LINE, ...Object.values(ONE_ENDED)];
+export const CREW_PREPARED_LINES: readonly string[] = FAREWELLS;

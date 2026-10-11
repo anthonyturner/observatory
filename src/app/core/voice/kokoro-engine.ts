@@ -9,7 +9,7 @@ import { SpeakerOutput } from './speaker-output';
 import { SpeechEngine, WarmUp, WarmUpRequest } from './speech-engine';
 import { VoiceError } from './voice-error';
 import { VoiceNarration } from './voice-narration';
-import { SpokenClip } from './voice-protocol';
+import { SpokenClip, VoiceRole } from './voice-protocol';
 import { VoiceStatus } from './voice-status';
 import { VoiceWorkerClient } from './voice-worker-client';
 import { LIMIT_MS, within } from './within';
@@ -52,9 +52,9 @@ export class KokoroEngine implements SpeechEngine {
     return sentences(text);
   }
 
-  async synthesize(sentence: string): Promise<SpokenClip> {
+  async synthesize(sentence: string, role: VoiceRole): Promise<SpokenClip> {
     await within(this.model.whenLoaded(), LIMIT_MS.model, 'model');
-    return this.client.synthesize(sentence);
+    return this.client.synthesize(sentence, role);
   }
 
   release(): void {

@@ -9,11 +9,18 @@ import { ViewerSession } from '../../../core/session/viewer-session';
 import { ANNOUNCEMENT_VOICE } from '../../../core/voice/announcement-voice';
 import { LineClips } from '../../../core/voice/line-clips';
 import { SpeakPreference } from '../../../core/voice/speak-preference';
+import { VoiceRole } from '../../../core/voice/voice-protocol';
 import { Resolution } from '../memory/departure-company';
 import { ExitStart } from '../memory/exits';
 import { Undock } from '../memory/undock';
 import { Play, ReadyLine, placeLines } from './line-plan';
-import { PREPARED_LINES, RESOLVED_LINE, endingLine, farewellFor } from './sky-lines';
+import {
+  CREW_PREPARED_LINES,
+  JEV_PREPARED_LINES,
+  RESOLVED_LINE,
+  endingLine,
+  farewellFor,
+} from './sky-lines';
 
 /** How long after its moment each kind of line may still start, in seconds.
  *  "Resolved!" is the planets turning green and must not trail them; a ship is
@@ -27,6 +34,7 @@ const wallSeconds = (): number => performance.now() / 1000;
 
 interface Wanted {
   readonly text: string;
+  readonly role: VoiceRole;
   readonly at: number;
   readonly lateS: number;
 }
@@ -34,9 +42,10 @@ interface Wanted {
 const earliest = (times: readonly number[]): number => Math.min(...times);
 
 /**
- * Jev, in the announcement voice, says short fixed lines as the sky changes:
- * "Resolved!" as planets turn green, a line for how pull requests ended, and a
- * farewell from the ships and satellites that fly home.
+ * Short fixed lines as the sky changes: Jev, in the announcement voice, says
+ * "Resolved!" as planets turn green and a line for how pull requests ended; the
+ * ships and satellites that fly home say their own farewell, in the crew's
+ * voice, which is not his.
  *
  * Each hook says when its line should land, and a line is heard only if it can
  * be heard then: Speak on, the tab in view, this machine, Jev and Agent Speak
@@ -67,7 +76,11 @@ export class SkyVoice {
     // Ready before the first is wanted, and again whenever the voice changes.
     effect(() => {
       this.clips.speaker();
-      if (this.canHear()) untracked(() => this.clips.prepare(PREPARED_LINES));
+      if (!this.canHear()) return;
+      untracked(() => {
+        this.clips.prepare(JEV_PREPARED_LINES, 'jev');
+        this.clips.prepare(CREW_PREPARED_LINES, 'crew');
+      });
     });
   }
 
@@ -75,7 +88,7 @@ export class SkyVoice {
   resolved(resolutions: readonly Resolution[]): void {
     if (!resolutions.length) return;
     const at = earliest(resolutions.map((each) => each.startAt));
-    this.say([{ text: RESOLVED_LINE, at, lateS: LATE_S.resolved }]);
+    this.say([{ text: RESOLVED_LINE, role: 'jev', at, lateS: LATE_S.resolved }]);
   }
 
   /** These pull requests' stars begin to go: one line for how they ended, as the first does. */
@@ -83,7 +96,7 @@ export class SkyVoice {
     const text = endingLine(starts.map((each) => each.kind));
     if (text === null) return;
     const at = earliest(starts.map((each) => each.startAt));
-    this.say([{ text, at, lateS: LATE_S.ending }]);
+    this.say([{ text, role: 'jev', at, lateS: LATE_S.ending }]);
   }
 
   /** Ships and satellites cast off: a farewell from the first few, each as it goes.
@@ -93,6 +106,7 @@ export class SkyVoice {
     this.say(
       undocks.slice(0, MAX_FAREWELLS).map((each) => ({
         text: farewellFor(each.key),
+        role: 'crew',
         at: each.startAt,
         lateS: LATE_S.farewell,
       })),
@@ -101,8 +115,8 @@ export class SkyVoice {
 
   private say(lines: readonly Wanted[]): void {
     if (!this.canHear()) return;
-    const ready = lines.flatMap(({ text, ...when }): ReadyLine[] => {
-      const clip = this.clips.clipOf(text);
+    const ready = lines.flatMap(({ text, role, ...when }): ReadyLine[] => {
+      const clip = this.clips.clipOf(text, role);
       return clip ? [{ clip, ...when }] : [];
     });
     const { plays, freeAt } = placeLines(ready, this.freeAt, wallSeconds());

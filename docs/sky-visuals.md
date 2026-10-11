@@ -44,6 +44,7 @@ TypeScript and the shader only draws it.
 | Review Queue | Planets resolve  | A leaver's issues, ending  | `fateOf`, `planetPoses`        |
 | Review Queue | Meteor pulled in | A leaver's new commits     | `meteorPull`, `ghostLook`      |
 | Review Queue | Comment sparks   | Review threads of a leaver | `sparksOf`, `sparksInFlight`   |
+| Review Queue | Spoken lines     | How a leaver ended         | `endingLine`, `farewellFor`    |
 | Review Queue | Doppler shift    | How a sound's source moves | `dopplerOf`, `dopplerFactor`   |
 | Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
 | Releases     | Star size        | Merged PRs it shipped      | `bodyRadius`, `roomAround`     |
@@ -711,7 +712,7 @@ Reduced motion: the layers draw no flight, so a crew ship goes with its star and
 satellite parks at once, as before; no engine plays. `flightOf` and `stillAway`
 give the stage (`docked`, `flying`, `home`) from the wall clock alone.
 
-**The hook for farewells.** `StarmapSky` emits `undocked` with the `Undock`s of each
+**The hook for farewells** (said by Jev: see **Jev's voice in the sky**). `StarmapSky` emits `undocked` with the `Undock`s of each
 batch as the sky plays them, once the sky is in view, each with the wall time
 (`startAt`, in `performance.now() / 1000` seconds) it casts off, its `kind`, `key`,
 `pr` and `name`. Speech reads that, never a timer of its own, and subtracts
@@ -732,6 +733,63 @@ in view.
 The engine is a low rumble that warms up (low-passed noise sweeping upward) under a
 thin band-passed whine that climbs; a crew's is longer and louder, a satellite's
 shorter and softer. Each is panned by the screen x of the star's place.
+
+### Jev's voice in the sky (data: how a leaving pull request ended)
+
+Code: `features/starmap/sound/sky-voice.ts` (`SkyVoice`) holds the rules,
+`sky-lines.ts` the words and `line-plan.ts` the timing; `core/voice/line-clips.ts`
+(`LineClips`) makes and keeps the clips. `StarmapPage` hands `SkyVoice` the three
+hooks of `StarmapSky`, which emits them in the order they are heard.
+
+Jev says short fixed lines in the announcement voice (the one the news uses), none
+of which names a pull request or an issue:
+
+| Line                                                                                          | When                                                                                                                                              | Hook (wall time it lands at)                          |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| "Resolved!"                                                                                   | The first planet turns green. Once a refresh, however many pull requests resolve                                                                  | `resolved`: `Resolution.startAt`                      |
+| "Merged!", "Squashed and shipped!", "Closed. Into the dark it goes."                          | The star begins to go. One line a refresh: "Three merged!" for several of a kind, "Three left the sky!" when they differ, "Many" past five        | `exited`: `ExitStart.startAt` (`exitBeat`: `'begin'`) |
+| "Goodbye!", "To the lull!", "Back to port, captain!", "Off to the dock!", "See you in orbit!" | A crew ship or satellite casts off: the first two of a refresh, each ship's own pick (`farewellFor(key)`, a hash of its key, so it never changes) | `undocked`: `Undock.startAt`                          |
+
+**Rules.** A line plays only with Speak on, the tab in view, on the owner's machine
+(`ViewerSession.isConfirmedLocal`), with Jev idle (`JevIdle`: not reading, not on
+the mic, not on a request, no task or question showing) and Agent Speak quiet (asked
+as the line falls due). It does not follow the sky's Sound switch. A line that cannot
+play is **dropped, never held**: its clip is not made yet, it would start later than
+its tolerance past its moment (0.4 s for "Resolved!", 0.5 s for an ending, 2.5 s for a
+farewell), or something above stopped it by the time it fell due. `placeLines` puts a
+refresh's lines one after another, each at its moment or when the one before has
+finished (plus a 0.3 s gap), which is why the farewells wait behind the ending and
+only two fit. With motion off there are no farewells (nothing flies); "Resolved!" and
+the ending are still said.
+
+**Clips.** `LineClips.clipOf(text)` answers a clip or null, and when null queues it to
+be made, so a line is made once per voice (Kokoro, or one ElevenLabs voice) and not
+re-synthesised: ElevenLabs bills per character. While Speak is on and the starmap page
+is open, `SkyVoice` makes the standard lines ahead (`PREPARED_LINES`), again whenever
+the voice changes; the counted lines ("Three merged!") are made the first time they
+are wanted, which is too late for that one. Clips are made with `mayAsk: false`, so
+the voice model's download question is never raised: a model that is not ready makes
+nothing and the sky is silent. They are kept for the visit only. The clip is played by
+`AnnouncementVoice.announceClip`, on the same terms as `announce` (dropped when a line
+is under way, cut off by a reply).
+
+**Adding a line.** Add it to `sky-lines.ts` (and to `PREPARED_LINES` if it is fixed),
+and say it from `SkyVoice` with its moment and tolerance. A separate voice for the
+crew is a follow-up (the Kokoro voice is fixed to `af_heart`, and `speak` takes no
+per-call voice).
+
+#### Cue table
+
+Tested with a fake speech engine and a fake output that make no sound
+(`line-clips.spec.ts`, `sky-voice.spec.ts`, `line-plan.spec.ts`, `sky-lines.spec.ts`,
+`spoken-replies.spec.ts`).
+
+| Sound         | When                          | Made by                            | Test                              |
+| ------------- | ----------------------------- | ---------------------------------- | --------------------------------- |
+| "Resolved!"   | The first planet turns green  | `SkyVoice.resolved`                | `sky-voice.spec.ts` ("Resolved!") |
+| Ending line   | The star begins to go         | `SkyVoice.exited`, `endingLine`    | `sky-voice.spec.ts` (the ending)  |
+| Farewell      | A ship or satellite casts off | `SkyVoice.undocked`, `farewellFor` | `sky-voice.spec.ts` (a farewell)  |
+| Order, timing | One refresh's lines           | `placeLines`                       | `line-plan.spec.ts`               |
 
 ### Doppler shift (data: how a moving sound's source moves)
 

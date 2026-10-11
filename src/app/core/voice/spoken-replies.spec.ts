@@ -275,4 +275,57 @@ describe('SpokenReplies', () => {
       expect(replies.isBusy()).toBe(false);
     });
   });
+
+  describe('an announced clip', () => {
+    it('plays as it is, without asking the engine for anything, busy until it ends', async () => {
+      const { replies, context, engine } = setup();
+
+      replies.announceClip(SECOND);
+      expect(replies.isBusy()).toBe(true);
+      await settle();
+
+      expect(context.sources).toHaveLength(1);
+      expect(engine.said).toEqual([]);
+      expect(engine.asked).toEqual([]);
+      hearAll(context);
+      await settle();
+      expect(replies.isBusy()).toBe(false);
+    });
+
+    it('is dropped while a line is under way, and cuts nothing off', async () => {
+      const { replies, context } = setup();
+      replies.announce('News.');
+      await settle();
+
+      replies.announceClip(SECOND);
+      await settle();
+
+      expect(context.sources).toHaveLength(1);
+      expect(context.sources[0].stoppedAt).toBeNull();
+    });
+
+    it('is cut off by a reply', async () => {
+      const { replies, context } = setup();
+      replies.announceClip(SECOND);
+      await settle();
+
+      void replies.speak('An answer.', 2);
+      await settle();
+
+      expect(context.sources[0].stoppedAt).not.toBeNull();
+    });
+
+    it('stays quiet while the mic is open, or Speak is off', async () => {
+      const { replies, context, talk } = setup();
+      talk.begin();
+      replies.announceClip(SECOND);
+      talk.end();
+      TestBed.inject(SpeakPreference).turnOff();
+      replies.announceClip(SECOND);
+      await settle();
+
+      expect(context.sources).toEqual([]);
+      expect(replies.isBusy()).toBe(false);
+    });
+  });
 });

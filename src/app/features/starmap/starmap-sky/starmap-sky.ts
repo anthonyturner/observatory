@@ -28,7 +28,7 @@ import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
 import { Resolution, resolutionsOf } from '../memory/departure-company';
 import { sparkCues } from '../memory/comment-sparks';
-import { exitCues } from '../memory/exits';
+import { ExitStart, exitCues, exitStartsOf } from '../memory/exits';
 import { Undock, stillAway, undockCues, undocksOf } from '../memory/undock';
 import { Point } from '../sound/doppler';
 import { News, NewsLayer } from '../memory/news-layer';
@@ -197,6 +197,12 @@ export class StarmapSky {
    * "Resolved!" can be timed to it.
    */
   readonly resolved = output<readonly Resolution[]>();
+  /**
+   * Stars of pull requests that left are about to begin to go (a merge, a squash
+   * or a close), each with the wall time (`startAt`, in `performance.now() / 1000`
+   * seconds) it does, so a line on how they ended can be timed to it.
+   */
+  readonly exited = output<readonly ExitStart[]>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('sky');
   private readonly document = inject(DOCUMENT);
@@ -407,11 +413,19 @@ export class StarmapSky {
     if (!this.hidden() && this.chart() === 'prs') {
       this.boom(events, engine, now);
       this.engines(leaving, engine, now);
-      if (leaving.length) this.undocked.emit(leaving);
-      const turning = resolutionsOf(events);
-      if (turning.length) this.resolved.emit(turning);
+      this.emitSpeechHooks(events, leaving);
     }
     engine.kick();
+  }
+
+  /** Tells speech what the batch will do, in the order it is heard: the planets
+   *  turning green, the stars going, then the ships casting off. */
+  private emitSpeechHooks(events: readonly NewsEvent[], leaving: readonly Undock[]): void {
+    const turning = resolutionsOf(events);
+    if (turning.length) this.resolved.emit(turning);
+    const exits = exitStartsOf(events);
+    if (exits.length) this.exited.emit(exits);
+    if (leaving.length) this.undocked.emit(leaving);
   }
 
   private engines(undocks: readonly Undock[], engine: SkyEngine, now: number): void {

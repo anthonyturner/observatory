@@ -1,5 +1,5 @@
 import { sentences } from '../sentences';
-import { SpeechEngine, WarmUp } from '../speech-engine';
+import { SpeechEngine, WarmUp, WarmUpRequest } from '../speech-engine';
 import { SpokenClip } from '../voice-protocol';
 
 /** An engine that answers as told, keeping what it was asked. */
@@ -9,10 +9,12 @@ export class FakeSpeechEngine implements SpeechEngine {
   warmUps = 0;
   released = 0;
   readonly said: string[] = [];
+  readonly warmUpRequests: WarmUpRequest[] = [];
   readonly clip: SpokenClip = { audio: new Float32Array(1), rate: 1 };
 
-  async warmUp(): Promise<WarmUp> {
+  async warmUp(request: WarmUpRequest): Promise<WarmUp> {
     this.warmUps++;
+    this.warmUpRequests.push(request);
     return this.warmUpAnswer;
   }
 

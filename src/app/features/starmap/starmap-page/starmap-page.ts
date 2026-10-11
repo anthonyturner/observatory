@@ -54,6 +54,7 @@ import { crewMarksOf } from '../../../core/crew/crew-roster';
 import { LiveAgentsFeed } from '../../../core/live-agents/live-agents-feed';
 import { satellitesOf } from '../../../core/live-agents/satellites';
 import { CometCard } from '../comet-card/comet-card';
+import { SkyVoice } from '../sound/sky-voice';
 import { StarmapSound } from '../sound/starmap-sound';
 import { mergePlan } from '../merge-plan';
 import { nextStar } from '../next-star';
@@ -218,6 +219,7 @@ export class StarmapPage {
   protected readonly weather = inject(WeatherFeed);
   protected readonly memory = inject(MemoryView);
   protected readonly agents = inject(AgentsFeed);
+  protected readonly skyVoice = inject(SkyVoice);
   private readonly sound = inject(StarmapSound);
   protected readonly usage = inject(UsageWatch);
   private readonly triage = inject(TriageClient);

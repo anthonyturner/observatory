@@ -1,6 +1,6 @@
 import { EMBER_SPAN_S } from './closed-ember';
 import { PRELUDE_S } from './departure-exit';
-import { exitBeat, exitBeats, exitCues, hasExit } from './exits';
+import { exitBeat, exitBeats, exitCues, exitStartsOf, hasExit } from './exits';
 import { MERGE_SPAN_S } from './merge-supernova';
 import { SQUASH_SPAN_S } from './squash-collapse';
 import { Point } from '../sound/doppler';
@@ -117,5 +117,31 @@ describe('exitCues', () => {
       whoosh: [],
     });
     expect(sink.exit === 'sink' && sink.cue.sink).toEqual([]);
+  });
+});
+
+describe('exitStartsOf', () => {
+  it('gives each started exit once, with the instant its star begins to go', () => {
+    const starts = exitStartsOf([
+      { ...news('merged', 20), pr: 1 },
+      { ...news('squashed', 30), pr: 2 },
+      { ...news('closed', 40), pr: 3 },
+    ]);
+
+    expect(starts).toEqual([
+      { pr: 1, kind: 'merged', startAt: 20 + PRELUDE_S },
+      { pr: 2, kind: 'squashed', startAt: 30 + PRELUDE_S },
+      { pr: 3, kind: 'closed', startAt: 40 + PRELUDE_S },
+    ]);
+  });
+
+  it('leaves out news that is no exit, and exits not yet started', () => {
+    expect(
+      exitStartsOf([
+        { ...news('left', 20), pr: 1 },
+        { ...news('blocked', 20), pr: 2 },
+        { ...news('merged'), pr: 3 },
+      ]),
+    ).toEqual([]);
   });
 });

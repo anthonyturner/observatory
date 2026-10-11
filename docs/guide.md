@@ -435,6 +435,9 @@ satellites round it cast off one after another: the ship flies away and fades,
 each satellite flies to its place across the top of the sky, and with sound on
 each makes a short engine sound. With motion off they simply go.
 
+With Speak on, Jev says a short line as they leave (see **Jev's voice in the
+sky** below).
+
 Crews and satellites are **only on your own computer**.
 
 ### The black hole
@@ -498,6 +501,24 @@ request was closed, its planet falls back into the field instead. A meteor (new
 commits since you looked) is pulled into the star's core, which flares. With
 sound on, a chime rings for each planet that turns green and a suction swells
 as the meteor falls in.
+
+**Jev's voice in the sky.** With Speak on, the tab in view and Jev free, he says a
+few short lines as the sky changes, in the voice you picked:
+
+- **"Resolved!"** the instant a planet turns green.
+- One line for how pull requests ended: **"Merged!"**, **"Squashed and
+  shipped!"** or **"Closed. Into the dark it goes."**. Several in one refresh
+  become one line: "Three merged!", "Three left the sky!" when they differ.
+- A short farewell from the first two ships or satellites that fly home, such as
+  **"Goodbye!"**, **"To the lull!"** or **"Back to port, captain!"**. The same
+  ship always says the same one.
+
+A line is said as the thing happens or not at all: if Jev is busy, you are
+talking, Agent Speak is speaking, or the line is not ready in time, it is
+dropped rather than held, because a late "Resolved!" would mislead. The lines
+are made once and kept while Speak is on, and the voice never asks to download
+its model for them. Only on your own computer; with sound off in the sky they
+still play, since they follow Speak, not Sound.
 
 Review threads leave with the star. Each peels off as a **spark**, **red** if the
 thread was still unresolved and **gold** if it was resolved, up to twelve in all

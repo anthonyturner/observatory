@@ -10,6 +10,7 @@ import { TalkState } from './talk-state';
 import { VoiceFailureKind, kindOf } from './voice-error';
 import { VoiceLevel } from './voice-level';
 import { VoiceNarration } from './voice-narration';
+import { SpokenClip } from './voice-protocol';
 import { VoiceStatus } from './voice-status';
 
 /** Why a reply went unheard, in words. Its text always shows. */
@@ -91,6 +92,12 @@ export class SpokenReplies implements ReplyVoice, AnnouncementVoice {
     void this.begin(new ReplyTurn(ANNOUNCEMENT_TIER, 'announcement'), text);
   }
 
+  announceClip(clip: SpokenClip): void {
+    if (this.turn) return;
+    const turn = new ReplyTurn(ANNOUNCEMENT_TIER, 'announcement');
+    void this.take(turn, () => this.playClip(turn, clip));
+  }
+
   stop(): boolean {
     const turn = this.turn;
     if (!turn) return false;
@@ -99,11 +106,17 @@ export class SpokenReplies implements ReplyVoice, AnnouncementVoice {
   }
 
   private begin(turn: ReplyTurn, text: string): Promise<void> {
-    const hasWords = sentences(text).length > 0;
-    if (!this.preference.isOn() || this.talk.isTalking() || !hasWords) return Promise.resolve();
+    if (sentences(text).length === 0) return Promise.resolve();
+    return this.take(turn, () => this.readAloud(turn, text));
+  }
+
+  /** Takes the voice for `turn` and runs `sound` for it, unless Speak is off
+   *  or the mic is held. Settles once the turn has ended. */
+  private take(turn: ReplyTurn, sound: () => Promise<void>): Promise<void> {
+    if (!this.preference.isOn() || this.talk.isTalking()) return Promise.resolve();
     this.turn = turn;
     this.turnUnderWay.set(true);
-    this.readAloud(turn, text)
+    sound()
       .catch((error: unknown) => {
         if (this.turn === turn && turn.kind === 'reply') this.report(error);
       })
@@ -118,10 +131,8 @@ export class SpokenReplies implements ReplyVoice, AnnouncementVoice {
     // A download waits for the viewer's say-so, so Speak is off till then.
     if (warmUp === 'asked') this.preference.turnOffForVisit();
     if (warmUp !== 'ready' || this.turn !== turn) return;
-    const line = await this.speaker.ready();
-    if (this.turn !== turn) return;
-    const job = new SpeechJob(line, () => this.startedSounding(turn));
-    turn.job = job;
+    const job = await this.openJob(turn);
+    if (!job) return;
     // Cut once warmed up: the picked voice is known by then.
     for (const part of this.engine.parts(text)) {
       const clip = await this.engine.synthesize(part);
@@ -129,6 +140,22 @@ export class SpokenReplies implements ReplyVoice, AnnouncementVoice {
       job.play(clip);
     }
     await job.heard();
+  }
+
+  private async playClip(turn: ReplyTurn, clip: SpokenClip): Promise<void> {
+    const job = await this.openJob(turn);
+    if (!job) return;
+    job.play(clip);
+    await job.heard();
+  }
+
+  /** The turn's sound, once the output plays; null if the turn ended while it woke. */
+  private async openJob(turn: ReplyTurn): Promise<SpeechJob | null> {
+    const line = await this.speaker.ready();
+    if (this.turn !== turn) return null;
+    const job = new SpeechJob(line, () => this.startedSounding(turn));
+    turn.job = job;
+    return job;
   }
 
   private startedSounding(turn: ReplyTurn): void {

@@ -1,4 +1,4 @@
-import { STREAK_S } from './departure-exit';
+import { PRELUDE_S, STREAK_S } from './departure-exit';
 import {
   MERGE_SPAN_S,
   NOVA_S,
@@ -11,15 +11,17 @@ import { Point } from '../sound/doppler';
 
 describe('the merge supernova', () => {
   it('goes off first, then hands over to the streak', () => {
-    const handover = NOVA_S / MERGE_SPAN_S;
+    const through = (seconds: number): number => seconds / MERGE_SPAN_S;
+    const handover = through(PRELUDE_S + NOVA_S);
 
-    expect(MERGE_SPAN_S).toBeCloseTo(NOVA_S + STREAK_S);
+    expect(MERGE_SPAN_S).toBeCloseTo(PRELUDE_S + NOVA_S + STREAK_S);
     expect(novaProgress(-0.1)).toBeNull();
-    expect(novaProgress(handover / 2)).toBeCloseTo(0.5);
+    expect(novaProgress(through(PRELUDE_S / 2))).toBeNull();
+    expect(novaProgress(through(PRELUDE_S + NOVA_S / 2))).toBeCloseTo(0.5);
     expect(novaProgress(handover + 0.01)).toBeNull();
-    expect(streakProgress(handover / 2)).toBe(0);
+    expect(streakProgress(through(PRELUDE_S + NOVA_S / 2))).toBe(0);
     expect(streakProgress(handover)).toBeCloseTo(0);
-    expect(streakProgress(1)).toBe(1);
+    expect(streakProgress(1)).toBeCloseTo(1);
   });
 });
 
@@ -50,7 +52,10 @@ describe('mergeCue', () => {
   const merged = (startAt: number) => ({ kind: 'merged', startAt, fromX: 0, fromY: 0, fromZ: 0 });
 
   it('waits for the supernova and sits where it happens on screen', () => {
-    expect(mergeCue(merged(12.5), scene(250))).toMatchObject({ delayS: 2.5, pan: -0.5 });
+    expect(mergeCue(merged(12.5), scene(250))).toMatchObject({
+      delayS: 2.5 + PRELUDE_S,
+      pan: -0.5,
+    });
     expect(mergeCue(merged(10), scene(1000)).pan).toBe(0.8);
   });
 

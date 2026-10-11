@@ -4,6 +4,8 @@ import { exitBeat, exitBeats, exitCues, hasExit } from './exits';
 import { MERGE_SPAN_S } from './merge-supernova';
 import { SQUASH_SPAN_S } from './squash-collapse';
 import { Point } from '../sound/doppler';
+import { issuePlanets } from '../engine/star-system';
+import { EMPTY_SYSTEM, endingOf } from './departure';
 
 const scene = (extra: object = {}) => ({
   now: 10,
@@ -81,6 +83,26 @@ describe('exitCues', () => {
     );
 
     expect(exitCues(many, scene())).toHaveLength(4);
+  });
+
+  it('carries the chimes and suction of the company, counted with the exit that holds them', () => {
+    const company = {
+      ...news('merged', 11),
+      departure: {
+        system: { ...EMPTY_SYSTEM, planets: issuePlanets({ item: { issues: [3] } as never }) },
+        ending: endingOf('merged'),
+      },
+    };
+    const [loud, quiet] = exitCues([company, news('closed', 11)], scene());
+
+    expect(loud.company.chimes).toHaveLength(1);
+    expect(quiet.company).toEqual({ chimes: [], suction: null });
+    expect(
+      exitCues(
+        Array.from({ length: 6 }, () => company),
+        scene(),
+      ),
+    ).toHaveLength(4);
   });
 
   it('keeps only each exit’s first act in the sound when motion is off', () => {

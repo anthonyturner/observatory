@@ -16,10 +16,14 @@ function fakeScore() {
     implode: ({ delayS, pan }) => void calls.push(`implode ${delayS} ${pan}`),
     sink: ({ delayS, pan }) => void calls.push(`sink ${delayS} ${pan}`),
     undock: ({ kind, delayS, pan }) => void calls.push(`undock ${kind} ${delayS} ${pan}`),
+    chime: ({ delayS, pan, planet }) => void calls.push(`chime ${planet} ${delayS} ${pan}`),
+    suction: ({ delayS, pan, strength }) => void calls.push(`suction ${delayS} ${pan} ${strength}`),
     sparks: ({ delayS, pan, pops }) => void calls.push(`sparks ${delayS} ${pan} ${pops.length}`),
   };
   return { score, calls };
 }
+
+const NO_COMPANY = { chimes: [], suction: null };
 
 function setUp() {
   const { score, calls } = fakeScore();
@@ -78,19 +82,45 @@ describe('StarmapSound', () => {
 
   it('sounds each way a pull request can leave, only while it plays', () => {
     const { sound, calls } = setUp();
-    sound.exited({ exit: 'merge', cue: { delayS: 1, pan: -0.5, whoosh: [] } });
+    sound.exited({ exit: 'merge', cue: { delayS: 1, pan: -0.5, whoosh: [] }, company: NO_COMPANY });
     sound.toggle();
-    sound.exited({ exit: 'merge', cue: { delayS: 0.5, pan: 0.25, whoosh: [] } });
+    sound.exited({
+      exit: 'merge',
+      cue: { delayS: 0.5, pan: 0.25, whoosh: [] },
+      company: NO_COMPANY,
+    });
     sound.exited({
       exit: 'implosion',
       cue: { delayS: 0.25, pan: -0.25, sweeps: true, whoosh: [] },
+      company: NO_COMPANY,
     });
-    sound.exited({ exit: 'sink', cue: { delayS: 2, pan: 0.5, sink: [] } });
+    sound.exited({ exit: 'sink', cue: { delayS: 2, pan: 0.5, sink: [] }, company: NO_COMPANY });
 
     expect(calls.filter((c) => /^(merge|implode|sink)/.test(c))).toEqual([
       'merge 0.5 0.25',
       'implode 0.25 -0.25',
       'sink 2 0.5',
+    ]);
+  });
+
+  it('chimes for each planet that turns green and pulls a meteor in, with the exit and only while it plays', () => {
+    const { sound, calls } = setUp();
+    const company = {
+      chimes: [
+        { delayS: 0, pan: 0.5, planet: 0 },
+        { delayS: 0.15, pan: 0.5, planet: 1 },
+      ],
+      suction: { delayS: 0.65, pan: 0.5, strength: 0.6 },
+    };
+    sound.exited({ exit: 'merge', cue: { delayS: 1, pan: 0.5, whoosh: [] }, company });
+    sound.toggle();
+    sound.exited({ exit: 'merge', cue: { delayS: 1, pan: 0.5, whoosh: [] }, company });
+
+    expect(calls.filter((c) => /^(merge|chime|suction)/.test(c))).toEqual([
+      'merge 1 0.5',
+      'chime 0 0 0.5',
+      'chime 1 0.15 0.5',
+      'suction 0.65 0.5 0.6',
     ]);
   });
 

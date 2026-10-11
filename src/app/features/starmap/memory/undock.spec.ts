@@ -1,6 +1,8 @@
 import { CrewMark } from '../../../core/crew/crew.types';
 import { Satellite } from '../../../core/live-agents/satellites';
 import { EMPTY_SYSTEM, StarSystem } from './departure';
+import { PRELUDE_S } from './departure-exit';
+import { exitBeat } from './exits';
 import { NewsEvent } from './news';
 import {
   FLIGHT_S,
@@ -56,6 +58,15 @@ describe('undocksOf', () => {
     expect(times[2]).toBeGreaterThan(times[1]);
     expect(undocks.every((each) => each.pr === 7)).toBe(true);
     expect(undocks[0].from).toEqual({ x: 10, y: 20, z: 30 });
+  });
+
+  it('casts off when the star begins to go, so a longer prelude moves the cast-off with it', () => {
+    const [undock] = undocksOf([leaving({ satellites: [satellite('a')] })]);
+    const goesAt = exitBeat(leaving({}), 'begin') ?? 0;
+
+    expect(goesAt).toBe(100 + PRELUDE_S);
+    expect(undock.startAt).toBeGreaterThan(goesAt);
+    expect(undock.startAt - goesAt).toBeLessThan(1);
   });
 
   it('has no ship to send for a crew already back from its run', () => {

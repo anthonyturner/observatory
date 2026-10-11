@@ -1,6 +1,7 @@
 import { panOf } from '../engine/meteor-layer';
 import { NewsEvent } from './news';
 import { DEPARTED_MAG } from './departure-exit';
+import { exitBeat } from './exits';
 
 /* How a leaving star's company goes home. A crew ship and each satellite at a
    star that left the sky cast off one after another, a beat after its exit
@@ -27,7 +28,7 @@ export interface Undock {
 /** How long each flies once it has cast off, in seconds. */
 export const FLIGHT_S: Readonly<Record<UndockKind, number>> = { crew: 4, satellite: 2.6 };
 
-/** The first casts off this long after its star's exit starts, then one every `STEP_S`. */
+/** The first casts off this long after its star begins to go, then one every `STEP_S`. */
 const FIRST_LAG_S = 0.3;
 const STEP_S = 0.18;
 /** More engines than this in one refresh is mud, so the rest fly silent. */
@@ -48,6 +49,7 @@ export function undocksOf(events: readonly NewsEvent[]): Undock[] {
     if (startAt == null || !departure) return [];
     const { crew, satellites } = departure.system;
     const from = { x: event.fromX ?? 0, y: event.fromY ?? 0, z: event.fromZ ?? 0 };
+    const goesAt = exitBeat(event, 'begin') ?? startAt;
     const leaving = [
       ...(crew?.phase === 'working'
         ? [{ kind: 'crew' as const, key: `crew:${event.pr}`, name: 'Crew' }]
@@ -58,7 +60,7 @@ export function undocksOf(events: readonly NewsEvent[]): Undock[] {
       ...each,
       pr: event.pr,
       from,
-      startAt: startAt + FIRST_LAG_S + i * STEP_S,
+      startAt: goesAt + FIRST_LAG_S + i * STEP_S,
     }));
   });
 }

@@ -44,8 +44,10 @@ export interface IssuePlanet {
   readonly tone: number;
 }
 
-export const PLANET_TONE_COUNT = 3;
-const MAX_PLANETS = 4;
+/** Planets' tones: bare rock, dust, and a world with water. */
+export const PLANET_TONES = ['#9aa3ad', '#b59a78', '#7fa9a6'] as const;
+const PLANET_TONE_COUNT = PLANET_TONES.length;
+export const MAX_PLANETS = 4;
 const FIRST_ORBIT = 1.9;
 const ORBIT_STEP = 0.6;
 const PLANET_SIZE = 0.18;

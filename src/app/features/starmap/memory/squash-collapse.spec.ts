@@ -1,4 +1,4 @@
-import { STREAK_S } from './departure-exit';
+import { PRELUDE_S, STREAK_S } from './departure-exit';
 import {
   COLLAPSE_S,
   SQUASH_SPAN_S,
@@ -11,13 +11,15 @@ import { Point } from '../sound/doppler';
 
 describe('the squash collapse', () => {
   it('collapses first, then hands over to the streak', () => {
-    const handover = COLLAPSE_S / SQUASH_SPAN_S;
+    const through = (seconds: number): number => seconds / SQUASH_SPAN_S;
+    const handover = through(PRELUDE_S + COLLAPSE_S);
 
-    expect(SQUASH_SPAN_S).toBeCloseTo(COLLAPSE_S + STREAK_S);
+    expect(SQUASH_SPAN_S).toBeCloseTo(PRELUDE_S + COLLAPSE_S + STREAK_S);
     expect(collapseProgress(-0.1)).toBeNull();
-    expect(collapseProgress(handover / 2)).toBeCloseTo(0.5);
+    expect(collapseProgress(through(PRELUDE_S / 2))).toBeNull();
+    expect(collapseProgress(through(PRELUDE_S + COLLAPSE_S / 2))).toBeCloseTo(0.5);
     expect(collapseProgress(handover + 0.01)).toBeNull();
-    expect(squashStreakProgress(handover / 2)).toBe(0);
+    expect(squashStreakProgress(through(PRELUDE_S + COLLAPSE_S / 2))).toBe(0);
     expect(squashStreakProgress(1)).toBe(1);
   });
 });
@@ -58,7 +60,7 @@ describe('implosionCue', () => {
   const squashed = { kind: 'squashed', startAt: 12, fromX: 0, fromY: 0, fromZ: 0, angle: 0 };
 
   it('waits for the collapse and sits where it happens on screen', () => {
-    expect(implosionCue(squashed, scene(250))).toMatchObject({ delayS: 2, pan: -0.5 });
+    expect(implosionCue(squashed, scene(250))).toMatchObject({ delayS: 2 + PRELUDE_S, pan: -0.5 });
   });
 
   it('sweeps in and follows the streak when the sky moves', () => {
@@ -71,6 +73,6 @@ describe('implosionCue', () => {
   it('keeps only the snap when motion is off, as the sky keeps only the flash', () => {
     const cue = implosionCue(squashed, scene(250, { frozen: true }));
 
-    expect(cue).toMatchObject({ sweeps: false, whoosh: [], delayS: 2 });
+    expect(cue).toMatchObject({ sweeps: false, whoosh: [], delayS: 2 + PRELUDE_S });
   });
 });

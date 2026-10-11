@@ -1,6 +1,8 @@
 import { lampOut, noiseBurst, pluck, suckIn, thump, whoosh } from '../../../core/sound/instruments';
 import { Rig } from '../../../core/sound/sound-rig';
 import { COOL_S, SINK_S, SinkCue } from '../memory/closed-ember';
+import { ChimeCue, SuctionCue } from '../memory/company-cue';
+import { PULL_S } from '../memory/departure-company';
 import { SparkCue } from '../memory/comment-sparks';
 import { STREAK_S } from '../memory/departure-exit';
 import { MergeCue, NOVA_S } from '../memory/merge-supernova';
@@ -45,6 +47,10 @@ export interface StarmapScore {
   sink(cue: SinkCue): void;
   /** The engine of a crew ship or satellite casting off from a star that left, after the cue's delay. */
   undock(cue: UndockCue): void;
+  /** A bright bell for a planet turning green, after the cue's delay, panned by it; each planet rings its own note. */
+  chime(cue: ChimeCue): void;
+  /** A swelling suction as a meteor is pulled into the core of a star that left, after the cue's delay. */
+  suction(cue: SuctionCue): void;
   /**
    * A crackle for the review threads shed from a leaving star, after the cue's
    * delay, panned by it: one pop as each spark peels off, low for an open thread, bright for a settled one.
@@ -75,6 +81,12 @@ const ENGINE: Readonly<
   crew: { seconds: 1.8, rumble: 0.09, whine: 0.05, from: 260, to: 820 },
   satellite: { seconds: 1.1, rumble: 0.04, whine: 0.025, from: 420, to: 1200 },
 };
+
+/** A planet's chime, innermost first: the top of the merge's arpeggio, a pentatonic climbing from E6. */
+const CHIME = { notes: [88, 90, 93, 97], level: 0.04, glassLag: 0.07, glassLevel: 0.015 } as const;
+
+/** The pull on a meteor: a band of noise that climbs and swells, quieter for a small change. */
+const SUCTION = { from: 220, to: 1800, level: 0.08 } as const;
 
 /** A spark's pop: quick and quiet, a little louder for a thread still open. */
 const SPARK_POP = { unresolved: 0.03, resolved: 0.02, decay: 0.035 } as const;
@@ -289,6 +301,38 @@ export class WebAudioStarmapScore implements StarmapScore {
         { at: 0, freq: engine.from, pan },
         { at: engine.seconds, freq: engine.to, pan },
       ],
+    });
+  }
+
+  /** A bell on the planet's note, with a quiet glassy octave a moment behind it. */
+  chime({ delayS, pan, planet }: ChimeCue): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
+    const at = ac.currentTime + delayS;
+    const midi = CHIME.notes[planet % CHIME.notes.length];
+    pluck(rig, { at, midi, severity: 'clear', pan, level: CHIME.level });
+    pluck(rig, {
+      at: at + CHIME.glassLag,
+      midi: midi + 12,
+      severity: 'clear',
+      pan,
+      level: CHIME.glassLevel,
+    });
+  }
+
+  /** Noise through a band that climbs and swells as the meteor falls in, and stops short at the core. */
+  suction({ delayS, pan, strength }: SuctionCue): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
+    suckIn(rig, {
+      at: ac.currentTime + delayS,
+      seconds: PULL_S,
+      level: SUCTION.level * (0.5 + 0.5 * strength),
+      pan,
+      from: SUCTION.from,
+      to: SUCTION.to,
     });
   }
 

@@ -27,6 +27,7 @@ import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
 import { mergeCues } from '../memory/merge-supernova';
+import { Undock, stillAway, undockCues, undocksOf } from '../memory/undock';
 import { Point } from '../sound/doppler';
 import { News, NewsLayer } from '../memory/news-layer';
 import { LogSkyLayout, LogStar } from '../../../core/logs/log-layout';
@@ -181,6 +182,12 @@ export class StarmapSky {
   readonly previewedComet = output<Comet>();
   /** A light on the Spiral of Done was clicked open. */
   readonly pickedDone = output<DoneItem>();
+  /**
+   * A crew ship or satellite is about to cast off from a pull request's star
+   * that left the sky: each with the wall time it goes (`startAt`, in
+   * `performance.now() / 1000` seconds), so a farewell can be timed to it.
+   */
+  readonly undocked = output<readonly Undock[]>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('sky');
   private readonly document = inject(DOCUMENT);
@@ -226,6 +233,8 @@ export class StarmapSky {
     typeof settled === 'number' ? this.previewed.emit(settled) : this.previewedComet.emit(settled),
   );
   private engine: SkyEngine | null = null;
+  /** Those casting off or still on their way home, for the crew and satellite layers. */
+  private undocks: readonly Undock[] = [];
   private isFramed = false;
   /** The skies already framed once, so a data refresh keeps the viewer's camera. */
   private readonly framed = new Set<string>();
@@ -381,9 +390,28 @@ export class StarmapSky {
       entranceEnd: engine.entranceEnd(),
       frozen: engine.frozen,
     });
+    const leaving = undocksOf(events);
+    this.undocks = [...stillAway(this.undocks, now), ...leaving];
+    this.crewLayer.setUndocks(this.undocks);
+    this.satelliteLayer.setUndocks(this.undocks);
     // A boom with no supernova to see (the list view, another sky) would be a ghost.
-    if (!this.hidden() && this.chart() === 'prs') this.boom(events, engine, now);
+    if (!this.hidden() && this.chart() === 'prs') {
+      this.boom(events, engine, now);
+      this.engines(leaving, engine, now);
+      if (leaving.length) this.undocked.emit(leaving);
+    }
     engine.kick();
+  }
+
+  private engines(undocks: readonly Undock[], engine: SkyEngine, now: number): void {
+    const width = this.document.defaultView?.innerWidth ?? 0;
+    const project = (x: number, y: number, z: number): { x: number } => ({
+      x: engine.toScreen(x, y, z)[0],
+    });
+    const frozen = engine.frozen;
+    for (const cue of undockCues(undocks, { now, width, frozen, project })) {
+      this.sound.undock(cue);
+    }
   }
 
   private boom(events: readonly NewsEvent[], engine: SkyEngine, now: number): void {

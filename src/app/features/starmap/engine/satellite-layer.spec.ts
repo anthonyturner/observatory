@@ -1,5 +1,13 @@
 import { Satellite } from '../../../core/live-agents/satellites';
-import { SatelliteLayer, isLit, lanesOf, orbitOffset, parkingPoint } from './satellite-layer';
+import { FLIGHT_S, Undock } from '../memory/undock';
+import {
+  SatelliteLayer,
+  isLit,
+  lanesOf,
+  orbitOffset,
+  parkingPoint,
+  satelliteOrbit,
+} from './satellite-layer';
 import { SkyFrame } from './sky-frame';
 
 const mark = (
@@ -97,12 +105,13 @@ const STILL = { t: 0, frozen: true };
 const fakeFrame = (
   chart: SkyFrame['chart'] = 'prs',
   pr: number | null = null,
-  { t, frozen } = STILL,
+  { t, frozen, wall = 0 }: { t: number; frozen: boolean; wall?: number } = STILL,
 ): SkyFrame =>
   ({
     width: 1000,
     height: 700,
     t,
+    wall,
     frozen,
     chart,
     stars: pr === null ? [] : [{ item: { pr }, mag: 6, ax: 0, ay: 0, az: 0 }],
@@ -203,5 +212,87 @@ describe('SatelliteLayer', () => {
     sky.flat(fakeCanvas(), fakeFrame('logs'));
 
     expect(sky.heardOf('a')).toEqual({ pan: 0, doppler: 1 });
+  });
+});
+
+describe('SatelliteLayer casting off', () => {
+  const layer = (): SatelliteLayer => new SatelliteLayer(() => ({ side: 0, top: 100 }));
+  const undock = (key = 'a', startAt = 10): Undock => ({
+    kind: 'satellite',
+    key,
+    pr: 7,
+    name: `agent ${key}`,
+    from: { x: 1, y: 2, z: 3 },
+    startAt,
+  });
+  /** A frame where the star is gone and the departure point is at the left of the screen. */
+  const at = (wall: number, frozen = false) => ({
+    ...fakeFrame('prs', null, { t: 1, frozen, wall }),
+    toScreen: () => [100, 400] as [number, number],
+  });
+  const panAt = (sky: SatelliteLayer, f: SkyFrame, key = 'a'): number => {
+    sky.flat(fakeCanvas(), f);
+    return sky.heardOf(key).pan;
+  };
+
+  it('circles the place its star stood until it casts off', () => {
+    const sky = layer();
+    sky.set([mark('a', 7)]);
+    sky.setUndocks([undock()]);
+
+    expect(panAt(sky, at(9))).toBeLessThan(-0.6);
+  });
+
+  it('flies from the star to the parking orbit, and is parked when it is home', () => {
+    const sky = layer();
+    sky.set([mark('a', 7)]);
+    sky.setUndocks([undock()]);
+    const parked = (() => {
+      const bare = layer();
+      bare.set([mark('a', null)]);
+      return panAt(bare, at(10 + FLIGHT_S.satellite + 1));
+    })();
+
+    const early = panAt(sky, at(10.1));
+    const middle = panAt(sky, at(10 + FLIGHT_S.satellite / 2));
+    const home = panAt(sky, at(10 + FLIGHT_S.satellite + 1));
+
+    expect(early).toBeLessThan(middle);
+    expect(middle).toBeLessThan(parked);
+    expect(home).toBe(parked);
+  });
+
+  it('parks at once when motion is off', () => {
+    const sky = layer();
+    sky.set([mark('a', 7)]);
+    sky.setUndocks([undock()]);
+    const bare = layer();
+    bare.set([mark('a', null)]);
+
+    expect(panAt(sky, at(9, true))).toBe(panAt(bare, at(9, true)));
+  });
+
+  it('leaves a satellite with no cast-off to the star or the parking orbit', () => {
+    const sky = layer();
+    sky.set([mark('a', null), mark('b', null)]);
+    sky.setUndocks([undock('b')]);
+
+    expect(panAt(sky, at(9), 'a')).toBeCloseTo(0.8);
+  });
+
+  it('ignores a crew ship’s cast-off', () => {
+    const sky = layer();
+    sky.set([mark('a', null)]);
+    sky.setUndocks([{ ...undock('crew:7'), kind: 'crew' }]);
+
+    expect(panAt(sky, at(9))).toBeCloseTo(0.8);
+  });
+});
+
+describe('satelliteOrbit', () => {
+  it('stays outside the crew ship’s orbit and on screen', () => {
+    expect(satelliteOrbit(1)).toBe(26);
+    expect(satelliteOrbit(10)).toBeCloseTo(56);
+    expect(satelliteOrbit(1000)).toBe(96);
   });
 });

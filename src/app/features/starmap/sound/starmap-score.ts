@@ -1,6 +1,7 @@
 import { noiseBurst, pluck, thump, whoosh } from '../../../core/sound/instruments';
 import { Rig } from '../../../core/sound/sound-rig';
 import { MergeCue, NOVA_S, STREAK_S } from '../memory/merge-supernova';
+import { UndockCue, UndockKind } from '../memory/undock';
 import { crackleOf } from './meteor-crackle';
 
 /* The star map's sound, generated live rather than played from a recording.
@@ -28,6 +29,8 @@ export interface StarmapScore {
    * by it, then the whoosh of the streak along the path the cue gives.
    */
   merge(cue: MergeCue): void;
+  /** The engine of a crew ship or satellite casting off from a star that left, after the cue's delay. */
+  undock(cue: UndockCue): void;
 }
 
 /** Loudness is heard as the square of the slider, so the gain follows it. */
@@ -45,6 +48,14 @@ const WHOOSH = { hz: 640, q: 2.5, level: 0.07 } as const;
 
 /** The boom's levels: the loudest thing the sky plays. */
 const BOOM = { thump: 0.4, rumble: 0.14 } as const;
+
+/** A cast-off's engine: noise warming up under a thin whine that climbs. A crew's is the bigger. */
+const ENGINE: Readonly<
+  Record<UndockKind, { seconds: number; rumble: number; whine: number; from: number; to: number }>
+> = {
+  crew: { seconds: 1.8, rumble: 0.09, whine: 0.05, from: 260, to: 820 },
+  satellite: { seconds: 1.1, rumble: 0.04, whine: 0.025, from: 420, to: 1200 },
+};
 
 /** An A major arpeggio climbing from A5, each note softer than the last. */
 const SHIMMER = [
@@ -169,6 +180,35 @@ export class WebAudioStarmapScore implements StarmapScore {
       level: WHOOSH.level,
       q: WHOOSH.q,
       path: path.map((stop) => ({ at: stop.at, pan: stop.pan, freq: WHOOSH.hz * stop.doppler })),
+    });
+  }
+
+  /** A low rumble that warms up and a thin whine climbing over it, from the side the star stood on. */
+  undock({ kind, delayS, pan }: UndockCue): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
+    const at = ac.currentTime + delayS;
+    const engine = ENGINE[kind];
+    noiseBurst(rig, {
+      at,
+      type: 'lowpass',
+      freq: 90,
+      to: 480,
+      q: 1.2,
+      level: engine.rumble,
+      decay: engine.seconds,
+      pan,
+    });
+    whoosh(rig, {
+      at,
+      seconds: engine.seconds,
+      level: engine.whine,
+      q: 6,
+      path: [
+        { at: 0, freq: engine.from, pan },
+        { at: engine.seconds, freq: engine.to, pan },
+      ],
     });
   }
 

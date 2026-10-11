@@ -4,7 +4,9 @@ import { Ledger } from '../../../core/queue/ledger';
 import { rnd } from '../engine/rnd';
 import { BucketId, SkyCluster, WORLD } from '../engine/sky-model';
 import { Departure, EMPTY_SYSTEM, Ending, StarSystem, endingOf, endingOfPull } from './departure';
+import { EMBER_SPAN_S } from './closed-ember';
 import { MERGE_SPAN_S } from './merge-supernova';
+import { COLLAPSE_RING, SQUASH_SPAN_S } from './squash-collapse';
 
 /* pr-starmap's memory, kept apart as it kept it: `diffItems` only compares,
    EFFECTS only says how each kind of change looks, and the panel, the timeline
@@ -93,9 +95,9 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     rank: 3,
     noun: 'squashed',
     tag: 'squashed',
-    colour: '#5fe3a1',
+    colour: COLLAPSE_RING,
     onStar: false,
-    span: MERGE_SPAN_S,
+    span: SQUASH_SPAN_S,
     mark: null,
     flashesStill: true,
   },
@@ -113,11 +115,11 @@ export const EFFECTS: Readonly<Record<ChangeKind, Effect>> = {
     rank: 5,
     noun: 'closed unmerged',
     tag: 'closed',
-    colour: '#8d9bc4',
+    colour: '#e08a6a',
     onStar: false,
-    span: 2.0,
+    span: EMBER_SPAN_S,
     mark: null,
-    flashesStill: false,
+    flashesStill: true,
   },
   left: {
     rank: 6,

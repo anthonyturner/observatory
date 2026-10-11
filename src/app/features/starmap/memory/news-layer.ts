@@ -1,16 +1,17 @@
 import { rnd } from '../engine/rnd';
 import { NewsEffect3D, SkyFrame, SkyLayer } from '../engine/sky-frame';
 import { SkyStar } from '../engine/sky-model';
-import {
-  NOVA_FLASH,
-  NOVA_RING,
-  DEPARTED_MAG,
-  novaLook,
-  novaProgress,
-  streakProgress,
-  streakTravel,
-} from './merge-supernova';
+import { coolLook, coolProgress, sinkHead, sinkLook, sinkProgress } from './closed-ember';
+import { DEPARTED_MAG, fromOf, streakTravel } from './departure-exit';
+import { NOVA_FLASH, NOVA_RING, novaLook, novaProgress, streakProgress } from './merge-supernova';
 import { EFFECTS, NewsEvent } from './news';
+import {
+  COLLAPSE_CORE,
+  COLLAPSE_RING,
+  collapseLook,
+  collapseProgress,
+  squashStreakProgress,
+} from './squash-collapse';
 
 const ease = (p: number): number => 1 - Math.pow(1 - p, 3);
 
@@ -137,39 +138,121 @@ const burstShooting: Burst = (ev, star, p, c, at, r, f) => {
   ev.head = [hx, hy];
 };
 
+/** Where a departed star stood on screen, and the size it is drawn at: it is gone, so there is none to measure. */
+function departedAt(ev: NewsEvent, f: SkyFrame): { x: number; y: number; size: number } {
+  const from = fromOf(ev);
+  const [x, y] = f.toScreen(from.x, from.y, from.z);
+  return { x, y, size: DEPARTED_MAG * Math.max(f.camera.current.scale, 0.42) };
+}
+
+const disc = (
+  c: CanvasRenderingContext2D,
+  [x, y]: [number, number],
+  radius: number,
+  colour: string,
+  alpha: number,
+): void => {
+  c.globalAlpha = alpha;
+  c.fillStyle = colour;
+  c.beginPath();
+  c.arc(x, y, radius, 0, Math.PI * 2);
+  c.fill();
+};
+
+const circle = (
+  c: CanvasRenderingContext2D,
+  [x, y]: [number, number],
+  radius: number,
+  colour: string,
+  alpha: number,
+  width: number,
+): void => {
+  c.globalAlpha = alpha;
+  c.strokeStyle = colour;
+  c.lineWidth = Math.max(width, 0.6);
+  c.beginPath();
+  c.arc(x, y, radius, 0, Math.PI * 2);
+  c.stroke();
+};
+
 /** A white-gold flash and one ring of dust where the star stood, then the streak.
  *  With motion off only a brief flash plays: no ring, no streak. */
 const burstMerged: Burst = (ev, star, p, c, at, r, f) => {
   const q = novaProgress(p);
   if (q !== null) {
-    const [x, y] = f.toScreen(ev.fromX ?? 0, ev.fromY ?? 0, ev.fromZ ?? 0);
-    const size = DEPARTED_MAG * Math.max(f.camera.current.scale, 0.42);
+    const { x, y, size } = departedAt(ev, f);
     const look = novaLook(q);
-    c.globalAlpha = look.flashAlpha;
-    c.fillStyle = NOVA_FLASH;
-    c.beginPath();
-    c.arc(x, y, size * look.flashRadius, 0, Math.PI * 2);
-    c.fill();
+    disc(c, [x, y], size * look.flashRadius, NOVA_FLASH, look.flashAlpha);
     if (!f.frozen) {
-      c.globalAlpha = look.ringAlpha;
-      c.strokeStyle = NOVA_RING;
-      c.lineWidth = Math.max(size * 0.45 * (1 - q), 0.6);
-      c.beginPath();
-      c.arc(x, y, size * look.ringRadius, 0, Math.PI * 2);
-      c.stroke();
+      circle(c, [x, y], size * look.ringRadius, NOVA_RING, look.ringAlpha, size * 0.45 * (1 - q));
     }
   }
   const sp = streakProgress(p);
   if (sp > 0 && sp < 1 && !f.frozen) burstShooting(ev, star, sp, c, at, r, f);
 };
 
+/** A ring falls in on the star, which shrinks to a point, flashes once, and streaks away.
+ *  With motion off only the core and the flash play: no ring, no streak. */
+const burstSquashed: Burst = (ev, star, p, c, at, r, f) => {
+  const q = collapseProgress(p);
+  if (q !== null) {
+    const { x, y, size } = departedAt(ev, f);
+    const look = collapseLook(q);
+    if (!f.frozen) {
+      circle(c, [x, y], size * look.ringRadius, COLLAPSE_RING, look.ringAlpha, size * 0.3);
+    }
+    disc(c, [x, y], size * look.coreRadius, COLLAPSE_CORE, look.coreAlpha);
+    disc(c, [x, y], size * look.flashRadius, '#ffffff', look.flashAlpha);
+  }
+  const sp = squashStreakProgress(p);
+  if (sp > 0 && sp < 1 && !f.frozen) burstShooting(ev, star, sp, c, at, r, f);
+};
+
+/** A glow and a fainter halo round it, the ember's whole look. */
+const ember = (
+  c: CanvasRenderingContext2D,
+  at: [number, number],
+  radius: number,
+  colour: string,
+  alpha: number,
+): void => {
+  disc(c, at, radius * 1.9, colour, alpha * 0.22);
+  disc(c, at, radius, colour, alpha);
+};
+
+/** The star cools to an ember where it stood, then sinks into the black hole.
+ *  With motion off only the cooling plays: it does not sink. */
+const burstClosed: Burst = (ev, star, p, c, at, r, f) => {
+  const q = coolProgress(p);
+  if (q !== null) {
+    const { x, y, size } = departedAt(ev, f);
+    const look = coolLook(q);
+    ember(c, [x, y], size * look.radius, look.colour, look.alpha);
+    ev.head = [x, y];
+  }
+  const s = sinkProgress(p);
+  if (s > 0 && s < 1 && !f.frozen) {
+    const head = sinkHead(fromOf(ev), s);
+    const place = f.toScreen(head.x, head.y, head.z);
+    const look = sinkLook(s);
+    ember(
+      c,
+      place,
+      DEPARTED_MAG * Math.max(f.camera.current.scale, 0.42) * look.radius,
+      look.colour,
+      look.alpha,
+    );
+    ev.head = place;
+  }
+};
+
 const BURSTS: Readonly<Record<NewsEvent['kind'], Burst>> = {
   blocked: burstSupernova,
   opened: burstNova,
   merged: burstMerged,
-  squashed: burstMerged,
+  squashed: burstSquashed,
   unblocked: burstImplode,
-  closed: burstShooting,
+  closed: burstClosed,
   left: burstShooting,
 };
 
@@ -177,9 +260,9 @@ const MODES: Readonly<Record<NewsEvent['kind'], NewsEffect3D['mode']>> = {
   blocked: 'supernova',
   opened: 'nova',
   merged: 'merged',
-  squashed: 'merged',
+  squashed: 'squashed',
   unblocked: 'implode',
-  closed: 'shooting',
+  closed: 'closed',
   left: 'shooting',
 };
 

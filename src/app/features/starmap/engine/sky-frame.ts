@@ -39,7 +39,7 @@ export interface SkyFrame {
  */
 export interface NewsEffect3D {
   readonly key: object;
-  readonly mode: 'nova' | 'supernova' | 'implode' | 'shooting' | 'merged';
+  readonly mode: 'nova' | 'supernova' | 'implode' | 'shooting' | 'merged' | 'squashed' | 'closed';
   /** 0 to 1 through the burst. */
   readonly p: number;
   /** Motion is off: play only what a still sky is meant to show. */

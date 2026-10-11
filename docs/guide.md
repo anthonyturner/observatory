@@ -480,9 +480,17 @@ looked:
 - a **shockwave** for a pull request that became blocked,
 - a **white flash** for a new one,
 - **falling green rings** for one that got unblocked,
-- a **shooting star** for one closed,
-- a **supernova**, a white-gold flash and a ring of dust, for one merged, with
-  a deep boom when sound is on; one squashed or rebased goes out the same way.
+- a **supernova**, a white-gold flash and a ring of dust, then a streak, for one
+  merged, with a deep boom when sound is on,
+- a **collapse**, a blue-white ring falling in as the star shrinks to a point
+  that flashes once, then a streak, for one squashed or rebased, with a rising
+  sweep and a snap when sound is on,
+- a **cooling ember**, the star dulling to a glowing coal that sinks into the
+  black hole, for one closed without merging, with a soft hush and a low breath
+  that falls with it when sound is on.
+
+With motion off, each plays only its first part: the flash, the collapsing core
+and its flash, or the cooling.
 
 The changes panel lists them, and **Got it** clears the marks. A pull request
 that merges or closes while the page is open leaves at the next refresh, and

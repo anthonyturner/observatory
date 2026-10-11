@@ -185,6 +185,37 @@ export function whoosh(rig: Rig, { at, seconds, level, q, path }: Whoosh): void 
   playFor([source], [filter, gain, panner], { at, end: at + seconds + 0.05 });
 }
 
+export interface SuckIn {
+  readonly at: number;
+  readonly seconds: number;
+  readonly level: number;
+  readonly pan: number;
+  /** Where the band starts and where it climbs to. */
+  readonly from: number;
+  readonly to: number;
+}
+
+/** Noise through a band that climbs and swells, then stops short: something falling in on itself. */
+export function suckIn(rig: Rig, { at, seconds, level, pan, from, to }: SuckIn): void {
+  const { context } = rig;
+  const source = context.createBufferSource();
+  source.buffer = rig.noise;
+  source.loop = true;
+  const filter = context.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.Q.value = 3;
+  filter.frequency.setValueAtTime(from, at);
+  filter.frequency.exponentialRampToValueAtTime(to, at + seconds);
+  const gain = context.createGain();
+  gain.gain.setValueAtTime(SILENT, at);
+  gain.gain.exponentialRampToValueAtTime(Math.max(level, SILENT * 2), at + seconds);
+  gain.gain.linearRampToValueAtTime(0, at + seconds + 0.02);
+  const panner = context.createStereoPanner();
+  panner.pan.value = pan;
+  source.connect(filter).connect(gain).connect(panner).connect(rig.bus);
+  playFor([source], [filter, gain, panner], { at, end: at + seconds + 0.05 });
+}
+
 /** The sun's pulse: a falling sine, the heartbeat of the system. */
 export function thump(rig: Rig, at: number, level: number, pan = 0): void {
   const { context } = rig;

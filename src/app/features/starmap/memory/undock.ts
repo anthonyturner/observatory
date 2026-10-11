@@ -1,6 +1,6 @@
 import { panOf } from '../engine/meteor-layer';
 import { NewsEvent } from './news';
-import { DEPARTED_MAG } from './merge-supernova';
+import { DEPARTED_MAG } from './departure-exit';
 
 /* How a leaving star's company goes home. A crew ship and each satellite at a
    star that left the sky cast off one after another, a beat after its exit

@@ -37,7 +37,9 @@ TypeScript and the shader only draws it.
 | Review Queue | Satellite        | A live agent, its state    | `satellitesOf`, `isLit`        |
 | Review Queue | Chain            | A PR stacked on another    | `stacksOf`, `chainLinks`       |
 | Review Queue | Comet fade       | Open PRs past a WIP limit  | `wipCheck(items, limit)`       |
-| Review Queue | Merge supernova  | A merged PR in the news    | `novaProgress`, `mergeCues`    |
+| Review Queue | Merge supernova  | A merged PR in the news    | `novaProgress`, `mergeCue`     |
+| Review Queue | Squash collapse  | A squashed PR in the news  | `collapseLook`                 |
+| Review Queue | Ember sink       | A closed PR in the news    | `coolLook`, `sinkHead`         |
 | Review Queue | Fly home         | Crew, agents of a leaver   | `undocksOf`, `flightOf`        |
 | Review Queue | Doppler shift    | How a sound's source moves | `dopplerOf`, `dopplerFactor`   |
 | Review Queue | Weather          | Design red flags added     | `stormOf`, `designFlagsOf`     |
@@ -448,36 +450,101 @@ Past the limit (8, set per browser with **wip** in the tools, `WipLimitSetting`,
 a faded comet still takes hover and clicks, and getting back within the limit,
 by a refresh or a raised limit, brightens them again.
 
-### Merge supernova (data: a merged pull request)
+### Exits (data: how a pull request ended)
 
-Code: `features/starmap/memory/merge-supernova.ts` holds the rule; `news-layer.ts`
-draws it in Canvas and `engine/news-3d.ts` (`merging`) in WebGL.
+Code: `features/starmap/memory/`. A pull request that left the queue goes out in
+one of three ways. Each is a pure rule file that `news-layer.ts` draws in Canvas,
+`engine/news-3d.ts` builds in WebGL and the sound reads, so the timings cannot
+drift apart between them. Every exit has two **acts**: the star's last light,
+then it goes. `departure-exit.ts` holds what they share (the acts' timing, the
+ghost star's size, the streak, the path a moving sound is read along);
+`exits.ts` lists the three and keeps time with them.
 
-A pull request that merged between two queues (a `merged` news event) goes out
-in two parts: for 0.7 s a white-gold flash and one ring of dust spread from where
-its star stood, then the usual 2 s streak leaves. There is no debris and no red,
-so it never reads as `blocked`'s shockwave. `novaProgress` and
-`streakProgress` split an event's progress between the two.
+| Ending | News kind  | First act                                                                                                               | Second act                                                                                           | Rule file            |
+| ------ | ---------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------- |
+| Merge  | `merged`   | **Supernova**, 0.7 s: a white-gold flash and one ring of dust spread                                                    | The 2 s streak leaves                                                                                | `merge-supernova.ts` |
+| Squash | `squashed` | **Collapse**, 0.9 s: a cool blue-white ring falls in as the star shrinks to a point, which flashes once                 | The 2 s streak leaves                                                                                | `squash-collapse.ts` |
+| Closed | `closed`   | **Cooling**, 1 s: the star's last light dulls and contracts to an ember (`#e08a6a`, the Spiral of Done's closed colour) | **Sink**, 1.8 s: the ember falls in a spiral to the black hole, shrinking and fading into its shadow | `closed-ember.ts`    |
 
-With sound on, the star map's score (`WebAudioStarmapScore.merge`) plays a low
-boom and rumble, then four notes of an A major arpeggio fading away, built from
-`core/sound` (`thump`, `noiseBurst`, `pluck`). `mergeCues` decides when and
-where: the delay until the supernova starts and a pan from the departure point's
-screen x, kept within 0.8 either side. A cue exists only for a merge the news diff
-found (`merged` or `squashed`, see `isMerge`), never on a timer, and at most four
-booms per refresh.
+A merge never reads as `blocked`'s red shockwave (no debris, no red). A closed
+pull request never reads as a merge: its ember is a small dull glow that sinks,
+where a merge flares and spreads. `left` (a pull request nobody learned the
+ending of) still crosses the sky as a plain shooting star, with no exit of its
+own. The label that follows a streak follows the closed ember too.
+`novaProgress`, `collapseProgress` and `coolProgress` give how far through the
+first act an event is, and `streakProgress`, `squashStreakProgress` and
+`sinkProgress` how far through the second.
 
-After the boom, the streak gets a short whoosh (`whoosh` in `core/sound`):
-noise through a band-pass filter that glides, with the pan, along eight stretches
-of the streak's own path. `mergeCues` samples the head with the same
-`streakHead` the 3D sky draws and projects each point through the active
-renderer, so the pan and Doppler factor of each stretch come from the positions
-the picture uses. Where the sky is flat the head gains no depth, as drawn.
+The departed star is not in the sky, so each exit is drawn at the point its star
+stood (`fromX/Y/Z`, set by `play`) at `DEPARTED_MAG`, not at a measured size. The
+ember sinks to the hole's centre in its plane (`sinkHead`: the distance falls
+with the square of the progress while it turns 1.4 rad). The hole's own flat
+layer is drawn over the scene, so the ember goes behind its shadow.
 
-Reduced motion: only the brief flash plays (no ring, no streak), and the boom
-still does; the whoosh does not, since nothing moves. `Effect.flashesStill`
-marks the one burst a still sky keeps, and `SkyLayer.animating` keeps the loop
-drawing until it has played.
+#### Timing hooks
+
+Anything that must happen in step with an exit reads its moments from `exits.ts`
+instead of keeping a clock of its own:
+
+- `exitBeats(kind)` gives `{ beginS, turnS, endS }` in seconds after the event
+  starts. `beginS` is when the star begins to go (the flash, the collapse's
+  first pull, the ember's first cooling), `turnS` when the first act hands to the
+  second (the streak leaves, the ember starts to sink), `endS` when the exit is
+  over.
+- `exitBeat(event, 'begin' | 'turn' | 'end')` gives the same on the sky's wall
+  clock from the event's `startAt`, or null for news with no exit or one not yet
+  started.
+- `PRELUDE_S` (`departure-exit.ts`, 0 today) is the room before `beginS`: time
+  for a star's planets, meteors, crew and satellites to play before the star
+  itself goes. Raising it delays the supernova, collapse and ember, lengthens
+  each span (and so `Effect.span`), and moves every cue with them. The prelude
+  is `startAt` to `exitBeat(event, 'begin')`.
+
+#### Sound
+
+With sound on, the star map's score plays one sound per exit, built from
+`core/sound` (`thump`, `noiseBurst`, `pluck`, `whoosh`, `lampOut`, `suckIn`).
+`exitCues` decides when and where: the delay until the star begins to go (after
+the prelude), a pan from the departure point's screen x kept within 0.8 either
+side, and the path of the second act projected through the active renderer. A
+cue exists only for an exit the news diff found and that has started, never on a
+timer, and at most four play per refresh in all, whichever way they left.
+
+Each moving part is read along the path the sky draws it on: the streak by the
+same `streakHead` the 3D sky uses, the sink by `sinkHead`, each cut into eight
+stretches (`pathStops`) whose pan and Doppler factor come from the projected
+positions (see **Doppler shift**). Where the sky is flat the streak gains no
+depth, as drawn.
+
+Reduced motion: each exit keeps only its first act, as the merge nova always
+has. A merge keeps the brief flash, a squash the core and its flash (no ring),
+a closed pull request the cooling (no sinking). Nothing streaks or sinks, so the
+sounds that follow a path (the whoosh, the sweep, the ember's breath) are left
+out while the snap, the boom, the hush and the cooling still play.
+`Effect.flashesStill` marks the exits a still sky keeps, and
+`SkyLayer.animating` keeps the loop drawing until they have played.
+
+#### Cue table
+
+Every sound is a method of `StarmapScore` (`sound/starmap-score.ts`), played by
+`WebAudioStarmapScore`, dispatched by `StarmapSound.exited`, and tested with a
+fake `AudioContext` that makes no sound (`starmap-score.spec.ts`). The cue
+rules are tested in each rule file's spec and in `exits.spec.ts`. Nothing plays
+with sound off.
+
+| Sound           | When                                                                                 | Score method   | Cue (built by)                         |
+| --------------- | ------------------------------------------------------------------------------------ | -------------- | -------------------------------------- |
+| Boom, shimmer   | The supernova starts: a low thump and rumble, then four notes of an A major arpeggio | `merge(cue)`   | `MergeCue` (`mergeCue`)                |
+| Whoosh          | The merge streak leaves: noise through a gliding band along the streak's path        | `merge(cue)`   | `MergeCue.whoosh`                      |
+| Implosion sweep | The collapse: noise through a band that climbs from 140 Hz to 3 kHz and swells       | `implode(cue)` | `ImplosionCue.sweeps` (`implosionCue`) |
+| Implosion snap  | The collapse ends: a short thump, a burst of high noise and a bright note            | `implode(cue)` | `ImplosionCue`                         |
+| Whoosh          | The squash streak leaves, as the merge's                                             | `implode(cue)` | `ImplosionCue.whoosh`                  |
+| Ember hush      | The cooling starts: a falling sine (`lampOut`) and a breath of high noise            | `sink(cue)`    | `SinkCue` (`sinkCue`)                  |
+| Ember breath    | The sink: low noise whose band falls with the ember, bent by its Doppler factor      | `sink(cue)`    | `SinkCue.sink`                         |
+| Hole's thud     | The ember reaches the hole: one soft low thump, panned where it went                 | `sink(cue)`    | `SinkCue.sink`                         |
+
+The first sound of each exit starts at `exitBeat(event, 'begin')`; the streak's
+whoosh and the ember's breath at `'turn'`.
 
 ### Departures (data: a pull request that left the sky)
 
@@ -506,8 +573,7 @@ A departure waits in `MemoryView.waiting` until the sky is in view (the queue's 
 no screen or window over it, no replay, a visible tab), then `release` hands it to
 the sky to play and keeps it in `departures` while it plays. Merging on a pull
 request's screen reads the queue at once, so that star leaves as soon as the screen
-closes. They draw as a `merged`, a `squashed` and a `closed` event do today; each
-ending's own look is a later change.
+closes. They draw and sound as the exit for their ending (see **Exits**).
 
 ### Crew ships and satellites fly home (data: the company a leaving star kept)
 
@@ -561,8 +627,8 @@ shorter and softer. Each is panned by the screen x of the star's place.
 ### Doppler shift (data: how a moving sound's source moves)
 
 Code: `features/starmap/sound/doppler.ts`. One pure rule for every sound whose
-source moves: the merge streak's whoosh, the meteor landing's crackle and the
-satellites' beeps. `closingSpeed(from, to, seconds, listener)` is how fast the
+source moves: the merge and squash streaks' whoosh, the ember's sink, the
+meteor landing's crackle and the satellites' beeps. `closingSpeed(from, to, seconds, listener)` is how fast the
 source drew nearer to the listener between two drawn places, in pixels a second;
 `dopplerFactor` turns it into a playback-rate factor, 3 semitones either way at
 600 px/s and beyond, 1 when it did not move. `listenerOf` puts the listener at
@@ -576,6 +642,7 @@ cue's `whoosh` path) and multiply it into a pitch. Nothing is invented:
 | Sound   | Positions the factor is read from                                   |
 | ------- | ------------------------------------------------------------------- |
 | Whoosh  | `streakHead` at each step of the streak, projected, with its depth  |
+| Ember   | `sinkHead` at each step of the sink, projected, with its depth      |
 | Crackle | `headAt` the last 50 ms of the fall onto the star (`MeteorLanding`) |
 | Beep    | Where the satellite was drawn last frame and this one (`heardOf`)   |
 

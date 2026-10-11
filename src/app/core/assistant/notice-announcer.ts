@@ -11,12 +11,10 @@ import { sayingOf } from '../notices/notice-words';
 import { PageVisibility } from '../presence/page-visibility';
 import { ANNOUNCEMENT_VOICE } from '../voice/announcement-voice';
 import { SpeakPreference } from '../voice/speak-preference';
-import { TalkState } from '../voice/talk-state';
 import { VoiceChoice } from '../voice/voice-choice';
-import { ASK_CHANNEL } from './ask-channel';
+import { JevIdle } from './jev-idle';
 import { openItemsOf, questionOf } from './open-items';
 import { OpenQuestion } from './open-question';
-import { ProposalSlot } from './proposal';
 
 /** What Jev has yet to say: the projects' news, then new mail. */
 interface Held {
@@ -42,23 +40,13 @@ export class NoticeAnnouncer {
   private readonly voice = inject(ANNOUNCEMENT_VOICE);
   private readonly speakOn = inject(SpeakPreference).isOn;
   private readonly hidden = inject(PageVisibility).isHidden;
-  private readonly talking = inject(TalkState).isTalking;
-  private readonly asking = inject(ASK_CHANNEL).busy;
-  private readonly proposal = inject(ProposalSlot).proposal;
+  private readonly isJevIdle = inject(JevIdle).isIdle;
   private readonly question = inject(OpenQuestion);
   /** Only a voice that keeps its words here may name a sender or subject. */
   private readonly mayNameMail = inject(VoiceChoice).isOnThisMachine;
   private readonly held = signal<Held>(NOTHING_HELD);
 
   private readonly canHear = computed(() => this.speakOn() && !this.hidden());
-  private readonly isJevIdle = computed(
-    () =>
-      !this.voice.isBusy() &&
-      !this.talking() &&
-      !this.asking() &&
-      this.proposal() === null &&
-      !this.question.isWaiting(),
-  );
   private readonly hasHeld = computed(
     () => this.held().items.length > 0 || this.held().mail.length > 0,
   );

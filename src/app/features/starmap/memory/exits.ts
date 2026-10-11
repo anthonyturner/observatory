@@ -58,6 +58,32 @@ export function exitBeat(ev: ExitEvent, beat: 'begin' | 'turn' | 'end'): number 
   return beats && ev.startAt != null ? ev.startAt + beats[`${beat}S`] : null;
 }
 
+/** The ways a pull request exits the sky, which are the endings that have one. */
+export type ExitKind = 'merged' | 'squashed' | 'closed';
+
+const isExitKind = (kind: string): kind is ExitKind => EXITS.has(kind);
+
+/** A pull request's star starting to go, for whoever wants to say how it ended. */
+export interface ExitStart {
+  readonly pr: number;
+  readonly kind: ExitKind;
+  /** When the star begins to go, in wall seconds (`performance.now() / 1000`). */
+  readonly startAt: number;
+}
+
+/**
+ * Each started exit in the news, once, with the instant its star begins to go.
+ * News that has no exit, or has not started, has none.
+ */
+export function exitStartsOf(
+  events: readonly (ExitEvent & { readonly pr: number })[],
+): ExitStart[] {
+  return events.flatMap((ev) => {
+    const startAt = exitBeat(ev, 'begin');
+    return isExitKind(ev.kind) && startAt != null ? [{ pr: ev.pr, kind: ev.kind, startAt }] : [];
+  });
+}
+
 /** More booms than this in one refresh is mud, so the rest play silent. */
 const MAX_EXITS_HEARD = 4;
 

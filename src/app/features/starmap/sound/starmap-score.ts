@@ -1,6 +1,9 @@
-import { noiseBurst, pluck, thump, whoosh } from '../../../core/sound/instruments';
+import { lampOut, noiseBurst, pluck, suckIn, thump, whoosh } from '../../../core/sound/instruments';
 import { Rig } from '../../../core/sound/sound-rig';
-import { MergeCue, NOVA_S, STREAK_S } from '../memory/merge-supernova';
+import { COOL_S, SINK_S, SinkCue } from '../memory/closed-ember';
+import { STREAK_S } from '../memory/departure-exit';
+import { MergeCue, NOVA_S } from '../memory/merge-supernova';
+import { COLLAPSE_S, ImplosionCue } from '../memory/squash-collapse';
 import { crackleOf } from './meteor-crackle';
 
 /* The star map's sound, generated live rather than played from a recording.
@@ -28,6 +31,16 @@ export interface StarmapScore {
    * by it, then the whoosh of the streak along the path the cue gives.
    */
   merge(cue: MergeCue): void;
+  /**
+   * An implosion for a squash, after the cue's delay, panned by it: a rising
+   * sweep as the star falls in, a snap as it flashes, then the whoosh of the streak.
+   */
+  implode(cue: ImplosionCue): void;
+  /**
+   * An ember sinking for a closed pull request, after the cue's delay, panned
+   * by it: a hush as the star cools, then a low breath that falls with it into the hole.
+   */
+  sink(cue: SinkCue): void;
 }
 
 /** Loudness is heard as the square of the slider, so the gain follows it. */
@@ -53,6 +66,17 @@ const SHIMMER = [
   { midi: 88, lag: 0.46, level: 0.03 },
   { midi: 93, lag: 0.64, level: 0.02 },
 ] as const;
+
+/** The implosion's levels: a squash is softer than a merge's boom, and sharper. */
+const IMPLOSION = { sweep: 0.1, snap: 0.12, thump: 0.28, ting: 0.03 } as const;
+
+/** The ember's levels: the quietest exit, a light going out. */
+const EMBER = {
+  lamp: 0.05,
+  hush: 0.018,
+  breath: { hz: 260, q: 1.4, level: 0.09 },
+  swallow: 0.12,
+} as const;
 
 interface Parts {
   readonly master: GainNode;
@@ -170,6 +194,53 @@ export class WebAudioStarmapScore implements StarmapScore {
       q: WHOOSH.q,
       path: path.map((stop) => ({ at: stop.at, pan: stop.pan, freq: WHOOSH.hz * stop.doppler })),
     });
+  }
+
+  /** A rising sweep, then a snap and a bright ting as the star flashes, then the streak's whoosh. */
+  implode({ delayS, pan, sweeps, whoosh: path }: ImplosionCue): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
+    const at = ac.currentTime + delayS;
+    if (sweeps) {
+      suckIn(rig, { at, seconds: COLLAPSE_S, level: IMPLOSION.sweep, pan, from: 140, to: 3000 });
+    }
+    const flash = at + COLLAPSE_S;
+    thump(rig, flash, IMPLOSION.thump, pan);
+    noiseBurst(rig, { at: flash, freq: 5200, level: IMPLOSION.snap, decay: 0.14, pan });
+    pluck(rig, { at: flash, midi: 93, severity: 'clear', pan, level: IMPLOSION.ting });
+    whoosh(rig, {
+      at: flash,
+      seconds: STREAK_S,
+      level: WHOOSH.level,
+      q: WHOOSH.q,
+      path: path.map((stop) => ({ at: stop.at, pan: stop.pan, freq: WHOOSH.hz * stop.doppler })),
+    });
+  }
+
+  /** A winding-down tone and a hush as the star cools, then a low breath that falls with the ember, and a thud as the hole takes it. */
+  sink({ delayS, pan, sink: path }: SinkCue): void {
+    const { ac, parts } = this;
+    if (!this.on || !ac || !parts) return;
+    const rig = this.rigOf(ac, parts);
+    const at = ac.currentTime + delayS;
+    lampOut(rig, { at, pan, level: EMBER.lamp });
+    noiseBurst(rig, { at, freq: 4800, level: EMBER.hush, decay: COOL_S * 0.8, pan });
+    const falling = at + COOL_S;
+    whoosh(rig, {
+      at: falling,
+      seconds: SINK_S,
+      level: EMBER.breath.level,
+      q: EMBER.breath.q,
+      // The breath drops as the ember does, then the source's own motion bends it.
+      path: path.map((stop) => ({
+        at: stop.at,
+        pan: stop.pan,
+        freq: EMBER.breath.hz * (1 - (0.75 * stop.at) / SINK_S) * stop.doppler,
+      })),
+    });
+    const last = path.at(-1);
+    if (last) thump(rig, falling + SINK_S, EMBER.swallow, last.pan);
   }
 
   /** The graph the shared instruments play into. */

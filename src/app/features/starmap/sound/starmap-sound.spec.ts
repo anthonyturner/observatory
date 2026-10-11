@@ -13,6 +13,8 @@ function fakeScore() {
       void calls.push(`crackle ${pan} ${strength} ${seed} ${doppler}`),
     beep: (pan, hz, doppler) => void calls.push(`beep ${pan} ${hz} ${doppler}`),
     merge: ({ delayS, pan }) => void calls.push(`merge ${delayS} ${pan}`),
+    implode: ({ delayS, pan }) => void calls.push(`implode ${delayS} ${pan}`),
+    sink: ({ delayS, pan }) => void calls.push(`sink ${delayS} ${pan}`),
   };
   return { score, calls };
 }
@@ -72,13 +74,22 @@ describe('StarmapSound', () => {
     ]);
   });
 
-  it('booms for a merge only while it plays', () => {
+  it('sounds each way a pull request can leave, only while it plays', () => {
     const { sound, calls } = setUp();
-    sound.merged({ delayS: 1, pan: -0.5, whoosh: [] });
+    sound.exited({ exit: 'merge', cue: { delayS: 1, pan: -0.5, whoosh: [] } });
     sound.toggle();
-    sound.merged({ delayS: 0.5, pan: 0.25, whoosh: [] });
+    sound.exited({ exit: 'merge', cue: { delayS: 0.5, pan: 0.25, whoosh: [] } });
+    sound.exited({
+      exit: 'implosion',
+      cue: { delayS: 0.25, pan: -0.25, sweeps: true, whoosh: [] },
+    });
+    sound.exited({ exit: 'sink', cue: { delayS: 2, pan: 0.5, sink: [] } });
 
-    expect(calls.filter((c) => c.startsWith('merge'))).toEqual(['merge 0.5 0.25']);
+    expect(calls.filter((c) => /^(merge|implode|sink)/.test(c))).toEqual([
+      'merge 0.5 0.25',
+      'implode 0.25 -0.25',
+      'sink 2 0.5',
+    ]);
   });
 
   it('remembers the volume and fades out when turned off', () => {

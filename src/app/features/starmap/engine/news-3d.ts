@@ -19,16 +19,28 @@ import { Kit, vec } from './gpu-kit';
 import { rnd } from './rnd';
 import { NewsEffect3D } from './sky-frame';
 import {
-  DEPARTED_MAG,
+  EmberLook,
+  coolLook,
+  coolProgress,
+  sinkHead,
+  sinkLook,
+  sinkProgress,
+} from '../memory/closed-ember';
+import { DEPARTED_MAG, STREAK_RISE, streakHead, streakTravel } from '../memory/departure-exit';
+import {
   NOVA_FLASH,
   NOVA_RING,
   novaLook,
   novaProgress,
-  STREAK_RISE,
-  streakHead,
   streakProgress,
-  streakTravel,
 } from '../memory/merge-supernova';
+import {
+  COLLAPSE_CORE,
+  COLLAPSE_RING,
+  collapseLook,
+  collapseProgress,
+  squashStreakProgress,
+} from '../memory/squash-collapse';
 
 /* pr-starmap's 3D news: shells, a flash and debris that expand or fall
    inward on a star, and a streak for a pull request crossing the sky as it
@@ -204,11 +216,31 @@ function shooting(ctx: Context, request: NewsEffect3D): Effect3D {
   };
 }
 
-/**
- * A merged pull request: a white-gold flash and one ring of dust where its star
- * stood, then the streak. With motion off the flash alone plays.
- */
-function merging(ctx: Context, request: NewsEffect3D): Effect3D {
+/** An exit's first act, then unless motion is off the streak it hands over to. */
+function thenStreak(
+  ctx: Context,
+  request: NewsEffect3D,
+  first: Effect3D,
+  along: (p: number) => number,
+): Effect3D {
+  let streak: Effect3D | null = null;
+  return {
+    update(update) {
+      first.update(update);
+      const progress = along(update.p);
+      if (update.still || progress <= 0) return;
+      streak ??= shooting(ctx, request);
+      streak.update({ ...update, p: progress });
+    },
+    dispose() {
+      streak?.dispose();
+      first.dispose();
+    },
+  };
+}
+
+/** A white-gold flash and one ring of dust where the star stood. With motion off the flash alone plays. */
+function supernova(ctx: Context): Effect3D {
   const { scene, kit, camera } = ctx;
   const own: Own = (resource) => kit.owned.own(resource);
   const group = new Group();
@@ -216,29 +248,102 @@ function merging(ctx: Context, request: NewsEffect3D): Effect3D {
   const flash = flashMesh(own, NOVA_FLASH);
   const ring = shellMesh(own, NOVA_RING);
   group.add(flash, ring);
-  let streak: Effect3D | null = null;
   return {
-    update(update) {
-      const { p, from, still } = update;
+    update({ p, from, still }) {
       const q = novaProgress(p);
       group.visible = q !== null;
-      if (q !== null) {
-        group.position.copy(vec(from.x, from.y, from.z));
-        const r = worldRadius(DEPARTED_MAG, from.z, camera);
-        const look = novaLook(q);
-        flash.scale.setScalar(r * look.flashRadius);
-        flash.material.opacity = look.flashAlpha;
-        ring.visible = !still;
-        ring.scale.setScalar(r * look.ringRadius);
-        ring.material.uniforms['opacity'].value = look.ringAlpha;
-      }
-      const along = streakProgress(p);
-      if (still || along <= 0) return;
-      streak ??= shooting(ctx, request);
-      streak.update({ ...update, p: along });
+      if (q === null) return;
+      group.position.copy(vec(from.x, from.y, from.z));
+      const r = worldRadius(DEPARTED_MAG, from.z, camera);
+      const look = novaLook(q);
+      flash.scale.setScalar(r * look.flashRadius);
+      flash.material.opacity = look.flashAlpha;
+      ring.visible = !still;
+      ring.scale.setScalar(r * look.ringRadius);
+      ring.material.uniforms['opacity'].value = look.ringAlpha;
     },
     dispose() {
-      streak?.dispose();
+      kit.owned.release(group);
+    },
+  };
+}
+
+/**
+ * A ring falls in on the star, which shrinks to a point and flashes once. With
+ * motion off the core and the flash play, and the ring does not.
+ */
+function collapse(ctx: Context): Effect3D {
+  const { scene, kit, camera } = ctx;
+  const own: Own = (resource) => kit.owned.own(resource);
+  const group = new Group();
+  scene.add(group);
+  const core = flashMesh(own, COLLAPSE_CORE);
+  const ring = shellMesh(own, COLLAPSE_RING);
+  const point = flashMesh(own, '#ffffff');
+  group.add(core, ring, point);
+  return {
+    update({ p, from, still }) {
+      const q = collapseProgress(p);
+      group.visible = q !== null;
+      if (q === null) return;
+      group.position.copy(vec(from.x, from.y, from.z));
+      const r = worldRadius(DEPARTED_MAG, from.z, camera);
+      const look = collapseLook(q);
+      core.scale.setScalar(r * look.coreRadius);
+      core.material.opacity = look.coreAlpha;
+      point.scale.setScalar(r * look.flashRadius);
+      point.material.opacity = look.flashAlpha;
+      ring.visible = !still;
+      ring.scale.setScalar(r * look.ringRadius);
+      ring.material.uniforms['opacity'].value = look.ringAlpha;
+    },
+    dispose() {
+      kit.owned.release(group);
+    },
+  };
+}
+
+/**
+ * The star cools to an ember where it stood, then sinks into the black hole.
+ * With motion off the cooling alone plays.
+ */
+function sinking(ctx: Context, request: NewsEffect3D): Effect3D {
+  const { scene, kit, camera } = ctx;
+  const own: Own = (resource) => kit.owned.own(resource);
+  const group = new Group();
+  scene.add(group);
+  const glow = flashMesh(own, '#ffffff');
+  const halo = flashMesh(own, '#ffffff');
+  group.add(halo, glow);
+  const show = (at: { x: number; y: number; z: number }, radius: number, look: EmberLook): void => {
+    group.visible = true;
+    group.position.copy(vec(at.x, at.y, at.z));
+    const r = worldRadius(DEPARTED_MAG, at.z, camera) * radius;
+    for (const [mesh, size, share] of [
+      [glow, 1, 1],
+      [halo, 1.9, 0.22],
+    ] as const) {
+      mesh.material.color.set(look.colour).multiplyScalar(2);
+      mesh.scale.setScalar(r * size);
+      mesh.material.opacity = look.alpha * share;
+    }
+    request.onHead?.(ctx.toScreen(at.x, at.y, at.z));
+  };
+  return {
+    update({ p, from, still }) {
+      group.visible = false;
+      const q = coolProgress(p);
+      if (q !== null) {
+        const look = coolLook(q);
+        show(from, look.radius, look);
+        return;
+      }
+      const s = sinkProgress(p);
+      if (still || s <= 0) return;
+      const look = sinkLook(s);
+      show(sinkHead(from, s), look.radius, look);
+    },
+    dispose() {
       kit.owned.release(group);
     },
   };
@@ -270,7 +375,13 @@ export class NewsEffects3D {
 
   private build(request: NewsEffect3D): Effect3D {
     if (request.mode === 'shooting') return shooting(this.ctx, request);
-    if (request.mode === 'merged') return merging(this.ctx, request);
+    if (request.mode === 'merged') {
+      return thenStreak(this.ctx, request, supernova(this.ctx), streakProgress);
+    }
+    if (request.mode === 'squashed') {
+      return thenStreak(this.ctx, request, collapse(this.ctx), squashStreakProgress);
+    }
+    if (request.mode === 'closed') return sinking(this.ctx, request);
     return expanding(this.ctx, request);
   }
 

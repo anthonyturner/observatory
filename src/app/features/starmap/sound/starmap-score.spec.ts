@@ -1,4 +1,6 @@
+import { COOL_S, SINK_S } from '../memory/closed-ember';
 import { NOVA_S } from '../memory/merge-supernova';
+import { COLLAPSE_S } from '../memory/squash-collapse';
 import { WebAudioStarmapScore } from './starmap-score';
 
 /** A stand-in for the audio device: it records what is started and where it is panned. */
@@ -143,6 +145,145 @@ describe('WebAudioStarmapScore.merge whoosh', () => {
     expect(ramp[2]).toBeCloseTo(10 + NOVA_S + 1.5);
     expect(starts.length).toBeGreaterThan(0);
     score.stop();
+  });
+});
+
+describe('WebAudioStarmapScore.implode', () => {
+  const path = [
+    { at: 0.5, pan: -0.5, doppler: 1.1 },
+    { at: 1.5, pan: 0.5, doppler: 0.9 },
+  ];
+
+  it('sweeps in over the collapse, then snaps and whooshes as the star flashes', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+
+    score.implode({ delayS: 1, pan: 0.3, sweeps: true, whoosh: path });
+
+    const played = starts.slice(before);
+    const flash = 10 + 1 + COLLAPSE_S;
+    expect(played).toContain(11);
+    expect(played.filter((at) => at === flash).length).toBeGreaterThanOrEqual(4);
+    expect(played.every((at) => at >= 11)).toBe(true);
+    score.stop();
+  });
+
+  it('keeps only the snap when the collapse does not move', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+
+    score.implode({ delayS: 1, pan: 0.3, sweeps: false, whoosh: [] });
+
+    const played = starts.slice(before);
+    expect(played.length).toBeGreaterThanOrEqual(3);
+    expect(played.every((at) => at === 10 + 1 + COLLAPSE_S)).toBe(true);
+    score.stop();
+  });
+
+  it('pans its snap by the cue', async () => {
+    const { context, pans } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    pans.length = 0;
+
+    score.implode({ delayS: 0, pan: -0.6, sweeps: true, whoosh: [] });
+
+    expect(pans.length).toBeGreaterThan(2);
+    expect(pans.every((pan) => pan === -0.6)).toBe(true);
+    score.stop();
+  });
+
+  it('plays nothing before it starts or after it stops', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+
+    score.implode({ delayS: 0, pan: 0, sweeps: true, whoosh: [] });
+    expect(starts).toEqual([]);
+
+    await score.start();
+    score.stop();
+    const after = starts.length;
+    score.implode({ delayS: 0, pan: 0, sweeps: true, whoosh: [] });
+    expect(starts.length).toBe(after);
+  });
+});
+
+describe('WebAudioStarmapScore.sink', () => {
+  const path = [
+    { at: 0.4, pan: 0.5, doppler: 1 },
+    { at: 1.4, pan: -0.2, doppler: 1 },
+  ];
+
+  it('hushes as the star cools, then breathes low as it sinks, then thuds as the hole takes it', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+
+    score.sink({ delayS: 1, pan: 0.5, sink: path });
+
+    const played = starts.slice(before);
+    expect(played).toContain(11);
+    expect(played).toContain(11 + COOL_S);
+    expect(played).toContain(11 + COOL_S + SINK_S);
+    expect(played.every((at) => at >= 11)).toBe(true);
+    score.stop();
+  });
+
+  it('only cools when motion is off, since nothing sinks', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    const before = starts.length;
+
+    score.sink({ delayS: 1, pan: 0.5, sink: [] });
+
+    const played = starts.slice(before);
+    expect(played.length).toBeGreaterThan(0);
+    expect(played.every((at) => at < 11 + COOL_S)).toBe(true);
+    score.stop();
+  });
+
+  it('lets the breath fall in pitch along the path, bent by each stop’s Doppler factor', async () => {
+    const { context } = fakeAudio();
+    const freqs: [number, number][] = [];
+    const real = context.createBiquadFilter.bind(context);
+    context.createBiquadFilter = () => {
+      const filter = real() as unknown as { frequency: Record<string, unknown> };
+      filter.frequency['setValueAtTime'] = (value: number, at: number) =>
+        void freqs.push([value, at]);
+      filter.frequency['linearRampToValueAtTime'] = (value: number, at: number) =>
+        void freqs.push([value, at]);
+      return filter as unknown as BiquadFilterNode;
+    };
+    const score = new WebAudioStarmapScore(() => context);
+    await score.start();
+    freqs.length = 0;
+
+    score.sink({ delayS: 0, pan: 0, sink: path });
+
+    const breath = freqs.filter(([, at]) => at >= 10 + COOL_S).map(([value]) => value);
+    expect(breath.length).toBe(2);
+    expect(breath[1]).toBeLessThan(breath[0]);
+    score.stop();
+  });
+
+  it('plays nothing before it starts or after it stops', async () => {
+    const { context, starts } = fakeAudio();
+    const score = new WebAudioStarmapScore(() => context);
+
+    score.sink({ delayS: 0, pan: 0, sink: path });
+    expect(starts).toEqual([]);
+
+    await score.start();
+    score.stop();
+    const after = starts.length;
+    score.sink({ delayS: 0, pan: 0, sink: path });
+    expect(starts.length).toBe(after);
   });
 });
 

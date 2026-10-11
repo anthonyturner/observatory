@@ -10,6 +10,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- Merged, squashed and closed pull requests now leave the Review Queue's sky in three different ways, each with its own sound. A merge keeps its supernova. A squashed or rebased one collapses: a blue-white ring falls in as the star shrinks to a point that flashes once, then it streaks away, with a rising sweep and a snap. A closed one cools to a glowing ember and sinks into the black hole, with a soft hush and a low breath that falls with it, instead of crossing the sky as a shooting star. They look the same in the 2D and 3D skies, and with motion off each plays only its first part ([#620](https://github.com/anthonyturner/observatory/pull/636)).
 - A pull request that merges or closes now leaves the Review Queue's sky at the next refresh, every refresh, not only once per visit; one you merge on its own screen leaves as soon as you close that screen. If the sky is not in view (a screen over it, another sky, the list or a hidden tab) the exit waits and plays when it is back. A squashed or rebased merge is now its own kind of news, and each exit carries a snapshot of the star's planets, crew ship, satellites and meteor for the endings to come ([#619](https://github.com/anthonyturner/observatory/issues/619)).
 
 ### Fixed

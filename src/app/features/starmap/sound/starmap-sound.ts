@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { SatelliteState } from '../../../core/live-agents/satellites';
 
-import { MergeCue } from '../memory/merge-supernova';
+import { ExitCue } from '../memory/exits';
 import { StarmapScore, WebAudioStarmapScore } from './starmap-score';
 
 /** Makes the score; a test provides one that needs no audio device. */
@@ -107,9 +107,12 @@ export class StarmapSound {
     if (this.isOn()) this.score?.beep(pan, BEEP_HZ[state], doppler);
   }
 
-  /** A boom for a pull request that merged, only while the sound is on. */
-  merged(cue: MergeCue): void {
-    if (this.isOn()) this.score?.merge(cue);
+  /** The sound of a pull request leaving, by how it ended, only while the sound is on. */
+  exited({ exit, cue }: ExitCue): void {
+    if (!this.isOn()) return;
+    if (exit === 'merge') this.score?.merge(cue);
+    else if (exit === 'implosion') this.score?.implode(cue);
+    else this.score?.sink(cue);
   }
 
   private play(): void {

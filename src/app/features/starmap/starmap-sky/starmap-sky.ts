@@ -26,7 +26,7 @@ import { PlanLayer, PlanMark } from '../engine/plan-layer';
 import { TetherLayer, TetherTarget } from '../engine/tether-layer';
 import { COMET_CAP, Comet } from '../comets';
 import { NewsEvent, play } from '../memory/news';
-import { mergeCues } from '../memory/merge-supernova';
+import { exitCues } from '../memory/exits';
 import { Point } from '../sound/doppler';
 import { News, NewsLayer } from '../memory/news-layer';
 import { LogSkyLayout, LogStar } from '../../../core/logs/log-layout';
@@ -381,7 +381,7 @@ export class StarmapSky {
       entranceEnd: engine.entranceEnd(),
       frozen: engine.frozen,
     });
-    // A boom with no supernova to see (the list view, another sky) would be a ghost.
+    // A boom with no exit to see (the list view, another sky) would be a ghost.
     if (!this.hidden() && this.chart() === 'prs') this.boom(events, engine, now);
     engine.kick();
   }
@@ -396,8 +396,8 @@ export class StarmapSky {
       return { x: sx, y: sy, z: rises ? z * engine.camera.current.scale : 0 };
     };
     const frozen = engine.frozen;
-    for (const cue of mergeCues(events, { now, width, height, frozen, project })) {
-      this.sound.merged(cue);
+    for (const cue of exitCues(events, { now, width, height, frozen, project })) {
+      this.sound.exited(cue);
     }
   }
 

@@ -9,6 +9,7 @@ import {
   VoiceModelId,
   VoiceReply,
   VoiceRequest,
+  VoiceRole,
   WeightChoice,
 } from './voice-protocol';
 import { LIMIT_MS, within } from './within';
@@ -93,8 +94,8 @@ export class VoiceWorkerClient {
     return this.run({ model: 'listen', audio, prompt }, [audio.buffer]).then(readTranscript);
   }
 
-  synthesize(text: string): Promise<SpokenClip> {
-    return this.run({ model: 'speak', text }, []).then(readClip);
+  synthesize(text: string, role: VoiceRole): Promise<SpokenClip> {
+    return this.run({ model: 'speak', text, role }, []).then(readClip);
   }
 
   /** Ends the worker and every call waiting on it. `culprit` is the model

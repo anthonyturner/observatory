@@ -1,5 +1,12 @@
 import { ExitKind } from '../memory/exits';
-import { FAREWELLS, PREPARED_LINES, RESOLVED_LINE, endingLine, farewellFor } from './sky-lines';
+import {
+  CREW_PREPARED_LINES,
+  FAREWELLS,
+  JEV_PREPARED_LINES,
+  RESOLVED_LINE,
+  endingLine,
+  farewellFor,
+} from './sky-lines';
 
 describe('endingLine', () => {
   it('has a line of its own for a single ending of each kind', () => {
@@ -51,11 +58,15 @@ describe('farewellFor', () => {
 });
 
 describe('the lines made ahead', () => {
-  it('are the resolved line, each ending alone and every farewell', () => {
-    expect(PREPARED_LINES).toContain(RESOLVED_LINE);
-    expect(PREPARED_LINES).toContain('Merged!');
-    expect(PREPARED_LINES).toContain('Squashed and shipped!');
-    expect(PREPARED_LINES).toContain('Closed. Into the dark it goes.');
-    expect(FAREWELLS.every((line) => PREPARED_LINES.includes(line))).toBe(true);
+  it('are the resolved line and each ending alone for Jev, and every farewell for the crew', () => {
+    expect(JEV_PREPARED_LINES).toContain(RESOLVED_LINE);
+    expect(JEV_PREPARED_LINES).toContain('Merged!');
+    expect(JEV_PREPARED_LINES).toContain('Squashed and shipped!');
+    expect(JEV_PREPARED_LINES).toContain('Closed. Into the dark it goes.');
+    expect(CREW_PREPARED_LINES).toEqual(FAREWELLS);
+  });
+
+  it('never have Jev make a farewell or the crew make one of his', () => {
+    expect(JEV_PREPARED_LINES.some((line) => FAREWELLS.includes(line))).toBe(false);
   });
 });

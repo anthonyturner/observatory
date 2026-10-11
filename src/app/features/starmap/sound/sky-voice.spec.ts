@@ -9,13 +9,13 @@ import { ViewerSession } from '../../../core/session/viewer-session';
 import { ANNOUNCEMENT_VOICE } from '../../../core/voice/announcement-voice';
 import { LineClips } from '../../../core/voice/line-clips';
 import { SpeakPreference } from '../../../core/voice/speak-preference';
-import { SpokenClip } from '../../../core/voice/voice-protocol';
+import { SpokenClip, VoiceRole } from '../../../core/voice/voice-protocol';
 import { Resolution } from '../memory/departure-company';
 import { ExitStart } from '../memory/exits';
 import { Undock } from '../memory/undock';
 import { GAP_S } from './line-plan';
 import { SkyVoice } from './sky-voice';
-import { FAREWELLS, PREPARED_LINES, farewellFor } from './sky-lines';
+import { CREW_PREPARED_LINES, FAREWELLS, JEV_PREPARED_LINES, farewellFor } from './sky-lines';
 
 /** A clip one second long, one for each line, so what was played says what it was. */
 const clips = new Map<string, SpokenClip>();
@@ -45,7 +45,9 @@ const undock = (startAt: number, key: string): Undock => ({
 function setUp() {
   const made = new Set<string>();
   const asked: string[] = [];
-  const prepare = vi.fn<(texts: readonly string[]) => void>();
+  /** The voice each line was asked for in. */
+  const askedIn = new Map<string, VoiceRole>();
+  const prepare = vi.fn<(texts: readonly string[], role: VoiceRole) => void>();
   const speaker = signal('kokoro');
   const played: { clip: SpokenClip; at: number }[] = [];
   const announceClip = vi.fn((clip: SpokenClip) => played.push({ clip, at: wall() }));
@@ -63,8 +65,9 @@ function setUp() {
         useValue: {
           speaker,
           prepare,
-          clipOf: (text: string) => {
+          clipOf: (text: string, role: VoiceRole) => {
             asked.push(text);
+            askedIn.set(text, role);
             return made.has(text) ? clipOf(text) : null;
           },
         },
@@ -91,6 +94,7 @@ function setUp() {
     announceClip,
     played,
     asked,
+    askedIn,
     readyLine,
     isOn,
     isHidden,
@@ -181,7 +185,7 @@ describe('SkyVoice', () => {
 
     it('has a line for each way to end', () => {
       const { voice, readyLine, advance, played } = setUp();
-      PREPARED_LINES.forEach(readyLine);
+      [...JEV_PREPARED_LINES, ...CREW_PREPARED_LINES].forEach(readyLine);
 
       for (const kind of ['merged', 'squashed', 'closed'] as const) {
         voice.exited([exit(wall() + 0.1, kind)]);
@@ -205,6 +209,20 @@ describe('SkyVoice', () => {
       advance(1);
 
       expect(played.map((each) => each.clip)).toEqual([clipOf(farewellFor('crew:7'))]);
+    });
+
+    it('is asked for in the crew voice, while Jev’s own lines are asked for in his', () => {
+      const { voice, readyLine, advance, askedIn } = setUp();
+      [...JEV_PREPARED_LINES, ...CREW_PREPARED_LINES].forEach(readyLine);
+
+      voice.resolved([resolution(wall() + 0.5)]);
+      voice.exited([exit(wall() + 1)]);
+      voice.undocked([undock(wall() + 2, 'crew:7')]);
+      advance(3);
+
+      expect(askedIn.get('Resolved!')).toBe('jev');
+      expect(askedIn.get('Merged!')).toBe('jev');
+      expect(askedIn.get(farewellFor('crew:7'))).toBe('crew');
     });
 
     it('is said by at most two of a crowd, one after the other', () => {
@@ -235,7 +253,7 @@ describe('SkyVoice', () => {
 
     it('waits its turn behind the ending and the “Resolved!” before it, two at most', () => {
       const { voice, readyLine, advance, played } = setUp();
-      PREPARED_LINES.forEach(readyLine);
+      [...JEV_PREPARED_LINES, ...CREW_PREPARED_LINES].forEach(readyLine);
       const start = wall();
 
       voice.resolved([resolution(start)]);
@@ -333,7 +351,9 @@ describe('SkyVoice', () => {
     it('are queued while Speak is on, the tab is in view and this machine speaks', () => {
       const { prepare } = setUp();
 
-      expect(prepare).toHaveBeenCalledExactlyOnceWith(PREPARED_LINES);
+      expect(prepare).toHaveBeenCalledTimes(2);
+      expect(prepare).toHaveBeenCalledWith(JEV_PREPARED_LINES, 'jev');
+      expect(prepare).toHaveBeenCalledWith(CREW_PREPARED_LINES, 'crew');
     });
 
     it('are not queued with Speak off, and are once it is on', () => {
@@ -346,7 +366,7 @@ describe('SkyVoice', () => {
 
       isOn.set(true);
       TestBed.tick();
-      expect(prepare).toHaveBeenCalledTimes(1);
+      expect(prepare).toHaveBeenCalledTimes(2);
     });
 
     it('are queued again when the voice changes', () => {
@@ -356,7 +376,9 @@ describe('SkyVoice', () => {
       speaker.set('elevenlabs:rachel');
       TestBed.tick();
 
-      expect(prepare).toHaveBeenCalledExactlyOnceWith(PREPARED_LINES);
+      expect(prepare).toHaveBeenCalledTimes(2);
+      expect(prepare).toHaveBeenCalledWith(JEV_PREPARED_LINES, 'jev');
+      expect(prepare).toHaveBeenCalledWith(CREW_PREPARED_LINES, 'crew');
     });
   });
 });

@@ -1,6 +1,6 @@
 import { InjectionToken, inject } from '@angular/core';
 import { ChosenEngine } from './chosen-engine';
-import { SpokenClip } from './voice-protocol';
+import { SpokenClip, VoiceRole } from './voice-protocol';
 
 export interface WarmUpRequest {
   /** Whether a download question takes the focus; not when it comes unasked. */
@@ -27,10 +27,10 @@ export interface SpeechEngine {
    *  sentence each for a model with a short reach, larger pieces for one that
    *  speaks a whole paragraph in one breath. */
   parts(text: string): string[];
-  /** One piece as sound. Rejects with a VoiceError; `model` while the
-   *  engine is still getting ready. A failure that turned Speak off has been
-   *  reported by the engine already. */
-  synthesize(part: string): Promise<SpokenClip>;
+  /** One piece as sound, in the voice this engine gives `role`. Rejects with
+   *  a VoiceError; `model` while the engine is still getting ready. A failure
+   *  that turned Speak off has been reported by the engine already. */
+  synthesize(part: string, role: VoiceRole): Promise<SpokenClip>;
   /** Speak is off: let go of what it holds. */
   release(): void;
 }

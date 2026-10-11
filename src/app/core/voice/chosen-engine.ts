@@ -7,7 +7,7 @@ import { SpeechEngine, WarmUp, WarmUpRequest } from './speech-engine';
 import { VoiceCatalog } from './voice-catalog';
 import { VoiceEngineId } from './voice-choice';
 import { messageOf } from './voice-error';
-import { SpokenClip } from './voice-protocol';
+import { SpokenClip, VoiceRole } from './voice-protocol';
 
 /** Every engine a reply can be read by, by the name the viewer picks it by. */
 export const SPEECH_ENGINES = new InjectionToken<Readonly<Record<VoiceEngineId, SpeechEngine>>>(
@@ -41,15 +41,15 @@ export class ChosenEngine implements SpeechEngine {
     return this.current().parts(text);
   }
 
-  async synthesize(part: string): Promise<SpokenClip> {
+  async synthesize(part: string, role: VoiceRole): Promise<SpokenClip> {
     const engine = this.current();
     try {
-      return await engine.synthesize(part);
+      return await engine.synthesize(part, role);
     } catch (error: unknown) {
       // A line that may not ask changes nothing either: ElevenLabs stays
       // chosen, and the next reply falls back and says so.
       if (engine !== this.engines.elevenlabs || !this.mayAsk) throw error;
-      return this.speakInKokoro(part, error);
+      return this.speakInKokoro(part, role, error);
     }
   }
 
@@ -64,7 +64,7 @@ export class ChosenEngine implements SpeechEngine {
   /** ElevenLabs failed mid-reply: Kokoro takes over from this piece, cut to
    *  its own sentences and played as one. A Kokoro that must first ask to
    *  download leaves Speak off till it may. */
-  private async speakInKokoro(part: string, error: unknown): Promise<SpokenClip> {
+  private async speakInKokoro(part: string, role: VoiceRole, error: unknown): Promise<SpokenClip> {
     this.engines.elevenlabs.release();
     this.active.fallBack(failedWith(error));
     const kokoro = this.engines.kokoro;
@@ -75,7 +75,7 @@ export class ChosenEngine implements SpeechEngine {
       throw error;
     }
     const clips: SpokenClip[] = [];
-    for (const sentence of kokoro.parts(part)) clips.push(await kokoro.synthesize(sentence));
+    for (const sentence of kokoro.parts(part)) clips.push(await kokoro.synthesize(sentence, role));
     return joinedClips(clips);
   }
 }

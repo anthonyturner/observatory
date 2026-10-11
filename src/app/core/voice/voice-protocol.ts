@@ -14,10 +14,15 @@ export interface DevicePath {
   readonly dtype: WeightChoice;
 }
 
+/** Whose voice a line is spoken in. Each engine picks its own voice for a
+ *  role, so a caller never names one: `jev` reads replies, news and the sky's
+ *  announcements; `crew` is the ships and satellites, who must not sound like him. */
+export type VoiceRole = 'jev' | 'crew';
+
 export type RunRequest =
   /** `prompt` primes Whisper with words to expect; empty for none. */
   | { readonly model: 'listen'; readonly audio: Float32Array; readonly prompt: string }
-  | { readonly model: 'speak'; readonly text: string };
+  | { readonly model: 'speak'; readonly text: string; readonly role: VoiceRole };
 
 export type VoiceRequest =
   | ({ readonly op: 'load'; readonly model: VoiceModelId } & DevicePath)

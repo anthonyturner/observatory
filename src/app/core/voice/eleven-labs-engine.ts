@@ -5,7 +5,7 @@ import { ELEVENLABS_SPEECH, ElevenLabsRefusal, SpeechRequest } from './eleven-la
 import { SpeechEngine, WarmUp } from './speech-engine';
 import { VoiceCatalog } from './voice-catalog';
 import { VoiceError } from './voice-error';
-import { SpokenClip } from './voice-protocol';
+import { SpokenClip, VoiceRole } from './voice-protocol';
 import { joinedSentences } from './sentences';
 import { LIMIT_MS, within } from './within';
 
@@ -39,8 +39,8 @@ export class ElevenLabsEngine implements SpeechEngine {
   }
 
   /** Rejects with a `run` VoiceError whose message says why, as a clause. */
-  async synthesize(part: string): Promise<SpokenClip> {
-    const voice = this.active.elevenLabsVoice();
+  async synthesize(part: string, role: VoiceRole): Promise<SpokenClip> {
+    const voice = this.active.elevenLabsVoiceFor(role);
     if (!voice) throw new VoiceError(NO_VOICE, 'run');
     const encoded = await this.fetchSound({ text: part, voice: voice.id });
     return this.decode(encoded);

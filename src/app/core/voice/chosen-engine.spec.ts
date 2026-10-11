@@ -36,7 +36,7 @@ describe('ChosenEngine', () => {
     const { engine, kokoro, elevenlabs } = setUp('kokoro');
 
     await engine.warmUp(REQUEST);
-    await engine.synthesize('Hello.');
+    await engine.synthesize('Hello.', 'jev');
     engine.release();
 
     expect(kokoro.warmUps).toBe(1);
@@ -45,11 +45,28 @@ describe('ChosenEngine', () => {
     expect(elevenlabs.warmUps).toBe(0);
   });
 
+  it('passes the role on to whichever engine speaks', async () => {
+    const kokoro = setUp('kokoro');
+    await kokoro.engine.synthesize('Goodbye!', 'crew');
+    expect(kokoro.kokoro.roles).toEqual(['crew']);
+  });
+
+  it('keeps the role when ElevenLabs fails and Kokoro takes over the piece', async () => {
+    const { engine, kokoro, elevenlabs } = setUp('elevenlabs');
+    await engine.warmUp(REQUEST);
+    elevenlabs.failure = new VoiceError('rate limited', 'run');
+
+    await engine.synthesize('Goodbye. Soon.', 'crew');
+
+    expect(kokoro.said).toEqual(['Goodbye.', 'Soon.']);
+    expect(kokoro.roles).toEqual(['crew', 'crew']);
+  });
+
   it('hands everything to ElevenLabs when it is chosen and on', async () => {
     const { engine, kokoro, elevenlabs } = setUp('elevenlabs');
 
     expect(await engine.warmUp(REQUEST)).toBe('ready');
-    await engine.synthesize('Hello.');
+    await engine.synthesize('Hello.', 'jev');
     engine.release();
 
     expect(elevenlabs.said).toEqual(['Hello.']);
@@ -61,7 +78,7 @@ describe('ChosenEngine', () => {
     const { engine, kokoro, elevenlabs } = setUp('elevenlabs', { status: 'off' });
 
     await engine.warmUp(REQUEST);
-    await engine.synthesize('Hello.');
+    await engine.synthesize('Hello.', 'jev');
 
     expect(kokoro.said).toEqual(['Hello.']);
     expect(elevenlabs.warmUps).toBe(0);
@@ -79,8 +96,8 @@ describe('ChosenEngine', () => {
     await engine.warmUp(REQUEST);
     elevenlabs.failure = new VoiceError('the key was refused', 'run');
 
-    await engine.synthesize('First.');
-    await engine.synthesize('Second.');
+    await engine.synthesize('First.', 'jev');
+    await engine.synthesize('Second.', 'jev');
 
     expect(kokoro.said).toEqual(['First.', 'Second.']);
     expect(elevenlabs.released).toBe(1);
@@ -93,7 +110,7 @@ describe('ChosenEngine', () => {
     elevenlabs.failure = failure;
     kokoro.warmUpAnswer = 'asked';
 
-    await expect(engine.synthesize('Hello.')).rejects.toBe(failure);
+    await expect(engine.synthesize('Hello.', 'jev')).rejects.toBe(failure);
     expect(preference.isOn()).toBe(false);
     expect(kokoro.said).toEqual([]);
   });
@@ -104,7 +121,7 @@ describe('ChosenEngine', () => {
     const failure = new VoiceError('rate limited', 'run');
     elevenlabs.failure = failure;
 
-    await expect(engine.synthesize('Hello.')).rejects.toBe(failure);
+    await expect(engine.synthesize('Hello.', 'jev')).rejects.toBe(failure);
     expect(kokoro.warmUps).toBe(0);
     expect(elevenlabs.released).toBe(0);
     expect(active.fallbackReason()).toBeNull();
@@ -116,7 +133,7 @@ describe('ChosenEngine', () => {
     const failure = new VoiceError('no model', 'model');
     kokoro.failure = failure;
 
-    await expect(engine.synthesize('Hello.')).rejects.toBe(failure);
+    await expect(engine.synthesize('Hello.', 'jev')).rejects.toBe(failure);
   });
 
   it('cuts the reply as the engine that will speak it does', async () => {
@@ -132,7 +149,7 @@ describe('ChosenEngine', () => {
     await engine.warmUp(REQUEST);
     elevenlabs.failure = new VoiceError('rate limited', 'run');
 
-    const clip = await engine.synthesize('One. Two.');
+    const clip = await engine.synthesize('One. Two.', 'jev');
 
     expect(kokoro.said).toEqual(['One.', 'Two.']);
     expect(clip.audio.length).toBe(kokoro.clip.audio.length * 2);

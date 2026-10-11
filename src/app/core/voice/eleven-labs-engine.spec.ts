@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { AUDIO_DECODER, AudioDecoder } from './audio-decoder';
 import { ELEVENLABS_PART_CHARS, ElevenLabsEngine } from './eleven-labs-engine';
 import { ELEVENLABS_SPEECH, ElevenLabsRefusal, ElevenLabsSpeech } from './eleven-labs-speech';
-import { ADAM, ELEVENLABS_ON, fakeCatalog } from './testing/voice-catalog-fixture';
+import { ADAM, ELEVENLABS_ON, RACHEL, fakeCatalog } from './testing/voice-catalog-fixture';
 import { CatalogState } from './voice-catalog.types';
 import { VoiceChoice } from './voice-choice';
 import { VoiceError } from './voice-error';
@@ -37,16 +37,39 @@ describe('ElevenLabsEngine', () => {
     const { engine, speech, decoder, choice } = setUp();
     choice.chooseVoice(ADAM.id);
 
-    expect(await engine.synthesize('Voice check.')).toBe(CLIP);
+    expect(await engine.synthesize('Voice check.', 'jev')).toBe(CLIP);
     expect(speech.speak).toHaveBeenCalledWith({ text: 'Voice check.', voice: ADAM.id });
     expect(decoder.decode).toHaveBeenCalledWith(MP3);
+  });
+
+  it('speaks the crew in a voice that is not Jev’s', async () => {
+    const { engine, speech, choice } = setUp();
+    choice.chooseVoice(RACHEL.id);
+    await engine.synthesize('Goodbye!', 'crew');
+    choice.chooseVoice(ADAM.id);
+    await engine.synthesize('Goodbye!', 'crew');
+
+    expect(speech.speak.mock.calls.map(([request]) => request.voice)).toEqual([ADAM.id, RACHEL.id]);
+  });
+
+  it('speaks the crew in Jev’s voice when the account has no other', async () => {
+    const { engine, speech } = setUp({
+      status: 'on',
+      voices: [RACHEL],
+      defaultVoice: RACHEL.id,
+      failed: null,
+    });
+
+    await engine.synthesize('Goodbye!', 'crew');
+
+    expect(speech.speak).toHaveBeenCalledWith({ text: 'Goodbye!', voice: RACHEL.id });
   });
 
   it('fails in the site’s words when the site refuses', async () => {
     const { engine, speech } = setUp();
     speech.speak.mockRejectedValue(new ElevenLabsRefusal('the key was refused'));
 
-    await expect(engine.synthesize('Hello.')).rejects.toEqual(
+    await expect(engine.synthesize('Hello.', 'jev')).rejects.toEqual(
       new VoiceError('the key was refused', 'run'),
     );
   });
@@ -55,7 +78,7 @@ describe('ElevenLabsEngine', () => {
     const { engine, decoder } = setUp();
     decoder.decode.mockRejectedValue(new DOMException('bad', 'EncodingError'));
 
-    await expect(engine.synthesize('Hello.')).rejects.toEqual(
+    await expect(engine.synthesize('Hello.', 'jev')).rejects.toEqual(
       new VoiceError('it sent sound this browser couldn’t play', 'run'),
     );
   });
@@ -63,7 +86,7 @@ describe('ElevenLabsEngine', () => {
   it('fails without a call when the account has no voice', async () => {
     const { engine, speech } = setUp({ status: 'off' });
 
-    await expect(engine.synthesize('Hello.')).rejects.toBeInstanceOf(VoiceError);
+    await expect(engine.synthesize('Hello.', 'jev')).rejects.toBeInstanceOf(VoiceError);
     expect(speech.speak).not.toHaveBeenCalled();
   });
 

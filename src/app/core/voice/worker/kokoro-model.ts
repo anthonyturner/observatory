@@ -1,5 +1,5 @@
 import { VoiceError } from '../voice-error';
-import { RunRequest, SpokenClip, WeightFormat } from '../voice-protocol';
+import { RunRequest, SpokenClip, VoiceRole, WeightFormat } from '../voice-protocol';
 import { kokoroVoiceClass } from './kokoro-module';
 import { ModelEntry, PinnedModel, ReadyModel, formatOf, weightUrl } from './model-entry';
 import { inLane } from './run-lane';
@@ -9,7 +9,9 @@ const KOKORO: PinnedModel = {
   id: 'onnx-community/Kokoro-82M-v1.0-ONNX',
   revision: '1939ad2a8e416c0acfeecc08a694d14ef25f2231',
 };
-const VOICE = 'af_heart';
+/** Kokoro's own voices, at the pinned revision: a woman's American voice for
+ *  Jev, and a man's British one for the crew, which no one mistakes for hers. */
+const VOICES: Readonly<Record<VoiceRole, string>> = { jev: 'af_heart', crew: 'bm_george' };
 const SUFFIX: Readonly<Partial<Record<WeightFormat, string>>> = { fp32: '', q8: '_quantized' };
 const WARM_UP_TEXT = 'Ready.';
 
@@ -32,7 +34,7 @@ export const KOKORO_MODEL: ModelEntry = {
   },
 };
 
-class KokoroReady implements ReadyModel {
+export class KokoroReady implements ReadyModel {
   constructor(
     private readonly voice: KokoroVoice,
     private readonly model: Disposable,
@@ -41,7 +43,7 @@ class KokoroReady implements ReadyModel {
   async run(request: RunRequest): Promise<SpokenClip> {
     if (request.model !== 'speak') throw new Error('Kokoro only speaks');
     const { audio, sampling_rate: rate } = await this.voice.generate(request.text, {
-      voice: VOICE,
+      voice: VOICES[request.role],
     });
     if (!audio.length || audio.some(Number.isNaN)) {
       throw new VoiceError('The voice model made no sound on this device.', 'silent');
@@ -60,7 +62,7 @@ class KokoroReady implements ReadyModel {
  *  card that does the same with these fails here and falls back. */
 async function warmUp(ready: KokoroReady): Promise<void> {
   try {
-    await inLane(() => ready.run({ model: 'speak', text: WARM_UP_TEXT }));
+    await inLane(() => ready.run({ model: 'speak', text: WARM_UP_TEXT, role: 'jev' }));
   } catch (error: unknown) {
     await ready.dispose();
     throw error;

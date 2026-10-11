@@ -106,9 +106,21 @@ describe('VoiceWorkerClient', () => {
     expect(ports).toHaveLength(2);
   });
 
+  it('asks the worker to speak in the role it was given', async () => {
+    const { client, ports } = setup();
+    void client.synthesize('Goodbye!', 'crew').catch(() => undefined);
+
+    expect(ports[0].sent[0].request).toEqual({
+      op: 'run',
+      model: 'speak',
+      text: 'Goodbye!',
+      role: 'crew',
+    });
+  });
+
   it('reports a model lost when a run finds none, or the card drops it', async () => {
     const { client, ports, losses } = setup();
-    const spoken = client.synthesize('Hello.');
+    const spoken = client.synthesize('Hello.', 'jev');
     ports[0].answer({ op: 'failed', id: ports[0].lastId(), kind: 'unloaded', message: 'gone' });
     await expect(spoken).rejects.toSatisfy(kindOf('unloaded'));
     ports[0].answer({ op: 'lost', model: 'listen' });

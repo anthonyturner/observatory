@@ -63,6 +63,12 @@ h1 {
   margin-top: 14px;
 }
 
+/* Holds what the page projects without a box of its own, so each control stays one of the
+   column's items. */
+.slot {
+  display: contents;
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -207,7 +213,9 @@ h1 {
     pointer-events: none;
   }
 
-  .side > * {
+  /* Encapsulated styles cannot reach the page's projected controls, so they inherit the pointer
+     from the slot instead. */
+  .slot {
     pointer-events: auto;
   }
 

@@ -14,7 +14,7 @@
   }
 </div>
 <div class="side">
-  <ng-content />
+  <div class="slot"><ng-content /></div>
   @if (chips().length) {
     <div class="legend">
       @for (chip of chips(); track chip.id) {

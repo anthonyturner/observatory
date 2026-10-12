@@ -612,6 +612,8 @@ export class StarmapPage {
   );
   /** What the last search said when it found nothing. */
   protected readonly searchMiss = signal<string | null>(null);
+  /** Whether the search shows something under its box, which lifts the top HUD. */
+  protected readonly searchReachesBelow = signal(false);
   /** The body the nursery rings: an open issue's, else the card's. */
   protected readonly ringedIssue = computed(
     () => this.issues.windowIssue() ?? this.issues.picked()?.issue?.number ?? null,

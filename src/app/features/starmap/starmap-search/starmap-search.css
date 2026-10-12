@@ -144,13 +144,19 @@ input:focus-visible,
 }
 
 /* The screen's top-right corner, where the page pins this on the same screens (starmap-page.css),
-   holds a compact box. */
+   holds a compact box. A miss there can fall across the project bar's tabs, so it sits on the
+   box's glass. */
 @media (min-width: 1200px) and (min-height: 501px) {
   :host {
     max-width: 320px;
   }
 
   .miss {
-    text-align: right;
+    align-self: flex-end;
+    padding: 3px 11px;
+    border: 1px solid var(--edge-soft);
+    border-radius: 999px;
+    background: var(--panel);
+    backdrop-filter: blur(14px) saturate(140%);
   }
 }

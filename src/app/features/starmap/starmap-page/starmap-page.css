@@ -17,15 +17,20 @@
   z-index: 5;
 }
 
-/* Level with the project bar and after it, so the search's suggestions open over the bar's tabs
-   where they wrap under the top-right corner. The header's own box reaches up behind the bar,
-   so only its contents take the pointer (starmap-header.css). */
 .hud.top {
   top: 0;
   padding-top: var(--page-inset-top);
-  z-index: 6;
 }
 
+/* While the search shows something under its box, the top HUD rises over the project bar, whose
+   tabs wrap under the top-right corner on a mid-width screen, and over the panels and playlist,
+   as a native drop-down would. */
+.hud.top.lifted {
+  z-index: 7;
+}
+
+/* The header's own box reaches up behind the project bar, so only its contents take the pointer
+   (starmap-header.css), and a lifted HUD still leaves the tabs clickable. */
 .hud.top > app-starmap-header {
   pointer-events: none;
 }

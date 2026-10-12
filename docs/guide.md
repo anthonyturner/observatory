@@ -561,7 +561,7 @@ or press **Replay** to watch the sky change, **[** and **]** to step, and
 - **Sprint** time-boxes a review: pick 15, 25 or 45 minutes and the queue fills
   it with pull requests that fit. A timer counts down, and you get a summary at
   the end.
-- **Search**, at the top right above the legend, finds a pull request or issue
+- **Search**, in the top-right corner, finds a pull request or issue
   by title or number. Press Enter or the magnifier to go.
 - **Triage.** Mark a pull request seen, snooze it, or dismiss it until it
   changes. Triage stays in Observatory; nothing is written to GitHub.

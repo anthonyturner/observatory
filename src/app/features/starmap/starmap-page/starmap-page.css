@@ -93,3 +93,13 @@
   bottom: var(--playlist-clear-bottom, 0px);
   padding-right: max(var(--playlist-clear-right, 20px), calc(var(--panel-clear, 0px) + 10px));
 }
+
+/* Wide and tall enough, the search takes the screen's top-right corner, level with the status
+   strip and above the project bar's row; the legend keeps the header's column below it. */
+@media (min-width: 1200px) and (min-height: 501px) {
+  app-starmap-search {
+    position: fixed;
+    top: var(--status-strip-top);
+    right: var(--page-inset-x);
+  }
+}

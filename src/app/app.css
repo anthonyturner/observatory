@@ -70,7 +70,7 @@
    Its layer is below the sheets and docks (8 and up), so an open one covers it. */
 .status {
   position: fixed;
-  top: calc(4px + env(safe-area-inset-top, 0px));
+  top: var(--status-strip-top);
   left: 50%;
   z-index: 7;
   transform: translateX(-50%);

@@ -20,6 +20,8 @@
      from the side. The project bar and each project screen's header both start here. */
   --page-inset-top: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
   --page-inset-x: 20px;
+  /* The status strip's top edge, which a control in the screen's top corner lines up with. */
+  --status-strip-top: calc(4px + env(safe-area-inset-top, 0px));
 
   /* A pull request's risk tag on its star card. */
   --risk-low: var(--ok);

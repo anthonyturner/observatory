@@ -22,6 +22,19 @@
   padding-top: var(--page-inset-top);
 }
 
+/* While the search shows something under its box, the top HUD rises over the project bar, whose
+   tabs wrap under the top-right corner on a mid-width screen, and over the panels and playlist,
+   as a native drop-down would. */
+.hud.top.lifted {
+  z-index: 7;
+}
+
+/* The header's own box reaches up behind the project bar, so only its contents take the pointer
+   (starmap-header.css), and a lifted HUD still leaves the tabs clickable. */
+.hud.top > app-starmap-header {
+  pointer-events: none;
+}
+
 .hud.bottom {
   bottom: 0;
   padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
@@ -92,4 +105,14 @@
 .hud.bottom {
   bottom: var(--playlist-clear-bottom, 0px);
   padding-right: max(var(--playlist-clear-right, 20px), calc(var(--panel-clear, 0px) + 10px));
+}
+
+/* Wide and tall enough, the search takes the screen's top-right corner, level with the status
+   strip and above the project bar's row; the legend keeps the header's column below it. */
+@media (min-width: 1200px) and (min-height: 501px) {
+  app-starmap-search {
+    position: fixed;
+    top: var(--status-strip-top);
+    right: var(--page-inset-x);
+  }
 }

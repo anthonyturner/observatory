@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { outputFromObservable, toObservable } from '@angular/core/rxjs-interop';
 import { suggestionParts, suggestionsFor } from '../sky-search';
 
 /** How many suggestions the list shows at once. */
@@ -33,6 +34,14 @@ export class StarmapSearch {
     this.shown().map((suggestion) => ({ suggestion, ...suggestionParts(suggestion) })),
   );
   protected readonly expanded = computed(() => this.isOpen() && this.shown().length > 0);
+  /** What the box held when it last searched. */
+  private readonly sent = signal('');
+  /** The miss, while the box still holds the words that missed; typing new ones clears it. */
+  protected readonly shownMiss = computed(() => (this.query() === this.sent() ? this.miss() : null));
+  /** Whether the suggestions or a miss show under the box, so the page can lift them over what they cross. */
+  readonly reachesBelow = outputFromObservable(
+    toObservable(computed(() => this.expanded() || this.shownMiss() !== null)),
+  );
 
   protected open(): void {
     this.isOpen.set(true);
@@ -69,12 +78,17 @@ export class StarmapSearch {
   protected pick(suggestion: string): void {
     this.query.set(suggestion);
     this.close();
-    this.find.emit(suggestion);
+    this.send(suggestion);
   }
 
   protected submit(event: Event): void {
     event.preventDefault();
     this.close();
-    if (this.query().trim()) this.find.emit(this.query());
+    if (this.query().trim()) this.send(this.query());
+  }
+
+  private send(query: string): void {
+    this.sent.set(query);
+    this.find.emit(query);
   }
 }

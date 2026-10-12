@@ -10,7 +10,7 @@
       autocomplete="off"
       [attr.aria-expanded]="expanded()"
       [attr.aria-activedescendant]="active() >= 0 ? 'starmap-search-option-' + active() : null"
-      [attr.aria-describedby]="miss() ? 'starmap-search-miss' : null"
+      [attr.aria-describedby]="shownMiss() ? 'starmap-search-miss' : null"
       [value]="query()"
       (click)="open()"
       (focus)="open()"
@@ -43,7 +43,7 @@
       }
     </ul>
   </div>
-  @if (miss(); as words) {
+  @if (shownMiss(); as words) {
     <span id="starmap-search-miss" class="miss" role="status">{{ words }}</span>
   }
 </form>

@@ -3,6 +3,13 @@
   display: block;
 }
 
+/* The page may leave the header's own box, which reaches up behind the project bar, out of the
+   pointer; what the header shows still takes it. */
+.brand,
+.side {
+  pointer-events: auto;
+}
+
 .brand {
   display: flex;
   flex-wrap: wrap;
@@ -198,9 +205,9 @@ h1 {
   }
 }
 
-/* Wide and tall enough, the legend and the page's search move to a column pinned top right, the
-   search above the legend, level with the title and below the project bar, which spans the
-   screen. Only the controls take the pointer; the sky shows through the rest. */
+/* Wide and tall enough, the legend and what the page projects move to a column pinned top right,
+   level with the title and below the project bar, which spans the screen. Only the controls take
+   the pointer; the sky shows through the rest. */
 @media (min-width: 1200px) and (min-height: 501px) {
   .side {
     position: fixed;

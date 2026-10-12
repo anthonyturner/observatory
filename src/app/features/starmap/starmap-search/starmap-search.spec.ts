@@ -119,4 +119,33 @@ describe('StarmapSearch', () => {
 
     expect(element.querySelector('.miss')?.textContent).toContain('nebula');
   });
+
+  it('tells the page while its suggestions or a miss show under the box', () => {
+    const { fixture, box, key } = render();
+    const reaches: boolean[] = [];
+    fixture.componentInstance.reachesBelow.subscribe((value) => reaches.push(value));
+
+    box.click();
+    fixture.detectChanges();
+    key('Escape');
+    fixture.componentRef.setInput('miss', 'Nothing matches “nebula”.');
+    fixture.detectChanges();
+
+    expect(reaches).toEqual([false, true, false, true]);
+  });
+
+  it('drops a miss once new words are typed, and shows it again for the words that missed', () => {
+    const { fixture, element, typeIn } = render();
+    typeIn('nebula');
+    element.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
+    fixture.componentRef.setInput('miss', 'Nothing matches “nebula”.');
+    fixture.detectChanges();
+    expect(element.querySelector('.miss')).not.toBeNull();
+
+    typeIn('nebul');
+    expect(element.querySelector('.miss')).toBeNull();
+
+    typeIn('nebula');
+    expect(element.querySelector('.miss')).not.toBeNull();
+  });
 });

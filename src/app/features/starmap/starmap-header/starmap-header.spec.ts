@@ -59,9 +59,10 @@ describe('StarmapHeader', () => {
     const side = element.querySelector('.side');
 
     expect(Array.from(side?.children ?? []).map((child) => child.className)).toEqual([
-      'projected',
+      'slot',
       'legend',
     ]);
+    expect(element.querySelector('.side > .slot > .projected')).not.toBeNull();
     expect(element.querySelector('.brand .projected')).toBeNull();
   });
 

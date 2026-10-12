@@ -3,6 +3,13 @@
   display: block;
 }
 
+/* The page may leave the header's own box, which reaches up behind the project bar, out of the
+   pointer; what the header shows still takes it. */
+.brand,
+.side {
+  pointer-events: auto;
+}
+
 .brand {
   display: flex;
   flex-wrap: wrap;

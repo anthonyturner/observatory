@@ -17,9 +17,17 @@
   z-index: 5;
 }
 
+/* Level with the project bar and after it, so the search's suggestions open over the bar's tabs
+   where they wrap under the top-right corner. The header's own box reaches up behind the bar,
+   so only its contents take the pointer (starmap-header.css). */
 .hud.top {
   top: 0;
   padding-top: var(--page-inset-top);
+  z-index: 6;
+}
+
+.hud.top > app-starmap-header {
+  pointer-events: none;
 }
 
 .hud.bottom {

@@ -1,8 +1,13 @@
 /* Sits beside the up-link and matches its pill; the current screen carries a
-   bar under it, so it never rests on colour alone. */
+   bar under it, so it never rests on colour alone. Below 1200px the same links
+   fold behind `.toggle` (the Review Queue's wide tier starts there). */
 :host {
   display: block;
   width: fit-content;
+}
+
+.toggle {
+  display: none;
 }
 
 nav {
@@ -80,4 +85,131 @@ a[aria-current='page'] {
   letter-spacing: 0;
   line-height: 14px;
   text-align: center;
+}
+
+.toggle {
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px 4px 9px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.toggle:hover {
+  border-color: var(--flow);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+.glyph {
+  color: var(--flow);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--security-badge);
+}
+
+.toggle .badge {
+  margin-left: 0;
+}
+
+@media (max-width: 1199px) {
+  .toggle {
+    display: inline-flex;
+  }
+
+  /* Anchored to the project bar, which is `position: fixed`, and not to the button: the button
+     can sit anywhere along a wrapped bar, and a list hung from it could run off the screen. */
+  nav {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    flex-direction: column;
+    width: min(240px, calc(100vw - 2 * var(--page-inset-x)));
+    max-height: calc(100dvh - var(--page-inset-top) - var(--project-bar-height, 40px) - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 14px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition:
+      opacity 0.1s,
+      transform 0.1s,
+      visibility 0s 0.1s;
+  }
+
+  nav.open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+      opacity 0.15s ease-out,
+      transform 0.15s ease-out,
+      visibility 0s;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+    padding: 4px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--edge-soft);
+    border-left: 2px solid transparent;
+  }
+
+  a:last-child {
+    border-bottom: 0;
+  }
+
+  a.quiet {
+    padding-inline: 12px;
+  }
+
+  a[aria-current='page'] {
+    border-bottom-color: var(--edge-soft);
+    border-left-color: var(--flow);
+  }
+
+  a[aria-current='page']:last-child {
+    border-bottom-color: transparent;
+  }
+
+  a:focus-visible {
+    outline-offset: -4px;
+  }
+}
+
+@media (max-width: 1199px) and (pointer: coarse) {
+  a {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  nav,
+  nav.open {
+    transition: none;
+  }
 }

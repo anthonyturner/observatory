@@ -1,5 +1,6 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ViewerSession } from '../../core/session/viewer-session';
 import {
@@ -155,5 +156,191 @@ describe('ProjectTabs', () => {
     fixture.componentRef.setInput('repo', 'me/calm');
     fixture.detectChanges();
     expect(security()?.querySelector('.badge')).toBeNull();
+  });
+
+  describe('as a menu below the breakpoint', () => {
+    @Component({ template: '' })
+    class Page {}
+
+    const mount = (current = 'releases', badges: TabBadge[] = []) => {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([{ path: '**', component: Page }]),
+          { provide: TAB_BADGES, useValue: badges },
+          { provide: QUIET_TABS, useValue: [] },
+        ],
+      });
+      const fixture = TestBed.createComponent(ProjectTabs);
+      fixture.componentRef.setInput('repo', 'me/app');
+      fixture.componentRef.setInput('current', current);
+      document.body.append(fixture.nativeElement);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      const button = host.querySelector('button') as HTMLButtonElement;
+      return { fixture, host, button, nav: host.querySelector('nav') as HTMLElement };
+    };
+    const security = (count: number | null): TabBadge => ({
+      tabId: 'security',
+      noun: 'open alert',
+      count: () => of(count),
+    });
+    const escape = () => new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+
+    afterEach(() => document.body.replaceChildren());
+
+    it('is a closed disclosure button that controls the list of links, not a role="menu"', () => {
+      const { fixture, host, button, nav } = mount();
+
+      expect(button.type).toBe('button');
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      expect(button.getAttribute('aria-controls')).toBe(nav.id);
+      expect(nav.getAttribute('aria-label')).toBe('Project screens');
+      expect(host.querySelector('[role]')).toBeNull();
+
+      button.click();
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-expanded')).toBe('true');
+      expect(nav.classList).toContain('open');
+
+      button.click();
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('names the current screen on the button', () => {
+      expect(mount('security').button.textContent).toContain('Security');
+    });
+
+    it('names the button "Screens" when the current screen is none of the tabs', () => {
+      expect(mount('').button.textContent).toContain('Screens');
+    });
+
+    it('lists every screen once, in the list the button controls', () => {
+      const { host, nav } = mount();
+
+      expect(host.querySelectorAll('a')).toHaveLength(PROJECT_TABS.length);
+      expect(nav.querySelectorAll('a')).toHaveLength(PROJECT_TABS.length);
+      expect(nav.querySelector('a[aria-current="page"]')?.textContent).toContain('Releases');
+    });
+
+    it('shows a dot, not a number, on the closed button while another screen has a badge', () => {
+      const { button } = mount('queue', [security(3)]);
+
+      expect(button.querySelector('.dot')).not.toBeNull();
+      expect(button.querySelector('.dot')?.getAttribute('aria-hidden')).toBe('true');
+      expect(button.querySelector('.badge')).toBeNull();
+      expect(button.querySelector('.visually-hidden')?.textContent).toBe(
+        ', Security: 3 open alerts',
+      );
+    });
+
+    it('shows the count inline instead of the dot when the current screen is the badged one', () => {
+      const { button } = mount('security', [security(3)]);
+
+      expect(button.querySelector('.badge')?.textContent).toBe('3');
+      expect(button.querySelector('.dot')).toBeNull();
+    });
+
+    it('shows no dot and says nothing extra when no screen has a badge', () => {
+      const { button } = mount('queue', [security(0)]);
+
+      expect(button.querySelector('.dot')).toBeNull();
+      expect(button.querySelector('.visually-hidden')).toBeNull();
+    });
+
+    it('closes on Escape, keeps the key from the page and puts focus back on the button', () => {
+      const { fixture, button, nav } = mount();
+      const page = vi.fn();
+      document.addEventListener('keydown', page);
+      button.click();
+      fixture.detectChanges();
+      nav.querySelector('a')?.focus();
+
+      nav.querySelector('a')?.dispatchEvent(escape());
+      fixture.detectChanges();
+      document.removeEventListener('keydown', page);
+
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(button);
+      expect(page).not.toHaveBeenCalled();
+    });
+
+    it('leaves Escape to the page while the list is closed', () => {
+      const { button } = mount();
+      const page = vi.fn();
+      document.addEventListener('keydown', page);
+
+      button.dispatchEvent(escape());
+      document.removeEventListener('keydown', page);
+
+      expect(page).toHaveBeenCalledOnce();
+    });
+
+    it('closes when a link is chosen, leaving focus on the button', () => {
+      const { fixture, button, nav } = mount();
+      button.click();
+      fixture.detectChanges();
+
+      nav.querySelector<HTMLElement>('a[href$="/depth"]')?.click();
+      fixture.detectChanges();
+
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(button);
+    });
+
+    it('closes on any navigation, such as the browser back button', async () => {
+      const { fixture, button } = mount();
+      button.click();
+      fixture.detectChanges();
+
+      await TestBed.inject(Router).navigateByUrl('/p/me/app/depth');
+      fixture.detectChanges();
+
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('closes on a click outside, and stays open on a click inside', () => {
+      const { fixture, nav, button } = mount();
+      button.click();
+      fixture.detectChanges();
+
+      nav.click();
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-expanded')).toBe('true');
+
+      document.body.click();
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('closes when focus moves out of it', () => {
+      const { fixture, host, button } = mount();
+      const elsewhere = document.body.appendChild(document.createElement('button'));
+      button.click();
+      fixture.detectChanges();
+
+      host.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: elsewhere }));
+      fixture.detectChanges();
+
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('closes on a resize that takes the button away, and not on one that leaves it', () => {
+      const { fixture, button } = mount();
+      const style = vi.spyOn(window, 'getComputedStyle');
+      button.click();
+      fixture.detectChanges();
+
+      style.mockReturnValue({ display: 'inline-flex' } as CSSStyleDeclaration);
+      window.dispatchEvent(new Event('resize'));
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-expanded')).toBe('true');
+
+      style.mockReturnValue({ display: 'none' } as CSSStyleDeclaration);
+      window.dispatchEvent(new Event('resize'));
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      style.mockRestore();
+    });
   });
 });

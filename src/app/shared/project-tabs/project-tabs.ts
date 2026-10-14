@@ -1,7 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
-import { Observable, combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { Observable, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
 import { plural } from '../text/plural';
 import { QuietTab } from './quiet-tab';
 import { QUIET_TABS } from './quiet-tabs';
@@ -78,10 +87,26 @@ interface TabLink {
   readonly isQuiet: boolean;
 }
 
+/** What the collapsed menu's button shows: the current screen, and that a badge is waiting. */
+interface ToggleView {
+  readonly name: string;
+  /** The current screen's own count, shown beside its name. */
+  readonly count: string | null;
+  /** Another screen has a badge: a dot with no number, which would read as this screen's. */
+  readonly hasDot: boolean;
+  /** Every badge, read out after the name: "Security: 3 open alerts". */
+  readonly spoken: string | null;
+}
+
 type BadgeCounts = ReadonlyMap<string, BadgeView>;
 
 const NO_BADGES: BadgeCounts = new Map();
 const NONE_QUIET: ReadonlySet<string> = new Set();
+
+/** The button's name while the current screen is none of the tabs. */
+const UNKNOWN_SCREEN = 'Screens';
+
+let menus = 0;
 
 /** Each badge's count for `repo`, as views by tab id; a count of none shows no badge. */
 function badgeViews(badges: readonly TabBadge[], repo: string): Observable<BadgeCounts> {
@@ -120,18 +145,33 @@ function quietIds(tabs: readonly QuietTab[], repo: string): Observable<ReadonlyS
   );
 }
 
-/** The row of a project's screens: links, the current one marked as the page. It only navigates;
- *  the project's other controls sit beside it in the project shell. */
+/**
+ * A project's screens: links, the current one marked as the page. It only
+ * navigates; the project's other controls sit beside it in the project shell.
+ *
+ * The links are rendered once. The stylesheet shows them as a row on a wide
+ * screen and, on a narrow one, behind a button as a drop-down: the disclosure
+ * navigation pattern, whose list is plain links and not a `role="menu"`.
+ */
 @Component({
   selector: 'app-project-tabs',
   imports: [RouterLink],
   templateUrl: './project-tabs.html',
   styleUrl: './project-tabs.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.open]': 'isOpen()',
+    '(document:click)': 'closeOutside($event)',
+    '(keydown.escape)': 'closeOnEscape($event)',
+    '(focusout)': 'closeWhenFocusLeaves($event)',
+    '(window:resize)': 'closeWhenNotCollapsed()',
+  },
 })
 export class ProjectTabs {
   private readonly badges = inject(TAB_BADGES);
   private readonly quietTabs = inject(QUIET_TABS);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly button = viewChild.required<ElementRef<HTMLButtonElement>>('button');
 
   /** `owner/name`. */
   readonly repo = input.required<string>();
@@ -157,4 +197,69 @@ export class ProjectTabs {
       isQuiet: this.quiet().has(tab.id),
     })),
   );
+
+  protected readonly toggleView = computed((): ToggleView => {
+    const links = this.links();
+    const current = links.find((link) => link.isCurrent);
+    const badged = links.flatMap((link) =>
+      link.badge ? [`${link.label}: ${link.badge.spoken}`] : [],
+    );
+    return {
+      name: current?.label ?? UNKNOWN_SCREEN,
+      count: current?.badge?.shown ?? null,
+      hasDot: badged.length > 0 && !current?.badge,
+      spoken: badged.length ? badged.join(', ') : null,
+    };
+  });
+
+  protected readonly menuId = `project-tabs-menu-${++menus}`;
+  protected readonly isOpen = signal(false);
+
+  constructor() {
+    inject(Router)
+      .events.pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.isOpen.set(false));
+  }
+
+  protected toggle(): void {
+    this.isOpen.update((open) => !open);
+  }
+
+  /** Choosing a screen closes the list and leaves focus on the button, not on a hidden link. */
+  protected chooseLink(): void {
+    if (this.isOpen()) this.closeToButton();
+  }
+
+  protected closeOnEscape(event: Event): void {
+    if (!this.isOpen()) return;
+    // The page closes its top card on Escape; here it closes only the list.
+    event.stopPropagation();
+    this.closeToButton();
+  }
+
+  protected closeOutside(event: MouseEvent): void {
+    if (this.isOpen() && !this.host.nativeElement.contains(event.target as Node)) {
+      this.isOpen.set(false);
+    }
+  }
+
+  protected closeWhenFocusLeaves(event: FocusEvent): void {
+    const next = event.relatedTarget;
+    if (next instanceof Node && !this.host.nativeElement.contains(next)) this.isOpen.set(false);
+  }
+
+  /** The button is shown only below the breakpoint, which only the stylesheet knows. */
+  protected closeWhenNotCollapsed(): void {
+    if (this.isOpen() && getComputedStyle(this.button().nativeElement).display === 'none') {
+      this.isOpen.set(false);
+    }
+  }
+
+  private closeToButton(): void {
+    this.isOpen.set(false);
+    this.button().nativeElement.focus();
+  }
 }

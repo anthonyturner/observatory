@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
+  afterNextRender,
   computed,
   inject,
   input,
@@ -11,6 +13,7 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { Observable, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
+import { ELEMENT_SIZE } from '../element-size/element-size';
 import { plural } from '../text/plural';
 import { QuietTab } from './quiet-tab';
 import { QUIET_TABS } from './quiet-tabs';
@@ -90,7 +93,6 @@ interface TabLink {
 /** What the collapsed menu's button shows: the current screen, and that a badge is waiting. */
 interface ToggleView {
   readonly name: string;
-  /** The current screen's own count, shown beside its name. */
   readonly count: string | null;
   /** Another screen has a badge: a dot with no number, which would read as this screen's. */
   readonly hasDot: boolean;
@@ -103,7 +105,6 @@ type BadgeCounts = ReadonlyMap<string, BadgeView>;
 const NO_BADGES: BadgeCounts = new Map();
 const NONE_QUIET: ReadonlySet<string> = new Set();
 
-/** The button's name while the current screen is none of the tabs. */
 const UNKNOWN_SCREEN = 'Screens';
 
 let menus = 0;
@@ -160,11 +161,11 @@ function quietIds(tabs: readonly QuietTab[], repo: string): Observable<ReadonlyS
   styleUrl: './project-tabs.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    // The project shell raises its bar above the page while this class is set.
     '[class.open]': 'isOpen()',
-    '(document:click)': 'closeOutside($event)',
+    '(document:pointerdown)': 'closeOutside($event)',
     '(keydown.escape)': 'closeOnEscape($event)',
     '(focusout)': 'closeWhenFocusLeaves($event)',
-    '(window:resize)': 'closeWhenNotCollapsed()',
   },
 })
 export class ProjectTabs {
@@ -216,6 +217,15 @@ export class ProjectTabs {
   protected readonly isOpen = signal(false);
 
   constructor() {
+    const sizeOf = inject(ELEMENT_SIZE);
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() =>
+      sizeOf(this.button().nativeElement)
+        .pipe(takeUntilDestroyed(destroyRef))
+        .subscribe(({ width, height }) => {
+          if (!width && !height) this.isOpen.set(false);
+        }),
+    );
     inject(Router)
       .events.pipe(
         filter((event) => event instanceof NavigationEnd),
@@ -224,8 +234,14 @@ export class ProjectTabs {
       .subscribe(() => this.isOpen.set(false));
   }
 
+  /** Opening focuses the button, so Escape reaches the list even where a click does not focus. */
   protected toggle(): void {
-    this.isOpen.update((open) => !open);
+    if (this.isOpen()) {
+      this.isOpen.set(false);
+      return;
+    }
+    this.isOpen.set(true);
+    this.button().nativeElement.focus();
   }
 
   /** Choosing a screen closes the list and leaves focus on the button, not on a hidden link. */
@@ -240,7 +256,7 @@ export class ProjectTabs {
     this.closeToButton();
   }
 
-  protected closeOutside(event: MouseEvent): void {
+  protected closeOutside(event: Event): void {
     if (this.isOpen() && !this.host.nativeElement.contains(event.target as Node)) {
       this.isOpen.set(false);
     }
@@ -249,13 +265,6 @@ export class ProjectTabs {
   protected closeWhenFocusLeaves(event: FocusEvent): void {
     const next = event.relatedTarget;
     if (next instanceof Node && !this.host.nativeElement.contains(next)) this.isOpen.set(false);
-  }
-
-  /** The button is shown only below the breakpoint, which only the stylesheet knows. */
-  protected closeWhenNotCollapsed(): void {
-    if (this.isOpen() && getComputedStyle(this.button().nativeElement).display === 'none') {
-      this.isOpen.set(false);
-    }
   }
 
   private closeToButton(): void {

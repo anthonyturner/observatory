@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { NEVER, Subject, of } from 'rxjs';
+import { ELEMENT_SIZE, ElementSize } from '../element-size/element-size';
 import { ViewerSession } from '../../core/session/viewer-session';
 import {
   PROJECT_TABS,
@@ -43,10 +44,13 @@ describe('guidePartOf', () => {
 });
 
 describe('ProjectTabs', () => {
+  const unsized = { provide: ELEMENT_SIZE, useValue: () => NEVER };
+
   it('only navigates: it asks nothing of the viewer’s session and carries no Run button', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        unsized,
         { provide: QUIET_TABS, useValue: [] },
         {
           provide: ViewerSession,
@@ -68,7 +72,7 @@ describe('ProjectTabs', () => {
 
   it('links every screen of the project and marks the current one as the page', () => {
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: QUIET_TABS, useValue: [] }],
+      providers: [provideRouter([]), unsized, { provide: QUIET_TABS, useValue: [] }],
     });
     const fixture = TestBed.createComponent(ProjectTabs);
     fixture.componentRef.setInput('repo', 'me/app');
@@ -109,7 +113,7 @@ describe('ProjectTabs', () => {
   it('lets a tab recede for a project with nothing on it, and says so to a screen reader', () => {
     const empty: QuietTab = { tabId: 'milestones', isEmpty: (repo) => of(repo === 'me/bare') };
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: QUIET_TABS, useValue: [empty] }],
+      providers: [provideRouter([]), unsized, { provide: QUIET_TABS, useValue: [empty] }],
     });
     const fixture = TestBed.createComponent(ProjectTabs);
     fixture.componentRef.setInput('repo', 'me/bare');
@@ -139,6 +143,7 @@ describe('ProjectTabs', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        unsized,
         { provide: TAB_BADGES, useValue: [badge] },
         { provide: QUIET_TABS, useValue: [] },
       ],
@@ -162,10 +167,13 @@ describe('ProjectTabs', () => {
     @Component({ template: '' })
     class Page {}
 
+    let sizes: Subject<ElementSize>;
     const mount = (current = 'releases', badges: TabBadge[] = []) => {
+      sizes = new Subject<ElementSize>();
       TestBed.configureTestingModule({
         providers: [
           provideRouter([{ path: '**', component: Page }]),
+          { provide: ELEMENT_SIZE, useValue: () => sizes },
           { provide: TAB_BADGES, useValue: badges },
           { provide: QUIET_TABS, useValue: [] },
         ],
@@ -207,8 +215,11 @@ describe('ProjectTabs', () => {
       expect(button.getAttribute('aria-expanded')).toBe('false');
     });
 
-    it('names the current screen on the button', () => {
-      expect(mount('security').button.textContent).toContain('Security');
+    it('names the current screen on the button, introduced as a screen to a screen reader', () => {
+      const { button } = mount('security');
+
+      expect(button.textContent?.replace(/\s+/g, ' ').trim()).toBe('☰Screen: Security ▾');
+      expect(button.querySelector('.visually-hidden')?.textContent).toBe('Screen:');
     });
 
     it('names the button "Screens" when the current screen is none of the tabs', () => {
@@ -229,7 +240,7 @@ describe('ProjectTabs', () => {
       expect(button.querySelector('.dot')).not.toBeNull();
       expect(button.querySelector('.dot')?.getAttribute('aria-hidden')).toBe('true');
       expect(button.querySelector('.badge')).toBeNull();
-      expect(button.querySelector('.visually-hidden')?.textContent).toBe(
+      expect(button.querySelectorAll('.visually-hidden')[1]?.textContent).toBe(
         ', Security: 3 open alerts',
       );
     });
@@ -245,7 +256,7 @@ describe('ProjectTabs', () => {
       const { button } = mount('queue', [security(0)]);
 
       expect(button.querySelector('.dot')).toBeNull();
-      expect(button.querySelector('.visually-hidden')).toBeNull();
+      expect(button.querySelectorAll('.visually-hidden')).toHaveLength(1);
     });
 
     it('closes on Escape, keeps the key from the page and puts focus back on the button', () => {
@@ -262,6 +273,22 @@ describe('ProjectTabs', () => {
 
       expect(button.getAttribute('aria-expanded')).toBe('false');
       expect(document.activeElement).toBe(button);
+      expect(page).not.toHaveBeenCalled();
+    });
+
+    it('takes focus when it opens, so Escape works after a click that focuses nothing', () => {
+      const { fixture, button } = mount();
+      const page = vi.fn();
+      document.addEventListener('keydown', page);
+      button.click();
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(button);
+      button.dispatchEvent(escape());
+      fixture.detectChanges();
+      document.removeEventListener('keydown', page);
+
+      expect(button.getAttribute('aria-expanded')).toBe('false');
       expect(page).not.toHaveBeenCalled();
     });
 
@@ -299,16 +326,16 @@ describe('ProjectTabs', () => {
       expect(button.getAttribute('aria-expanded')).toBe('false');
     });
 
-    it('closes on a click outside, and stays open on a click inside', () => {
+    it('closes on a press outside, and stays open on a press inside', () => {
       const { fixture, nav, button } = mount();
       button.click();
       fixture.detectChanges();
 
-      nav.click();
+      nav.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
       fixture.detectChanges();
       expect(button.getAttribute('aria-expanded')).toBe('true');
 
-      document.body.click();
+      document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
       fixture.detectChanges();
       expect(button.getAttribute('aria-expanded')).toBe('false');
     });
@@ -325,22 +352,18 @@ describe('ProjectTabs', () => {
       expect(button.getAttribute('aria-expanded')).toBe('false');
     });
 
-    it('closes on a resize that takes the button away, and not on one that leaves it', () => {
+    it('closes when the button is taken away by a resize, and not while it keeps its size', () => {
       const { fixture, button } = mount();
-      const style = vi.spyOn(window, 'getComputedStyle');
       button.click();
       fixture.detectChanges();
 
-      style.mockReturnValue({ display: 'inline-flex' } as CSSStyleDeclaration);
-      window.dispatchEvent(new Event('resize'));
+      sizes.next({ width: 117, height: 24 });
       fixture.detectChanges();
       expect(button.getAttribute('aria-expanded')).toBe('true');
 
-      style.mockReturnValue({ display: 'none' } as CSSStyleDeclaration);
-      window.dispatchEvent(new Event('resize'));
+      sizes.next({ width: 0, height: 0 });
       fixture.detectChanges();
       expect(button.getAttribute('aria-expanded')).toBe('false');
-      style.mockRestore();
     });
   });
 });

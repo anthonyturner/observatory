@@ -67,8 +67,9 @@ usually works. It is the cost, not the correctness, that rules it out.
 ## Breakpoint tiers
 
 There are no breakpoint tokens; each stylesheet writes its own media queries. The Review
-Queue (the header, the tools and the page, with the project tabs menu beside it) uses two
-tiers that are exact opposites, so every size is in one of them:
+Queue (the header, the tools and the page) uses two tiers that are exact opposites, so every
+size is in one of them. The project tabs menu is not part of them: it collapses on width alone,
+below 1200px.
 
 - **Compact:** `(max-width: 1199px), (max-height: 500px)`. The title shrinks, the legend and
   the tools keep to one row that scrolls sideways, and Controls folds the tools away.
@@ -82,7 +83,7 @@ as their phone line; leave them on it until a screen is moved on purpose.
 
 Anything that must clear the chrome takes its height from a published custom property, not a
 constant: `--project-bar-height`, `--status-strip-height`, `--hud-top-height` and
-`--tools-height`, each measured by `ELEMENT_SIZE` (`PublishHeight` for the last two).
+`--tools-height`, each published by the `PublishSize` directive from `ELEMENT_SIZE`.
 
 ## Accessibility
 

@@ -2,9 +2,9 @@
 .plan {
   position: fixed;
   right: 20px;
-  bottom: var(--panel-bottom, 70px);
+  bottom: var(--panel-bottom);
   width: min(370px, calc(100vw - 40px));
-  max-height: min(470px, var(--panel-room, 400px));
+  max-height: min(470px, var(--panel-room));
   display: flex;
   flex-direction: column;
   gap: 10px;

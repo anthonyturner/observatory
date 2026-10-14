@@ -6,7 +6,7 @@
   overflow-y: auto;
   background: var(--queue-sky);
   padding-inline: 20px;
-  padding-block: max(calc(150px + env(safe-area-inset-top, 0px)), var(--chrome-top, 0px)) 100px;
+  padding-block: max(calc(150px + env(safe-area-inset-top, 0px)), var(--chrome-top)) 100px;
   z-index: 4;
 }
 

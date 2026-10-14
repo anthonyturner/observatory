@@ -13,7 +13,7 @@
      the corner and the HUD's own box is only as tall as the title. */
   --chrome-top: calc(var(--hud-top-height, 0px) + 12px);
   --panel-top: max(180px, var(--chrome-top));
-  /* Beside the tools, a panel need only clear the playlist; over them, it rises above them too. */
+  /* Over the tools, a panel rises above them as well as the playlist. */
   --panel-bottom: max(
     calc(70px + env(safe-area-inset-bottom, 0px)),
     calc(var(--playlist-clear-bottom, 0px) + var(--foot-inset) + var(--tools-height, 0px)),
@@ -37,9 +37,8 @@
   padding-top: var(--page-inset-top);
 }
 
-/* While the search shows something under its box, the top HUD rises over the project bar, whose
-   tabs wrap under the top-right corner on a mid-width screen, and over the panels and playlist,
-   as a native drop-down would. */
+/* While the search shows something under its box, the top HUD rises over the project bar and over
+   the panels and playlist, as a native drop-down would. */
 .hud.top.lifted {
   z-index: 7;
 }
@@ -107,15 +106,13 @@
   font-size: 17px;
 }
 
-/* Past SIDE_PANEL_MIN_WIDTH (starmap-page.ts) the tools make room beside an open panel, so it
-   stands level with them. */
-@media (min-width: 901px) {
-  :host {
-    --panel-bottom: max(
-      calc(70px + env(safe-area-inset-bottom, 0px)),
-      calc(var(--playlist-reach, 0px) + 12px)
-    );
-  }
+/* Where the page keeps a column for the open panel, the tools make room beside it, so it stands
+   level with them and need only clear the playlist. */
+:host([data-beside-tools]) {
+  --panel-bottom: max(
+    calc(70px + env(safe-area-inset-bottom, 0px)),
+    calc(var(--playlist-reach, 0px) + 12px)
+  );
 }
 
 @media (max-width: 1199px), (max-height: 500px) {

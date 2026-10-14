@@ -20,6 +20,7 @@ import { TransportBar } from './features/playlist/transport-bar/transport-bar';
 import { UsageFact } from './features/usage-strip/usage-fact/usage-fact';
 import { ELEMENT_SIZE, ElementSize } from './shared/element-size/element-size';
 import { PreviewBanner } from './shared/preview-banner/preview-banner';
+import { PublishSize } from './shared/publish-size/publish-size';
 import { StatusStrip } from './shared/status-strip/status-strip';
 
 const NO_SIZE: ElementSize = { width: 0, height: 0 };
@@ -40,6 +41,7 @@ const NO_SIZE: ElementSize = { width: 0, height: 0 };
     NoticeStack,
     StatusStrip,
     UsageFact,
+    PublishSize,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -49,7 +51,6 @@ export class App {
   protected readonly placement = inject(PlaylistPlacement);
   protected readonly visibility = inject(PlayerVisibility);
   private readonly foot = viewChild.required<ElementRef<HTMLElement>>('foot');
-  private readonly strip = viewChild.required('strip', { read: ElementRef<HTMLElement> });
 
   constructor() {
     const sizeOf = inject(ELEMENT_SIZE);
@@ -77,9 +78,6 @@ export class App {
           root.style.setProperty('--playlist-clear-bottom', `${clearance.bottom}px`);
           root.style.setProperty('--playlist-reach', `${playlistReachOf(bar, aboveBar)}px`);
         });
-      sizeOf(this.strip().nativeElement)
-        .pipe(takeUntilDestroyed(destroyRef))
-        .subscribe(({ height }) => root.style.setProperty('--status-strip-height', `${height}px`));
     });
   }
 }

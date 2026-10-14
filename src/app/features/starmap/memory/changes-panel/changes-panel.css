@@ -2,9 +2,9 @@
 .changes {
   position: fixed;
   right: 20px;
-  bottom: var(--panel-bottom, 70px);
+  bottom: var(--panel-bottom);
   width: min(350px, calc(100vw - 40px));
-  max-height: min(430px, calc(var(--panel-room, 400px) - 10px));
+  max-height: min(430px, calc(var(--panel-room) - 10px));
   display: flex;
   flex-direction: column;
   gap: 11px;
@@ -166,7 +166,7 @@ li[data-go]:hover {
     right: 10px;
     left: 10px;
     width: auto;
-    max-height: 38vh;
+    max-height: min(38vh, var(--panel-room));
   }
 }
 

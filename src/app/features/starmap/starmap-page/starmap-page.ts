@@ -93,7 +93,7 @@ import { retroStamp } from '../starmap-retro/retro-charts';
 import { wipCheck } from '../wip-limit/wip-check';
 import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
 import { WipNotice } from '../wip-limit/wip-notice/wip-notice';
-import { PublishHeight } from '../../../shared/publish-height/publish-height';
+import { PublishSize } from '../../../shared/publish-size/publish-size';
 import { usageStamp } from '../starmap-usage/usage-text';
 import {
   Chart,
@@ -111,13 +111,12 @@ import {
 const TOP_INSET = 140;
 /** With the issue bar docked under the title, over the nursery. */
 const TOP_INSET_WITH_DOCK = 205;
-/** The review queue's search box, which a phone stacks under the legend. */
+/** The review queue's search box, which Fit keeps clear of as well. */
 const SEARCH_HEIGHT = 44;
 const BOTTOM_INSET = 70;
 /** With a chart along the bottom, as the Log Sky's meteor record. */
 const BOTTOM_INSET_WITH_STRIP = 200;
-/** Past this width a panel down the right edge takes its own column. starmap-page.css repeats it
- *  (as 901px) for the panels' bottom edge. */
+/** Past this width a panel down the right edge takes its own column. */
 const SIDE_PANEL_MIN_WIDTH = 900;
 /** The changes panel's width and the gap beside it. */
 const SIDE_PANEL_WIDTH = 380;
@@ -187,12 +186,13 @@ export interface SkyState {
     StarmapHelp,
     SprintPanel,
     WipNotice,
-    PublishHeight,
+    PublishSize,
   ],
   hostDirectives: [HelpShortcuts],
   host: {
     '(document:keydown.escape)': 'closeTopmost()',
     '(document:keydown)': 'onKey($event)',
+    '[attr.data-beside-tools]': 'insets().side > 0 ? "" : null',
   },
   providers: [
     QueueFeed,

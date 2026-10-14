@@ -1,18 +1,8 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DOCUMENT,
-  DestroyRef,
-  ElementRef,
-  afterNextRender,
-  computed,
-  inject,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, ParamMap, Router, RouterOutlet } from '@angular/router';
 import { filter, map, of, startWith, switchMap } from 'rxjs';
-import { ELEMENT_SIZE } from '../../shared/element-size/element-size';
+import { PublishSize } from '../../shared/publish-size/publish-size';
 import {
   guidePartOf,
   ProjectTab,
@@ -33,7 +23,7 @@ const repoOf = (params: ParamMap): string =>
  */
 @Component({
   selector: 'app-project-shell',
-  imports: [RouterOutlet, UpLink, ProjectTabs, RunPreviewButton],
+  imports: [RouterOutlet, UpLink, ProjectTabs, RunPreviewButton, PublishSize],
   templateUrl: './project-shell.html',
   styleUrl: './project-shell.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,24 +46,4 @@ export class ProjectShell {
     const tab = this.tab();
     return tab ? guidePartOf(tab) : null;
   });
-
-  private readonly bar = viewChild.required<ElementRef<HTMLElement>>('bar');
-
-  constructor() {
-    const sizeOf = inject(ELEMENT_SIZE);
-    const root = inject(DOCUMENT).documentElement;
-    const destroyRef = inject(DestroyRef);
-    afterNextRender(() =>
-      sizeOf(this.bar().nativeElement)
-        .pipe(takeUntilDestroyed(destroyRef))
-        .subscribe(({ width, height }) => {
-          root.style.setProperty('--project-bar-width', `${width}px`);
-          root.style.setProperty('--project-bar-height', `${height}px`);
-        }),
-    );
-    destroyRef.onDestroy(() => {
-      root.style.removeProperty('--project-bar-width');
-      root.style.removeProperty('--project-bar-height');
-    });
-  }
 }

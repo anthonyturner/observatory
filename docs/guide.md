@@ -576,6 +576,11 @@ or press **Replay** to watch the sky change, **[** and **]** to step, and
 - **Move around.** Drag to pan, scroll to zoom, **Fit** to see everything.
   Cards and screens move by their headers; double-click a header to put it
   back.
+- **Small windows.** Under 1200px wide, or on a phone, the Review Queue
+  tightens up: the filter chips and the tools along the bottom each keep to one
+  row that you scroll sideways, and **Controls** folds the tools away to give
+  the sky back. The side panels (Agents, Done, Merge plan, Since you last
+  looked) keep clear of the tools and stop below the header.
 
 ### PR screen
 

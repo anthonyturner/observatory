@@ -128,14 +128,13 @@
   display: none;
 }
 
-@media (max-width: 720px), (max-height: 500px) {
+@media (max-width: 1199px), (max-height: 500px) {
   .fold {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-height: 44px;
     margin-left: auto;
-    padding: 0 15px;
+    padding: 8px 15px;
     border: 1px solid var(--edge-soft);
     border-radius: 10px;
     background: var(--panel);
@@ -165,10 +164,6 @@
 
   .toolgroup {
     flex: none;
-  }
-
-  .toolgroup button {
-    min-height: 44px;
   }
 
   /* Drag, scroll and hover mean little to a thumb. */
@@ -207,5 +202,13 @@
 
   :host([data-folded]) .fold {
     pointer-events: auto;
+  }
+}
+
+/* A thumb needs a taller target than a pointer does. */
+@media (max-width: 1199px) and (pointer: coarse), (max-height: 500px) and (pointer: coarse) {
+  .toolgroup button,
+  .fold {
+    min-height: 44px;
   }
 }

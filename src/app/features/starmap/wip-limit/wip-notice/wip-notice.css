@@ -77,7 +77,7 @@
   outline-offset: -3px;
 }
 
-@media (max-width: 720px) {
+@media (pointer: coarse) {
   .close {
     width: 44px;
   }

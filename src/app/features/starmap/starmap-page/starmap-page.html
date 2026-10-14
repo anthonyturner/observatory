@@ -89,7 +89,11 @@
   </div>
 }
 
-<div class="hud top" [class.lifted]="chart() === 'prs' && searchReachesBelow()">
+<div
+  class="hud top"
+  appPublishHeight="--hud-top-height"
+  [class.lifted]="chart() === 'prs' && searchReachesBelow()"
+>
   <app-starmap-header
     [repo]="repo()"
     [title]="title()"
@@ -140,6 +144,7 @@
     />
   }
   <app-starmap-tools
+    appPublishHeight="--tools-height"
     [repo]="repo()"
     [chart]="chart()"
     [view]="view()"

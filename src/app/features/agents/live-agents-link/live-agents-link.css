@@ -31,6 +31,7 @@ a:focus-visible {
 }
 
 :host(.tool) a {
+  flex: none;
   min-height: 0;
   padding: 8px 13px;
   color: var(--muted);

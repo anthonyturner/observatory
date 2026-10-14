@@ -19,7 +19,7 @@ export const ELEMENT_SIZE = new InjectionToken<SizeOf>('ELEMENT_SIZE', {
         const [box] = entry.borderBoxSize;
         subscriber.next({ width: box.inlineSize, height: box.blockSize });
       });
-      observer.observe(element);
+      observer.observe(element, { box: 'border-box' });
       return () => observer.disconnect();
     }),
 });

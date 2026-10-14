@@ -93,6 +93,7 @@ import { retroStamp } from '../starmap-retro/retro-charts';
 import { wipCheck } from '../wip-limit/wip-check';
 import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
 import { WipNotice } from '../wip-limit/wip-notice/wip-notice';
+import { PublishHeight } from '../../../shared/publish-height/publish-height';
 import { usageStamp } from '../starmap-usage/usage-text';
 import {
   Chart,
@@ -115,7 +116,8 @@ const SEARCH_HEIGHT = 44;
 const BOTTOM_INSET = 70;
 /** With a chart along the bottom, as the Log Sky's meteor record. */
 const BOTTOM_INSET_WITH_STRIP = 200;
-/** Past this width a panel down the right edge takes its own column. */
+/** Past this width a panel down the right edge takes its own column. starmap-page.css repeats it
+ *  (as 901px) for the panels' bottom edge. */
 const SIDE_PANEL_MIN_WIDTH = 900;
 /** The changes panel's width and the gap beside it. */
 const SIDE_PANEL_WIDTH = 380;
@@ -185,6 +187,7 @@ export interface SkyState {
     StarmapHelp,
     SprintPanel,
     WipNotice,
+    PublishHeight,
   ],
   hostDirectives: [HelpShortcuts],
   host: {

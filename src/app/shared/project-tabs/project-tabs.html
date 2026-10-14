@@ -1,9 +1,31 @@
-<nav aria-label="Project screens">
+<button
+  #button
+  type="button"
+  class="toggle"
+  [attr.aria-expanded]="isOpen()"
+  [attr.aria-controls]="menuId"
+  (click)="toggle()"
+>
+  <span class="glyph" aria-hidden="true">☰</span>
+  <span class="visually-hidden">Screen:</span>
+  {{ toggleView().name }}
+  @if (toggleView().count; as count) {
+    <span class="badge" aria-hidden="true">{{ count }}</span>
+  } @else if (toggleView().hasDot) {
+    <span class="dot" aria-hidden="true"></span>
+  }
+  @if (toggleView().spoken; as spoken) {
+    <span class="visually-hidden">, {{ spoken }}</span>
+  }
+  <span class="glyph" aria-hidden="true">{{ isOpen() ? '▴' : '▾' }}</span>
+</button>
+<nav [id]="menuId" aria-label="Project screens" [class.open]="isOpen()">
   @for (tab of links(); track tab.id) {
     <a
       [routerLink]="tab.link"
       [attr.aria-current]="tab.isCurrent ? 'page' : null"
       [class.quiet]="tab.isQuiet"
+      (click)="chooseLink()"
       >{{ tab.label }}
       @if (tab.badge; as badge) {
         <span class="badge" aria-hidden="true">{{ badge.shown }}</span

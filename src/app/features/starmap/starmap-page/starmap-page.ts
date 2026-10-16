@@ -93,6 +93,7 @@ import { retroStamp } from '../starmap-retro/retro-charts';
 import { wipCheck } from '../wip-limit/wip-check';
 import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
 import { WipNotice } from '../wip-limit/wip-notice/wip-notice';
+import { PublishSize } from '../../../shared/publish-size/publish-size';
 import { usageStamp } from '../starmap-usage/usage-text';
 import {
   Chart,
@@ -110,7 +111,7 @@ import {
 const TOP_INSET = 140;
 /** With the issue bar docked under the title, over the nursery. */
 const TOP_INSET_WITH_DOCK = 205;
-/** The review queue's search box, which a phone stacks under the legend. */
+/** The review queue's search box, which Fit keeps clear of as well. */
 const SEARCH_HEIGHT = 44;
 const BOTTOM_INSET = 70;
 /** With a chart along the bottom, as the Log Sky's meteor record. */
@@ -185,11 +186,13 @@ export interface SkyState {
     StarmapHelp,
     SprintPanel,
     WipNotice,
+    PublishSize,
   ],
   hostDirectives: [HelpShortcuts],
   host: {
     '(document:keydown.escape)': 'closeTopmost()',
     '(document:keydown)': 'onKey($event)',
+    '[attr.data-beside-tools]': 'insets().side > 0 ? "" : null',
   },
   providers: [
     QueueFeed,

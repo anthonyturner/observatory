@@ -145,7 +145,7 @@ h1 {
 /* On a small screen, narrow or short, the header stacks under the title and keeps to fixed
    rows: the stamp to one line and the legend to one row that scrolls sideways, so neither
    wraps down over the sky. The padding leaves room for the focus ring. */
-@media (max-width: 720px), (max-height: 500px) {
+@media (max-width: 1199px), (max-height: 500px) {
   h1 {
     font-size: 24px;
   }

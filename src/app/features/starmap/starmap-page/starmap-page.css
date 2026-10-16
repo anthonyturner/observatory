@@ -6,6 +6,21 @@
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: 14px;
+
+  --foot-inset: calc(18px + env(safe-area-inset-bottom, 0px));
+  /* Where the chrome ends, from the top and from the bottom, for what sits between: the side
+     panels and the list views. The floors are the wide layout's, where the legend is pinned to
+     the corner and the HUD's own box is only as tall as the title. */
+  --chrome-top: calc(var(--hud-top-height, 0px) + 12px);
+  --panel-top: max(180px, var(--chrome-top));
+  /* Over the tools, a panel rises above them as well as the playlist. */
+  --panel-bottom: max(
+    calc(70px + env(safe-area-inset-bottom, 0px)),
+    calc(var(--playlist-clear-bottom, 0px) + var(--foot-inset) + var(--tools-height, 0px)),
+    calc(var(--playlist-reach, 0px) + 12px)
+  );
+  /* A panel short of room keeps this much, and covers the header, rather than shrink to nothing. */
+  --panel-room: max(120px, calc(100vh - var(--panel-bottom) - var(--panel-top)));
 }
 
 .hud {
@@ -22,9 +37,8 @@
   padding-top: var(--page-inset-top);
 }
 
-/* While the search shows something under its box, the top HUD rises over the project bar, whose
-   tabs wrap under the top-right corner on a mid-width screen, and over the panels and playlist,
-   as a native drop-down would. */
+/* While the search shows something under its box, the top HUD rises over the project bar and over
+   the panels and playlist, as a native drop-down would. */
 .hud.top.lifted {
   z-index: 7;
 }
@@ -37,7 +51,7 @@
 
 .hud.bottom {
   bottom: 0;
-  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: var(--foot-inset);
 }
 
 .hud > * {
@@ -56,7 +70,11 @@
   overflow-y: auto;
   background: var(--queue-sky);
   padding-inline: 20px;
-  padding-block: calc(150px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)) 100px;
+  padding-block: max(
+      calc(150px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)),
+      var(--chrome-top)
+    )
+    100px;
   z-index: 4;
 }
 
@@ -88,7 +106,16 @@
   font-size: 17px;
 }
 
-@media (max-width: 720px), (max-height: 500px) {
+/* Where the page keeps a column for the open panel, the tools make room beside it, so it stands
+   level with them and need only clear the playlist. */
+:host([data-beside-tools]) {
+  --panel-bottom: max(
+    calc(70px + env(safe-area-inset-bottom, 0px)),
+    calc(var(--playlist-reach, 0px) + 12px)
+  );
+}
+
+@media (max-width: 1199px), (max-height: 500px) {
   .hud.bottom[data-folded] {
     pointer-events: none;
   }

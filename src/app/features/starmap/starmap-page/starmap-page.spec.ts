@@ -15,6 +15,7 @@ import { StarmapSound } from '../sound/starmap-sound';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
 import { VideoBackground } from '../../../core/playlist/video-background';
+import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { StarmapPage } from './starmap-page';
 
 const pull = (number: number, bucket: string, extra: Record<string, unknown> = {}) => ({
@@ -62,6 +63,11 @@ function render(
           dispose: () => undefined,
           setUnease: () => undefined,
         }),
+      },
+      {
+        provide: ELEMENT_SIZE,
+        useValue: (element: Element) =>
+          of({ width: 400, height: element.classList.contains('hud') ? 220 : 44 }),
       },
       {
         provide: ActivatedRoute,
@@ -124,6 +130,16 @@ describe('StarmapPage', () => {
     expect(element.querySelector('app-starmap-header h2')?.textContent).toBe('Review Queue');
     expect(element.querySelector('.stamp')?.textContent).toContain('me/a · 2 open · refreshed');
     expect(element.querySelector('.lg')?.textContent).toContain('0 cannot merge');
+  });
+
+  it('publishes the heights of its top chrome and its tools, for the panels and lists to clear', () => {
+    render();
+    const root = document.documentElement.style;
+
+    expect([
+      root.getPropertyValue('--hud-top-height'),
+      root.getPropertyValue('--tools-height'),
+    ]).toEqual(['220px', '44px']);
   });
 
   it('sends the live agents in this repository to the sky as satellites', () => {

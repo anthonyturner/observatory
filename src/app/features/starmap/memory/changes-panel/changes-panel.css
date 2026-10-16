@@ -2,13 +2,9 @@
 .changes {
   position: fixed;
   right: 20px;
-  /* Above the tools, and above the playlist and its video, at whatever size. */
-  bottom: max(
-    calc(70px + env(safe-area-inset-bottom, 0px)),
-    calc(var(--playlist-reach, 0px) + 12px)
-  );
+  bottom: var(--panel-bottom);
   width: min(350px, calc(100vw - 40px));
-  max-height: min(430px, calc(100vh - 260px), calc(100vh - 202px - var(--playlist-reach, 0px)));
+  max-height: min(430px, calc(var(--panel-room) - 10px));
   display: flex;
   flex-direction: column;
   gap: 11px;
@@ -170,7 +166,7 @@ li[data-go]:hover {
     right: 10px;
     left: 10px;
     width: auto;
-    max-height: 38vh;
+    max-height: min(38vh, var(--panel-room));
   }
 }
 

@@ -64,6 +64,27 @@ whether the answer changed until after it has paid for it.
 A method call in a template is never stale, which is why code shaped that way
 usually works. It is the cost, not the correctness, that rules it out.
 
+## Breakpoint tiers
+
+There are no breakpoint tokens; each stylesheet writes its own media queries. The Review
+Queue (the header, the tools and the page) uses two tiers that are exact opposites, so every
+size is in one of them. The project tabs menu is not part of them: it collapses on width alone,
+below 1200px.
+
+- **Compact:** `(max-width: 1199px), (max-height: 500px)`. The title shrinks, the legend and
+  the tools keep to one row that scrolls sideways, and Controls folds the tools away.
+- **Wide:** `(min-width: 1200px) and (min-height: 501px)`. The legend and the search box are
+  pinned to the top right.
+
+Two finer lines sit inside them: the work-in-progress note moves to the top centre from
+1440x600, and the Home dock from 1024x600. Touch sizing, the 44px targets, follows the
+pointer, `(pointer: coarse)`, never the width. Other screens still use `(max-width: 720px)`
+as their phone line; leave them on it until a screen is moved on purpose.
+
+Anything that must clear the chrome takes its height from a published custom property, not a
+constant: `--project-bar-height`, `--status-strip-height`, `--hud-top-height` and
+`--tools-height`, each published by the `PublishSize` directive from `ELEMENT_SIZE`.
+
 ## Accessibility
 
 Meet [WCAG 2.1 AA](https://www.w3.org/TR/WCAG21/), the widely used web

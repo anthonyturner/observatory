@@ -246,7 +246,6 @@ a:focus-visible,
     padding: 8px 12px;
   }
 
-
   /* Nothing to run on this machine: no empty strip at the foot of the list. */
   .tool:has(> :empty) {
     display: none;

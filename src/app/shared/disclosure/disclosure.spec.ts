@@ -163,6 +163,19 @@ describe('Disclosure', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('stays open when focus goes nowhere, as on a press on text inside it', () => {
+    const { fixture, host, button } = mount();
+    button.click();
+    fixture.detectChanges();
+
+    host.firstElementChild?.dispatchEvent(
+      new FocusEvent('focusout', { bubbles: true, relatedTarget: null }),
+    );
+    fixture.detectChanges();
+
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('closes when the button is taken away by a resize, and not while it keeps its size', () => {
     const { fixture, button } = mount();
     button.click();

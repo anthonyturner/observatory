@@ -38,26 +38,19 @@ a:hover {
   background: var(--starmap-hover);
 }
 
+a:hover,
+a:focus-visible {
+  --label-dim: 1;
+}
+
 a:focus-visible {
   outline: 2px solid var(--flow);
   outline-offset: -2px;
 }
 
-/* A screen this project has nothing on: dimmed, but kept above the contrast floor for text. */
+/* A screen this project has nothing on takes a little less room; its label dims itself. */
 a.quiet {
   padding-inline: 9px;
-  opacity: 0.8;
-  font-style: italic;
-}
-
-a.quiet:hover,
-a.quiet:focus-visible,
-a.quiet[aria-current='page'] {
-  opacity: 1;
-}
-
-a.quiet[aria-current='page'] {
-  font-style: normal;
 }
 
 a[aria-current='page'] {

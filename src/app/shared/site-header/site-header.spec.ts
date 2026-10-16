@@ -120,7 +120,7 @@ describe('SiteHeader', () => {
       '/p/me/app/security',
       '/p/me/app/milestones',
     ]);
-    expect(links[5].classList).toContain('quiet');
+    expect(links[5].querySelector('app-section-label')?.classList).toContain('recedes');
   });
 
   it('shows a dot on the closed button while a section has a badge, and says which', () => {

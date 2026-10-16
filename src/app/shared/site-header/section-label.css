@@ -13,3 +13,10 @@
   line-height: 14px;
   text-align: center;
 }
+
+/* Dimmed, but kept above the contrast floor for text. The link around it sets `--label-dim` to 1
+   while it is pointed at or focused. */
+:host(.recedes) {
+  opacity: var(--label-dim, 0.8);
+  font-style: italic;
+}

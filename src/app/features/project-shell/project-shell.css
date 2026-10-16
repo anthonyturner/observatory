@@ -1,8 +1,8 @@
-/* The bar floats over the screen below it: see the site header. */
 :host {
   display: contents;
 }
 
+/* The up-link's bottom margin separates it from a title; in the bar's row it would lift it off the line. */
 app-up-link {
   margin-bottom: 0;
 }

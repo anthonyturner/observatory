@@ -47,7 +47,13 @@ export class ProjectShell {
       map((url): ProjectTab | undefined => projectTabAt(url[0]?.path ?? '')),
     ),
   );
-  protected readonly repoName = computed(() => this.repo().split('/').pop() ?? '');
+  protected readonly repoName = toSignal(
+    this.route.paramMap.pipe(map((params) => params.get('repo') ?? '')),
+    {
+      initialValue: '',
+    },
+  );
+  protected readonly allProjects = ALL_PROJECTS;
   private readonly currentTab = computed(() => this.tab()?.id ?? '');
   protected readonly guide = computed((): string | null => {
     const tab = this.tab();

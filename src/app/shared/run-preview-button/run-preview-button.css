@@ -32,6 +32,8 @@ a {
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
+  /* A place that needs touch-sized buttons says how big, such as the site header's menu. */
+  min-height: var(--touch-target, 0);
   transition:
     color 0.2s,
     border-color 0.2s;
@@ -67,8 +69,7 @@ a:focus-visible {
   color: var(--bad-soft);
 }
 
-/* Touch size in the site header's menu, on a tablet as well as a phone. */
-@media (max-width: 720px), (max-width: 1199px) and (pointer: coarse) {
+@media (max-width: 720px) {
   button,
   a {
     min-height: 44px;

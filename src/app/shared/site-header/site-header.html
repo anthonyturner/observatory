@@ -35,7 +35,6 @@
           [routerLink]="section.link"
           [fragment]="section.fragment"
           [attr.aria-current]="section.isCurrent ? 'page' : null"
-          [class.quiet]="section.isQuiet"
           (click)="menu.closeToTrigger()"
           ><app-section-label [section]="section"
         /></a>

@@ -40,6 +40,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Removed
 
+- Home's System vitals column no longer has a Documents list. Its links (the Orrery and the top project's star map, Issues, Logs and Usage) repeated the top menu and the project cards. The 30-day cost section is now headed **Agent usage**, so it no longer shares a name with the Agent sessions screen ([#675](https://github.com/anthonyturner/observatory/pull/675)).
 - Home no longer links to Architecture, and the `/architecture` page that always charted one project from a map you scanned by hand is gone: each project's Architecture tab replaces it, and no longer reads that map file ([#586](https://github.com/anthonyturner/observatory/pull/586)).
 - The Review Queue's sound no longer plays a continuous background drone. Space is silent, so with sound on the sky stays quiet until something happens on it: a star's ping, a meteor's crackle, a satellite's beep, a merge's boom. The off-key tone that grew with blocked pull requests went with it ([#553](https://github.com/anthonyturner/observatory/issues/553)).
 

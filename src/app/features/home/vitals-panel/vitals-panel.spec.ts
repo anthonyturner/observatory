@@ -14,7 +14,6 @@ const column: VitalsColumn = {
     ],
     note: 'Blocked first',
   },
-  docs: { links: [{ label: 'Orrery', path: '/orrery' }] },
 };
 
 describe('VitalsPanel', () => {
@@ -29,6 +28,5 @@ describe('VitalsPanel', () => {
     expect(element.querySelectorAll('app-vital-readout').length).toBe(1);
     expect(element.querySelector('app-weekly-gauge .reading')?.textContent).toContain('10');
     expect(element.querySelector('app-directive-list a')?.textContent).toContain('Fix it');
-    expect(element.querySelector('app-doc-tabs a')?.getAttribute('href')).toBe('/orrery');
   });
 });

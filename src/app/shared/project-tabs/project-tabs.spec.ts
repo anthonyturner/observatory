@@ -1,9 +1,6 @@
-import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
-import { NEVER, Subject, of } from 'rxjs';
-import { ELEMENT_SIZE, ElementSize } from '../element-size/element-size';
-import { ViewerSession } from '../../core/session/viewer-session';
+import { provideRouter } from '@angular/router';
+import { NavSection } from '../site-header/nav-section';
 import {
   PROJECT_TABS,
   ProjectTabs,
@@ -11,9 +8,6 @@ import {
   projectTabAt,
   projectTabLink,
 } from './project-tabs';
-import { QuietTab } from './quiet-tab';
-import { QUIET_TABS } from './quiet-tabs';
-import { TAB_BADGES, TabBadge } from './tab-badge';
 
 describe('projectTabLink', () => {
   it('puts the queue at the project’s own route and every other screen below it', () => {
@@ -44,326 +38,62 @@ describe('guidePartOf', () => {
 });
 
 describe('ProjectTabs', () => {
-  const unsized = { provide: ELEMENT_SIZE, useValue: () => NEVER };
+  const tabs: readonly NavSection[] = [
+    { id: 'queue', label: 'Queue', link: '/p/me/app' },
+    { id: 'releases', label: 'Releases', link: '/p/me/app/releases', isCurrent: true },
+    {
+      id: 'security',
+      label: 'Security',
+      link: '/p/me/app/security',
+      badge: { shown: '3', spoken: '3 open alerts' },
+    },
+    { id: 'milestones', label: 'Milestones', link: '/p/me/app/milestones', isQuiet: true },
+  ];
 
-  it('only navigates: it asks nothing of the viewer’s session and carries no Run button', () => {
-    TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        unsized,
-        { provide: QUIET_TABS, useValue: [] },
-        {
-          provide: ViewerSession,
-          useFactory: () => {
-            throw new Error('ProjectTabs must not depend on the session');
-          },
-        },
-      ],
-    });
+  function mount(): HTMLElement {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(ProjectTabs);
-    fixture.componentRef.setInput('repo', 'me/app');
-    fixture.componentRef.setInput('current', 'security');
+    fixture.componentRef.setInput('tabs', tabs);
     fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
 
-    const host = fixture.nativeElement as HTMLElement;
-    expect(host.querySelector('app-run-preview-button')).toBeNull();
-    expect(host.querySelectorAll('a')).toHaveLength(PROJECT_TABS.length);
+  const words = (element: Element) => element.textContent?.replace(/\s+/g, ' ').trim();
+
+  it('links every section it is given and marks the current one as the page', () => {
+    const host = mount();
+    const links = [...host.querySelectorAll('a')];
+
+    expect(host.querySelector('nav')?.getAttribute('aria-label')).toBe('Project screens');
+    expect(
+      links.map((link) => [link.getAttribute('href'), link.getAttribute('aria-current')]),
+    ).toEqual([
+      ['/p/me/app', null],
+      ['/p/me/app/releases', 'page'],
+      ['/p/me/app/security', null],
+      ['/p/me/app/milestones', null],
+    ]);
   });
 
-  it('links every screen of the project and marks the current one as the page', () => {
-    TestBed.configureTestingModule({
-      providers: [provideRouter([]), unsized, { provide: QUIET_TABS, useValue: [] }],
-    });
-    const fixture = TestBed.createComponent(ProjectTabs);
-    fixture.componentRef.setInput('repo', 'me/app');
-    fixture.componentRef.setInput('current', 'releases');
-    fixture.detectChanges();
+  it('shows a badge’s count on its tab, read out after the name', () => {
+    const security = mount().querySelector('a[href$="/security"]');
 
-    const host = fixture.nativeElement as HTMLElement;
-    const links = [...host.querySelectorAll('a')];
-    expect(host.querySelector('nav')?.getAttribute('aria-label')).toBe('Project screens');
-    expect(links.map((link) => [link.textContent?.trim(), link.getAttribute('href')])).toEqual([
-      ['Queue', '/p/me/app'],
-      ['Releases', '/p/me/app/releases'],
-      ['Actions', '/p/me/app/actions'],
-      ['Journal', '/p/me/app/journal'],
-      ['Library', '/p/me/app/library'],
-      ['Depth', '/p/me/app/depth'],
-      ['Architecture', '/p/me/app/architecture'],
-      ['Security', '/p/me/app/security'],
-      ['Insights', '/p/me/app/insights'],
-      ['Deployments', '/p/me/app/deployments'],
-      ['Milestones', '/p/me/app/milestones'],
-    ]);
-    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([
-      null,
-      'page',
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-    ]);
+    expect(security?.querySelector('.badge')?.textContent).toBe('3');
+    expect(security && words(security)).toBe('Security 3, 3 open alerts');
   });
 
   it('lets a tab recede for a project with nothing on it, and says so to a screen reader', () => {
-    const empty: QuietTab = { tabId: 'milestones', isEmpty: (repo) => of(repo === 'me/bare') };
-    TestBed.configureTestingModule({
-      providers: [provideRouter([]), unsized, { provide: QUIET_TABS, useValue: [empty] }],
-    });
-    const fixture = TestBed.createComponent(ProjectTabs);
-    fixture.componentRef.setInput('repo', 'me/bare');
-    fixture.componentRef.setInput('current', 'queue');
-    fixture.detectChanges();
+    const host = mount();
+    const milestones = host.querySelector('a[href$="/milestones"]');
 
-    const host = fixture.nativeElement as HTMLElement;
-    const milestones = () => host.querySelector('a[href$="/milestones"]');
-    expect(milestones()?.classList).toContain('quiet');
-    expect(milestones()?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Milestones , nothing here yet',
-    );
-    expect(host.querySelectorAll('a.quiet').length).toBe(1);
-
-    fixture.componentRef.setInput('repo', 'me/app');
-    fixture.detectChanges();
-    expect(milestones()?.classList).not.toContain('quiet');
+    expect(milestones?.classList).toContain('quiet');
+    expect(milestones && words(milestones)).toBe('Milestones , nothing here yet');
+    expect(host.querySelectorAll('a.quiet')).toHaveLength(1);
   });
 
-  it('shows a badge’s count on its tab, read out after the name, and none for a count of none', () => {
-    const counts: Record<string, number | null> = { 'me/app': 3, 'me/calm': 0 };
-    const badge: TabBadge = {
-      tabId: 'security',
-      noun: 'open alert',
-      count: (repo) => of(counts[repo] ?? null),
-    };
-    TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        unsized,
-        { provide: TAB_BADGES, useValue: [badge] },
-        { provide: QUIET_TABS, useValue: [] },
-      ],
-    });
-    const fixture = TestBed.createComponent(ProjectTabs);
-    fixture.componentRef.setInput('repo', 'me/app');
-    fixture.componentRef.setInput('current', 'queue');
-    fixture.detectChanges();
+  it('has no menu of its own: it is a row, and the site header folds the same sections below 1200px', () => {
+    const host = mount();
 
-    const host = fixture.nativeElement as HTMLElement;
-    const security = () => host.querySelector('a[href$="/security"]');
-    expect(security()?.querySelector('.badge')?.textContent).toBe('3');
-    expect(security()?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Security 3, 3 open alerts');
-
-    fixture.componentRef.setInput('repo', 'me/calm');
-    fixture.detectChanges();
-    expect(security()?.querySelector('.badge')).toBeNull();
-  });
-
-  describe('as a menu below the breakpoint', () => {
-    @Component({ template: '' })
-    class Page {}
-
-    let sizes: Subject<ElementSize>;
-    const mount = (current = 'releases', badges: TabBadge[] = []) => {
-      sizes = new Subject<ElementSize>();
-      TestBed.configureTestingModule({
-        providers: [
-          provideRouter([{ path: '**', component: Page }]),
-          { provide: ELEMENT_SIZE, useValue: () => sizes },
-          { provide: TAB_BADGES, useValue: badges },
-          { provide: QUIET_TABS, useValue: [] },
-        ],
-      });
-      const fixture = TestBed.createComponent(ProjectTabs);
-      fixture.componentRef.setInput('repo', 'me/app');
-      fixture.componentRef.setInput('current', current);
-      document.body.append(fixture.nativeElement);
-      fixture.detectChanges();
-      const host = fixture.nativeElement as HTMLElement;
-      const button = host.querySelector('button') as HTMLButtonElement;
-      return { fixture, host, button, nav: host.querySelector('nav') as HTMLElement };
-    };
-    const security = (count: number | null): TabBadge => ({
-      tabId: 'security',
-      noun: 'open alert',
-      count: () => of(count),
-    });
-    const escape = () => new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
-
-    afterEach(() => document.body.replaceChildren());
-
-    it('is a closed disclosure button that controls the list of links, not a role="menu"', () => {
-      const { fixture, host, button, nav } = mount();
-
-      expect(button.type).toBe('button');
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-      expect(button.getAttribute('aria-controls')).toBe(nav.id);
-      expect(nav.getAttribute('aria-label')).toBe('Project screens');
-      expect(host.querySelector('[role]')).toBeNull();
-
-      button.click();
-      fixture.detectChanges();
-      expect(button.getAttribute('aria-expanded')).toBe('true');
-      expect(nav.classList).toContain('open');
-
-      button.click();
-      fixture.detectChanges();
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-    });
-
-    it('names the current screen on the button, introduced as a screen to a screen reader', () => {
-      const { button } = mount('security');
-
-      expect(button.textContent?.replace(/\s+/g, ' ').trim()).toBe('☰Screen: Security ▾');
-      expect(button.querySelector('.visually-hidden')?.textContent).toBe('Screen:');
-    });
-
-    it('names the button "Screens" when the current screen is none of the tabs', () => {
-      expect(mount('').button.textContent).toContain('Screens');
-    });
-
-    it('lists every screen once, in the list the button controls', () => {
-      const { host, nav } = mount();
-
-      expect(host.querySelectorAll('a')).toHaveLength(PROJECT_TABS.length);
-      expect(nav.querySelectorAll('a')).toHaveLength(PROJECT_TABS.length);
-      expect(nav.querySelector('a[aria-current="page"]')?.textContent).toContain('Releases');
-    });
-
-    it('shows a dot, not a number, on the closed button while another screen has a badge', () => {
-      const { button } = mount('queue', [security(3)]);
-
-      expect(button.querySelector('.dot')).not.toBeNull();
-      expect(button.querySelector('.dot')?.getAttribute('aria-hidden')).toBe('true');
-      expect(button.querySelector('.badge')).toBeNull();
-      expect(button.querySelectorAll('.visually-hidden')[1]?.textContent).toBe(
-        ', Security: 3 open alerts',
-      );
-    });
-
-    it('shows the count inline instead of the dot when the current screen is the badged one', () => {
-      const { button } = mount('security', [security(3)]);
-
-      expect(button.querySelector('.badge')?.textContent).toBe('3');
-      expect(button.querySelector('.dot')).toBeNull();
-    });
-
-    it('shows no dot and says nothing extra when no screen has a badge', () => {
-      const { button } = mount('queue', [security(0)]);
-
-      expect(button.querySelector('.dot')).toBeNull();
-      expect(button.querySelectorAll('.visually-hidden')).toHaveLength(1);
-    });
-
-    it('closes on Escape, keeps the key from the page and puts focus back on the button', () => {
-      const { fixture, button, nav } = mount();
-      const page = vi.fn();
-      document.addEventListener('keydown', page);
-      button.click();
-      fixture.detectChanges();
-      nav.querySelector('a')?.focus();
-
-      nav.querySelector('a')?.dispatchEvent(escape());
-      fixture.detectChanges();
-      document.removeEventListener('keydown', page);
-
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-      expect(document.activeElement).toBe(button);
-      expect(page).not.toHaveBeenCalled();
-    });
-
-    it('takes focus when it opens, so Escape works after a click that focuses nothing', () => {
-      const { fixture, button } = mount();
-      const page = vi.fn();
-      document.addEventListener('keydown', page);
-      button.click();
-      fixture.detectChanges();
-
-      expect(document.activeElement).toBe(button);
-      button.dispatchEvent(escape());
-      fixture.detectChanges();
-      document.removeEventListener('keydown', page);
-
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-      expect(page).not.toHaveBeenCalled();
-    });
-
-    it('leaves Escape to the page while the list is closed', () => {
-      const { button } = mount();
-      const page = vi.fn();
-      document.addEventListener('keydown', page);
-
-      button.dispatchEvent(escape());
-      document.removeEventListener('keydown', page);
-
-      expect(page).toHaveBeenCalledOnce();
-    });
-
-    it('closes when a link is chosen, leaving focus on the button', () => {
-      const { fixture, button, nav } = mount();
-      button.click();
-      fixture.detectChanges();
-
-      nav.querySelector<HTMLElement>('a[href$="/depth"]')?.click();
-      fixture.detectChanges();
-
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-      expect(document.activeElement).toBe(button);
-    });
-
-    it('closes on any navigation, such as the browser back button', async () => {
-      const { fixture, button } = mount();
-      button.click();
-      fixture.detectChanges();
-
-      await TestBed.inject(Router).navigateByUrl('/p/me/app/depth');
-      fixture.detectChanges();
-
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-    });
-
-    it('closes on a press outside, and stays open on a press inside', () => {
-      const { fixture, nav, button } = mount();
-      button.click();
-      fixture.detectChanges();
-
-      nav.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
-      fixture.detectChanges();
-      expect(button.getAttribute('aria-expanded')).toBe('true');
-
-      document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
-      fixture.detectChanges();
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-    });
-
-    it('closes when focus moves out of it', () => {
-      const { fixture, host, button } = mount();
-      const elsewhere = document.body.appendChild(document.createElement('button'));
-      button.click();
-      fixture.detectChanges();
-
-      host.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: elsewhere }));
-      fixture.detectChanges();
-
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-    });
-
-    it('closes when the button is taken away by a resize, and not while it keeps its size', () => {
-      const { fixture, button } = mount();
-      button.click();
-      fixture.detectChanges();
-
-      sizes.next({ width: 117, height: 24 });
-      fixture.detectChanges();
-      expect(button.getAttribute('aria-expanded')).toBe('true');
-
-      sizes.next({ width: 0, height: 0 });
-      fixture.detectChanges();
-      expect(button.getAttribute('aria-expanded')).toBe('false');
-    });
+    expect(host.querySelector('button')).toBeNull();
   });
 });

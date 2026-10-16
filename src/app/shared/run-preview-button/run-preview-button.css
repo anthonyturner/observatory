@@ -67,7 +67,8 @@ a:focus-visible {
   color: var(--bad-soft);
 }
 
-@media (max-width: 720px) {
+/* Touch size in the site header's menu, on a tablet as well as a phone. */
+@media (max-width: 720px), (max-width: 1199px) and (pointer: coarse) {
   button,
   a {
     min-height: 44px;

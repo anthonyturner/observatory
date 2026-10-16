@@ -11,6 +11,7 @@ import { SITE_OPENER } from '../../core/dev-servers/site-opener';
 import { libraryMatcher } from '../../core/library/library-route';
 import { ViewerSession } from '../../core/session/viewer-session';
 import { ELEMENT_SIZE } from '../../shared/element-size/element-size';
+import { PROJECT_TABS } from '../../shared/project-tabs/project-tabs';
 import { QUIET_TABS } from '../../shared/project-tabs/quiet-tabs';
 import { ProjectShell } from './project-shell';
 
@@ -108,6 +109,38 @@ describe('ProjectShell', () => {
     await harness.navigateByUrl('/p/me/app/library/docs/stack');
     settle();
     expect(currentTab()).toBe('/p/me/app/library');
+  });
+
+  it('gives the header’s menu the way up, this screen’s Guide, every screen and then Run', async () => {
+    const { harness, element, settle } = await setUp();
+    settle();
+    const header = element.querySelector('app-site-header') as HTMLElement;
+    const menuLinks = () => [...header.querySelectorAll<HTMLAnchorElement>('.menu nav a')];
+    const hrefs = () => menuLinks().map((link) => link.getAttribute('href'));
+
+    expect(header.querySelector('.title')?.textContent).toBe('app');
+    expect(
+      menuLinks()
+        .slice(0, 3)
+        .map((link) => link.textContent?.trim()),
+    ).toEqual(['All projects', 'Guide', 'Queue']);
+    expect(hrefs().slice(0, 3)).toEqual(['/orrery', '/guide#releases', '/p/me/app']);
+    expect(menuLinks()).toHaveLength(2 + PROJECT_TABS.length);
+    expect(
+      menuLinks()
+        .find((link) => link.getAttribute('aria-current'))
+        ?.getAttribute('href'),
+    ).toBe('/p/me/app/releases');
+    expect(header.querySelector('.menu .tool app-run-preview-button button')).not.toBeNull();
+
+    await harness.navigateByUrl('/p/me/app/journal');
+    settle();
+    expect(hrefs()[1]).toBe('/guide#journal');
+    expect(
+      menuLinks()
+        .find((link) => link.getAttribute('aria-current'))
+        ?.getAttribute('href'),
+    ).toBe('/p/me/app/journal');
   });
 
   it('keeps one Run button, and the server it is starting, across tab switches', async () => {

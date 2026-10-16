@@ -149,12 +149,13 @@ when a pull request merges or an issue opens while Observatory is in the
 background.
 
 **System vitals**, in the left column, holds your Claude Code usage (tokens
-today, the 5-hour window and the weekly limit), **Directives** (the three most
-blocked pull requests across your projects) and **Documents** links.
+today, the 5-hour window and the weekly limit) and **Directives** (the three
+most blocked pull requests across your projects).
 
-The top bar jumps to Home's sections (Mail, News, Projects, Agents) and links
-to the Agents screen (with how many sessions are running), the Inbox (with
-your unread count), the Orrery and this Guide.
+The top bar jumps to Home's sections (Mail, News, Projects, and Agents, which
+lands on **Agent usage**) and links to the Agent sessions screen (with how many
+sessions are running), the Inbox (with your unread count), the Orrery and this
+Guide.
 
 ### Jev
 
@@ -243,7 +244,7 @@ is ever marked read. **Only on your own computer.**
 
 ### Agent costs
 
-Home's **Agents** section shows what each coding agent you use cost over the
+Home's **Agent usage** section shows what each coding agent you use cost over the
 last 30 days, read from Claude Code's logs.
 
 - **Orrery.** Each agent is a moon around a small core. A bigger moon did more

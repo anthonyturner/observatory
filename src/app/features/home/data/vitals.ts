@@ -36,23 +36,9 @@ export interface DirectiveList {
   readonly note: string;
 }
 
-/** A link to another view in the app: a route path, and a part of it to open. */
-export interface DocLink {
-  readonly label: string;
-  readonly path: string;
-  readonly fragment?: string;
-}
-
-export interface DocTabs {
-  /** The project the star-map tabs open, first in the queue. */
-  readonly project?: string;
-  readonly links: readonly DocLink[];
-}
-
 /** Everything Home's left column shows. */
 export interface VitalsColumn {
   readonly vitals: readonly VitalReading[];
   readonly weekly: WeeklyUsage;
   readonly directives: DirectiveList;
-  readonly docs: DocTabs;
 }

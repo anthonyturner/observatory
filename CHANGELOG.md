@@ -16,6 +16,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Changed
 
+- Home's 30-day agent cost section is now headed **Agent usage**, so it no longer shares a name with the Agent sessions screen ([#675](https://github.com/anthonyturner/observatory/pull/675)).
 - In a window under 1200px wide, such as a small browser pane, the Review Queue now uses its phone layout instead of a crowded desktop one: a smaller title, the filter chips and the tools each in one row that scrolls sideways, and a **Controls** button that folds the tools away. The Agents, Done, Merge plan and Since-you-last-looked panels now sit clear of the header above and the tools below, and the List view starts below the header however tall it is. The extra-tall touch buttons now come only on a touch screen ([#661](https://github.com/anthonyturner/observatory/pull/661)).
 - On a window under 1200px wide, a project's row of tabs folds into one button that names the screen you are on, so the last tabs are no longer pushed off the edge. Press it for the list of screens: choosing one goes there and closes the list, and **Esc**, a click elsewhere or moving on to another control closes it too. A small dot on the button shows that another screen has a count waiting (Security's open alerts); **All projects**, **Guide** and **Run** stay in view. On a wider window nothing changes ([#657](https://github.com/anthonyturner/observatory/issues/657)).
 - On a wide screen, the Review Queue's search box now sits in the top-right corner, level with the usage strip, instead of below the project's tabs; the filter chips stay where they were ([#654](https://github.com/anthonyturner/observatory/issues/654)).
@@ -40,6 +41,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Removed
 
+- Home's System vitals column no longer has a Documents list. Its links (the Orrery and the top project's star map, Issues, Logs and Usage) repeated the top menu and the project cards. ([#675](https://github.com/anthonyturner/observatory/pull/675)).
 - Home no longer links to Architecture, and the `/architecture` page that always charted one project from a map you scanned by hand is gone: each project's Architecture tab replaces it, and no longer reads that map file ([#586](https://github.com/anthonyturner/observatory/pull/586)).
 - The Review Queue's sound no longer plays a continuous background drone. Space is silent, so with sound on the sky stays quiet until something happens on it: a star's ping, a meteor's crackle, a satellite's beep, a merge's boom. The off-key tone that grew with blocked pull requests went with it ([#553](https://github.com/anthonyturner/observatory/issues/553)).
 

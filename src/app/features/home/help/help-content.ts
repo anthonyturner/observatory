@@ -57,7 +57,7 @@ const HOME_HELP_ENTRIES: readonly HelpEntry[] = [
     section: SKY,
   },
   {
-    term: 'Agents',
+    term: 'Agent usage',
     meaning:
       'Below Projects (Agents in the menu jumps there): what each agent you use cost over the last 30 days, read from Claude Code’s logs on this machine. pm, refine, ux-design, dev and qa each keep one colour in every chart; every other agent (Explore, general-purpose and the rest) is grey Other. Click a moon, a bar, a day or a grid cell to narrow the charts; the chips above them clear it.',
     section: AGENTS,

@@ -1,6 +1,11 @@
-<div class="bar" appPublishWidth="--project-bar-width" appPublishHeight="--project-bar-height">
-  <app-up-link to="/orrery" label="All projects" [guide]="guide()" />
-  <app-project-tabs [repo]="repo()" [current]="currentTab()" />
-  <app-run-preview-button [repo]="repo()" />
-</div>
+<app-site-header
+  [sections]="sections()"
+  [title]="repoName()"
+  appPublishWidth="--project-bar-width"
+  appPublishHeight="--project-bar-height"
+>
+  <app-up-link [to]="allProjects.link" [label]="allProjects.label" [guide]="guide()" />
+  <app-project-tabs [tabs]="tabs()" />
+  <app-run-preview-button siteHeaderTool [repo]="repo()" />
+</app-site-header>
 <router-outlet />

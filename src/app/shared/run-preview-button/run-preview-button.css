@@ -32,6 +32,8 @@ a {
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
+  /* A place that needs touch-sized buttons says how big, such as the site header's menu. */
+  min-height: var(--touch-target, 0);
   transition:
     color 0.2s,
     border-color 0.2s;

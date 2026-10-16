@@ -68,8 +68,8 @@ usually works. It is the cost, not the correctness, that rules it out.
 
 There are no breakpoint tokens; each stylesheet writes its own media queries. The Review
 Queue (the header, the tools and the page) uses two tiers that are exact opposites, so every
-size is in one of them. The project tabs menu is not part of them: it collapses on width alone,
-below 1200px.
+size is in one of them. The site header is not part of them: it changes on width alone, below
+1200px.
 
 - **Compact:** `(max-width: 1199px), (max-height: 500px)`. The title shrinks, the legend and
   the tools keep to one row that scrolls sideways, and Controls folds the tools away.
@@ -80,6 +80,15 @@ Two finer lines sit inside them: the work-in-progress note moves to the top cent
 1440x600, and the Home dock from 1024x600. Touch sizing, the 44px targets, follows the
 pointer, `(pointer: coarse)`, never the width. Other screens still use `(max-width: 720px)`
 as their phone line; leave them on it until a screen is moved on purpose.
+
+The **site header** (`shared/site-header`) is the bar across the top of a project screen. At
+1200px and wider it is the page's own row, unchanged. Below 1200px it is the logo, the page's
+title and one Menu button, whose list holds every `NavSection` it is given and the one control
+the page marks `siteHeaderTool` (Run), which stays mounted while the menu is closed. A page that
+adopts it builds its sections once, as `projectTabSections` does for the project shell. Wide but
+short windows keep the row. The menu's open, outside-press, Escape and focus behaviour is the
+`Disclosure` directive (`shared/disclosure`); use it for any drop-down rather than writing it
+again.
 
 Anything that must clear the chrome takes its height from a published custom property, not a
 constant: `--project-bar-height`, `--status-strip-height`, `--hud-top-height` and

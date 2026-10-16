@@ -181,6 +181,20 @@ h1 {
   }
 }
 
+/* Below 1200px the site header above carries the project's name. The title stays as the page's
+   heading, for a screen reader, and takes no room. These declarations are `.visually-hidden` in
+   styles/base.css; keep them in step. */
+@media (max-width: 1199px) {
+  .title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
 /* Short, as a phone on its side: the way back shares the title's row. */
 @media (max-height: 500px) {
   :host {

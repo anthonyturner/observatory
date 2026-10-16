@@ -1,0 +1,277 @@
+/* The bar floats over the screen below it. A screen is a fixed layer of its own, so nothing
+   inside one can rise above the bar: a panel or card that would reach the bar starts below it
+   instead, by `--project-bar-height`, which the page publishes. 1200px is where the Review
+   Queue's wide tier starts. */
+:host {
+  position: fixed;
+  top: var(--page-inset-top);
+  left: var(--page-inset-x);
+  z-index: 6;
+  display: block;
+  width: fit-content;
+  max-width: calc(100% - 2 * var(--page-inset-x));
+}
+
+/* Above the search list (7), under the notices (9), while the menu is open. */
+:host(.open) {
+  z-index: 8;
+}
+
+/* Wide: only what the page projects, as a row. The wrappers take no box of their own, so the
+   projected controls are the row's items. */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.row,
+.menu,
+.tool {
+  display: contents;
+}
+
+.logo,
+.title,
+.toggle,
+nav {
+  display: none;
+}
+
+.mark {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  fill: none;
+  stroke: var(--flow);
+  stroke-width: 1.4;
+}
+
+.core {
+  fill: var(--flow);
+  stroke: none;
+}
+
+.moon {
+  fill: var(--warm);
+  stroke: none;
+}
+
+.logo {
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.wordmark {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+}
+
+.title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.toggle {
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.toggle:hover {
+  border-color: var(--flow);
+}
+
+.glyph {
+  color: var(--flow);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--security-badge);
+}
+
+a:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1199px) {
+  /* The bar keeps its natural width, as in the wide row, so the room the page reserves for it
+     (`--project-bar-width`) is the room it takes and what sat beside it still can. */
+  .bar {
+    position: relative;
+    isolation: isolate;
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 0 6px 0 12px;
+  }
+
+  /* The bar's glass is its own layer: a `backdrop-filter` on the bar itself would make it the
+     backdrop root of the menu, which would then blur the bar and not the sky behind it. */
+  .bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border: 1px solid var(--edge-soft);
+    border-radius: 999px;
+    background: var(--panel);
+    backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  .row {
+    display: none;
+  }
+
+  .logo,
+  .toggle {
+    display: inline-flex;
+  }
+
+  .title {
+    display: block;
+  }
+
+  /* Hung from the bar's left edge, which the page insets, so the list can never run off the screen. */
+  .menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    display: block;
+    width: 280px;
+    max-width: calc(100vw - 2 * var(--page-inset-x));
+    max-height: calc(100dvh - var(--page-inset-top) - var(--project-bar-height, 44px) - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--edge-soft);
+    border-radius: 14px;
+    background: var(--panel-strong);
+    backdrop-filter: blur(14px) saturate(140%);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition:
+      opacity 0.1s,
+      transform 0.1s,
+      visibility 0s 0.1s;
+  }
+
+  .menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+      opacity 0.15s ease-out,
+      transform 0.15s ease-out,
+      visibility 0s;
+  }
+
+  nav {
+    display: flex;
+    flex-direction: column;
+  }
+
+  nav a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+    padding: 4px 12px;
+    border-bottom: 1px solid var(--edge-soft);
+    border-left: 2px solid transparent;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition:
+      color 0.2s,
+      background 0.2s;
+  }
+
+  nav a:hover {
+    color: var(--ink);
+    background: var(--starmap-hover);
+  }
+
+  nav a:hover,
+  nav a:focus-visible {
+    --label-dim: 1;
+  }
+
+  nav a:focus-visible {
+    outline-offset: -4px;
+  }
+
+  nav a[aria-current='page'] {
+    color: var(--ink);
+    background: var(--starmap-press);
+    border-left-color: var(--flow);
+  }
+
+  .tool {
+    display: block;
+    padding: 8px 12px;
+  }
+
+  /* Nothing to run on this machine: no empty strip at the foot of the list. */
+  .tool:has(> :empty) {
+    display: none;
+  }
+}
+
+@media (max-width: 1199px) and (pointer: coarse) {
+  .logo,
+  .toggle,
+  nav a {
+    min-height: 44px;
+  }
+
+  .toggle {
+    min-width: 44px;
+  }
+
+  /* Run sizes its buttons by this. */
+  .tool {
+    --touch-target: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu,
+  .menu.open {
+    transition: none;
+  }
+}

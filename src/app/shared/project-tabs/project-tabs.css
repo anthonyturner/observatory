@@ -1,22 +1,17 @@
 /* Sits beside the up-link and matches its pill; the current screen carries a
-   bar under it, so it never rests on colour alone. Below 1200px the same links
-   fold behind `.toggle` (the Review Queue's wide tier starts there). */
+   bar under it, so it never rests on colour alone. */
 :host {
   display: block;
   width: fit-content;
 }
 
-nav,
-.toggle {
+nav {
+  display: flex;
+  overflow: hidden;
   border: 1px solid var(--edge-soft);
   border-radius: 999px;
   background: var(--panel);
   backdrop-filter: blur(14px) saturate(140%);
-}
-
-nav {
-  display: flex;
-  overflow: hidden;
 }
 
 a {
@@ -43,170 +38,23 @@ a:hover {
   background: var(--starmap-hover);
 }
 
+a:hover,
+a:focus-visible {
+  --label-dim: 1;
+}
+
 a:focus-visible {
   outline: 2px solid var(--flow);
   outline-offset: -2px;
 }
 
-/* A screen this project has nothing on: dimmed, but kept above the contrast floor for text. */
+/* A screen this project has nothing on takes a little less room; its label dims itself. */
 a.quiet {
   padding-inline: 9px;
-  opacity: 0.8;
-  font-style: italic;
-}
-
-a.quiet:hover,
-a.quiet:focus-visible,
-a.quiet[aria-current='page'] {
-  opacity: 1;
-}
-
-a.quiet[aria-current='page'] {
-  font-style: normal;
 }
 
 a[aria-current='page'] {
   color: var(--ink);
   background: var(--starmap-press);
   border-bottom-color: var(--flow);
-}
-
-/* A count on a tab, such as Security's open alerts: a small warm pill. */
-.badge {
-  display: inline-block;
-  min-width: 15px;
-  margin-left: 5px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--security-badge);
-  color: var(--void);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 14px;
-  text-align: center;
-}
-
-.toggle .badge {
-  margin-left: 0;
-}
-
-.toggle {
-  display: none;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 12px 4px 9px;
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    color 0.2s,
-    border-color 0.2s;
-}
-
-.toggle:hover {
-  border-color: var(--flow);
-}
-
-.toggle:focus-visible {
-  outline: 2px solid var(--flow);
-  outline-offset: 2px;
-}
-
-.glyph {
-  color: var(--flow);
-  font-size: 13px;
-  line-height: 1;
-}
-
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--security-badge);
-}
-
-@media (max-width: 1199px) {
-  .toggle {
-    display: inline-flex;
-  }
-
-  /* Anchored to the project bar, which is `position: fixed`, and not to the button: the button
-     can sit anywhere along a wrapped bar, and a list hung from it could run off the screen. */
-  nav {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    flex-direction: column;
-    width: min(240px, calc(100vw - 2 * var(--page-inset-x)));
-    max-height: calc(100dvh - var(--page-inset-top) - var(--project-bar-height, 40px) - 16px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    border-radius: 14px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-6px);
-    transition:
-      opacity 0.1s,
-      transform 0.1s,
-      visibility 0s 0.1s;
-  }
-
-  nav.open {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition:
-      opacity 0.15s ease-out,
-      transform 0.15s ease-out,
-      visibility 0s;
-  }
-
-  a {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 36px;
-    padding: 4px 12px;
-    border-right: 0;
-    border-bottom: 1px solid var(--edge-soft);
-    border-left: 2px solid transparent;
-  }
-
-  a:last-child {
-    border-bottom: 0;
-  }
-
-  a.quiet {
-    padding-inline: 12px;
-  }
-
-  a[aria-current='page'] {
-    border-bottom-color: var(--edge-soft);
-    border-left-color: var(--flow);
-  }
-
-  a[aria-current='page']:last-child {
-    border-bottom-color: transparent;
-  }
-
-  a:focus-visible {
-    outline-offset: -4px;
-  }
-}
-
-@media (max-width: 1199px) and (pointer: coarse) {
-  a {
-    min-height: 44px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  nav,
-  nav.open {
-    transition: none;
-  }
 }

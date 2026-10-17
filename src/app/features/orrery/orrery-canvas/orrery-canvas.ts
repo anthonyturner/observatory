@@ -6,6 +6,7 @@ import {
   ElementRef,
   ErrorHandler,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
@@ -18,8 +19,11 @@ import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld, pickWorld } from '../../../core/orrery/pick-world';
-import { OrreryWorld, outermostOrbit } from '../../../core/orrery/world-layout';
+import { systemExtent } from '../../../core/orrery/sun-placement';
+import { OrreryWorld } from '../../../core/orrery/world-layout';
 import { OrreryPalette, readOrreryPalette } from './orrery-palette';
+import { EARTH_IMAGES, loadImage } from './earth-images';
+import { describeLayout } from './layout-description';
 import { OrreryScene, SceneFrame } from './orrery-scene';
 import type { OrreryWebGL } from './webgl/orrery-webgl';
 import { CardHover } from './card-hover';
@@ -57,7 +61,10 @@ interface Press {
  */
 @Component({
   selector: 'app-orrery-canvas',
-  template: '<canvas #canvas aria-label="Orrery of every project"></canvas>',
+  template: `
+    <canvas #canvas aria-label="Orrery of every project" aria-describedby="orrery-layout"></canvas>
+    <p id="orrery-layout" class="visually-hidden">{{ layout() }}</p>
+  `,
   styleUrl: './orrery-canvas.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -111,6 +118,7 @@ export class OrreryCanvas {
   });
   private pinch: number | null = null;
   protected press: Press | null = null;
+  protected readonly layout = computed(() => describeLayout(this.worlds()));
   /** Signals, so the cursor follows: the canvas changes them outside any template event. */
   protected readonly isOverWorld = signal(false);
   protected readonly isDragging = signal(false);
@@ -151,7 +159,7 @@ export class OrreryCanvas {
   }
 
   fit(): void {
-    this.camera.fit(outermostOrbit(this.worlds()), this.view);
+    this.camera.fit(systemExtent(this.worlds()), this.view);
     this.loop?.kick();
   }
 
@@ -187,16 +195,31 @@ export class OrreryCanvas {
     if (this.worlds().length && this.shownAt === null) this.showSystem();
     this.listen(canvas);
     this.loop.kick();
+    void this.showEarth();
     void this.upgrade(canvas);
+  }
+
+  /** Draws the Earth from its NASA picture once that has loaded, until the 3D view takes over. A still page
+   *  draws one frame and stops, so the arrival has to ask for another. */
+  private async showEarth(): Promise<void> {
+    try {
+      const day = await loadImage(this.document, EARTH_IMAGES.day);
+      if (this.isStopped) return;
+      this.scene?.setEarthPicture(day);
+      this.loop?.kick();
+    } catch (error: unknown) {
+      console.warn('The Earth’s picture is unavailable; drawing it flat.', error);
+    }
   }
 
   /** Loads the 3D view and moves to it where it can draw; anything that goes
    *  wrong, from the download to a shader, keeps the 2D orrery. */
   private async upgrade(canvas: HTMLCanvasElement): Promise<void> {
+    let webgl: OrreryWebGL | null = null;
     try {
       const { OrreryWebGL } = await import('./webgl/orrery-webgl');
       if (this.isStopped || !this.palette) return;
-      const webgl = new OrreryWebGL(this.document, this.palette, () => this.dropWebgl());
+      webgl = new OrreryWebGL(this.document, this.palette, () => this.dropWebgl());
       // The 2D orrery keeps drawing while the shaders compile, which can take seconds.
       const worlds = this.worlds();
       await webgl.setWorlds(worlds);
@@ -211,6 +234,8 @@ export class OrreryCanvas {
       this.loop?.kick();
     } catch (error: unknown) {
       console.warn('The 3D orrery is unavailable; drawing in 2D.', error);
+      // A picture that will not load fails after the renderer exists, and it holds a GPU context.
+      if (webgl && this.webgl !== webgl) webgl.dispose();
     }
   }
 
@@ -243,7 +268,7 @@ export class OrreryCanvas {
    *  read on Home), so framing waits for both. */
   private frameOnce(): void {
     if (this.isFramed || !this.view.width || !this.worlds().length) return;
-    this.camera.fit(outermostOrbit(this.worlds()), this.view);
+    this.camera.fit(systemExtent(this.worlds()), this.view);
     this.camera.settle();
     this.isFramed = true;
   }

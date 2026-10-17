@@ -2,14 +2,16 @@ import { seededRandom } from '../../../core/instrument/seeded-random';
 import { growth, worldPosition } from '../../../core/orrery/orbit';
 import { depthAt } from '../../../core/orrery/orrery-camera';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
-import { DrawnWorld } from '../../../core/orrery/pick-world';
+import { EARTH_RADIUS } from '../../../core/orrery/earth';
+import { DrawnWorld, Occluder, isOccluded } from '../../../core/orrery/pick-world';
 import { FieldStar, starField } from '../../../core/orrery/star-field';
 import {
-  OrreryWorld,
-  openTotal,
-  outermostOrbit,
-  sunRadius,
-} from '../../../core/orrery/world-layout';
+  SunPlacement,
+  dialRadius,
+  sunPlacement,
+  sunwardAngle,
+} from '../../../core/orrery/sun-placement';
+import { OrreryWorld, openTotal } from '../../../core/orrery/world-layout';
 import { OrreryPalette } from './orrery-palette';
 import {
   makeGrain,
@@ -17,6 +19,7 @@ import {
   paintGrain,
   paintVignette,
 } from '../../../shared/night-sky/night-sky';
+import { makeEarthDisc, paintEarth } from './earth-painter';
 import { paintBackground, paintDial, paintHouses3D } from './sky-painter';
 import { paintSun, paintSunLabel } from './sun-painter';
 import {
@@ -29,8 +32,6 @@ import {
   paintWorldLabel,
 } from './world-painter';
 
-/** The dial sits this far beyond the outermost orbit. */
-export const DIAL_BEYOND_ORBIT = 100;
 const GRAIN_SEED = 20260926;
 
 /** One frame's inputs. */
@@ -51,12 +52,14 @@ export interface SceneFrame {
  */
 export class OrreryScene {
   private worlds: readonly OrreryWorld[] = [];
+  private sun: SunPlacement = sunPlacement([]);
+  private earthDisc: HTMLCanvasElement | null = null;
   private readonly field: readonly FieldStar[] = starField();
   private readonly grain: HTMLCanvasElement;
   private readonly glow: HTMLCanvasElement;
 
   constructor(
-    document: Document,
+    private readonly document: Document,
     private readonly palette: OrreryPalette,
   ) {
     this.grain = makeGrain(document, seededRandom(GRAIN_SEED));
@@ -65,6 +68,12 @@ export class OrreryScene {
 
   setWorlds(worlds: readonly OrreryWorld[]): void {
     this.worlds = worlds;
+    this.sun = sunPlacement(worlds);
+  }
+
+  /** The Earth's day picture has loaded: from the next frame the Earth is drawn from it. */
+  setEarthPicture(day: HTMLImageElement): void {
+    this.earthDisc = makeEarthDisc(this.document, day);
   }
 
   /** The bloom layer runs at half size: it is about to be blurred anyway. */
@@ -82,17 +91,29 @@ export class OrreryScene {
 
     paintBackground(ctx, view, this.palette);
     paintField(ctx, this.field, camera, view, time, this.palette.stars);
-    const dialRadius = (outermostOrbit(this.worlds) + DIAL_BEYOND_ORBIT) * scale;
-    if (this.worlds.length) paintDial(ctx, centre, dialRadius, time, scale, this.palette);
+    if (this.worlds.length) {
+      paintDial(ctx, centre, dialRadius(this.worlds) * scale, time, scale, this.palette);
+    }
     for (const world of placed) paintOrbit(ctx, centre, world, scale, this.palette);
 
-    const sun = sunRadius(this.worlds) * scale;
+    const [sunX, sunY] = camera.toScreen(this.sun.x, this.sun.y, view);
+    const sunPx = this.sun.radius * scale;
+    const earthSunward = sunwardAngle({ x: 0, y: 0 }, this.sun);
+    paintEarth(
+      ctx,
+      centre[0],
+      centre[1],
+      EARTH_RADIUS * scale,
+      earthSunward,
+      this.earthDisc,
+      this.palette,
+    );
     this.paintBloom(ctx, view, (glow) => {
-      paintSun(glow, centre[0], centre[1], sun, time, this.palette);
+      paintSun(glow, sunX, sunY, sunPx, time, this.palette);
       for (const world of placed) paintWorld(glow, world, time, isStill, this.palette);
     });
 
-    paintSunLabel(ctx, centre[0], centre[1], sun, openTotal(this.worlds), scale, this.palette);
+    paintSunLabel(ctx, sunX, sunY, sunPx, openTotal(this.worlds), scale, this.palette);
     for (const world of placed) paintWorldLabel(ctx, world, scale, this.palette);
     paintVignette(ctx, view, this.palette.vignette);
     paintGrain(ctx, this.grain, view, time, isStill);
@@ -120,13 +141,12 @@ export class OrreryScene {
       if (world.grow > 0) paintComets(ctx, world, time, isStill, this.palette);
     ctx.restore();
 
-    const [sunX, sunY] = camera.toScreenAt(0, 0, 0, view);
-    const sun = sunRadius(this.worlds) * scale;
-    paintSunLabel(ctx, sunX, sunY, sun, openTotal(this.worlds), scale, this.palette);
+    const [sunX, sunY] = camera.toScreenAt(this.sun.x, this.sun.y, this.sun.z, view);
+    const sunPx = this.sun.radius * scale * depthAt(this.sun.z);
+    paintSunLabel(ctx, sunX, sunY, sunPx, openTotal(this.worlds), scale, this.palette);
     for (const world of placed) paintWorldLabel(ctx, world, scale, this.palette);
     if (this.worlds.length) {
-      const dial = outermostOrbit(this.worlds) + DIAL_BEYOND_ORBIT;
-      paintHouses3D(ctx, camera, view, dial, time, this.palette);
+      paintHouses3D(ctx, camera, view, dialRadius(this.worlds), time, this.palette);
     }
     for (const world of placed) {
       if (!world.isSelected || world.grow <= 0) continue;
@@ -135,10 +155,14 @@ export class OrreryScene {
       ctx.restore();
     }
 
-    // A world behind the sun's disc is hidden by it, so it cannot be picked there.
+    // A world behind the Earth's or the sun's disc is hidden by it, so it cannot be picked there.
+    const [earthX, earthY] = camera.toScreenAt(0, 0, 0, view);
+    const occluders: Occluder[] = [
+      { x: earthX, y: earthY, z: 0, radius: EARTH_RADIUS * scale },
+      { x: sunX, y: sunY, z: this.sun.z, radius: sunPx },
+    ];
     return placed
-      .filter((world) => world.grow > 0.1)
-      .filter((world) => !(world.z < 0 && Math.hypot(world.x - sunX, world.y - sunY) < sun))
+      .filter((world) => world.grow > 0.1 && !isOccluded(world, occluders))
       .map((world) => ({
         key: world.world.project.repo,
         x: world.x,
@@ -167,7 +191,7 @@ export class OrreryScene {
       radius: Math.max(world.radius * camera.current.scale * depth, MIN_WORLD_RADIUS) * grow,
       grow,
       color: this.palette.channels(world.color),
-      sunward: Math.atan2(-position.y, -position.x),
+      sunward: sunwardAngle(position, this.sun),
       isSelected: world.project.repo === frame.selectedKey,
     };
   }

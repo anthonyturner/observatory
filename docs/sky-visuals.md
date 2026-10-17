@@ -21,6 +21,7 @@ TypeScript and the shader only draws it.
 
 | Sky          | Mark             | Data                       | Rule (function)                |
 | ------------ | ---------------- | -------------------------- | ------------------------------ |
+| Orrery       | Sun size         | Open PRs                   | `sunRadius`                    |
 | Orrery       | Air colour       | Most urgent state          | severity colour (`severityOf`) |
 | Orrery       | City lights      | Open PRs, oldest idle days | `nightSide(project).lights`    |
 | Orrery       | Glowing fissures | Failing checks             | `nightSide(project).unrest`    |
@@ -80,7 +81,80 @@ TypeScript and the shader only draws it.
 
 Code: `features/orrery/orrery-canvas/webgl/orrery-webgl.ts` builds the scene;
 the shaders are in `shared/planets/planet-shaders.ts` (shared with the
-Architecture page's star view) and `orrery-shaders.ts` (sun, rings, field).
+Architecture page's star view), `earth-shaders.ts` (the Earth) and
+`orrery-shaders.ts` (sun, rings, field).
+
+### Earth at the centre (scenery)
+
+The home world sits at the orbit origin, radius 60 (`EARTH_RADIUS`), with no
+change to the worlds' layout. It is scenery: its colours mean nothing, and it
+has no hover, card or click. Its pictures are NASA's, under `public/earth/`
+(`day.jpg` 2048×1024, `night.jpg` and `clouds.jpg` 1024×512, sources and credits
+in `CREDITS.md` beside them), and only the Orrery loads them.
+
+Code: `webgl/earth-body.ts` builds it, `webgl/earth-shaders.ts` draws it. It is a
+sibling of the worlds' shader on purpose: `planet-shaders.ts` is shared with the
+Architecture page and stays as it is.
+
+- **Built once.** `OrreryWebGL` makes the Earth from its pictures when it
+  starts. `setWorlds` rebuilds the scene on every refresh, so the Earth owns its
+  own GPU resources outside it (`disposeAll` leaves them) and `attachTo` moves
+  it into each new scene once that scene can draw. It is compiled with the
+  scene (`compileAsync`), so it adds no first-show stall. If a picture will not
+  load, the 3D view is not used and the 2D orrery stays.
+- **Day and night.** The ground is the day map where the sun shines and the
+  night map past it: a smoothstep on N·L from −0.08 to +0.12. The dusk band
+  between is warm orange-pink, at most 25% strength.
+- **City lights** are the night map's lights, warm amber, peaking at about 0.55
+  of the bloom threshold and dimmed under cloud. They are scenery, not the
+  worlds' `nightSide` lights, which are data.
+- **Clouds.** A shell at 1.015 × radius over the ground, from a NASA cloud map,
+  turning at 0.015 rad/s against the ground, which holds still. Their shadows
+  fall on the ground, offset toward the sun. Their brightness is held under 0.8,
+  so they never bloom. With motion off they hold still.
+- **Air.** A rim at 1.06 × radius, blue on the day limb, fading on the night
+  side and warm at the terminator. It reuses the worlds' air shader, in a pale
+  blue, and carries no data.
+- **Glint.** A small specular glint on the day side's sea.
+- **2D fallback.** The day map is drawn as a flat disc facing the same longitude,
+  shaded dark on the side away from the sun (0.55 black at the far limb) with a
+  thin warm terminator and a faint blue limb. No clouds or lights. Until the
+  picture has loaded it is a flat sea-coloured disc. A picture arriving asks for
+  one more frame, since a still page draws one and stops.
+- **Picking.** Earth and the sun each hide any world behind them, as a disc
+  (`isOccluded`); neither can be picked.
+
+### Sun placement
+
+`sunPlacement(worlds)` in `core/orrery/sun-placement.ts` is the one rule for where
+the sun is, and 3D, 2D, the light, picking and Fit all read it.
+
+- **Bearing.** A fixed bearing that does not turn with the dial: about ten
+  o'clock on screen (150° counter-clockwise from screen right), clear of the
+  chrome.
+- **Depth.** At Earth's depth, same screen bearing, not on the tilted orbital
+  plane. On that plane, ten o'clock stands well behind Earth and would light only
+  a thin crescent of it; at Earth's depth the light comes from the side and the
+  terminator runs about vertical.
+- **Distance.** Measured on screen, along the bearing: from where the house
+  names' ring (a flattened ellipse, `1.07 × dialRadius`) crosses it, plus the
+  sun's radius and 12 units. So the disc is 12 units clear of the names at any
+  sun size. Its faint halo may overlap them.
+- **Size.** `sunRadius`, unchanged: 36 to 76 from open pull requests, with the
+  total on it. The label is the same too, and `--orrery-sun-ink` against the sun
+  body measures 10.9 to 1 (needs 4.5).
+- **Light.** The light, the sun's corona and every shader's `sun` uniform are at
+  that point, so every world, the Earth and the rings are lit from the sun's
+  side. In 2D, each world's `sunward` points at the sun (`sunwardAngle`), not at
+  the middle.
+- **Fit** stays centred on Earth and frames the larger of two radii: the
+  outermost orbit plus 140, and the sun's distance plus half its radius. So the
+  whole sun disc is in view. On a phone (under 720px wide, or portrait) it
+  zooms out at most 1.15 × the orbits-only fit, and never so far that the sun's
+  centre, with half its radius to spare, leaves the screen: the halo and up to
+  about half the disc may clip. The number on the sun shows down to a zoom of 0.1
+  (`SUN_LABEL_MIN_SCALE`), lower than the worlds' names (0.2), so it stays on a
+  phone.
 
 ### The shipped Milky Way (data: merged pull requests)
 
@@ -156,7 +230,7 @@ that nothing shows.
 `layoutWorlds` sets each orbit from urgency and neglect, then `clearLanes`
 pushes any orbit out until it clears the one inside it by both worlds' air
 (`AIR_SCALE`) plus 28 units, so worlds never sit on top of each other side by
-side. Behind the sun the slant and each orbit's small tilt bring lanes closer,
+side. Behind Earth the slant and each orbit's small tilt bring lanes closer,
 so a nearer world can still pass in front of a farther one there, like a
 transit. A hard guarantee would need the system about twice as wide.
 
@@ -175,6 +249,11 @@ continents, oceans and ice caps; gas giants warped bands, eddies and a storm;
 ice worlds soft blue cracks; deserts two crater fields and grain.
 
 ### Light
+
+All of it comes from the sun's position (see **Sun placement**), not from the
+middle of the system. The merge dim follows it too: `dimSpot` takes the world's
+direction to the light, so the dimmed city light lands on the night side, away
+from the sun.
 
 - **Relief:** the surface normal is tilted down the terrain's slope, measured
   from three height samples, so highlands and crater rims catch the light along

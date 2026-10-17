@@ -1,3 +1,5 @@
+import { SystemExtent } from './sun-placement';
+
 export interface Viewport {
   readonly width: number;
   readonly height: number;
@@ -30,6 +32,16 @@ const FIT_MARGIN = 140;
 const FIT_CHROME_HEIGHT = 200;
 /** An orbit is drawn this much taller than flat, at most. */
 const FIT_ORBIT_HEIGHT = 1.35;
+/** Fit frames the sun's centre and this much of its disc. */
+const FIT_SUN_REACH = 0.5;
+/** A viewport this narrow, or taller than wide, is a phone's. */
+const PHONE_MAX_WIDTH = 720;
+/** On a phone Fit never zooms out beyond this multiple of the orbits-only fit,
+ *  so the Earth and the worlds stay big enough to read. */
+const PHONE_MAX_ZOOM_OUT = 1.15;
+
+const isPhone = (view: Viewport): boolean =>
+  view.width <= PHONE_MAX_WIDTH || view.height > view.width;
 
 /** How far the 3D camera stands from the plane, in orrery units: far enough
  *  that the system looks nearly flat, near enough that depth still shows. */
@@ -40,6 +52,25 @@ export const depthAt = (z: number): number => CAMERA_DISTANCE / (CAMERA_DISTANCE
 
 export const clampScale = (scale: number): number =>
   Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+
+/** The scale at which a circle of `radius` round the origin just fits the view, clear of the HUD's bars. */
+const fitScale = (radius: number, view: Viewport): number =>
+  Math.min(
+    view.width / (radius * 2),
+    (view.height - FIT_CHROME_HEIGHT) / (radius * FIT_ORBIT_HEIGHT),
+  );
+
+/** The most zoomed-in scale that keeps the sun's centre on screen, with half its radius to spare. */
+const sunCentreInView = (
+  sun: { readonly x: number; readonly y: number; readonly radius: number },
+  view: Viewport,
+): number => {
+  const spare = FIT_SUN_REACH * sun.radius;
+  return Math.min(
+    view.width / 2 / (Math.abs(sun.x) + spare),
+    (view.height - FIT_CHROME_HEIGHT) / 2 / (Math.abs(sun.y) + spare),
+  );
+};
 
 /** A 2D camera over the orrery's plane that eases toward where it is sent. */
 export class OrreryCamera {
@@ -103,16 +134,24 @@ export class OrreryCamera {
     this.target.y = oy - (sy - view.height / 2) / scale;
   }
 
-  /** Frames the whole system out to `outermostOrbit`. */
-  fit(outermostOrbit: number, view: Viewport): void {
-    const far = outermostOrbit + FIT_MARGIN;
+  /** Frames the Earth at the centre, the orbits round it and the sun beyond them.
+   *  On a phone the sun may clip, but never so far that its centre, and the
+   *  number on it, leave the screen. */
+  fit({ outermostOrbit, sun }: SystemExtent, view: Viewport): void {
+    const orbitsRadius = outermostOrbit + FIT_MARGIN;
+    const withSun = fitScale(
+      Math.max(orbitsRadius, sun.distance + FIT_SUN_REACH * sun.radius),
+      view,
+    );
     this.target.x = 0;
     this.target.y = 0;
     this.target.scale = clampScale(
-      Math.min(
-        view.width / (far * 2),
-        (view.height - FIT_CHROME_HEIGHT) / (far * FIT_ORBIT_HEIGHT),
-      ),
+      isPhone(view)
+        ? Math.min(
+            Math.max(withSun, fitScale(orbitsRadius, view) / PHONE_MAX_ZOOM_OUT),
+            sunCentreInView(sun, view),
+          )
+        : withSun,
     );
   }
 

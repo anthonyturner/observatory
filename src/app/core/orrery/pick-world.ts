@@ -25,3 +25,21 @@ export function pickWorld(drawn: readonly DrawnWorld[], sx: number, sy: number):
   }
   return best?.key ?? null;
 }
+
+/** A disc that hides what is behind it: a body at depth `z`, in screen pixels. */
+export interface Occluder {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly radius: number;
+}
+
+/** Whether a world's centre is hidden by a disc in front of it: nearer the
+ *  viewer than the world, and with the world's centre inside its edge. */
+export const isOccluded = (
+  world: { readonly x: number; readonly y: number; readonly z: number },
+  occluders: readonly Occluder[],
+): boolean =>
+  occluders.some(
+    (disc) => world.z < disc.z && Math.hypot(world.x - disc.x, world.y - disc.y) < disc.radius,
+  );

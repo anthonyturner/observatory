@@ -324,7 +324,20 @@ it listens to:
 ## Orrery
 
 The Orrery is a solar system of your projects: one world for each project you
-own, orbiting a sun that shows how many pull requests are open.
+own, orbiting Earth, your home world at the centre. A sun off to one side lights
+every world and shows how many pull requests are open.
+
+### Earth and the sun
+
+- **Earth** is drawn from NASA pictures, with a day side, a night side, city
+  lights and clouds. It is scenery only: it says nothing about your work, and
+  there is nothing to click.
+- **The sun** sits just outside the ring of house names, at the upper left. It
+  grows with your open pull requests, and the number on it is the total. Every
+  world is lit from its side.
+- **Fit** frames Earth, the orbits and the whole sun. On a phone it zooms out
+  less, so the sun may be cut off at the screen's edge, but its number stays in
+  view.
 
 ### Worlds
 
@@ -379,7 +392,8 @@ across the room, and a small bell where it lands.
   tap once for the card and again to open.
 - Drag or use the arrow keys to move, scroll or **+ −** to zoom.
 - **Sound** makes the system play itself: each world is an instrument, harsh
-  when blocked and a bell when clear, and the sun keeps the beat.
+  when blocked and a bell when clear, and the sun, off to one side, keeps the
+  beat.
 
 ## Review Queue
 

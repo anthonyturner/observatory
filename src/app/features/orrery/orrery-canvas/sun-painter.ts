@@ -1,11 +1,10 @@
+import { SUN_LABEL_MIN_SCALE } from '../../../core/orrery/sun-placement';
 import { rgba } from '../../../shared/night-sky/night-sky';
 import { OrreryPalette } from './orrery-palette';
 
 const RAYS = 16;
 /** The halo stays close, so the space round the sun stays dark. */
 const HALO_REACH = 2.2;
-/** Below this zoom the total on the sun is too small to read. */
-const LABEL_MIN_SCALE = 0.2;
 
 /** The sun, drawn into the glow layer: a breathing halo, corona rays, a body. */
 export function paintSun(
@@ -69,7 +68,7 @@ export function paintSunLabel(
   scale: number,
   palette: OrreryPalette,
 ): void {
-  if (scale < LABEL_MIN_SCALE) return;
+  if (scale < SUN_LABEL_MIN_SCALE) return;
   ctx.save();
   ctx.fillStyle = rgba(palette.sunInk);
   ctx.textAlign = 'center';

@@ -99,7 +99,9 @@ constant: `--project-bar-height`, `--status-strip-height`, `--hud-top-height` an
 Meet [WCAG 2.1 AA](https://www.w3.org/TR/WCAG21/), the widely used web
 accessibility standard:
 
-- Every interactive element works from the keyboard.
+- Every interactive element works from the keyboard. Decoration that does,
+  shows and changes nothing is not interactive, and needs no keyboard route:
+  the Orrery's Earth spin is declared so in [../sky-visuals.md](../sky-visuals.md).
 - Focus is always visible.
 - Custom interactive elements have the right ARIA role and an accessible label.
   (ARIA attributes tell assistive technology, such as screen readers, what an

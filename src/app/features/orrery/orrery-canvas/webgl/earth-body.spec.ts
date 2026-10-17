@@ -47,13 +47,39 @@ describe('EarthBody', () => {
     const [ground, clouds] = earth.group.children;
     const turnOf = (): number => materialsOf(earth)[0].uniforms['cloudTurn'].value;
 
-    earth.update(0);
+    earth.update(0, 0);
     expect(turnOf()).toBeCloseTo(0);
-    earth.update(10);
+    earth.update(10, 0);
 
     expect(clouds.rotation.y).toBeGreaterThan(ground.rotation.y);
     expect(turnOf()).toBeLessThan(0);
     expect(ground.rotation.y).toBeCloseTo(-Math.PI / 3);
+  });
+
+  it('turns the ground and its clouds together when spun, the clouds still drifting against it', () => {
+    const earth = new EarthBody(textures(), new Color());
+    const [ground, clouds] = earth.group.children;
+    const turnOf = (): number => materialsOf(earth)[0].uniforms['cloudTurn'].value;
+    earth.update(10, 0);
+    const drift = clouds.rotation.y - ground.rotation.y;
+    const turn = turnOf();
+
+    earth.update(10, 1.5);
+
+    expect(ground.rotation.y).toBeCloseTo(-Math.PI / 3 + 1.5);
+    expect(clouds.rotation.y - ground.rotation.y).toBeCloseTo(drift);
+    expect(turnOf()).toBeCloseTo(turn);
+  });
+
+  it('turns about its own axis without moving the Earth or its lighting', () => {
+    const earth = new EarthBody(textures(), new Color());
+    earth.attachTo(new Scene(), new Vector3(-900, 500, 0));
+
+    earth.update(0, 2);
+
+    expect(earth.group.position.toArray()).toEqual([0, 0, 0]);
+    expect(earth.group.rotation.y).toBe(0);
+    expect((materialsOf(earth)[0].uniforms['sun'].value as Vector3).x).toBe(-900);
   });
 
   it('sends every picture to the GPU when asked, so the first frame does not stall', () => {

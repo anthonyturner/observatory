@@ -108,7 +108,6 @@ export class EarthBody {
 
     this.ground = new Mesh(this.geometry, ground);
     this.ground.scale.setScalar(EARTH_RADIUS);
-    this.ground.rotation.y = EARTH_TURN;
     this.clouds = new Mesh(this.geometry, clouds);
     this.clouds.scale.setScalar(EARTH_RADIUS * CLOUD_SCALE);
     this.clouds.renderOrder = 1;
@@ -116,7 +115,7 @@ export class EarthBody {
     air.scale.setScalar(EARTH_RADIUS * EARTH_AIR_SCALE);
     air.renderOrder = 2;
     this.group.add(this.ground, this.clouds, air);
-    this.update(0);
+    this.update(0, 0);
   }
 
   /** Moves the Earth into `scene`, out of any scene it was in, lit from `sun`. */
@@ -130,8 +129,10 @@ export class EarthBody {
     for (const texture of Object.values(this.textures)) renderer.initTexture(texture);
   }
 
-  /** The clouds' place at scene time `time`, in seconds. */
-  update(time: number): void {
+  /** The Earth as it stands at scene time `time`, in seconds, turned `spin` radians eastward. The
+   *  clouds drift against the ground however it turns. */
+  update(time: number, spin: number): void {
+    this.ground.rotation.y = EARTH_TURN + spin;
     this.clouds.rotation.y = this.ground.rotation.y + CLOUD_DRIFT * time;
     this.ground.material.uniforms['cloudTurn'].value =
       this.ground.rotation.y - this.clouds.rotation.y;

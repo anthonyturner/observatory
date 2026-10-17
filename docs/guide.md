@@ -331,7 +331,9 @@ every world and shows how many pull requests are open.
 
 - **Earth** is drawn from NASA pictures, with a day side, a night side, city
   lights and clouds. It is scenery only: it says nothing about your work, and
-  there is nothing to click.
+  there is nothing to click. Drag it to spin it; it keeps turning for a moment
+  after you let go, then settles to a slow turn of its own. Drag anywhere else
+  to pan, as before. With reduced motion it only follows your pointer.
 - **The sun** sits just outside the ring of house names, at the upper left. It
   grows with your open pull requests, and the number on it is the total. Every
   world is lit from its side.

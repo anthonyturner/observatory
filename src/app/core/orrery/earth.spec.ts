@@ -45,6 +45,14 @@ describe('earthDisc', () => {
     expect(pixel(size / 2, 0)[3]).toBeLessThan(255);
   });
 
+  it('shows the longitudes to the west once turned east, as the 3D ground does', () => {
+    const turned = earthDisc(coordinateMap(), size, (30 * Math.PI) / 180);
+    const at = (size / 2 * size + size / 2) * 4;
+
+    // Thirty degrees east brings longitude -60 (column 120) to the centre.
+    expect(turned[at]).toBeCloseTo(120, -1);
+  });
+
   it('turns the 3D ground a quarter turn plus the facing longitude', () => {
     expect(EARTH_TURN).toBeCloseTo(-Math.PI / 3);
   });

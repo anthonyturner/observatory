@@ -19,7 +19,7 @@ import {
   paintGrain,
   paintVignette,
 } from '../../../shared/night-sky/night-sky';
-import { makeEarthDisc, paintEarth } from './earth-painter';
+import { EarthDisc, paintEarth } from './earth-painter';
 import { paintBackground, paintDial, paintHouses3D } from './sky-painter';
 import { paintSun, paintSunLabel } from './sun-painter';
 import {
@@ -43,6 +43,8 @@ export interface SceneFrame {
   readonly sinceShown: number;
   readonly isStill: boolean;
   readonly selectedKey: string | null;
+  /** How far the Earth has turned about its axis, in radians eastward. */
+  readonly earthSpin: number;
 }
 
 /**
@@ -53,7 +55,7 @@ export interface SceneFrame {
 export class OrreryScene {
   private worlds: readonly OrreryWorld[] = [];
   private sun: SunPlacement = sunPlacement([]);
-  private earthDisc: HTMLCanvasElement | null = null;
+  private earthDisc: EarthDisc | null = null;
   private readonly field: readonly FieldStar[] = starField();
   private readonly grain: HTMLCanvasElement;
   private readonly glow: HTMLCanvasElement;
@@ -73,7 +75,7 @@ export class OrreryScene {
 
   /** The Earth's day picture has loaded: from the next frame the Earth is drawn from it. */
   setEarthPicture(day: HTMLImageElement): void {
-    this.earthDisc = makeEarthDisc(this.document, day);
+    this.earthDisc = EarthDisc.from(this.document, day);
   }
 
   /** The bloom layer runs at half size: it is about to be blurred anyway. */
@@ -105,7 +107,7 @@ export class OrreryScene {
       centre[1],
       EARTH_RADIUS * scale,
       earthSunward,
-      this.earthDisc,
+      this.earthDisc?.turnedTo(frame.earthSpin) ?? null,
       this.palette,
     );
     this.paintBloom(ctx, view, (glow) => {

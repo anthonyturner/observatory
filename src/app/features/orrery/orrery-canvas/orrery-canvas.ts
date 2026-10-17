@@ -17,8 +17,11 @@ import {
 } from '@angular/core';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
+import { EARTH_RADIUS } from '../../../core/orrery/earth';
+import { EarthSpin } from '../../../core/orrery/earth-spin';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld, pickWorld } from '../../../core/orrery/pick-world';
+import { PressRoute, grabRadius, isClick, routePress } from '../../../core/orrery/press-route';
 import { systemExtent } from '../../../core/orrery/sun-placement';
 import { OrreryWorld } from '../../../core/orrery/world-layout';
 import { OrreryPalette, readOrreryPalette } from './orrery-palette';
@@ -38,8 +41,6 @@ const SHIPPED_FALLBACK = '200, 215, 255';
 const FRAMES_PER_SECOND = 30;
 /** Retina and beyond cost more than they show on a moving sky. */
 const MAX_PIXEL_RATIO = 2;
-/** A press that moves less than this is a click, not a drag. */
-const CLICK_SLOP_PX = 5;
 const WHEEL_ZOOM = 1.16;
 const KEY_ZOOM = 1.2;
 const KEY_PAN_PX = 90;
@@ -51,11 +52,13 @@ interface Press {
   x: number;
   y: number;
   moved: number;
+  /** What its drag does, fixed where it began. */
+  readonly route: PressRoute;
 }
 
 /**
- * The orrery on a full-window canvas: drag to pan, scroll or pinch to zoom,
- * hover a world to show its card, click to pin it. It draws in 2D at once and
+ * The orrery on a full-window canvas: drag to pan, or drag the Earth to spin it,
+ * scroll or pinch to zoom, hover a world to show its card, click to pin it. It draws in 2D at once and
  * in 3D once Three.js has loaded and can draw, with the labels kept on the 2D
  * canvas over it; losing the 3D view for any reason goes back to 2D for good.
  */
@@ -89,6 +92,7 @@ export class OrreryCanvas {
   private readonly motion = inject(MotionPreference);
   private readonly errors = inject(ErrorHandler);
   private readonly camera = new OrreryCamera();
+  private readonly spin = new EarthSpin();
   private readonly shippedLayer = new ShippedLayer();
   /** A project's world colour as `r, g, b`, so its specks match its world. */
   private readonly colourOf = (repo: string): string => {
@@ -282,6 +286,7 @@ export class OrreryCanvas {
     const isStill = this.motion.isStill();
     if (isStill) this.camera.settle();
     else this.camera.advance(dt, this.press !== null);
+    this.spin.advance(dt, this.press?.route === 'spin-earth', !isStill);
 
     const ratio = this.pixelRatio();
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -293,6 +298,7 @@ export class OrreryCanvas {
       sinceShown: isStill || this.shownAt === null ? FULLY_GROWN_S : wall - this.shownAt,
       isStill,
       selectedKey: this.selected(),
+      earthSpin: this.spin.angle,
     };
     this.drawn = this.drawFrame(ctx, frame);
     for (const launch of this.shippedLayer.draw(ctx, frame, wall, this.drawn, this.colourOf)) {
@@ -320,6 +326,12 @@ export class OrreryCanvas {
       }
     }
     return scene.draw(ctx, frame);
+  }
+
+  /** The Earth's disc on screen. Its centre is the orbit origin in 2D and 3D alike. */
+  private earthOnScreen(): { x: number; y: number; radius: number } {
+    const [x, y] = this.camera.toScreen(0, 0, this.view);
+    return { x, y, radius: EARTH_RADIUS * this.camera.current.scale };
   }
 
   private pixelRatio(): number {
@@ -367,7 +379,13 @@ export class OrreryCanvas {
 
   private onPointerDown(canvas: HTMLCanvasElement, event: PointerEvent): void {
     canvas.setPointerCapture(event.pointerId);
-    this.press = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: 0 };
+    this.press = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      moved: 0,
+      route: routePress(event.clientX, event.clientY, this.earthOnScreen()),
+    };
     this.isDragging.set(true);
     this.camera.stopDrift();
     this.loop?.kick();
@@ -386,12 +404,13 @@ export class OrreryCanvas {
     press.moved += Math.abs(dx) + Math.abs(dy);
     press.x = event.clientX;
     press.y = event.clientY;
-    this.camera.drag(dx, dy);
+    if (press.route === 'spin-earth') this.spin.drag(dx, grabRadius(this.earthOnScreen().radius));
+    else this.camera.drag(dx, dy);
     this.loop?.kick();
   }
 
   private onPointerUp(event: PointerEvent): void {
-    const wasClick = this.press !== null && this.press.moved < CLICK_SLOP_PX;
+    const wasClick = this.press !== null && isClick(this.press.moved);
     this.press = null;
     this.isDragging.set(false);
     if (wasClick) {

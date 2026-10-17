@@ -4,6 +4,9 @@ import { OrreryWorld, outermostOrbit, sunRadius } from './world-layout';
 /** The dial sits this far beyond the outermost orbit. */
 export const DIAL_BEYOND_ORBIT = 100;
 
+/** How far the sun's corona reaches, in sun radii. */
+export const SUN_CORONA_REACH = 1.9;
+
 /** Where the sun reads on screen, in degrees counter-clockwise from screen-right:
  *  about ten o'clock, clear of the chrome, so it lights the Earth from the side. */
 const SUN_SCREEN_BEARING = (150 * Math.PI) / 180;

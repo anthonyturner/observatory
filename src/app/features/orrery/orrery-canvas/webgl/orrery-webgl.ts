@@ -27,6 +27,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { DepthPlanes, depthPlanes } from '../../../../core/orrery/depth-planes';
 import { growth, orbitPoint, worldPosition } from '../../../../core/orrery/orbit';
 import { CAMERA_DISTANCE } from '../../../../core/orrery/orrery-camera';
 import { FieldStar, starField } from '../../../../core/orrery/star-field';
@@ -104,6 +105,8 @@ interface Dimming {
 interface SceneModel {
   /** Where the sun, its corona and the light are in this scene, which the Earth is lit from. */
   readonly sun: Vector3;
+  /** The camera's near and far planes that hug this scene. */
+  readonly planes: DepthPlanes;
   update(frame: SceneFrame): void;
 }
 
@@ -236,6 +239,8 @@ export class OrreryWebGL {
     this.camera.fov =
       (2 * Math.atan(view.height / (2 * CAMERA_DISTANCE * current.scale)) * 180) / Math.PI;
     this.camera.position.set(current.x, -current.y, CAMERA_DISTANCE);
+    this.camera.near = this.model.planes.near;
+    this.camera.far = this.model.planes.far;
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();
     this.earthBody?.update(frame.time);
@@ -453,6 +458,7 @@ export class OrreryWebGL {
 
     return {
       sun: sunPosition,
+      planes: depthPlanes(worlds),
       update: (frame) => {
         const { time, camera } = frame;
         updateSky(frame);

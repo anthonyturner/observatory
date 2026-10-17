@@ -156,6 +156,21 @@ the sun is, and 3D, 2D, the light, picking and Fit all read it.
   (`SUN_LABEL_MIN_SCALE`), lower than the worlds' names (0.2), so it stays on a
   phone.
 
+### Depth range
+
+The 3D camera stands 24,000 units off and looks straight down its line of sight,
+so zoom changes only its field of view. `depthPlanes(worlds)` in
+`core/orrery/depth-planes.ts` sets its near and far planes from the scene: near
+just in front of the furthest-forward thing (the dial, the sun's corona, or the
+furthest world with its air, ring and moons), far just past the deepest field
+star (`FIELD_DEEPEST`). A depth buffer spends its steps between the two, so the
+tighter they hug the scene, the thinner a gap it can tell apart: one step at the
+scene is about 0.002 units, where near 1 and far 100,000 gave about 34. That is
+why a world's cloud and air shells (0.015 and 0.12 of its radius, so 0.2 units
+at the smallest) sit apart from its ground with no depth offset. **Anything new
+that sits further out than these, in front or behind, must be added to
+`depthPlanes`**, or the camera will clip it.
+
 ### The shipped Milky Way (data: merged pull requests)
 
 The band holds every pull request merged in the last 60 days across the projects

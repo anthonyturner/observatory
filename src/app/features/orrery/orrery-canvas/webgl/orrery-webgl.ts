@@ -27,11 +27,25 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { DepthPlanes, depthPlanes } from '../../../../core/orrery/depth-planes';
 import { growth, orbitPoint, worldPosition } from '../../../../core/orrery/orbit';
 import { CAMERA_DISTANCE } from '../../../../core/orrery/orrery-camera';
-import { FieldStar, starField } from '../../../../core/orrery/star-field';
+import {
+  FIELD_SPREAD_3D,
+  FIELD_STARS_3D,
+  FieldStar,
+  starField,
+} from '../../../../core/orrery/star-field';
 import { dialRadius, sunPlacement } from '../../../../core/orrery/sun-placement';
-import { OrreryWorld, hashString } from '../../../../core/orrery/world-layout';
+import {
+  MOON_TILT,
+  OrreryWorld,
+  RING_INNER,
+  RING_OUTER,
+  hashString,
+  moonOrbitRadius,
+  moonRadius,
+} from '../../../../core/orrery/world-layout';
 import { CLOUD_COVER, WorldKind, worldKind } from '../../../../core/orrery/world-kind';
 import { nightSide } from '../../../../core/orrery/world-night';
 import { DIM_TOTAL_S, dimAt, dimSpot } from '../../../../core/orrery/merge-arrival';
@@ -63,8 +77,6 @@ import {
 
 const DEG = Math.PI / 180;
 /** The 3D sky holds more stars over a wider field, so it can turn without bare corners. */
-const FIELD_STARS_3D = 1800;
-const FIELD_SPREAD_3D = 1.7;
 /** Bloom only on what is luminous: deep space stays black so stars have something to be brighter than. */
 const BLOOM_STRENGTH = 0.32;
 const BLOOM_RADIUS = 0.25;
@@ -80,7 +92,6 @@ const MOON_TINT = 0.7;
 const GROUND_TURN = 0.035;
 const CLOUD_TURN = 0.05;
 /** A moon is never smaller than this many screen pixels. */
-const MIN_MOON_PX = 1.3;
 
 const rgb = (channels: string): Color => new Color(`rgb(${channels})`);
 
@@ -104,6 +115,8 @@ interface Dimming {
 interface SceneModel {
   /** Where the sun, its corona and the light are in this scene, which the Earth is lit from. */
   readonly sun: Vector3;
+  /** The camera's near and far planes that hug this scene. */
+  readonly planes: DepthPlanes;
   update(frame: SceneFrame): void;
 }
 
@@ -117,7 +130,8 @@ export class OrreryWebGL {
   private readonly canvas: HTMLCanvasElement;
   private readonly gl: WebGLRenderer;
   private scene = new Scene();
-  private readonly camera = new PerspectiveCamera(30, 1, 1, 100000);
+  /** Its near and far planes are set from the scene on every frame. */
+  private readonly camera = new PerspectiveCamera(30, 1);
   private readonly composer: EffectComposer;
   private readonly renderPass: RenderPass;
   private readonly passes: { dispose(): void }[];
@@ -236,6 +250,8 @@ export class OrreryWebGL {
     this.camera.fov =
       (2 * Math.atan(view.height / (2 * CAMERA_DISTANCE * current.scale)) * 180) / Math.PI;
     this.camera.position.set(current.x, -current.y, CAMERA_DISTANCE);
+    this.camera.near = this.model.planes.near;
+    this.camera.far = this.model.planes.far;
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();
     this.earthBody?.update(frame.time);
@@ -412,7 +428,7 @@ export class OrreryWebGL {
       }
       if (world.hasRing) {
         const ring = new Mesh(
-          own(new RingGeometry(1.76, 2.3, 96)),
+          own(new RingGeometry(RING_INNER, RING_OUTER, 96)),
           own(
             new ShaderMaterial({
               uniforms: {
@@ -453,6 +469,7 @@ export class OrreryWebGL {
 
     return {
       sun: sunPosition,
+      planes: depthPlanes(worlds),
       update: (frame) => {
         const { time, camera } = frame;
         updateSky(frame);
@@ -529,10 +546,10 @@ export class OrreryWebGL {
     moons.forEach((moon, i) => {
       const angle = world.spin + frame.time * (0.5 + i * 0.16) + (i / world.moons) * Math.PI * 2;
       // Nearly edge-on, so every moon passes in front of its world and behind it.
-      const p = orbitPoint(radius * (2.7 + i * 0.34), angle, -0.36);
+      const p = orbitPoint(moonOrbitRadius(radius, i), angle, MOON_TILT);
       moon.visible = grow > 0;
       moon.position.copy(vec(at.x + p.x, at.y + p.y, at.z + p.z));
-      moon.scale.setScalar(Math.max(world.radius * 0.15, MIN_MOON_PX / scale) * grow);
+      moon.scale.setScalar(moonRadius(world.radius, scale) * grow);
       moon.material.uniforms['parentCentre'].value.copy(group.position);
       moon.material.uniforms['parentRadius'].value = radius;
     });

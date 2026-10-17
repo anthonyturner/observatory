@@ -27,6 +27,16 @@ const FIELD_HEIGHT = 2600;
  *  off as a power of an even draw. */
 const MAGNITUDE_POWER = 3;
 
+/** How many stars the 3D sky holds, and how much wider than the 2D sky it spreads. */
+export const FIELD_STARS_3D = 1800;
+export const FIELD_SPREAD_3D = 1.7;
+
+/** The nearest a 3D field star sits behind the system, and how much deeper the rest reach. */
+const FIELD_NEAREST = 12000;
+const FIELD_DEPTH_SPAN = 30000;
+/** How far behind the plane the deepest field star can be: the far plane must reach it. */
+export const FIELD_DEEPEST = FIELD_NEAREST + FIELD_DEPTH_SPAN;
+
 /** The same sky on every load, `spread` times as wide and tall as the default.
  *  Each star takes its draws in the same order, so a star keeps its place. */
 export function starField(count = FIELD_STARS, spread = 1): FieldStar[] {
@@ -42,7 +52,7 @@ export function starField(count = FIELD_STARS, spread = 1): FieldStar[] {
       radius: 0.2 + magnitude * 1.2,
       alpha: 0.06 + 0.4 * (0.75 * magnitude + 0.25 * glint * glint),
       depth: 0.28 + random() * 0.38,
-      z: -12000 - random() * 30000,
+      z: -FIELD_NEAREST - random() * FIELD_DEPTH_SPAN,
       phase: random() * Math.PI * 2,
       rate: 0.3 + random() * 1.8,
       tint: Math.floor(random() * FIELD_TINT_COUNT),

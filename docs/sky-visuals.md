@@ -102,6 +102,19 @@ Architecture page and stays as it is.
   it into each new scene once that scene can draw. It is compiled with the
   scene (`compileAsync`), so it adds no first-show stall. If a picture will not
   load, the 3D view is not used and the 2D orrery stays.
+- **Spin.** Drag the Earth to spin it. A press that starts inside its disc (at
+  least 24 px out, so a finger can grab it at a phone's Fit) turns the Earth;
+  anywhere else pans the camera as before (`routePress`). A drag of one
+  Earth radius turns it by one radian, eastward for a drag to the right. The
+  drag sets the turn speed, and on release it decays to the idle rate, one turn
+  in two minutes, in about 2 s (`EarthSpin`, shaped like the camera's drift).
+  Only the Earth object turns, with its clouds still drifting against the
+  ground; the camera and the sun's light do not. Only the sideways part of a
+  drag counts. With motion off there is no idle spin and no inertia: the Earth
+  just follows the pointer. Spin is decoration, not an action (see
+  `docs/stack/ui-components.md`), so it has no keyboard route; the arrow keys
+  still pan. A drag on the Earth is never a click. The cursor is already a
+  grab hand everywhere off a world, so the Earth shows one too.
 - **Day and night.** The ground is the day map where the sun shines and the
   night map past it: a smoothstep on N·L from −0.08 to +0.12. The dusk band
   between is warm orange-pink, at most 25% strength.
@@ -117,7 +130,9 @@ Architecture page and stays as it is.
   blue, and carries no data.
 - **Glint.** A small specular glint on the day side's sea.
 - **2D fallback.** The day map is drawn as a flat disc facing the same longitude,
-  shaded dark on the side away from the sun (0.55 black at the far limb) with a
+  and it spins too: the disc is redrawn with the map scrolled in longitude, once
+  per map column turned. It is shaded dark on the side away from the sun (0.55
+  black at the far limb) with a
   thin warm terminator and a faint blue limb. No clouds or lights. Until the
   picture has loaded it is a flat sea-coloured disc. A picture arriving asks for
   one more frame, since a still page draws one and stops.

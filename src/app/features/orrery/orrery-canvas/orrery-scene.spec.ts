@@ -77,6 +77,7 @@ const frame: SceneFrame = {
   sinceShown: 10,
   isStill: true,
   selectedKey: null,
+  earthSpin: 0,
 };
 
 /** Where in the paint order a world's circles were drawn. */

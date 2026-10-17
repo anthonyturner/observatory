@@ -5,27 +5,50 @@ import { OrreryPalette } from './orrery-palette';
 /** The map is read at this size, and the disc made at this size: plenty for an Earth a few hundred pixels across. */
 const MAP_SIZE = { width: 512, height: 256 } as const;
 const DISC_SIZE = 256;
+/** One column of the map, in radians of longitude. */
+const MAP_COLUMN = (2 * Math.PI) / MAP_SIZE.width;
 /** The far limb goes this dark, and the terminator is a thin warm band either side of the half-way line. */
 const NIGHT_SHADE = 0.55;
 const TERMINATOR_WARMTH = 0.16;
 const LIMB_ALPHA = 0.35;
 
-/** The NASA day map as a flat disc facing the viewer, ready to draw, or null where no 2D canvas can be made. */
-export function makeEarthDisc(document: Document, day: HTMLImageElement): HTMLCanvasElement | null {
-  const map = document.createElement('canvas');
-  map.width = MAP_SIZE.width;
-  map.height = MAP_SIZE.height;
-  const mapContext = map.getContext('2d', { willReadFrequently: true });
-  const disc = document.createElement('canvas');
-  disc.width = disc.height = DISC_SIZE;
-  const discContext = disc.getContext('2d');
-  if (!mapContext || !discContext) return null;
-  mapContext.drawImage(day, 0, 0, MAP_SIZE.width, MAP_SIZE.height);
-  const pixels: MapPixels = mapContext.getImageData(0, 0, MAP_SIZE.width, MAP_SIZE.height);
-  const image = discContext.createImageData(DISC_SIZE, DISC_SIZE);
-  image.data.set(earthDisc(pixels, DISC_SIZE));
-  discContext.putImageData(image, 0, 0);
-  return disc;
+/** The NASA day map as a flat disc facing the viewer. Turning it redraws it, so it is redrawn only
+ *  once the Earth has moved a column of the map on from where it was last drawn. */
+export class EarthDisc {
+  private drawnAt = Number.NaN;
+
+  private constructor(
+    private readonly map: MapPixels,
+    private readonly canvas: HTMLCanvasElement,
+    private readonly context: CanvasRenderingContext2D,
+  ) {}
+
+  /** The disc for `day`, or null where no 2D canvas can be made. */
+  static from(document: Document, day: HTMLImageElement): EarthDisc | null {
+    const map = document.createElement('canvas');
+    map.width = MAP_SIZE.width;
+    map.height = MAP_SIZE.height;
+    const mapContext = map.getContext('2d', { willReadFrequently: true });
+    const disc = document.createElement('canvas');
+    disc.width = disc.height = DISC_SIZE;
+    const discContext = disc.getContext('2d');
+    if (!mapContext || !discContext) return null;
+    mapContext.drawImage(day, 0, 0, MAP_SIZE.width, MAP_SIZE.height);
+    const pixels: MapPixels = mapContext.getImageData(0, 0, MAP_SIZE.width, MAP_SIZE.height);
+    return new EarthDisc(pixels, disc, discContext);
+  }
+
+  /** The disc turned `spin` radians eastward. */
+  turnedTo(spin: number): HTMLCanvasElement {
+    const turn = Math.round(spin / MAP_COLUMN) * MAP_COLUMN;
+    if (turn !== this.drawnAt) {
+      const image = this.context.createImageData(DISC_SIZE, DISC_SIZE);
+      image.data.set(earthDisc(this.map, DISC_SIZE, turn));
+      this.context.putImageData(image, 0, 0);
+      this.drawnAt = turn;
+    }
+    return this.canvas;
+  }
 }
 
 /**

@@ -1,5 +1,16 @@
+import { OrreryCamera, Viewport } from './orrery-camera';
+
 /** The Earth at the orbit origin, in orrery units. */
 export const EARTH_RADIUS = 60;
+
+/** The Earth's disc on screen, in pixels. It sits at the orbit origin, which both the 2D and the 3D camera put at the same place. */
+export const earthOnScreen = (
+  camera: OrreryCamera,
+  view: Viewport,
+): { readonly x: number; readonly y: number; readonly radius: number } => {
+  const [x, y] = camera.toScreen(0, 0, view);
+  return { x, y, radius: EARTH_RADIUS * camera.current.scale };
+};
 
 /** The longitude that faces the viewer, in degrees east: the Atlantic, with the
  *  Americas on the day side and Europe and Africa's lights on the night side. */
@@ -22,11 +33,13 @@ const CHANNELS = 4;
 /**
  * The globe as the viewer sees it, drawn flat as a `size` by `size` disc of
  * RGBA pixels, for the 2D orrery. It faces the same longitude as the 3D Earth,
- * north up. Pixels outside the disc are transparent, and its edge is soft.
+ * north up, once turned `spin` radians eastward (as `EarthSpin` counts them),
+ * which brings the longitudes to its west round to the front. Pixels outside
+ * the disc are transparent, and its edge is soft.
  */
-export function earthDisc(map: MapPixels, size: number): Uint8ClampedArray {
+export function earthDisc(map: MapPixels, size: number, spin = 0): Uint8ClampedArray {
   const disc = new Uint8ClampedArray(size * size * CHANNELS);
-  const facing = (FACING_LONGITUDE_DEG * Math.PI) / 180;
+  const facing = (FACING_LONGITUDE_DEG * Math.PI) / 180 - spin;
   for (let row = 0; row < size; row++) {
     const y = 1 - ((row + 0.5) / size) * 2;
     for (let column = 0; column < size; column++) {

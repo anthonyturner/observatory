@@ -2,7 +2,7 @@ import { seededRandom } from '../../../core/instrument/seeded-random';
 import { OrbitPoint, growth, worldPosition } from '../../../core/orrery/orbit';
 import { depthAt } from '../../../core/orrery/orrery-camera';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
-import { EARTH_RADIUS } from '../../../core/orrery/earth';
+import { earthOnScreen } from '../../../core/orrery/earth';
 import { DrawnWorld, Occluder, isOccluded } from '../../../core/orrery/pick-world';
 import { FieldStar, starField } from '../../../core/orrery/star-field';
 import {
@@ -19,7 +19,7 @@ import {
   paintGrain,
   paintVignette,
 } from '../../../shared/night-sky/night-sky';
-import { makeEarthDisc, paintEarth } from './earth-painter';
+import { EarthDisc, paintEarth } from './earth-painter';
 import { paintBackground, paintDial, paintHouses3D } from './sky-painter';
 import { paintSun, paintSunLabel } from './sun-painter';
 import {
@@ -80,6 +80,8 @@ export interface SceneFrame {
   readonly sinceShown: number;
   readonly isStill: boolean;
   readonly selectedKey: string | null;
+  /** How far the Earth has turned about its axis, in radians eastward. */
+  readonly earthSpin: number;
 }
 
 /**
@@ -92,7 +94,7 @@ export interface SceneFrame {
 export class OrreryScene {
   private worlds: readonly OrreryWorld[] = [];
   private sun: SunPlacement = sunPlacement([]);
-  private earthDisc: HTMLCanvasElement | null = null;
+  private earthDisc: EarthDisc | null = null;
   private readonly field: readonly FieldStar[] = starField();
   private readonly grain: HTMLCanvasElement;
   private readonly glow: HTMLCanvasElement;
@@ -112,7 +114,7 @@ export class OrreryScene {
 
   /** The Earth's day picture has loaded: from the next frame the Earth is drawn from it. */
   setEarthPicture(day: HTMLImageElement): void {
-    this.earthDisc = makeEarthDisc(this.document, day);
+    this.earthDisc = EarthDisc.from(this.document, day);
   }
 
   /** The bloom layer runs at half size: it is about to be blurred anyway. */
@@ -127,7 +129,7 @@ export class OrreryScene {
     const { scale } = camera.current;
     const centre = camera.toScreen(EARTH_AT.x, EARTH_AT.y, view);
     const placed = this.worlds.map((world) => this.place(world, frame, flat));
-    const earth = this.earthOccluder(frame, flat);
+    const earth = this.earthOccluder(frame);
     const underEarth = placed.filter((world) => glowsUnderEarth(world, earth));
     const overEarth = placed.filter((world) => !underEarth.includes(world));
 
@@ -148,11 +150,11 @@ export class OrreryScene {
     }
     paintEarth(
       ctx,
-      centre[0],
-      centre[1],
-      EARTH_RADIUS * scale,
+      earth.x,
+      earth.y,
+      earth.radius,
       earthSunward,
-      this.earthDisc,
+      this.earthDisc?.turnedTo(frame.earthSpin) ?? null,
       this.palette,
     );
     this.paintBloom(ctx, view, (glow) => {
@@ -205,7 +207,7 @@ export class OrreryScene {
     frame: SceneFrame,
     project: Projection,
   ): DrawnWorld[] {
-    const occluders = [this.earthOccluder(frame, project), this.sunOccluder(frame, project)];
+    const occluders = [this.earthOccluder(frame), this.sunOccluder(frame, project)];
     return placed
       .filter((world) => world.grow > 0.1 && !isOccluded(world, occluders))
       .map((world) => ({
@@ -216,8 +218,9 @@ export class OrreryScene {
       }));
   }
 
-  private earthOccluder(frame: SceneFrame, project: Projection): Occluder {
-    return this.disc(frame, project, EARTH_AT, EARTH_RADIUS);
+  /** At the plane's depth the flat and the 3D views put the Earth in the same place. */
+  private earthOccluder(frame: SceneFrame): Occluder {
+    return { ...earthOnScreen(frame.camera, frame.view), z: EARTH_AT.z };
   }
 
   private sunOccluder(frame: SceneFrame, project: Projection): Occluder {

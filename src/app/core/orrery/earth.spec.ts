@@ -1,4 +1,5 @@
-import { EARTH_TURN, MapPixels, earthDisc } from './earth';
+import { EARTH_RADIUS, EARTH_TURN, MapPixels, earthDisc, earthOnScreen } from './earth';
+import { OrreryCamera } from './orrery-camera';
 
 /** A 360 by 180 map, one pixel a degree, whose red is the column and whose green is the row. */
 function coordinateMap(): MapPixels {
@@ -15,6 +16,18 @@ function coordinateMap(): MapPixels {
   }
   return { width, height, data };
 }
+
+describe('earthOnScreen', () => {
+  it('is the orbit origin, as wide as the Earth at the camera zoom', () => {
+    const camera = new OrreryCamera({ x: 100, y: -50, scale: 0.5 });
+
+    expect(earthOnScreen(camera, { width: 800, height: 600 })).toEqual({
+      x: 400 - 50,
+      y: 300 + 25,
+      radius: EARTH_RADIUS * 0.5,
+    });
+  });
+});
 
 describe('earthDisc', () => {
   const size = 64;
@@ -43,6 +56,14 @@ describe('earthDisc', () => {
     expect(pixel(0, 0)[3]).toBe(0);
     expect(pixel(size / 2, size / 2)[3]).toBe(255);
     expect(pixel(size / 2, 0)[3]).toBeLessThan(255);
+  });
+
+  it('shows the longitudes to the west once turned east, as the 3D ground does', () => {
+    const turned = earthDisc(coordinateMap(), size, (30 * Math.PI) / 180);
+    const at = (size / 2 * size + size / 2) * 4;
+
+    // Thirty degrees east brings longitude -60 (column 120) to the centre.
+    expect(turned[at]).toBeCloseTo(120, -1);
   });
 
   it('turns the 3D ground a quarter turn plus the facing longitude', () => {

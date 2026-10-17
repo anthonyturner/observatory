@@ -254,7 +254,7 @@ export class OrreryWebGL {
     this.camera.far = this.model.planes.far;
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();
-    this.earthBody?.update(frame.time);
+    this.earthBody?.update(frame.time, frame.earthSpin);
     this.model.update(frame);
     this.finish.uniforms['time'].value = frame.time;
     this.composer.render();

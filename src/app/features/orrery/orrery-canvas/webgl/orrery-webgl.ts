@@ -1,7 +1,6 @@
 import {
   ACESFilmicToneMapping,
   AdditiveBlending,
-  BackSide,
   BufferGeometry,
   Color,
   DoubleSide,
@@ -11,10 +10,8 @@ import {
   Line,
   LineBasicMaterial,
   Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
-  PointLight,
   Points,
   Quaternion,
   RingGeometry,
@@ -42,8 +39,8 @@ import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { OrreryPalette } from '../orrery-palette';
 import { SceneFrame } from '../orrery-scene';
 import { EarthBody, loadEarthBody } from './earth-body';
+import { buildSun } from './sun-body';
 import {
-  CORONA_FRAGMENT,
   FIELD_FRAGMENT,
   FIELD_VERTEX,
   FINISH_FRAGMENT,
@@ -72,10 +69,6 @@ const FIELD_SPREAD_3D = 1.7;
 const BLOOM_STRENGTH = 0.32;
 const BLOOM_RADIUS = 0.25;
 const BLOOM_THRESHOLD = 0.85;
-/** Just bright enough that the bloom catches the sun's rim, and no more. */
-const SUN_OVERBRIGHT = 1.3;
-/** How far the corona reaches, in sun radii. */
-const CORONA_REACH = 1.9;
 /** Bloom runs at no more than this pixel ratio: it is about to be blurred. */
 const BLOOM_MAX_RATIO = 1.25;
 const MAX_PIXEL_RATIO = 2;
@@ -215,6 +208,7 @@ export class OrreryWebGL {
     const build = ++this.builds;
     const earth = await this.earth;
     if (this.isDisposed) return;
+    earth.upload(this.gl);
     const scene = new Scene();
     const owned = new Owned();
     const model = this.build(worlds, scene, owned);
@@ -285,12 +279,12 @@ export class OrreryWebGL {
     const own = <T extends { dispose(): void }>(resource: T): T => owned.own(resource);
     const updateSky = this.buildMilkyWay(scene, owned);
     const updateField = this.buildField(scene, owned);
-    const sunAt = sunPlacement(worlds);
-    const sunPosition = vec(sunAt.x, sunAt.y, sunAt.z);
-    const light = new PointLight('#fff2dd', 1);
-    light.position.copy(sunPosition);
-    scene.add(light);
     const surfaceGeometry = own(new SphereGeometry(1, 64, 40));
+    const {
+      light,
+      position: sunPosition,
+      coronaMaterial,
+    } = buildSun(scene, sunPlacement(worlds), rgb(this.palette.sunBody), surfaceGeometry, owned);
     const moonGeometry = own(new SphereGeometry(1, 20, 14));
     const surface = (
       colour: Color,
@@ -363,39 +357,6 @@ export class OrreryWebGL {
           new LineBasicMaterial({ color: colour, transparent: true, opacity, depthWrite: false }),
         ),
       );
-
-    // The sun, overbright so the bloom takes it, and its corona.
-    const sunSize = sunAt.radius;
-    const sun = new Mesh(
-      surfaceGeometry,
-      own(
-        new MeshBasicMaterial({
-          color: rgb(this.palette.sunBody).multiplyScalar(SUN_OVERBRIGHT),
-        }),
-      ),
-    );
-    sun.scale.setScalar(sunSize);
-    sun.position.copy(sunPosition);
-    scene.add(sun);
-    const corona = own(
-      new ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-          centre: { value: sunPosition },
-          radius: { value: sunSize },
-          reach: { value: CORONA_REACH },
-        },
-        vertexShader: SPHERE_VERTEX,
-        fragmentShader: CORONA_FRAGMENT,
-        transparent: true,
-        side: BackSide,
-        depthWrite: false,
-        blending: AdditiveBlending,
-      }),
-    );
-    const coronaShell = new Mesh(own(new SphereGeometry(sunSize * CORONA_REACH, 32, 20)), corona);
-    coronaShell.position.copy(sunPosition);
-    scene.add(coronaShell);
 
     // The dial: two rings and 72 ticks in the plane, turning slowly.
     const dial = new Group();
@@ -496,7 +457,7 @@ export class OrreryWebGL {
         const { time, camera } = frame;
         updateSky(frame);
         updateField(time, time * SKY_TURN);
-        corona.uniforms['time'].value = time;
+        coronaMaterial.uniforms['time'].value = time;
         dial.quaternion.setFromAxisAngle(planeNormal, -time * DIAL_TURN);
         dial.visible = worlds.length > 0;
         for (const system of systems) this.updateSystem(system, frame, camera.current.scale);

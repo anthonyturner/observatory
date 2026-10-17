@@ -24,7 +24,7 @@ import { EARTH_CLOUD_FRAGMENT, EARTH_GROUND_FRAGMENT } from './earth-shaders';
 
 /** The air shell's radius, in Earth radii: a thin rim, thinner than the worlds' severity air. */
 const EARTH_AIR_SCALE = 1.06;
-/** The clouds turn at 0.05 rad/s over a ground that turns at 0.035, so 0.015 relative to it; the ground itself holds still. */
+/** How fast the clouds slip past the ground, in radians a second. The ground itself holds still. */
 const CLOUD_DRIFT = 0.015;
 /** Sharper at a slant, up to this much: a few taps cost little and the limb reads better. */
 const MAX_ANISOTROPY = 4;
@@ -123,6 +123,11 @@ export class EarthBody {
   attachTo(scene: Scene, sun: Vector3): void {
     this.sun.copy(sun);
     scene.add(this.group);
+  }
+
+  /** Sends the pictures to the GPU now, so the first frame that shows the Earth does not stall on them. */
+  upload(renderer: { initTexture(texture: Texture): void }): void {
+    for (const texture of Object.values(this.textures)) renderer.initTexture(texture);
   }
 
   /** The clouds' place at scene time `time`, in seconds. */

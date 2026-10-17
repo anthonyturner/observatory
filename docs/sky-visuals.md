@@ -129,13 +129,17 @@ Architecture page and stays as it is.
 `sunPlacement(worlds)` in `core/orrery/sun-placement.ts` is the one rule for where
 the sun is, and 3D, 2D, the light, picking and Fit all read it.
 
-- **Bearing.** In the orbital plane, at a fixed bearing that does not turn with
-  the dial: about ten o'clock on screen (150° counter-clockwise from screen
-  right), clear of the chrome. The in-plane angle that projects there is worked
-  out from `ORBIT_SQUASH`.
-- **Distance.** `1.07 × dialRadius + sunRadius + 12` from Earth in the plane: the
-  disc sits just outside the house names, 12 units clear. Its faint halo may
-  overlap them.
+- **Bearing.** A fixed bearing that does not turn with the dial: about ten
+  o'clock on screen (150° counter-clockwise from screen right), clear of the
+  chrome.
+- **Depth.** At Earth's depth, same screen bearing, not on the tilted orbital
+  plane. On that plane, ten o'clock stands well behind Earth and would light only
+  a thin crescent of it; at Earth's depth the light comes from the side and the
+  terminator runs about vertical.
+- **Distance.** Measured on screen, along the bearing: from where the house
+  names' ring (a flattened ellipse, `1.07 × dialRadius`) crosses it, plus the
+  sun's radius and 12 units. So the disc is 12 units clear of the names at any
+  sun size. Its faint halo may overlap them.
 - **Size.** `sunRadius`, unchanged: 36 to 76 from open pull requests, with the
   total on it. The label is the same too, and `--orrery-sun-ink` against the sun
   body measures 10.9 to 1 (needs 4.5).
@@ -145,10 +149,12 @@ the sun is, and 3D, 2D, the light, picking and Fit all read it.
   the middle.
 - **Fit** stays centred on Earth and frames the larger of two radii: the
   outermost orbit plus 140, and the sun's distance plus half its radius. So the
-  whole sun disc is in view and the default view zooms out by about a quarter. On a phone (under 720px wide, or
-  portrait) it zooms out at most 1.15 × the orbits-only fit, and never so far
-  that the sun's centre, with half its radius to spare, leaves the screen: the
-  halo and up to about half the disc may clip, and the number stays.
+  whole sun disc is in view. On a phone (under 720px wide, or portrait) it
+  zooms out at most 1.15 × the orbits-only fit, and never so far that the sun's
+  centre, with half its radius to spare, leaves the screen: the halo and up to
+  about half the disc may clip. The number on the sun shows down to a zoom of 0.1
+  (`SUN_LABEL_MIN_SCALE`), lower than the worlds' names (0.2), so it stays on a
+  phone.
 
 ### The shipped Milky Way (data: merged pull requests)
 

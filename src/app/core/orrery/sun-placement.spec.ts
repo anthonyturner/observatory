@@ -2,13 +2,14 @@ import { ProjectCounts, ProjectSnapshot } from '../projects/project.types';
 import { OrreryCamera } from './orrery-camera';
 import {
   DIAL_BEYOND_ORBIT,
+  SUN_LABEL_MIN_SCALE,
   dialRadius,
   sunPlacement,
   sunwardAngle,
   systemExtent,
 } from './sun-placement';
 import { OrreryWorld, layoutWorlds, sunRadius } from './world-layout';
-import { ORBIT_SQUASH } from './orbit';
+import { ORBIT_SQUASH, orbitPoint } from './orbit';
 
 const quiet: ProjectCounts = {
   conflicted: 0,
@@ -30,6 +31,12 @@ const project = (name: string, open: number, oldestIdleDays: number): ProjectSna
 const worlds = (): OrreryWorld[] =>
   layoutWorlds([project('a', 12, 5), project('b', 3, 30), project('c', 20, 60)]);
 
+/** The in-plane angle that projects to ten o’clock on screen. */
+const planeAngle = Math.atan2(
+  -Math.sin((150 * Math.PI) / 180) / ORBIT_SQUASH,
+  Math.cos((150 * Math.PI) / 180),
+);
+
 describe('sunPlacement', () => {
   it('stands beyond the dial, just outside the house names', () => {
     const sun = sunPlacement(worlds());
@@ -37,8 +44,22 @@ describe('sunPlacement', () => {
     expect(dialRadius(worlds())).toBe(
       Math.max(...worlds().map((world) => world.orbit)) + DIAL_BEYOND_ORBIT,
     );
-    expect(sun.distance - sun.radius).toBeGreaterThan(dialRadius(worlds()) * 1.07);
-    expect(Math.hypot(sun.x, sun.y / ORBIT_SQUASH)).toBeCloseTo(sun.distance);
+    const dial = orbitPoint(dialRadius(worlds()), planeAngle);
+    expect(sun.distance - sun.radius).toBeGreaterThan(Math.hypot(dial.x, dial.y));
+    expect(Math.hypot(sun.x, sun.y)).toBeCloseTo(sun.distance);
+  });
+
+  it('keeps its disc 12 units clear of the house names on screen, however big the sun', () => {
+    for (const set of [
+      layoutWorlds([project('crowded', 200, 0)]),
+      layoutWorlds([project('quiet', 0, 0)]),
+      worlds(),
+    ]) {
+      const sun = sunPlacement(set);
+      const names = orbitPoint(1.07 * dialRadius(set), planeAngle);
+
+      expect(Math.hypot(sun.x, sun.y) - sun.radius - Math.hypot(names.x, names.y)).toBeCloseTo(12);
+    }
   });
 
   it('reads about ten o’clock on screen, whatever the layout', () => {
@@ -71,6 +92,25 @@ describe('sunPlacement', () => {
     expect(y - reach).toBeGreaterThan(0);
     expect(x + reach).toBeLessThan(view.width);
     expect(y + reach).toBeLessThan(view.height);
+  });
+});
+
+describe('the sun’s number on a phone', () => {
+  it('stays readable at Fit when one project has been idle for months', () => {
+    const phone = { width: 390, height: 844 };
+    const stale = layoutWorlds([
+      project('a', 12, 5),
+      project('b', 3, 30),
+      project('c', 1, 70),
+      project('d', 2, 70),
+      project('e', 4, 70),
+    ]);
+    const camera = new OrreryCamera();
+
+    camera.fit(systemExtent(stale), phone);
+
+    expect(Math.max(...stale.map((world) => world.orbit))).toBeGreaterThan(780);
+    expect(camera.target.scale).toBeGreaterThanOrEqual(SUN_LABEL_MIN_SCALE);
   });
 });
 

@@ -9,8 +9,11 @@ export const DIAL_BEYOND_ORBIT = 100;
 const SUN_SCREEN_BEARING = (150 * Math.PI) / 180;
 /** The house names sit just outside the dial's ring, at this multiple of its radius. */
 const HOUSE_NAMES_AT = 1.07;
-/** Clear space between the sun's disc and the house names. */
+/** Clear space between the sun's disc and the house names, measured on screen. */
 const SUN_CLEARANCE = 12;
+/** Below this zoom the total on the sun is too small to read. Lower than the worlds' names',
+ *  because the sun's number must still show at a phone's Fit. */
+export const SUN_LABEL_MIN_SCALE = 0.1;
 
 /** The in-plane angle that projects to the screen bearing, given how flat the plane looks. */
 const SUN_PLANE_ANGLE = Math.atan2(
@@ -18,8 +21,8 @@ const SUN_PLANE_ANGLE = Math.atan2(
   Math.cos(SUN_SCREEN_BEARING),
 );
 
-/** The sun: where it is, how far it stands from the Earth in the orbital
- *  plane, and its disc's radius. All in orrery units. */
+/** The sun: where it is, how far from the Earth on screen (`distance`), and its
+ *  disc's radius. All in orrery units. */
 export interface SunPlacement extends OrbitPoint {
   readonly distance: number;
   readonly radius: number;
@@ -39,15 +42,25 @@ export const dialRadius = (worlds: readonly OrreryWorld[]): number =>
  *  read it, so they cannot disagree. It sits at a fixed bearing that does not
  *  turn with the dial, just outside the house names, and it keeps its size.
  *
+ *  The clearance is measured on screen, along the bearing, from where the
+ *  names' ring (a flattened ellipse) crosses it, so the disc stays 12 units
+ *  clear however large it is.
+ *
  *  It is at the Earth's depth, not on the tilted plane's far side: a sun that
  *  reads as ten o'clock on the plane stands well behind the Earth, and would
  *  light only a thin crescent of it. At the Earth's depth the light comes from
  *  the side, and the terminator runs about vertical. */
 export function sunPlacement(worlds: readonly OrreryWorld[]): SunPlacement {
   const radius = sunRadius(worlds);
-  const distance = HOUSE_NAMES_AT * dialRadius(worlds) + radius + SUN_CLEARANCE;
-  const { x, y } = orbitPoint(distance, SUN_PLANE_ANGLE);
-  return { x, y, z: 0, distance, radius };
+  const names = orbitPoint(HOUSE_NAMES_AT * dialRadius(worlds), SUN_PLANE_ANGLE);
+  const distance = Math.hypot(names.x, names.y) + radius + SUN_CLEARANCE;
+  return {
+    x: distance * Math.cos(SUN_SCREEN_BEARING),
+    y: -distance * Math.sin(SUN_SCREEN_BEARING),
+    z: 0,
+    distance,
+    radius,
+  };
 }
 
 export const systemExtent = (worlds: readonly OrreryWorld[]): SystemExtent => ({

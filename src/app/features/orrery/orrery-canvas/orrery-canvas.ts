@@ -20,9 +20,10 @@ import { MotionPreference } from '../../../core/motion/motion-preference';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld, pickWorld } from '../../../core/orrery/pick-world';
 import { systemExtent } from '../../../core/orrery/sun-placement';
-import { OrreryWorld, openTotal } from '../../../core/orrery/world-layout';
+import { OrreryWorld } from '../../../core/orrery/world-layout';
 import { OrreryPalette, readOrreryPalette } from './orrery-palette';
 import { EARTH_IMAGES, loadImage } from './earth-images';
+import { describeLayout } from './layout-description';
 import { OrreryScene, SceneFrame } from './orrery-scene';
 import type { OrreryWebGL } from './webgl/orrery-webgl';
 import { CardHover } from './card-hover';
@@ -117,10 +118,7 @@ export class OrreryCanvas {
   });
   private pinch: number | null = null;
   protected press: Press | null = null;
-  protected readonly layout = computed(
-    () =>
-      `Earth at the centre; the sun, with ${openTotal(this.worlds())} open pull requests, at the upper left`,
-  );
+  protected readonly layout = computed(() => describeLayout(this.worlds()));
   /** Signals, so the cursor follows: the canvas changes them outside any template event. */
   protected readonly isOverWorld = signal(false);
   protected readonly isDragging = signal(false);
@@ -217,10 +215,11 @@ export class OrreryCanvas {
   /** Loads the 3D view and moves to it where it can draw; anything that goes
    *  wrong, from the download to a shader, keeps the 2D orrery. */
   private async upgrade(canvas: HTMLCanvasElement): Promise<void> {
+    let webgl: OrreryWebGL | null = null;
     try {
       const { OrreryWebGL } = await import('./webgl/orrery-webgl');
       if (this.isStopped || !this.palette) return;
-      const webgl = new OrreryWebGL(this.document, this.palette, () => this.dropWebgl());
+      webgl = new OrreryWebGL(this.document, this.palette, () => this.dropWebgl());
       // The 2D orrery keeps drawing while the shaders compile, which can take seconds.
       const worlds = this.worlds();
       await webgl.setWorlds(worlds);
@@ -235,6 +234,8 @@ export class OrreryCanvas {
       this.loop?.kick();
     } catch (error: unknown) {
       console.warn('The 3D orrery is unavailable; drawing in 2D.', error);
+      // A picture that will not load fails after the renderer exists, and it holds a GPU context.
+      if (webgl && this.webgl !== webgl) webgl.dispose();
     }
   }
 

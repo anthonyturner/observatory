@@ -45,16 +45,26 @@ describe('EarthBody', () => {
   it('turns its clouds against a ground that holds still', () => {
     const earth = new EarthBody(textures(), new Color());
     const [ground, clouds] = earth.group.children;
+    const turnOf = (): number => materialsOf(earth)[0].uniforms['cloudTurn'].value;
 
     earth.update(0);
-    const start = clouds.rotation.y;
+    expect(turnOf()).toBeCloseTo(0);
     earth.update(10);
 
-    expect(clouds.rotation.y).toBeGreaterThan(start);
-    expect(ground.rotation.y).toBe(start);
-    expect(materialsOf(earth)[0].uniforms['cloudTurn'].value).toBeCloseTo(
-      ground.rotation.y - clouds.rotation.y,
-    );
+    expect(clouds.rotation.y).toBeGreaterThan(ground.rotation.y);
+    expect(turnOf()).toBeLessThan(0);
+    expect(ground.rotation.y).toBeCloseTo(-Math.PI / 3);
+  });
+
+  it('sends every picture to the GPU when asked, so the first frame does not stall', () => {
+    const set = textures();
+    const earth = new EarthBody(set, new Color());
+    const uploaded: Texture[] = [];
+
+    earth.upload({ initTexture: (texture) => uploaded.push(texture) });
+
+    expect(uploaded).toEqual(expect.arrayContaining([set.day, set.night, set.clouds]));
+    expect(uploaded).toHaveLength(3);
   });
 
   it('releases its textures and materials when disposed, and leaves the scene', () => {

@@ -1,5 +1,16 @@
+import { OrreryCamera, Viewport } from './orrery-camera';
+
 /** The Earth at the orbit origin, in orrery units. */
 export const EARTH_RADIUS = 60;
+
+/** The Earth's disc on screen, in pixels. It sits at the orbit origin, which both the 2D and the 3D camera put at the same place. */
+export const earthOnScreen = (
+  camera: OrreryCamera,
+  view: Viewport,
+): { readonly x: number; readonly y: number; readonly radius: number } => {
+  const [x, y] = camera.toScreen(0, 0, view);
+  return { x, y, radius: EARTH_RADIUS * camera.current.scale };
+};
 
 /** The longitude that faces the viewer, in degrees east: the Atlantic, with the
  *  Americas on the day side and Europe and Africa's lights on the night side. */

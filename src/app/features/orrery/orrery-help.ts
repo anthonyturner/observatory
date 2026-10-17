@@ -9,7 +9,7 @@ export const ORRERY_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Earth',
     meaning:
-      'Your home world at the centre of the system, drawn from NASA pictures. Its day side, night side and city lights are scenery only: they say nothing about your work. Drag it to spin it; left alone it turns slowly, and it stays still if you have asked for less motion.',
+      'Your home world at the centre of the system, drawn from NASA pictures. Its day side, night side and city lights are scenery only: they say nothing about your work. Drag it to spin it; left alone it turns slowly, but it does not turn on its own if you have asked for less motion.',
   },
   {
     term: 'The sun',

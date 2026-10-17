@@ -26,7 +26,7 @@ describe('EarthSpin', () => {
     expect(spin.angle).toBeCloseTo(IDLE_TURN * 10, 1);
   });
 
-  it('follows the pointer while dragged: a drag across its width turns it by a radian', () => {
+  it('follows the pointer while dragged: a drag of one radius turns it by a radian', () => {
     const spin = new EarthSpin();
 
     spin.drag(RADIUS, RADIUS);
@@ -94,7 +94,7 @@ describe('EarthSpin', () => {
 
     spin.advance(FRAME, true, true);
 
-    expect(speedOf(spin)).toBeLessThan(IDLE_TURN * 1.2);
+    expect(speedOf(spin)).toBeLessThan(IDLE_TURN * 0.2);
   });
 
   it('caps how hard a flick can throw it', () => {

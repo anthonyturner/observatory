@@ -2,7 +2,7 @@ import { seededRandom } from '../../../core/instrument/seeded-random';
 import { growth, worldPosition } from '../../../core/orrery/orbit';
 import { depthAt } from '../../../core/orrery/orrery-camera';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
-import { EARTH_RADIUS } from '../../../core/orrery/earth';
+import { earthOnScreen } from '../../../core/orrery/earth';
 import { DrawnWorld, Occluder, isOccluded } from '../../../core/orrery/pick-world';
 import { FieldStar, starField } from '../../../core/orrery/star-field';
 import {
@@ -101,11 +101,12 @@ export class OrreryScene {
     const [sunX, sunY] = camera.toScreen(this.sun.x, this.sun.y, view);
     const sunPx = this.sun.radius * scale;
     const earthSunward = sunwardAngle({ x: 0, y: 0 }, this.sun);
+    const earth = earthOnScreen(camera, view);
     paintEarth(
       ctx,
-      centre[0],
-      centre[1],
-      EARTH_RADIUS * scale,
+      earth.x,
+      earth.y,
+      earth.radius,
       earthSunward,
       this.earthDisc?.turnedTo(frame.earthSpin) ?? null,
       this.palette,
@@ -158,9 +159,8 @@ export class OrreryScene {
     }
 
     // A world behind the Earth's or the sun's disc is hidden by it, so it cannot be picked there.
-    const [earthX, earthY] = camera.toScreenAt(0, 0, 0, view);
     const occluders: Occluder[] = [
-      { x: earthX, y: earthY, z: 0, radius: EARTH_RADIUS * scale },
+      { ...earthOnScreen(camera, view), z: 0 },
       { x: sunX, y: sunY, z: this.sun.z, radius: sunPx },
     ];
     return placed

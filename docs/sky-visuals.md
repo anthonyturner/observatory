@@ -104,8 +104,8 @@ Architecture page and stays as it is.
   load, the 3D view is not used and the 2D orrery stays.
 - **Spin.** Drag the Earth to spin it. A press that starts inside its disc (at
   least 24 px out, so a finger can grab it at a phone's Fit) turns the Earth;
-  anywhere else pans the camera as before (`routePress`). A drag across the
-  Earth's width turns it by one radian, eastward for a drag to the right. The
+  anywhere else pans the camera as before (`routePress`). A drag of one
+  Earth radius turns it by one radian, eastward for a drag to the right. The
   drag sets the turn speed, and on release it decays to the idle rate, one turn
   in two minutes, in about 2 s (`EarthSpin`, shaped like the camera's drift).
   Only the Earth object turns, with its clouds still drifting against the
@@ -131,7 +131,8 @@ Architecture page and stays as it is.
 - **Glint.** A small specular glint on the day side's sea.
 - **2D fallback.** The day map is drawn as a flat disc facing the same longitude,
   and it spins too: the disc is redrawn with the map scrolled in longitude, once
-  per map column turned. It is shaded dark on the side away from the sun (0.55 black at the far limb) with a
+  per map column turned. It is shaded dark on the side away from the sun (0.55
+  black at the far limb) with a
   thin warm terminator and a faint blue limb. No clouds or lights. Until the
   picture has loaded it is a flat sea-coloured disc. A picture arriving asks for
   one more frame, since a still page draws one and stops.

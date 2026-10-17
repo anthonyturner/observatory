@@ -29,11 +29,8 @@ describe('isClick', () => {
     expect(isClick(CLICK_SLOP_PX - 1)).toBe(true);
   });
 
-  it('does not count a drag that turned the Earth as a click', () => {
-    const turned = routePress(420, 310, EARTH) === 'spin-earth';
-
-    expect(turned).toBe(true);
-    expect(isClick(80)).toBe(false);
+  it('does not count a press that travelled past the slop as a click, on the Earth or off it', () => {
     expect(isClick(CLICK_SLOP_PX)).toBe(false);
+    expect(isClick(80)).toBe(false);
   });
 });

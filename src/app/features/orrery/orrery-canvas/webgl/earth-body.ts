@@ -24,7 +24,7 @@ import { EARTH_CLOUD_FRAGMENT, EARTH_GROUND_FRAGMENT } from './earth-shaders';
 
 /** The air shell's radius, in Earth radii: a thin rim, thinner than the worlds' severity air. */
 const EARTH_AIR_SCALE = 1.06;
-/** How fast the clouds slip past the ground, in radians a second. The ground itself holds still. */
+/** How fast the clouds slip past the ground, in radians a second. The ground turns only as the Earth is spun. */
 const CLOUD_DRIFT = 0.015;
 /** Sharper at a slant, up to this much: a few taps cost little and the limb reads better. */
 const MAX_ANISOTROPY = 4;

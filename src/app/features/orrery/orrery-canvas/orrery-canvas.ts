@@ -17,7 +17,7 @@ import {
 } from '@angular/core';
 import { FrameLoop } from '../../../core/instrument/frame-loop';
 import { MotionPreference } from '../../../core/motion/motion-preference';
-import { EARTH_RADIUS } from '../../../core/orrery/earth';
+import { earthOnScreen } from '../../../core/orrery/earth';
 import { EarthSpin } from '../../../core/orrery/earth-spin';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { DrawnWorld, pickWorld } from '../../../core/orrery/pick-world';
@@ -328,12 +328,6 @@ export class OrreryCanvas {
     return scene.draw(ctx, frame);
   }
 
-  /** The Earth's disc on screen. Its centre is the orbit origin in 2D and 3D alike. */
-  private earthOnScreen(): { x: number; y: number; radius: number } {
-    const [x, y] = this.camera.toScreen(0, 0, this.view);
-    return { x, y, radius: EARTH_RADIUS * this.camera.current.scale };
-  }
-
   private pixelRatio(): number {
     return Math.min(this.document.defaultView?.devicePixelRatio ?? 1, MAX_PIXEL_RATIO);
   }
@@ -384,7 +378,7 @@ export class OrreryCanvas {
       x: event.clientX,
       y: event.clientY,
       moved: 0,
-      route: routePress(event.clientX, event.clientY, this.earthOnScreen()),
+      route: routePress(event.clientX, event.clientY, earthOnScreen(this.camera, this.view)),
     };
     this.isDragging.set(true);
     this.camera.stopDrift();
@@ -404,7 +398,7 @@ export class OrreryCanvas {
     press.moved += Math.abs(dx) + Math.abs(dy);
     press.x = event.clientX;
     press.y = event.clientY;
-    if (press.route === 'spin-earth') this.spin.drag(dx, grabRadius(this.earthOnScreen().radius));
+    if (press.route === 'spin-earth') this.spin.drag(dx, grabRadius(earthOnScreen(this.camera, this.view).radius));
     else this.camera.drag(dx, dy);
     this.loop?.kick();
   }

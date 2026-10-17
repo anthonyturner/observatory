@@ -25,7 +25,7 @@ export class EarthSpin {
     return this.turned;
   }
 
-  /** The ground follows the pointer: a drag of `pixels` to the right, on an Earth `radius` pixels wide, turns it east. */
+  /** The ground follows the pointer: a drag of `pixels` to the right, on an Earth of `radius` pixels, turns it east by pixels / radius radians. */
   drag(pixels: number, radius: number): void {
     this.pending += pixels / radius;
   }

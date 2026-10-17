@@ -43,15 +43,3 @@ export const isOccluded = (
   occluders.some(
     (disc) => world.z < disc.z && Math.hypot(world.x - disc.x, world.y - disc.y) < disc.radius,
   );
-
-/** Splits what is drawn at a body's depth `z`, for painting back to front: what
- *  lies behind it (to go under it), and what is level with it or in front. */
-export function splitAtDepth<T extends { readonly z: number }>(
-  items: readonly T[],
-  z: number,
-): { readonly behind: T[]; readonly inFront: T[] } {
-  return {
-    behind: items.filter((item) => item.z < z),
-    inFront: items.filter((item) => item.z >= z),
-  };
-}

@@ -1,3 +1,4 @@
+import { ORBIT_SQUASH } from '../../../core/orrery/orbit';
 import { OrreryCamera } from '../../../core/orrery/orrery-camera';
 import { OrreryWorld } from '../../../core/orrery/world-layout';
 import { OrreryPalette } from './orrery-palette';
@@ -44,13 +45,17 @@ function sceneWith(painted: Painted[]): OrreryScene {
   return scene;
 }
 
-/** On a flat, untilted orbit a quarter turn on is toward the viewer; a quarter
- *  turn back is behind the Earth. Both land 56px off the Earth's centre, inside its disc. */
-const world = (repo: string, angle: number): OrreryWorld =>
+const ORBIT = 100;
+/** How far an untilted orbit of that size reaches above and below the Earth on screen: inside its disc. */
+const REACH = ORBIT * ORBIT_SQUASH;
+
+/** On an untilted orbit a quarter turn on is toward the viewer; a quarter
+ *  turn back is behind the Earth. Both land `REACH` off the Earth's centre. */
+const world = (repo: string, angle: number, orbit = ORBIT): OrreryWorld =>
   ({
     project: { repo },
     color: 'red',
-    orbit: 100,
+    orbit,
     radius: 10,
     angle,
     speed: 0,
@@ -60,8 +65,10 @@ const world = (repo: string, angle: number): OrreryWorld =>
 
 const FRONT = world('o/front', Math.PI / 2);
 const BEHIND = world('o/behind', -Math.PI / 2);
-const FRONT_Y = CENTRE.y + 56;
-const BEHIND_Y = CENTRE.y - 56;
+/** Behind the Earth, but far enough out that neither it nor its glow reaches the disc. */
+const FAR_BEHIND = world('o/far', -Math.PI / 2, 400);
+const FRONT_Y = CENTRE.y + REACH;
+const BEHIND_Y = CENTRE.y - REACH;
 
 const frame: SceneFrame = {
   view: VIEW,
@@ -105,11 +112,33 @@ describe('OrreryScene in 2D', () => {
   });
 
   it('picks a world behind the Earth once it is clear of its disc', () => {
-    const clear = { ...BEHIND, orbit: 400 };
-    scene.setWorlds([FRONT, clear]);
+    scene.setWorlds([FRONT, FAR_BEHIND]);
 
     const drawn = scene.draw(recordingContext(painted, false), frame);
 
-    expect(drawn.map((world) => world.key).sort()).toEqual(['o/behind', 'o/front']);
+    expect(drawn.map((world) => world.key).sort()).toEqual(['o/far', 'o/front']);
+  });
+
+  it('spends a second bloom layer only when a world behind the Earth glows over it', () => {
+    const layers = () => painted.filter((step) => step !== 'earth').length;
+
+    scene.draw(recordingContext(painted, false), frame);
+    expect(layers()).toBe(2);
+
+    painted.length = 0;
+    scene.setWorlds([FRONT, FAR_BEHIND]);
+    scene.draw(recordingContext(painted, false), frame);
+    expect(layers()).toBe(1);
+  });
+});
+
+describe('OrreryScene over the 3D view', () => {
+  it('cannot pick a world through the Earth that hides it', () => {
+    const scene = sceneWith([]);
+    scene.setWorlds([FRONT, BEHIND, FAR_BEHIND]);
+
+    const drawn = scene.drawOverlay(recordingContext([], false), frame);
+
+    expect(drawn.map((world) => world.key).sort()).toEqual(['o/far', 'o/front']);
   });
 });

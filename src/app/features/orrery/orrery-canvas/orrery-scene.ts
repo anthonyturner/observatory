@@ -3,7 +3,7 @@ import { OrbitPoint, growth, worldPosition } from '../../../core/orrery/orbit';
 import { depthAt } from '../../../core/orrery/orrery-camera';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { EARTH_RADIUS } from '../../../core/orrery/earth';
-import { DrawnWorld, Occluder, isOccluded, splitAtDepth } from '../../../core/orrery/pick-world';
+import { DrawnWorld, Occluder, isOccluded } from '../../../core/orrery/pick-world';
 import { FieldStar, starField } from '../../../core/orrery/star-field';
 import {
   SunPlacement,
@@ -25,6 +25,7 @@ import { paintSun, paintSunLabel } from './sun-painter';
 import {
   MIN_WORLD_RADIUS,
   PlacedWorld,
+  WORLD_HALO_REACH,
   paintComets,
   paintOrbit,
   paintSelection,
@@ -37,6 +38,38 @@ const GRAIN_SEED = 20260926;
 /** The Earth sits at the orbit's origin. The sun stands at its depth too (see
  *  `sunPlacement`), so what is behind one is behind the other. */
 const EARTH_AT: OrbitPoint = { x: 0, y: 0, z: 0 };
+
+/** A world as placed this frame, with how far toward the viewer it is. */
+type PlacedInDepth = PlacedWorld & { readonly z: number };
+
+/** The widest blur laid over the glow, in pixels: how far bloom spreads past a halo. */
+const WIDE_BLUR_PX = 24;
+
+/** Where a point of the orrery lands on screen, and how much nearer or farther
+ *  than the plane it makes things look. */
+type Projection = (
+  frame: SceneFrame,
+  point: OrbitPoint,
+) => { readonly x: number; readonly y: number; readonly depth: number };
+
+/** The 2D view: the plane seen flat. */
+const flat: Projection = ({ camera, view }, point) => {
+  const [x, y] = camera.toScreen(point.x, point.y, view);
+  return { x, y, depth: 1 };
+};
+
+/** The 3D view's camera, for the labels and picking over it. */
+const perspective: Projection = ({ camera, view }, point) => {
+  const [x, y] = camera.toScreenAt(point.x, point.y, point.z, view);
+  return { x, y, depth: depthAt(point.z) };
+};
+
+/** Whether a world behind the Earth glows over its disc. The glow is additive,
+ *  so only such a world's paint order shows; any other can go with the rest. */
+const glowsUnderEarth = (world: PlacedInDepth, earth: Occluder): boolean =>
+  isOccluded(world, [
+    { ...earth, radius: earth.radius + world.radius * WORLD_HALO_REACH + WIDE_BLUR_PX },
+  ]);
 
 /** One frame's inputs. */
 export interface SceneFrame {
@@ -52,7 +85,9 @@ export interface SceneFrame {
 /**
  * Draws the orrery onto a canvas: the sky, the dial, the orbits, then the sun
  * and the worlds into a half-size glow layer that is blurred back over the
- * frame as bloom, then their labels, the vignette and the grain.
+ * frame as bloom, then their labels, the vignette and the grain. The Earth goes
+ * between two such layers when a world behind it glows over it, so that world
+ * is painted first and the Earth covers it.
  */
 export class OrreryScene {
   private worlds: readonly OrreryWorld[] = [];
@@ -91,8 +126,10 @@ export class OrreryScene {
     const { view, camera, time, isStill } = frame;
     const { scale } = camera.current;
     const centre = camera.toScreen(EARTH_AT.x, EARTH_AT.y, view);
-    const placed = this.worlds.map((world) => this.place(world, frame));
-    const { behind, inFront } = splitAtDepth(placed, EARTH_AT.z);
+    const placed = this.worlds.map((world) => this.place(world, frame, flat));
+    const earth = this.earthOccluder(frame, flat);
+    const underEarth = placed.filter((world) => glowsUnderEarth(world, earth));
+    const overEarth = placed.filter((world) => !underEarth.includes(world));
 
     paintBackground(ctx, view, this.palette);
     paintField(ctx, this.field, camera, view, time, this.palette.stars);
@@ -104,9 +141,9 @@ export class OrreryScene {
     const [sunX, sunY] = camera.toScreen(this.sun.x, this.sun.y, view);
     const sunPx = this.sun.radius * scale;
     const earthSunward = sunwardAngle({ x: 0, y: 0 }, this.sun);
-    if (behind.length) {
+    if (underEarth.length) {
       this.paintBloom(ctx, view, (glow) => {
-        for (const world of behind) paintWorld(glow, world, time, isStill, this.palette);
+        for (const world of underEarth) paintWorld(glow, world, time, isStill, this.palette);
       });
     }
     paintEarth(
@@ -120,7 +157,7 @@ export class OrreryScene {
     );
     this.paintBloom(ctx, view, (glow) => {
       paintSun(glow, sunX, sunY, sunPx, time, this.palette);
-      for (const world of inFront) paintWorld(glow, world, time, isStill, this.palette);
+      for (const world of overEarth) paintWorld(glow, world, time, isStill, this.palette);
     });
 
     paintSunLabel(ctx, sunX, sunY, sunPx, openTotal(this.worlds), scale, this.palette);
@@ -128,7 +165,7 @@ export class OrreryScene {
     paintVignette(ctx, view, this.palette.vignette);
     paintGrain(ctx, this.grain, view, time, isStill);
 
-    return this.pickable(placed, frame, false);
+    return this.pickable(placed, frame, flat);
   }
 
   /** Over the 3D view: what stays sharp through its bloom, the comets, the
@@ -137,7 +174,7 @@ export class OrreryScene {
   drawOverlay(ctx: CanvasRenderingContext2D, frame: SceneFrame): DrawnWorld[] {
     const { view, camera, time, isStill } = frame;
     const { scale } = camera.current;
-    const placed = this.worlds.map((world) => this.place(world, frame, true));
+    const placed = this.worlds.map((world) => this.place(world, frame, perspective));
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const world of placed)
@@ -158,17 +195,17 @@ export class OrreryScene {
       ctx.restore();
     }
 
-    return this.pickable(placed, frame, true);
+    return this.pickable(placed, frame, perspective);
   }
 
   /** Where each world landed, for picking, less the worlds hidden behind the
    *  Earth's or the sun's disc: what cannot be seen cannot be picked. */
   private pickable(
-    placed: readonly (PlacedWorld & { z: number })[],
+    placed: readonly PlacedInDepth[],
     frame: SceneFrame,
-    inDepth: boolean,
+    project: Projection,
   ): DrawnWorld[] {
-    const occluders = this.occluders(frame, inDepth);
+    const occluders = [this.earthOccluder(frame, project), this.sunOccluder(frame, project)];
     return placed
       .filter((world) => world.grow > 0.1 && !isOccluded(world, occluders))
       .map((world) => ({
@@ -179,31 +216,22 @@ export class OrreryScene {
       }));
   }
 
-  private occluders(frame: SceneFrame, inDepth: boolean): Occluder[] {
-    const disc = (body: OrbitPoint, radius: number): Occluder => {
-      const { x, y, depth } = this.project(frame, body, inDepth);
-      return { x, y, z: body.z, radius: radius * frame.camera.current.scale * depth };
-    };
-    return [disc(EARTH_AT, EARTH_RADIUS), disc(this.sun, this.sun.radius)];
+  private earthOccluder(frame: SceneFrame, project: Projection): Occluder {
+    return this.disc(frame, project, EARTH_AT, EARTH_RADIUS);
   }
 
-  /** Where a point of the orrery lands on screen, and how much nearer or
-   *  farther than the plane it makes things look: flat in 2D, in perspective in 3D. */
-  private project(frame: SceneFrame, point: OrbitPoint, inDepth: boolean) {
-    const { camera, view } = frame;
-    const [x, y] = inDepth
-      ? camera.toScreenAt(point.x, point.y, point.z, view)
-      : camera.toScreen(point.x, point.y, view);
-    return { x, y, depth: inDepth ? depthAt(point.z) : 1 };
+  private sunOccluder(frame: SceneFrame, project: Projection): Occluder {
+    return this.disc(frame, project, this.sun, this.sun.radius);
   }
 
-  private place(
-    world: OrreryWorld,
-    frame: SceneFrame,
-    inDepth = false,
-  ): PlacedWorld & { z: number } {
+  private disc(frame: SceneFrame, project: Projection, body: OrbitPoint, radius: number): Occluder {
+    const { x, y, depth } = project(frame, body);
+    return { x, y, z: body.z, radius: radius * frame.camera.current.scale * depth };
+  }
+
+  private place(world: OrreryWorld, frame: SceneFrame, project: Projection): PlacedInDepth {
     const position = worldPosition(world, frame.time);
-    const { x, y, depth } = this.project(frame, position, inDepth);
+    const { x, y, depth } = project(frame, position);
     const grow = growth(world, frame.sinceShown);
     return {
       world,
@@ -239,7 +267,7 @@ export class OrreryScene {
     ctx.globalCompositeOperation = 'lighter';
     for (const [blur, alpha] of [
       ['blur(6px)', 0.5],
-      ['blur(24px)', 0.12],
+      [`blur(${WIDE_BLUR_PX}px)`, 0.12],
       ['none', 1],
     ] as const) {
       ctx.filter = blur;

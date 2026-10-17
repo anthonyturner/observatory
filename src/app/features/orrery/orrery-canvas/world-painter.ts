@@ -20,6 +20,8 @@ export interface PlacedWorld {
 
 /** A world is never smaller than this on screen. */
 export const MIN_WORLD_RADIUS = 3.4;
+/** A world's halo reaches this many radii out. */
+export const WORLD_HALO_REACH = 3.4;
 /** Below this zoom the names are too small to read. */
 const LABEL_MIN_SCALE = 0.2;
 const LABEL_MIN_GROWTH = 0.6;
@@ -63,14 +65,14 @@ export function paintWorld(
   const { x, y, radius: r, color, sunward } = placed;
   c.save();
 
-  const halo = c.createRadialGradient(x, y, 0, x, y, r * 3.4);
+  const halo = c.createRadialGradient(x, y, 0, x, y, r * WORLD_HALO_REACH);
   halo.addColorStop(0, rgba(color));
   halo.addColorStop(0.3, rgba(color, 0.44));
   halo.addColorStop(1, rgba(color, 0));
   c.globalAlpha = 0.42;
   c.fillStyle = halo;
   c.beginPath();
-  c.arc(x, y, r * 3.4, 0, Math.PI * 2);
+  c.arc(x, y, r * WORLD_HALO_REACH, 0, Math.PI * 2);
   c.fill();
 
   // One light source for the whole system: the sun.

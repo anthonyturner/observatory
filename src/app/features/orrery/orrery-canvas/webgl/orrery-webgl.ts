@@ -33,18 +33,15 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { growth, orbitPoint, worldPosition } from '../../../../core/orrery/orbit';
 import { CAMERA_DISTANCE } from '../../../../core/orrery/orrery-camera';
 import { FieldStar, starField } from '../../../../core/orrery/star-field';
-import {
-  OrreryWorld,
-  hashString,
-  outermostOrbit,
-  sunRadius,
-} from '../../../../core/orrery/world-layout';
+import { dialRadius, sunPlacement } from '../../../../core/orrery/sun-placement';
+import { OrreryWorld, hashString } from '../../../../core/orrery/world-layout';
 import { CLOUD_COVER, WorldKind, worldKind } from '../../../../core/orrery/world-kind';
 import { nightSide } from '../../../../core/orrery/world-night';
 import { DIM_TOTAL_S, dimAt, dimSpot } from '../../../../core/orrery/merge-arrival';
 import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { OrreryPalette } from '../orrery-palette';
-import { DIAL_BEYOND_ORBIT, SceneFrame } from '../orrery-scene';
+import { SceneFrame } from '../orrery-scene';
+import { EarthBody, loadEarthBody } from './earth-body';
 import {
   CORONA_FRAGMENT,
   FIELD_FRAGMENT,
@@ -112,6 +109,8 @@ interface Dimming {
 }
 
 interface SceneModel {
+  /** Where the sun, its corona and the light are in this scene, which the Earth is lit from. */
+  readonly sun: Vector3;
   update(frame: SceneFrame): void;
 }
 
@@ -139,6 +138,9 @@ export class OrreryWebGL {
   /** By repository, so a rebuild of the worlds in the middle of one does not lose it. */
   private readonly dimmings = new Map<string, Dimming>();
   private isLost = false;
+  /** The Earth lives outside the worlds' scene, which is rebuilt on every refresh: it is built once, from its pictures. */
+  private readonly earth: Promise<EarthBody>;
+  private earthBody: EarthBody | null = null;
 
   /** Throws where WebGL cannot start or a shader will not compile; the caller keeps 2D. */
   constructor(
@@ -180,6 +182,15 @@ export class OrreryWebGL {
     this.passes = [render, bloom, output, this.finish];
     for (const pass of [render, bloom, output, this.finish]) this.composer.addPass(pass);
     this.canvas.addEventListener('webglcontextlost', this.lose);
+    this.earth = loadEarthBody(
+      document,
+      this.gl.capabilities.getMaxAnisotropy(),
+      rgb(palette.earthAir),
+    ).then((body) => {
+      if (this.isDisposed) body.dispose();
+      else this.earthBody = body;
+      return body;
+    });
   }
 
   /** Puts its canvas under `above`, which keeps drawing the labels. */
@@ -195,20 +206,25 @@ export class OrreryWebGL {
   }
 
   /**
-   * Builds the worlds into a new scene and compiles its shaders off the main
-   * thread, which a driver can take seconds over. The scene on screen stays
-   * until the new one can draw without stalling; resolves once it is shown.
+   * Builds the worlds into a new scene and compiles its shaders, and the
+   * Earth's, off the main thread, which a driver can take seconds over. The
+   * scene on screen stays until the new one can draw without stalling; resolves
+   * once it is shown. Rejects if the Earth's pictures cannot load.
    */
   async setWorlds(worlds: readonly OrreryWorld[]): Promise<void> {
     const build = ++this.builds;
+    const earth = await this.earth;
+    if (this.isDisposed) return;
     const scene = new Scene();
     const owned = new Owned();
     const model = this.build(worlds, scene, owned);
-    await this.compile(scene);
+    await this.compile(scene, earth);
     if (build !== this.builds || this.isDisposed) {
       owned.disposeAll();
       return;
     }
+    // The Earth moves out of the old scene only now, so that one keeps drawing it until this one can.
+    earth.attachTo(scene, model.sun);
     // The old scene's programs stay held until here, so the new one reuses them.
     const old = this.owned;
     this.scene = scene;
@@ -228,6 +244,7 @@ export class OrreryWebGL {
     this.camera.position.set(current.x, -current.y, CAMERA_DISTANCE);
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();
+    this.earthBody?.update(frame.time);
     this.model.update(frame);
     this.finish.uniforms['time'].value = frame.time;
     this.composer.render();
@@ -237,6 +254,7 @@ export class OrreryWebGL {
     this.isDisposed = true;
     this.canvas.removeEventListener('webglcontextlost', this.lose);
     this.owned.disposeAll();
+    this.earthBody?.dispose();
     for (const pass of this.passes) pass.dispose();
     this.composer.dispose();
     this.gl.dispose();
@@ -250,11 +268,15 @@ export class OrreryWebGL {
     this.onLost();
   };
 
-  /** A program is built for the target it draws into, so compile against the composer's. */
-  private compile(scene: Scene): Promise<unknown> {
+  /** A program is built for the target it draws into, so compile against the composer's.
+   *  The Earth is compiled into the new scene's lighting without being added to it yet. */
+  private compile(scene: Scene, earth: EarthBody): Promise<unknown> {
     const target = this.gl.getRenderTarget();
     this.gl.setRenderTarget(this.composer.readBuffer);
-    const compiled = this.gl.compileAsync(scene, this.camera);
+    const compiled = Promise.all([
+      this.gl.compileAsync(scene, this.camera),
+      this.gl.compileAsync(earth.group, this.camera, scene),
+    ]);
     this.gl.setRenderTarget(target);
     return compiled;
   }
@@ -263,7 +285,10 @@ export class OrreryWebGL {
     const own = <T extends { dispose(): void }>(resource: T): T => owned.own(resource);
     const updateSky = this.buildMilkyWay(scene, owned);
     const updateField = this.buildField(scene, owned);
+    const sunAt = sunPlacement(worlds);
+    const sunPosition = vec(sunAt.x, sunAt.y, sunAt.z);
     const light = new PointLight('#fff2dd', 1);
+    light.position.copy(sunPosition);
     scene.add(light);
     const surfaceGeometry = own(new SphereGeometry(1, 64, 40));
     const moonGeometry = own(new SphereGeometry(1, 20, 14));
@@ -340,7 +365,7 @@ export class OrreryWebGL {
       );
 
     // The sun, overbright so the bloom takes it, and its corona.
-    const sunSize = sunRadius(worlds);
+    const sunSize = sunAt.radius;
     const sun = new Mesh(
       surfaceGeometry,
       own(
@@ -350,11 +375,13 @@ export class OrreryWebGL {
       ),
     );
     sun.scale.setScalar(sunSize);
+    sun.position.copy(sunPosition);
     scene.add(sun);
     const corona = own(
       new ShaderMaterial({
         uniforms: {
           time: { value: 0 },
+          centre: { value: sunPosition },
           radius: { value: sunSize },
           reach: { value: CORONA_REACH },
         },
@@ -366,12 +393,14 @@ export class OrreryWebGL {
         blending: AdditiveBlending,
       }),
     );
-    scene.add(new Mesh(own(new SphereGeometry(sunSize * CORONA_REACH, 32, 20)), corona));
+    const coronaShell = new Mesh(own(new SphereGeometry(sunSize * CORONA_REACH, 32, 20)), corona);
+    coronaShell.position.copy(sunPosition);
+    scene.add(coronaShell);
 
     // The dial: two rings and 72 ticks in the plane, turning slowly.
     const dial = new Group();
     scene.add(dial);
-    const far = outermostOrbit(worlds) + DIAL_BEYOND_ORBIT;
+    const far = dialRadius(worlds);
     const dialInk = rgb(this.palette.dial);
     const onPlane = (radius: number, angle: number, tilt = 0): Vector3 => {
       const p = orbitPoint(radius, angle, tilt);
@@ -462,6 +491,7 @@ export class OrreryWebGL {
     });
 
     return {
+      sun: sunPosition,
       update: (frame) => {
         const { time, camera } = frame;
         updateSky(frame);

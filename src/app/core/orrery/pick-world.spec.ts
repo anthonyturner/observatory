@@ -1,4 +1,4 @@
-import { pickWorld } from './pick-world';
+import { isOccluded, pickWorld } from './pick-world';
 
 describe('pickWorld', () => {
   it('finds the world under the pointer', () => {
@@ -28,5 +28,25 @@ describe('pickWorld', () => {
     ];
 
     expect(pickWorld(drawn, 18, 0)).toBe('right');
+  });
+});
+
+describe('isOccluded', () => {
+  const earth = { x: 0, y: 0, z: 0, radius: 40 };
+  const sun = { x: -300, y: -150, z: -400, radius: 60 };
+
+  it('hides a world behind a disc and inside its edge', () => {
+    expect(isOccluded({ x: 10, y: 10, z: -50 }, [earth, sun])).toBe(true);
+    expect(isOccluded({ x: -310, y: -140, z: -900 }, [earth, sun])).toBe(true);
+  });
+
+  it('leaves a world in front of the disc, or outside it, alone', () => {
+    expect(isOccluded({ x: 10, y: 10, z: 50 }, [earth, sun])).toBe(false);
+    expect(isOccluded({ x: 100, y: 0, z: -50 }, [earth, sun])).toBe(false);
+    expect(isOccluded({ x: -310, y: -140, z: -100 }, [earth, sun])).toBe(false);
+  });
+
+  it('hides nothing when nothing stands in the way', () => {
+    expect(isOccluded({ x: 0, y: 0, z: -50 }, [])).toBe(false);
   });
 });

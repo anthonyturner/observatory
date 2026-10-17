@@ -11,19 +11,19 @@ const NOISE = `float noise3(vec3 p) {
     mix(mix(fract(sin(n+a.z)*43758.5),fract(sin(n+a.x+a.z)*43758.5),f.x),
     mix(fract(sin(n+a.y+a.z)*43758.5),fract(sin(n+a.x+a.y+a.z)*43758.5),f.x),f.y),f.z); }`;
 
-/** The sun's corona, marched through in twelve steps, with slowly moving wisps.
+/** The sun's corona, round the sun at `centre`, marched through in twelve steps, with slowly moving wisps.
  *  It reaches `reach` sun radii, and fades fast so the space round the sun stays dark. */
-export const CORONA_FRAGMENT = `${NOISE} varying vec3 wp; uniform float time, radius, reach;
+export const CORONA_FRAGMENT = `${NOISE} varying vec3 wp; uniform vec3 centre; uniform float time, radius, reach;
   void main() {
-    vec3 ray = normalize(wp-cameraPosition); float b = dot(cameraPosition,ray);
-    float d = b*b-dot(cameraPosition,cameraPosition)+radius*radius*reach*reach;
+    vec3 ray = normalize(wp-cameraPosition), fromSun = cameraPosition-centre; float b = dot(fromSun,ray);
+    float d = b*b-dot(fromSun,fromSun)+radius*radius*reach*reach;
     if (d < 0.) discard;
     float start = max(0.,-b-sqrt(d)), finish = -b+sqrt(d);
     float stepSize = (finish-start)/12., sum = 0.;
     for (int i=0; i<12; i++) {
       vec3 p = cameraPosition + ray*(start+(float(i)+.5)*stepSize);
-      float altitude = max(0.,length(p)/radius-1.);
-      vec3 direction = normalize(p);
+      float altitude = max(0.,length(p-centre)/radius-1.);
+      vec3 direction = normalize(p-centre);
       float wisps = .55 + .45 * noise3(direction*9. + vec3(time*.07));
       sum += exp(-altitude*6.) * wisps * stepSize/radius;
     }

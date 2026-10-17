@@ -15,6 +15,9 @@ export interface OrreryPalette {
   readonly sunHalo: string;
   readonly sunRay: string;
   readonly sunInk: string;
+  readonly earthSea: string;
+  readonly earthAir: string;
+  readonly earthDusk: string;
   readonly worldLight: string;
   readonly worldShade: string;
   readonly moon: string;
@@ -49,6 +52,9 @@ export function readOrreryPalette(element: HTMLElement): OrreryPalette {
     sunHalo: token('orrery-sun-halo'),
     sunRay: token('orrery-sun-ray'),
     sunInk: token('orrery-sun-ink'),
+    earthSea: token('orrery-earth-sea'),
+    earthAir: token('orrery-earth-air'),
+    earthDusk: token('orrery-earth-dusk'),
     worldLight: token('orrery-world-light'),
     worldShade: token('orrery-world-shade'),
     moon: token('orrery-moon'),

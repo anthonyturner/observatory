@@ -4,7 +4,17 @@ export const ORRERY_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Worlds',
     meaning:
-      'One world per project you own. Its air glows in its most urgent colour; a bigger world has more open work.',
+      'One world per project you own, orbiting Earth. Its air glows in its most urgent colour; a bigger world has more open work.',
+  },
+  {
+    term: 'Earth',
+    meaning:
+      'Your home world at the centre of the system, drawn from NASA pictures. Its day side, night side and city lights are scenery only: they say nothing about your work.',
+  },
+  {
+    term: 'The sun',
+    meaning:
+      'Off to one side, lighting every world. Its size grows with your open pull requests, and the number on it is the total.',
   },
   {
     term: 'Night side',
@@ -44,7 +54,7 @@ export const ORRERY_HELP_ENTRIES: readonly HelpEntry[] = [
   {
     term: 'Sound',
     meaning:
-      'The system plays itself. Each world is an instrument with its own rhythm, busier with more open work; its sound says its state: harsh when blocked, a bell when clear. Each plays from where it sits, the sun keeps the beat, and a scanner sweep rises with blocked worlds. Pointing at a world plays its motif.',
+      'The system plays itself. Each world is an instrument with its own rhythm, busier with more open work; its sound says its state: harsh when blocked, a bell when clear. Each plays from where it sits, the sun, off to one side, keeps the beat, and a scanner sweep rises with blocked worlds. Pointing at a world plays its motif.',
   },
 ];
 

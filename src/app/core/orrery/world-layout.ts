@@ -27,7 +27,7 @@ export interface OrreryWorld {
   readonly delay: number;
 }
 
-/** The innermost orbit, clear of the sun. */
+/** The innermost orbit, clear of the Earth. */
 const FIRST_ORBIT = 260;
 /** Distance is neglect: each idle day moves a world this far out... */
 const ORBIT_PER_IDLE_DAY = 7.6;
@@ -102,7 +102,7 @@ export function layoutWorlds(projects: readonly ProjectSnapshot[]): OrreryWorld[
 /**
  * Pushes each orbit, innermost first, clear of the one inside it by both
  * worlds' air and a clearance, so neighbours never sit on top of each other.
- * Behind the sun the slant brings lanes closer, so a nearer world can still
+ * Behind the Earth the slant brings lanes closer, so a nearer world can still
  * pass in front of a farther one there, as a planet transits. Order holds, so
  * distance still grows with neglect.
  */

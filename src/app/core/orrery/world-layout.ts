@@ -46,7 +46,26 @@ const LANE_CLEARANCE = 28;
 const INNER_SPEED = 0.5 * 0.22;
 const KEPLER_POWER = 1.5;
 const MAX_TILT = 0.17;
-const MAX_MOONS = 6;
+export const MAX_MOONS = 6;
+/** A world's ring spans these many of its radii. */
+export const RING_INNER = 1.76;
+export const RING_OUTER = 2.3;
+/** The plane the moons circle in, leaning nearly edge-on so each passes in front of and behind its world. */
+export const MOON_TILT = -0.36;
+/** The smallest a moon is drawn, in screen pixels, however far out the view is. */
+export const MIN_MOON_PX = 1.3;
+
+/** How far from its world's centre moon `index` circles, in the world's radii. */
+export const moonOrbitRadius = (worldRadius: number, index: number): number =>
+  worldRadius * (2.7 + index * 0.34);
+
+/** A moon's radius under a view at `scale`, before the world has finished growing in. */
+export const moonRadius = (worldRadius: number, scale: number): number =>
+  Math.max(worldRadius * 0.15, MIN_MOON_PX / scale);
+
+/** The furthest from its world's centre any moon or its body can be. */
+export const farthestMoon = (worldRadius: number, scale: number): number =>
+  moonOrbitRadius(worldRadius, MAX_MOONS - 1) + moonRadius(worldRadius, scale);
 const MAX_COMETS = 5;
 const FIRST_DELAY = 0.25;
 const DELAY_PER_WORLD = 0.16;

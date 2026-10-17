@@ -2,10 +2,20 @@ import { ProjectCounts, ProjectSnapshot } from '../projects/project.types';
 import { CLOUD_SCALE } from '../../shared/planets/planet-shaders';
 import { depthPlanes, depthStep } from './depth-planes';
 import { orbitPoint, worldPosition } from './orbit';
-import { CAMERA_DISTANCE } from './orrery-camera';
-import { starField } from './star-field';
+import { EARTH_RADIUS } from './earth';
+import { CAMERA_DISTANCE, clampScale } from './orrery-camera';
+import { FIELD_SPREAD_3D, FIELD_STARS_3D, starField } from './star-field';
 import { SUN_CORONA_REACH, dialRadius, sunPlacement } from './sun-placement';
-import { AIR_SCALE, OrreryWorld, layoutWorlds } from './world-layout';
+import {
+  AIR_SCALE,
+  MAX_MOONS,
+  MOON_TILT,
+  OrreryWorld,
+  RING_OUTER,
+  layoutWorlds,
+  moonOrbitRadius,
+  moonRadius,
+} from './world-layout';
 
 const quiet: ProjectCounts = {
   conflicted: 0,
@@ -36,9 +46,9 @@ const scenes: Record<string, OrreryWorld[]> = {
 };
 
 const OLD_PLANES = { near: 1, far: 100000 };
-const EARTH_CLOUD_GAP = 60 * (CLOUD_SCALE - 1);
-/** The thinnest gap between a world's ground and its cloud shell: the smallest world, radius 14. */
-const WORLD_CLOUD_GAP = 14 * (CLOUD_SCALE - 1);
+const EARTH_CLOUD_GAP = EARTH_RADIUS * (CLOUD_SCALE - 1);
+const MIN_SCALE = clampScale(0);
+const AROUND = Array.from({ length: 360 }, (_, step) => (step / 360) * Math.PI * 2);
 
 /** How far a point `z` toward the viewer is from the camera, along its line of sight. */
 const distanceOf = (z: number): number => CAMERA_DISTANCE - z;
@@ -50,15 +60,18 @@ describe('depthPlanes', () => {
       const inside = (z: number): boolean =>
         distanceOf(z) > planes.near && distanceOf(z) < planes.far;
 
-      it('keeps every world, with its air, rings and moons, between the planes all round its orbit', () => {
+      it('keeps every world, with its air, ring and moons, between the planes all round its orbit', () => {
         for (const world of worlds) {
-          for (let step = 0; step < 360; step++) {
-            const angle = (step / 360) * Math.PI * 2;
+          const { radius } = world;
+          const moonSize = moonRadius(radius, MIN_SCALE);
+          for (const angle of AROUND) {
             const at = orbitPoint(world.orbit, angle, world.tilt);
-            const moon = orbitPoint(world.radius * (2.7 + 5 * 0.34), angle, -0.36);
-            expect(inside(at.z + world.radius * AIR_SCALE)).toBe(true);
-            expect(inside(at.z - world.radius * AIR_SCALE)).toBe(true);
-            expect(inside(at.z + moon.z)).toBe(true);
+            const moon = orbitPoint(moonOrbitRadius(radius, MAX_MOONS - 1), angle, MOON_TILT);
+            for (const sign of [1, -1]) {
+              expect(inside(at.z + sign * radius * AIR_SCALE)).toBe(true);
+              expect(inside(at.z + sign * radius * RING_OUTER)).toBe(true);
+              expect(inside(at.z + moon.z + sign * moonSize)).toBe(true);
+            }
           }
           expect(inside(worldPosition(world, 0).z)).toBe(true);
         }
@@ -73,18 +86,20 @@ describe('depthPlanes', () => {
         expect(inside(-dialZ)).toBe(true);
         expect(inside(sun.z + sun.radius * SUN_CORONA_REACH)).toBe(true);
         expect(inside(sun.z - sun.radius * SUN_CORONA_REACH)).toBe(true);
-        expect(inside(60)).toBe(true);
-        expect(inside(-60)).toBe(true);
+        expect(inside(EARTH_RADIUS)).toBe(true);
+        expect(inside(-EARTH_RADIUS)).toBe(true);
       });
 
       it('keeps every field star of the 3D sky between the planes', () => {
-        for (const star of starField(1800, 1.7)) expect(inside(star.z)).toBe(true);
+        for (const star of starField(FIELD_STARS_3D, FIELD_SPREAD_3D))
+          expect(inside(star.z)).toBe(true);
       });
 
       it('resolves a gap far thinner than any world or Earth shell is from its ground', () => {
         const step = depthStep(CAMERA_DISTANCE, planes);
+        const thinnest = Math.min(...worlds.map((world) => world.radius)) * (CLOUD_SCALE - 1);
 
-        expect(step).toBeLessThan(WORLD_CLOUD_GAP / 20);
+        expect(step).toBeLessThan(thinnest / 20);
         expect(step).toBeLessThan(EARTH_CLOUD_GAP / 20);
       });
     });

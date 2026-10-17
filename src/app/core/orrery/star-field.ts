@@ -27,6 +27,10 @@ const FIELD_HEIGHT = 2600;
  *  off as a power of an even draw. */
 const MAGNITUDE_POWER = 3;
 
+/** How many stars the 3D sky holds, and how much wider than the 2D sky it spreads. */
+export const FIELD_STARS_3D = 1800;
+export const FIELD_SPREAD_3D = 1.7;
+
 /** The nearest a 3D field star sits behind the system, and how much deeper the rest reach. */
 const FIELD_NEAREST = 12000;
 const FIELD_DEPTH_SPAN = 30000;

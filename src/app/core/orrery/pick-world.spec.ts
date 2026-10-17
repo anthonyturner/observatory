@@ -1,4 +1,4 @@
-import { isOccluded, pickWorld } from './pick-world';
+import { isOccluded, pickWorld, splitAtDepth } from './pick-world';
 
 describe('pickWorld', () => {
   it('finds the world under the pointer', () => {
@@ -48,5 +48,32 @@ describe('isOccluded', () => {
 
   it('hides nothing when nothing stands in the way', () => {
     expect(isOccluded({ x: 0, y: 0, z: -50 }, [])).toBe(false);
+  });
+});
+
+describe('splitAtDepth', () => {
+  const near = { key: 'near', z: 30 };
+  const level = { key: 'level', z: 0 };
+  const far = { key: 'far', z: -30 };
+
+  it('puts what lies behind the depth apart from what is level with it or in front', () => {
+    const { behind, inFront } = splitAtDepth([near, far, level], 0);
+
+    expect(behind).toEqual([far]);
+    expect(inFront).toEqual([near, level]);
+  });
+
+  it('agrees with isOccluded about which side a world is on', () => {
+    const disc = { x: 0, y: 0, z: 0, radius: 40 };
+    const { behind } = splitAtDepth([near, level, far], disc.z);
+
+    for (const world of [near, level, far]) {
+      const hidden = isOccluded({ x: 0, y: 0, z: world.z }, [disc]);
+      expect(behind.includes(world)).toBe(hidden);
+    }
+  });
+
+  it('has nothing behind when nothing is', () => {
+    expect(splitAtDepth([near], 0)).toEqual({ behind: [], inFront: [near] });
   });
 });

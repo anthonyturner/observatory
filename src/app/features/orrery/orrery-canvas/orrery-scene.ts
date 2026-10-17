@@ -1,9 +1,9 @@
 import { seededRandom } from '../../../core/instrument/seeded-random';
-import { growth, worldPosition } from '../../../core/orrery/orbit';
+import { OrbitPoint, growth, worldPosition } from '../../../core/orrery/orbit';
 import { depthAt } from '../../../core/orrery/orrery-camera';
 import { OrreryCamera, Viewport } from '../../../core/orrery/orrery-camera';
 import { EARTH_RADIUS } from '../../../core/orrery/earth';
-import { DrawnWorld, Occluder, isOccluded } from '../../../core/orrery/pick-world';
+import { DrawnWorld, Occluder, isOccluded, splitAtDepth } from '../../../core/orrery/pick-world';
 import { FieldStar, starField } from '../../../core/orrery/star-field';
 import {
   SunPlacement,
@@ -33,6 +33,10 @@ import {
 } from './world-painter';
 
 const GRAIN_SEED = 20260926;
+
+/** The Earth sits at the orbit's origin. The sun stands at its depth too (see
+ *  `sunPlacement`), so what is behind one is behind the other. */
+const EARTH_AT: OrbitPoint = { x: 0, y: 0, z: 0 };
 
 /** One frame's inputs. */
 export interface SceneFrame {
@@ -86,8 +90,9 @@ export class OrreryScene {
   draw(ctx: CanvasRenderingContext2D, frame: SceneFrame): DrawnWorld[] {
     const { view, camera, time, isStill } = frame;
     const { scale } = camera.current;
-    const centre = camera.toScreen(0, 0, view);
+    const centre = camera.toScreen(EARTH_AT.x, EARTH_AT.y, view);
     const placed = this.worlds.map((world) => this.place(world, frame));
+    const { behind, inFront } = splitAtDepth(placed, EARTH_AT.z);
 
     paintBackground(ctx, view, this.palette);
     paintField(ctx, this.field, camera, view, time, this.palette.stars);
@@ -99,6 +104,11 @@ export class OrreryScene {
     const [sunX, sunY] = camera.toScreen(this.sun.x, this.sun.y, view);
     const sunPx = this.sun.radius * scale;
     const earthSunward = sunwardAngle({ x: 0, y: 0 }, this.sun);
+    if (behind.length) {
+      this.paintBloom(ctx, view, (glow) => {
+        for (const world of behind) paintWorld(glow, world, time, isStill, this.palette);
+      });
+    }
     paintEarth(
       ctx,
       centre[0],
@@ -110,7 +120,7 @@ export class OrreryScene {
     );
     this.paintBloom(ctx, view, (glow) => {
       paintSun(glow, sunX, sunY, sunPx, time, this.palette);
-      for (const world of placed) paintWorld(glow, world, time, isStill, this.palette);
+      for (const world of inFront) paintWorld(glow, world, time, isStill, this.palette);
     });
 
     paintSunLabel(ctx, sunX, sunY, sunPx, openTotal(this.worlds), scale, this.palette);
@@ -118,14 +128,7 @@ export class OrreryScene {
     paintVignette(ctx, view, this.palette.vignette);
     paintGrain(ctx, this.grain, view, time, isStill);
 
-    return placed
-      .filter((world) => world.grow > 0.1)
-      .map((world) => ({
-        key: world.world.project.repo,
-        x: world.x,
-        y: world.y,
-        radius: world.radius,
-      }));
+    return this.pickable(placed, frame, false);
   }
 
   /** Over the 3D view: what stays sharp through its bloom, the comets, the
@@ -155,12 +158,17 @@ export class OrreryScene {
       ctx.restore();
     }
 
-    // A world behind the Earth's or the sun's disc is hidden by it, so it cannot be picked there.
-    const [earthX, earthY] = camera.toScreenAt(0, 0, 0, view);
-    const occluders: Occluder[] = [
-      { x: earthX, y: earthY, z: 0, radius: EARTH_RADIUS * scale },
-      { x: sunX, y: sunY, z: this.sun.z, radius: sunPx },
-    ];
+    return this.pickable(placed, frame, true);
+  }
+
+  /** Where each world landed, for picking, less the worlds hidden behind the
+   *  Earth's or the sun's disc: what cannot be seen cannot be picked. */
+  private pickable(
+    placed: readonly (PlacedWorld & { z: number })[],
+    frame: SceneFrame,
+    inDepth: boolean,
+  ): DrawnWorld[] {
+    const occluders = this.occluders(frame, inDepth);
     return placed
       .filter((world) => world.grow > 0.1 && !isOccluded(world, occluders))
       .map((world) => ({
@@ -171,24 +179,38 @@ export class OrreryScene {
       }));
   }
 
+  private occluders(frame: SceneFrame, inDepth: boolean): Occluder[] {
+    const disc = (body: OrbitPoint, radius: number): Occluder => {
+      const { x, y, depth } = this.project(frame, body, inDepth);
+      return { x, y, z: body.z, radius: radius * frame.camera.current.scale * depth };
+    };
+    return [disc(EARTH_AT, EARTH_RADIUS), disc(this.sun, this.sun.radius)];
+  }
+
+  /** Where a point of the orrery lands on screen, and how much nearer or
+   *  farther than the plane it makes things look: flat in 2D, in perspective in 3D. */
+  private project(frame: SceneFrame, point: OrbitPoint, inDepth: boolean) {
+    const { camera, view } = frame;
+    const [x, y] = inDepth
+      ? camera.toScreenAt(point.x, point.y, point.z, view)
+      : camera.toScreen(point.x, point.y, view);
+    return { x, y, depth: inDepth ? depthAt(point.z) : 1 };
+  }
+
   private place(
     world: OrreryWorld,
     frame: SceneFrame,
     inDepth = false,
   ): PlacedWorld & { z: number } {
     const position = worldPosition(world, frame.time);
-    const { camera, view } = frame;
-    const [x, y] = inDepth
-      ? camera.toScreenAt(position.x, position.y, position.z, view)
-      : camera.toScreen(position.x, position.y, view);
-    const depth = inDepth ? depthAt(position.z) : 1;
+    const { x, y, depth } = this.project(frame, position, inDepth);
     const grow = growth(world, frame.sinceShown);
     return {
       world,
       x,
       y,
       z: position.z,
-      radius: Math.max(world.radius * camera.current.scale * depth, MIN_WORLD_RADIUS) * grow,
+      radius: Math.max(world.radius * frame.camera.current.scale * depth, MIN_WORLD_RADIUS) * grow,
       grow,
       color: this.palette.channels(world.color),
       sunward: sunwardAngle(position, this.sun),

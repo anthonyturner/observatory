@@ -29,16 +29,6 @@ const CLOUD_DRIFT = 0.015;
 /** Sharper at a slant, up to this much: a few taps cost little and the limb reads better. */
 const MAX_ANISOTROPY = 4;
 
-/** The camera stands 24,000 units off, where one step of the depth buffer is
- *  about 34 units: more than the gap between the ground and its shells, which
- *  would flicker in and out of it. A shell is drawn a couple of steps nearer
- *  instead, still well behind any world in front of the Earth. */
-const SHELL_DEPTH = {
-  polygonOffset: true,
-  polygonOffsetFactor: -1,
-  polygonOffsetUnits: -2,
-} as const;
-
 export interface EarthTextures {
   readonly day: Texture;
   readonly night: Texture;
@@ -93,7 +83,6 @@ export class EarthBody {
       fragmentShader: EARTH_CLOUD_FRAGMENT,
       transparent: true,
       depthWrite: false,
-      ...SHELL_DEPTH,
     });
     const rim = new ShaderMaterial({
       uniforms: { ink: { value: airInk }, sun, ground: { value: 1 / EARTH_AIR_SCALE } },
@@ -101,7 +90,6 @@ export class EarthBody {
       fragmentShader: ATMOSPHERE_FRAGMENT,
       transparent: true,
       depthWrite: false,
-      ...SHELL_DEPTH,
       blending: AdditiveBlending,
     });
     this.materials = [ground, clouds, rim];

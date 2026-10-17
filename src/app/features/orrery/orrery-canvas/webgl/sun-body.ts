@@ -10,15 +10,13 @@ import {
   SphereGeometry,
   Vector3,
 } from 'three';
-import { SunPlacement } from '../../../../core/orrery/sun-placement';
+import { SUN_CORONA_REACH, SunPlacement } from '../../../../core/orrery/sun-placement';
 import { SPHERE_VERTEX } from '../../../../shared/planets/planet-shaders';
 import { Owned, vec } from '../../../starmap/engine/gpu-kit';
 import { CORONA_FRAGMENT } from './orrery-shaders';
 
 /** Just bright enough that the bloom catches the sun's rim, and no more. */
 const SUN_OVERBRIGHT = 1.3;
-/** How far the corona reaches, in sun radii. */
-const CORONA_REACH = 1.9;
 
 /** The sun's parts, all at `position`: the light every shader is lit from, the body, and the corona round it. */
 export interface SunBody {
@@ -52,7 +50,7 @@ export function buildSun(
         time: { value: 0 },
         centre: { value: position },
         radius: { value: placement.radius },
-        reach: { value: CORONA_REACH },
+        reach: { value: SUN_CORONA_REACH },
       },
       vertexShader: SPHERE_VERTEX,
       fragmentShader: CORONA_FRAGMENT,
@@ -63,7 +61,7 @@ export function buildSun(
     }),
   );
   const corona = new Mesh(
-    owned.own(new SphereGeometry(placement.radius * CORONA_REACH, 32, 20)),
+    owned.own(new SphereGeometry(placement.radius * SUN_CORONA_REACH, 32, 20)),
     coronaMaterial,
   );
   corona.position.copy(position);

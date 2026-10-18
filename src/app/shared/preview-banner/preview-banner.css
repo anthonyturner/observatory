@@ -30,7 +30,7 @@
 
 @media (max-width: 700px) {
   .preview {
-    top: calc(8px + var(--status-strip-height, 0px));
+    top: calc(8px + var(--page-brand-height, 0px) + var(--status-strip-height, 0px));
     right: 8px;
     bottom: auto;
     padding: 4px 10px;

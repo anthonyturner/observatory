@@ -17,11 +17,17 @@
   --warm: #ffd98a;
 
   /* Where a screen's header begins: below the status strip and the device's top edge, and in
-     from the side. The project bar and each project screen's header both start here. */
-  --page-inset-top: calc(18px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px));
+     from the side. The project bar and each project screen's header both start here. A screen
+     whose brand rides above the strip (the Review Queue) publishes its height as
+     `--page-brand-height`, which pushes the strip and everything under it down. */
+  --page-brand-top: calc(10px + env(safe-area-inset-top, 0px));
+  --page-inset-top: calc(
+    18px + env(safe-area-inset-top, 0px) + var(--page-brand-height, 0px) +
+      var(--status-strip-height, 0px)
+  );
   --page-inset-x: 20px;
   /* The status strip's top edge, which a control in the screen's top corner lines up with. */
-  --status-strip-top: calc(4px + env(safe-area-inset-top, 0px));
+  --status-strip-top: calc(4px + env(safe-area-inset-top, 0px) + var(--page-brand-height, 0px));
 
   /* A pull request's risk tag on its star card. */
   --risk-low: var(--ok);

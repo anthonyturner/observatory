@@ -63,6 +63,23 @@ describe('StarmapTools', () => {
     );
   });
 
+  it('offers Timeline only once the timeline has days, pressed while it is open', () => {
+    const { fixture, button } = render();
+    expect(button('Timeline')).toBeUndefined();
+
+    fixture.componentRef.setInput('timelineReady', true);
+    fixture.detectChanges();
+    let asked = 0;
+    fixture.componentInstance.timeline.subscribe(() => asked++);
+    button('Timeline')?.click();
+    expect(asked).toBe(1);
+    expect(button('Timeline')?.getAttribute('aria-pressed')).toBe('false');
+
+    fixture.componentRef.setInput('timelineOn', true);
+    fixture.detectChanges();
+    expect(button('Timeline')?.getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('asks for another screen, and hides what means nothing there', () => {
     const { fixture, button, element } = render('usage');
     const asked: Chart[] = [];

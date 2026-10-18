@@ -45,6 +45,7 @@ import { MemoryView } from '../memory/memory-view';
 import { systemsOf } from '../memory/departure';
 import { EFFECTS, MemoryItem, knownEndings } from '../memory/news';
 import { Timeline } from '../memory/timeline/timeline';
+import { TimelineFold } from '../memory/timeline/timeline-fold';
 import { binaries } from '../engine/binary-layer';
 import { CardContext } from '../star-card/card-facts';
 import { BlackHoleSetting } from '../black-hole/black-hole-setting';
@@ -237,6 +238,7 @@ export class StarmapPage {
   protected readonly video = inject(VideoBackground);
   private readonly blackHole = inject(BlackHoleSetting);
   private readonly wipLimit = inject(WipLimitSetting);
+  protected readonly timelineFold = inject(TimelineFold);
   private readonly route = inject(ActivatedRoute);
   private readonly visibility = inject(PageVisibility);
   private readonly now = inject(Clock).now;
@@ -565,12 +567,16 @@ export class StarmapPage {
       !news.acknowledged
     );
   });
-  /** The timeline under the queue's map, once the ledger has days to show. */
-  protected readonly showTimeline = computed(
+  /** The timeline can sit under the queue's map once the ledger has days to show. */
+  protected readonly timelineReady = computed(
     () =>
       this.chart() === 'prs' &&
       this.view() === 'map' &&
       (this.memory.ledger()?.rows.length ?? 0) > 1,
+  );
+  /** The timeline shows where it can, once the viewer opens it from the tools. */
+  protected readonly showTimeline = computed(
+    () => this.timelineReady() && this.timelineFold.isOpen(),
   );
   protected readonly openItem = computed(
     () => this.shownItems().find((each) => each.number === this.openPull()) ?? null,
@@ -953,18 +959,24 @@ export class StarmapPage {
     this.memory.showFrame(index);
   }
 
+  /** Folding the timeline takes its Live button with it, so the sky returns to now. */
+  protected toggleTimeline(): void {
+    if (this.timelineFold.isOpen()) this.memory.endReplay();
+    this.timelineFold.toggle();
+  }
+
   protected togglePlayer(): void {
     this.openPull.set(null);
     this.memory.togglePlayer(this.motion.isStill());
   }
 
-  /** On the queue's sky, `n` goes to the next star and `[` and `]` step through the recorded refreshes. */
+  /** On the queue's sky, `n` goes to the next star and, while the timeline shows, `[` and `]` step through the recorded refreshes. */
   protected onKey(event: KeyboardEvent): void {
     const target = event.target;
     if (target instanceof Element && target.closest(TYPING)) return;
     if (this.chart() !== 'prs' || this.sheetPull() !== null) return;
     if (event.key === 'n' && !hasModifier(event)) return this.goToNext();
-    if (event.key !== '[' && event.key !== ']') return;
+    if ((event.key !== '[' && event.key !== ']') || !this.showTimeline()) return;
     this.openPull.set(null);
     this.memory.step(event.key === '[' ? -1 : 1);
   }

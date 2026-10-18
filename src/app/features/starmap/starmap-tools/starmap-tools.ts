@@ -31,7 +31,7 @@ const CHARTS: readonly { readonly id: Chart; readonly label: string }[] = [
 
 /**
  * The bottom tools, by purpose: which sky, Starmap or List, zoom, Next star,
- * what the sky draws, the side panels, the repo's agent sessions, Refresh, Motion and Sound, then help.
+ * what the sky draws and the timeline, the side panels, the repo's agent sessions, Refresh, Motion and Sound, then help.
  * What only the map uses hides on a list. On a small screen Controls folds
  * them away, remembered per viewer.
  */
@@ -52,6 +52,9 @@ export class StarmapTools {
   readonly planOn = input(false);
   readonly agentsOn = input(false);
   readonly doneOn = input(false);
+  /** Whether the queue's timeline has days to show here, and whether it is open. */
+  readonly timelineReady = input(false);
+  readonly timelineOn = input(false);
   readonly refreshing = input(false);
   readonly refreshFailed = input(false);
   /** The pull request Next star would open, or null when nothing is workable. */
@@ -68,6 +71,7 @@ export class StarmapTools {
   readonly plan = output<void>();
   readonly agents = output<void>();
   readonly done = output<void>();
+  readonly timeline = output<void>();
   readonly nextStar = output<void>();
   readonly sprint = output<void>();
   readonly refresh = output<void>();

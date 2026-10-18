@@ -96,6 +96,16 @@
           /><span aria-hidden="true">d</span></label
         >
       }
+      @if (timelineReady()) {
+        <button
+          type="button"
+          title="Open pull requests per day for 60 days, with Replay"
+          [attr.aria-pressed]="timelineOn()"
+          (click)="timeline.emit()"
+        >
+          Timeline
+        </button>
+      }
     </div>
     <div class="toolgroup" role="group" aria-label="Side panel">
       <button

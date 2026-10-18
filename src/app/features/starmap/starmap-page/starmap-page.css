@@ -71,7 +71,10 @@
   background: var(--queue-sky);
   padding-inline: 20px;
   padding-block: max(
-      calc(150px + env(safe-area-inset-top, 0px) + var(--status-strip-height, 0px)),
+      calc(
+        150px + env(safe-area-inset-top, 0px) + var(--page-brand-height, 0px) +
+          var(--status-strip-height, 0px)
+      ),
       var(--chrome-top)
     )
     100px;

@@ -115,7 +115,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ],
       [
         'Timeline',
-        'The strip at the bottom: open pull requests per day for 60 days, each merge a green streak, each recorded refresh a tick. Drag across it, or press Replay, to watch the sky change refresh by refresh; [ and ] step, Live returns to now.',
+        'The strip over the tools, opened and closed with Timeline: open pull requests per day for 60 days, each merge a green streak, each recorded refresh a tick. Drag across it, or press Replay, to watch the sky change refresh by refresh; [ and ] step, Live returns to now, and so does closing it.',
       ],
       [
         'Hover',

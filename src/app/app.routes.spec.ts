@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { provideAppRouter } from './app.routes';
+import { GuidePage } from './features/guide/guide-page/guide-page';
 import { PROJECT_TABS } from './shared/project-tabs/project-tabs';
 
 function leafOf(route: ActivatedRouteSnapshot): ActivatedRouteSnapshot {
@@ -36,6 +37,13 @@ describe('the app’s routes', () => {
 
     expect(leaf.params).toEqual({ owner: 'me', repo: 'app', page: 'docs/stack' });
     expect(leaf.title).toBe('Library · Observatory');
+  });
+
+  it('opens the Git cheat sheet with the Guide page, under its own title', async () => {
+    const { leaf } = await open('/git-cheat-sheet');
+
+    expect(leaf.title).toBe('Git cheat sheet · Observatory');
+    expect(leaf.component).toBe(GuidePage);
   });
 
   it('keeps a pull request link’s query on the Queue', async () => {

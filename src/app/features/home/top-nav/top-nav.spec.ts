@@ -61,6 +61,16 @@ describe('TopNav', () => {
     expect(link?.getAttribute('href')).toBe('/orrery');
   });
 
+  it('leads to the Git cheat sheet inside the app', () => {
+    const fixture = TestBed.createComponent(TopNav);
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector(
+      'a.link[href="/git-cheat-sheet"]',
+    );
+    expect(link?.textContent).toContain('Git cheat sheet');
+  });
+
   it('jumps to News and Projects, moving focus there without changing the address', () => {
     const fixture = TestBed.createComponent(TopNav);
     fixture.detectChanges();

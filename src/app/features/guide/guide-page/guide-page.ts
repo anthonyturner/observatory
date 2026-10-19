@@ -11,7 +11,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { guideMatching, guideOf, sectionCount } from '../../../core/guide/guide';
-import { GUIDE_MARKDOWN } from '../../../core/guide/guide-markdown';
+import { GUIDE_BOOK } from '../../../core/guide/guide-book';
 import { searchTerms } from '../../../core/library/library-search';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UpLink } from '../../../shared/up-link/up-link';
@@ -20,10 +20,11 @@ import { LibraryIndex } from '../../library/library-index/library-index';
 import { contentsOf, resultLineOf } from './guide-view';
 
 /**
- * How every part of Observatory works, on one page: the Guide's Markdown read
- * with the Library's parser and drawn with its blocks, its contents the
- * Library's star chart, a filter across every section, and an anchor per
- * section so a screen's Guide link lands on its own part.
+ * A long Markdown text on one page, by default how every part of Observatory
+ * works: the book's Markdown read with the Library's parser and drawn with its
+ * blocks, its contents the Library's star chart, a filter across every
+ * section, and an anchor per section so a screen's Guide link lands on its
+ * own part.
  */
 @Component({
   selector: 'app-guide-page',
@@ -38,7 +39,10 @@ import { contentsOf, resultLineOf } from './guide-view';
 })
 export class GuidePage {
   private readonly reading = viewChild<ElementRef<HTMLElement>>('reading');
-  private readonly guide = guideOf(inject(GUIDE_MARKDOWN));
+  protected readonly book = inject(GUIDE_BOOK);
+  protected readonly contentsLabel = `${this.book.title} contents`;
+  protected readonly filterLabel = `Filter ${this.book.name}`;
+  private readonly guide = guideOf(this.book.markdown);
   private readonly fragment = toSignal(inject(ActivatedRoute).fragment, { initialValue: null });
 
   protected readonly isStill = inject(MotionPreference).isStill;
@@ -49,10 +53,15 @@ export class GuidePage {
   private readonly terms = computed(() => searchTerms(this.query()));
   protected readonly shown = computed(() => guideMatching(this.guide, this.terms()));
   protected readonly shelves = computed(() =>
-    contentsOf({ guide: this.shown(), terms: this.terms(), currentId: this.fragment() }),
+    contentsOf({
+      guide: this.shown(),
+      link: this.book.link,
+      terms: this.terms(),
+      currentId: this.fragment(),
+    }),
   );
   protected readonly resultLine = computed(() =>
-    resultLineOf(sectionCount(this.shown()), this.terms()),
+    resultLineOf(sectionCount(this.shown()), this.terms(), this.book.name),
   );
 
   constructor() {

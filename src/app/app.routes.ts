@@ -1,4 +1,5 @@
 import { Routes, provideRouter, withRouterConfig } from '@angular/router';
+import { GIT_CHEAT_SHEET_PATH } from './core/guide/git-cheat-sheet-link';
 import { GUIDE_PATH } from './core/guide/guide-link';
 import { libraryMatcher } from './core/library/library-route';
 
@@ -26,6 +27,12 @@ export const routes: Routes = [
     path: GUIDE_PATH,
     title: 'Guide · Observatory',
     loadComponent: () => import('./features/guide/guide-page/guide-page').then((m) => m.GuidePage),
+  },
+  {
+    path: GIT_CHEAT_SHEET_PATH,
+    title: 'Git cheat sheet · Observatory',
+    loadChildren: () =>
+      import('./features/guide/git-cheat-sheet.routes').then((m) => m.GIT_CHEAT_SHEET_ROUTES),
   },
   {
     path: 'agents',

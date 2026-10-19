@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -7,10 +8,9 @@ import {
   inject,
   input,
   signal,
-  WritableSignal,
   viewChild,
   viewChildren,
-  afterNextRender,
+  WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
@@ -70,7 +70,6 @@ export class SiteHeader {
   private readonly moreButton = viewChild.required<ElementRef<HTMLElement>>('moreButton');
   private readonly screenLinks = viewChildren<ElementRef<HTMLElement>>('screenLink');
 
-  /** The page's screens, in order, as links. */
   readonly screens = input.required<readonly NavSection[]>();
   /** The ways out of the page, such as All projects: always in the list, below the screens. */
   readonly exits = input<readonly NavSection[]>([]);

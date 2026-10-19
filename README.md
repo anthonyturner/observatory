@@ -584,7 +584,8 @@ GitHub issue and lands through a pull request.
 
 The [wiki](https://github.com/anthonyturner/observatory/wiki) is generated from
 this README, `CHANGELOG.md` and chosen `/docs` pages (the list is in
-`server/wiki/wiki-pages.ts`) by the **Wiki sync** workflow on every merge to
+`server/wiki/wiki-pages.ts`; every `docs/*-cheat-sheet.md` is found by its
+name and listed under Guide) by the **Wiki sync** workflow on every merge to
 main, so edit those files, not the wiki. The sync replaces only the pages it
 wrote, which open with a `docs-wiki-sync` marker; pages written by hand on the
 wiki stay. `npm run wiki:sync` writes the same pages to `dist/wiki` to read

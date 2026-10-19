@@ -597,15 +597,15 @@ ask.
 git push --force
 ```
 
-| Piece                | What it means                                                  |
-| -------------------- | -------------------------------------------------------------- |
-| `git push`           | Upload your commits to GitHub.                                 |
-| `--force`            | Replace GitHub's branch with yours, whatever it held.          |
-| `--force-with-lease` | The same, but refuse if someone pushed since you last fetched. |
+| Piece                | What it means                                                                                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `git push`           | Upload your commits to GitHub.                                                                                                                                                            |
+| `--force`            | Replace GitHub's branch with yours, whatever it held.                                                                                                                                     |
+| `--force-with-lease` | The same, but refuse if GitHub's branch no longer matches your last-fetched note of it. A fetch (even one your editor runs in the background) updates that note, which weakens the check. |
 
 Replaces GitHub's copy of a branch with yours, even if that deletes commits
 other people have. `--force-with-lease` is a little safer (it refuses if
-someone pushed since you last looked) but still rewrites history. Never on
+GitHub's branch moved past your last-fetched note of it) but still rewrites history. Never on
 `main`.
 
 ### Reset --hard: throw away work

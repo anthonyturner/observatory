@@ -119,11 +119,7 @@
   }
 </div>
 
-<div
-  class="hud bottom"
-  [attr.data-folded]="folded() ? '' : null"
-  [style.--panel-clear.px]="insets().side"
->
+<div class="hud bottom" [style.--panel-clear.px]="insets().side">
   @if (showTimeline() && memory.ledger(); as ledger) {
     <app-timeline
       [rows]="ledger.rows"
@@ -157,7 +153,6 @@
     [next]="next()"
     [sprintPhase]="sprint.phase()"
     [refreshing]="refreshing() || usage.isRefreshing()"
-    [(folded)]="folded"
     (chartChange)="setChart($event)"
     (viewChange)="setView($event)"
     (zoomIn)="sky.zoomIn()"

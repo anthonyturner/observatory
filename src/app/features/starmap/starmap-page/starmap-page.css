@@ -118,16 +118,10 @@
   );
 }
 
-@media (max-width: 1199px), (max-height: 500px) {
-  .hud.bottom[data-folded] {
-    pointer-events: none;
-  }
-
-  /* Folded, the charts go with the tools. */
-  .hud.bottom[data-folded] app-meteor-record,
-  .hud.bottom[data-folded] app-timeline {
-    display: none;
-  }
+/* While the Tools sheet or the Settings list is open it stands over the cards and panels, and
+   under the notices (9). */
+.hud.bottom:has(app-starmap-tools[data-open]) {
+  z-index: 8;
 }
 
 /* Beside the playlist while it leaves room, wrapping short of it; above it otherwise.

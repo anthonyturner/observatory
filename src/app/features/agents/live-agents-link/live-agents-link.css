@@ -30,9 +30,10 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+/* A toolbar that needs a taller target on touch sets `--touch-target`. */
 :host(.tool) a {
   flex: none;
-  min-height: 0;
+  min-height: var(--touch-target, 0px);
   padding: 8px 13px;
   color: var(--muted);
   backdrop-filter: blur(14px) saturate(140%);

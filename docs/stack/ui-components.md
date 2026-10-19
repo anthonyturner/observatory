@@ -71,10 +71,16 @@ Queue (the header, the tools and the page) uses two tiers that are exact opposit
 size is in one of them. The site header is not part of them: it changes on width alone, below
 1200px.
 
-- **Compact:** `(max-width: 1199px), (max-height: 500px)`. The title shrinks, the legend and
-  the tools keep to one row that scrolls sideways, and Controls folds the tools away.
+- **Compact:** `(max-width: 1199px), (max-height: 500px)`. The title shrinks, the legend keeps to
+  one row that scrolls sideways, and the tools become a drawer: a Tools button at the bottom left
+  raises them as a bottom sheet.
 - **Wide:** `(min-width: 1200px) and (min-height: 501px)`. The legend and the search box are
-  pinned to the top right.
+  pinned to the top right, and the tools are a dock of two rows along the foot, with the
+  settings behind a Settings button that opens upward.
+
+The dock and the drawer are the same `StarmapTools` element, switched by CSS; never draw the
+tools twice. The sheet is a `Disclosure`, not a dialog: no backdrop, no focus trap, so the sky
+stays visible as the tools change it.
 
 Two finer lines sit inside them: the work-in-progress note moves to the top centre from
 1440x600, and the Home dock from 1024x600. Touch sizing, the 44px targets, follows the

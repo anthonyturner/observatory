@@ -1,198 +1,262 @@
-<div class="tools">
-  <div class="toolgroup" role="group" aria-label="Which sky">
-    @for (each of charts; track each.id) {
-      <button
-        type="button"
-        [attr.aria-pressed]="chart() === each.id"
-        (click)="chart() !== each.id && chartChange.emit(each.id)"
-      >
-        {{ each.label }}
-      </button>
-    }
-  </div>
-  @if (!skyHidden()) {
-    <div class="toolgroup" role="group" aria-label="View">
-      <button type="button" [attr.aria-pressed]="view() === 'map'" (click)="viewChange.emit('map')">
-        Starmap
-      </button>
-      <button
-        type="button"
-        [attr.aria-pressed]="view() === 'list'"
-        (click)="viewChange.emit('list')"
-      >
-        List
-      </button>
-    </div>
-  }
-  @if (onMap()) {
-    <div class="toolgroup" role="group" aria-label="Zoom">
-      <button type="button" title="Zoom out" (click)="zoomOut.emit()">&minus;</button>
-      <button type="button" title="Zoom in" (click)="zoomIn.emit()">+</button>
-      <button type="button" title="Fit everything on screen" (click)="fit.emit()">Fit</button>
-    </div>
-  }
-  @if (!queueHidden() && chart() === 'prs') {
-    <div class="toolgroup">
-      <button
-        type="button"
-        aria-keyshortcuts="n"
-        [title]="nextTitle()"
-        [disabled]="!next()"
-        (click)="nextStar.emit()"
-      >
-        Next star
-      </button>
-      <button
-        type="button"
-        [title]="
-          sprintBusy()
-            ? 'A review sprint is on: its panel ends it'
-            : 'A time-boxed review sprint: 15, 25 or 45 minutes of pull requests that fit'
-        "
-        [attr.aria-pressed]="sprintPhase() !== null"
-        [disabled]="sprintBusy()"
-        (click)="sprint.emit()"
-      >
-        Sprint
-      </button>
-      <label
-        class="field wip"
-        title="Past this many open pull requests, drafts aside, the comets fade and a note suggests finishing one first"
-        ><span aria-hidden="true">wip</span
-        ><input
-          type="number"
-          step="1"
-          aria-label="Work-in-progress limit: open pull requests before the queue nudges"
-          [min]="minWipLimit"
-          [max]="maxWipLimit"
-          [value]="wipLimit.limit()"
-          (change)="onNumberField($event, wipLimit)"
-      /></label>
-    </div>
-  }
-  @if (!queueHidden() && onMap()) {
-    <div class="toolgroup" role="group" aria-label="On the sky">
-      <button
-        type="button"
-        title="Threads between pull requests that would conflict with each other"
-        [attr.aria-pressed]="showCollisions()"
-        (click)="collisions.emit()"
-      >
-        Collisions
-      </button>
-      @if (chart() === 'prs') {
-        <label
-          class="field hole"
-          title="Pull requests idle longer than this many days fall toward the black hole"
-          ><span aria-hidden="true">hole</span
-          ><input
-            type="number"
-            step="1"
-            aria-label="Black hole: idle days before a pull request falls in"
-            [min]="minHoleDays"
-            [max]="maxHoleDays"
-            [value]="blackHole.staleAfterDays()"
-            (change)="onNumberField($event, blackHole)"
-          /><span aria-hidden="true">d</span></label
-        >
-      }
-      @if (timelineReady()) {
-        <button
-          type="button"
-          title="Open pull requests per day for 60 days, with Replay"
-          [attr.aria-pressed]="timelineOn()"
-          (click)="timeline.emit()"
-        >
-          Timeline
-        </button>
-      }
-    </div>
-    <div class="toolgroup" role="group" aria-label="Side panel">
-      <button
-        type="button"
-        title="The order to merge in that needs the fewest rebases"
-        [attr.aria-pressed]="planOn()"
-        (click)="plan.emit()"
-      >
-        Merge plan
-      </button>
-      <button
-        type="button"
-        title="How each agent's pull requests fare"
-        [attr.aria-pressed]="agentsOn()"
-        (click)="agents.emit()"
-      >
-        Agents
-      </button>
-      <button
-        type="button"
-        title="What finished in the last 60 days, on the Spiral of Done"
-        [attr.aria-pressed]="doneOn()"
-        (click)="done.emit()"
-      >
-        Done
-      </button>
-    </div>
-  }
-  @if (!queueHidden()) {
-    <app-live-agents-link class="tool" label="Agent sessions" [repo]="repo()" />
-  }
-  <div class="toolgroup">
-    <button
-      type="button"
-      title="Rebuild this sky from GitHub now"
-      [disabled]="refreshing()"
-      (click)="refresh.emit()"
-    >
-      {{ refreshing() ? 'Refreshing…' : refreshFailed() ? 'Refresh failed — retry' : 'Refresh' }}
-    </button>
-  </div>
-  <div class="toolgroup" role="group" aria-label="Motion and sound">
-    <button
-      type="button"
-      [attr.aria-pressed]="!motion.isStill()"
-      [title]="motionTitle()"
-      (click)="motion.toggle()"
-    >
-      {{ motion.isStill() ? 'Motion off' : 'Motion on' }}
-    </button>
-    <button
-      type="button"
-      [attr.aria-pressed]="sound.isOn()"
-      [title]="sound.isOn() ? 'Sky sound is on — click to silence' : 'Play the sky’s sound'"
-      (click)="sound.toggle()"
-    >
-      {{ sound.isOn() ? 'Sound on' : 'Sound off' }}
-    </button>
-    @if (sound.isOn()) {
-      <label class="vol" title="Volume"
-        ><span aria-hidden="true">vol</span
-        ><input
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          aria-label="Volume"
-          [value]="volumePercent()"
-          (input)="onVolume($event)"
-      /></label>
-    }
-  </div>
-  <div class="toolgroup">
-    <button
-      type="button"
-      aria-label="Help"
-      title="What am I looking at? (?)"
-      [attr.aria-pressed]="help.isOpen()"
-      (click)="help.toggle()"
-    >
-      ?
-    </button>
-  </div>
-  @if (onMap()) {
-    <span class="hint">drag · scroll · hover or click a star</span>
-  }
-  <button type="button" class="fold" [attr.aria-expanded]="!folded()" (click)="toggleFold()">
-    Controls <span aria-hidden="true">&#9662;</span>
+<div class="dock" [appDisclosure]="toolsButton" #drawer="appDisclosure">
+  <button
+    #toolsButton
+    type="button"
+    class="toolsbutton"
+    [attr.aria-expanded]="drawer.isOpen()"
+    [attr.aria-controls]="drawer.panelId"
+    (click)="drawer.toggle()"
+  >
+    Tools <span aria-hidden="true">{{ drawer.isOpen() ? '▾' : '▴' }}</span>
   </button>
+  <div
+    class="tools popup"
+    role="region"
+    aria-label="Review Queue tools"
+    [id]="drawer.panelId"
+    [class.open]="drawer.isOpen()"
+  >
+    <div class="line">
+      <div class="toolgroup sky" role="group" aria-label="Which sky">
+        <span class="grouplabel" aria-hidden="true">Sky</span>
+        @for (each of charts; track each.id) {
+          <button
+            type="button"
+            [attr.aria-pressed]="chart() === each.id"
+            (click)="pickChart(each.id); drawer.closeToTrigger()"
+          >
+            {{ each.label }}
+          </button>
+        }
+      </div>
+      @if (!skyHidden()) {
+        <div class="toolgroup" role="group" aria-label="View">
+          <span class="grouplabel" aria-hidden="true">View</span>
+          <button
+            type="button"
+            [attr.aria-pressed]="view() === 'map'"
+            (click)="viewChange.emit('map')"
+          >
+            Starmap
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="view() === 'list'"
+            (click)="viewChange.emit('list')"
+          >
+            List
+          </button>
+        </div>
+      }
+      @if (onMap()) {
+        <div class="toolgroup" role="group" aria-label="Zoom">
+          <span class="grouplabel" aria-hidden="true">Zoom</span>
+          <button type="button" title="Zoom out" (click)="zoomOut.emit()">&minus;</button>
+          <button type="button" title="Zoom in" (click)="zoomIn.emit()">+</button>
+          <button type="button" title="Fit everything on screen" (click)="fit.emit()">Fit</button>
+        </div>
+      }
+      @if (!queueHidden() && chart() === 'prs') {
+        <div class="toolgroup" role="group" aria-label="Review">
+          <span class="grouplabel" aria-hidden="true">Review</span>
+          <button
+            type="button"
+            aria-keyshortcuts="n"
+            [title]="nextTitle()"
+            [disabled]="!next()"
+            (click)="nextStar.emit(); drawer.closeToTrigger()"
+          >
+            Next star
+          </button>
+          <button
+            type="button"
+            [title]="
+              sprintBusy()
+                ? 'A review sprint is on: its panel ends it'
+                : 'A time-boxed review sprint: 15, 25 or 45 minutes of pull requests that fit'
+            "
+            [attr.aria-pressed]="sprintPhase() !== null"
+            [disabled]="sprintBusy()"
+            (click)="sprint.emit(); drawer.closeToTrigger()"
+          >
+            Sprint
+          </button>
+        </div>
+      }
+      @if (!queueHidden() && onMap()) {
+        <div class="toolgroup" role="group" aria-label="On the sky">
+          <span class="grouplabel" aria-hidden="true">On the sky</span>
+          <button
+            type="button"
+            title="Threads between pull requests that would conflict with each other"
+            [attr.aria-pressed]="showCollisions()"
+            (click)="collisions.emit()"
+          >
+            Collisions
+          </button>
+          @if (timelineReady()) {
+            <button
+              type="button"
+              title="Open pull requests per day for 60 days, with Replay"
+              [attr.aria-pressed]="timelineOn()"
+              (click)="timeline.emit(); drawer.closeToTrigger()"
+            >
+              Timeline
+            </button>
+          }
+        </div>
+      }
+    </div>
+    <div class="line">
+      @if (!queueHidden() && onMap()) {
+        <div class="toolgroup" role="group" aria-label="Panels">
+          <span class="grouplabel" aria-hidden="true">Panels</span>
+          <button
+            type="button"
+            title="The order to merge in that needs the fewest rebases"
+            [attr.aria-pressed]="planOn()"
+            (click)="plan.emit(); drawer.closeToTrigger()"
+          >
+            Merge plan
+          </button>
+          <button
+            type="button"
+            title="How each agent's pull requests fare"
+            [attr.aria-pressed]="agentsOn()"
+            (click)="agents.emit(); drawer.closeToTrigger()"
+          >
+            Agents
+          </button>
+          <button
+            type="button"
+            title="What finished in the last 60 days, on the Spiral of Done"
+            [attr.aria-pressed]="doneOn()"
+            (click)="done.emit(); drawer.closeToTrigger()"
+          >
+            Done
+          </button>
+        </div>
+      }
+      @if (!queueHidden()) {
+        <app-live-agents-link
+          class="tool"
+          label="Agent sessions"
+          [repo]="repo()"
+          (click)="drawer.closeToTrigger()"
+        />
+      }
+      <div class="settings" [appDisclosure]="settingsButton" #settings="appDisclosure">
+        <div class="toolgroup settingstrigger">
+          <button
+            #settingsButton
+            type="button"
+            [attr.aria-expanded]="settings.isOpen()"
+            [attr.aria-controls]="settings.panelId"
+            (click)="settings.toggle()"
+          >
+            Settings <span aria-hidden="true">{{ settings.isOpen() ? '▾' : '▴' }}</span>
+          </button>
+        </div>
+        <div
+          class="settingspanel popup"
+          role="group"
+          aria-label="Settings"
+          [id]="settings.panelId"
+          [class.open]="settings.isOpen()"
+        >
+          <span class="grouplabel" aria-hidden="true">Settings</span>
+          @if (!queueHidden() && chart() === 'prs') {
+            <label
+              class="field wip"
+              title="Past this many open pull requests, drafts aside, the comets fade and a note suggests finishing one first"
+              ><span aria-hidden="true">WIP limit</span
+              ><input
+                type="number"
+                step="1"
+                aria-label="Work-in-progress limit: open pull requests before the queue nudges"
+                [min]="minWipLimit"
+                [max]="maxWipLimit"
+                [value]="wipLimit.limit()"
+                (change)="onNumberField($event, wipLimit)"
+            /></label>
+            @if (onMap()) {
+              <label
+                class="field hole"
+                title="Pull requests idle longer than this many days fall toward the black hole"
+                ><span aria-hidden="true">Hole days</span
+                ><input
+                  type="number"
+                  step="1"
+                  aria-label="Black hole: idle days before a pull request falls in"
+                  [min]="minHoleDays"
+                  [max]="maxHoleDays"
+                  [value]="blackHole.staleAfterDays()"
+                  (change)="onNumberField($event, blackHole)"
+                /><span aria-hidden="true">d</span></label
+              >
+            }
+          }
+          <div class="toolgroup" role="group" aria-label="Motion and sound">
+            <button
+              type="button"
+              [attr.aria-pressed]="!motion.isStill()"
+              [title]="motionTitle()"
+              (click)="motion.toggle()"
+            >
+              {{ motion.isStill() ? 'Motion off' : 'Motion on' }}
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="sound.isOn()"
+              [title]="sound.isOn() ? 'Sky sound is on — click to silence' : 'Play the sky’s sound'"
+              (click)="sound.toggle()"
+            >
+              {{ sound.isOn() ? 'Sound on' : 'Sound off' }}
+            </button>
+            @if (sound.isOn()) {
+              <label class="vol" title="Volume"
+                ><span aria-hidden="true">vol</span
+                ><input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  aria-label="Volume"
+                  [value]="volumePercent()"
+                  (input)="onVolume($event)"
+              /></label>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <div class="toolgroup refresh">
+          <button
+            type="button"
+            title="Rebuild this sky from GitHub now"
+            [disabled]="refreshing()"
+            (click)="refresh.emit()"
+          >
+            {{
+              refreshing() ? 'Refreshing…' : refreshFailed() ? 'Refresh failed — retry' : 'Refresh'
+            }}
+          </button>
+        </div>
+        <div class="toolgroup help">
+          <button
+            type="button"
+            aria-label="Help"
+            title="What am I looking at? (?)"
+            [attr.aria-pressed]="help.isOpen()"
+            (click)="help.toggle(); drawer.closeToTrigger()"
+          >
+            ?
+          </button>
+        </div>
+      </div>
+      @if (onMap()) {
+        <span class="hint">drag · scroll · hover or click a star</span>
+      }
+    </div>
+  </div>
 </div>

@@ -85,7 +85,9 @@ export class SiteHeader {
   private readonly moreWidth = signal(0);
   private readonly linkWidths = signal<readonly number[]>([]);
 
-  protected readonly isMeasured = computed(() => this.innerWidth() > 0);
+  protected readonly isMeasured = computed(
+    () => this.innerWidth() > 0 && this.linkWidths().length === this.screens().length,
+  );
   protected readonly fit = computed(() =>
     fitLinks(
       this.innerWidth() - this.logoWidth() - this.titleFloor() - this.endWidth() - SAFETY,

@@ -425,6 +425,23 @@ describe('SiteHeader', () => {
     expect(host.querySelector('.chip')).toBe(chip);
   });
 
+  it('draws no links until the bar and every link have been measured', () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: ELEMENT_SIZE, useValue: () => NEVER }],
+    });
+    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.screens = SCREENS;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.bar')?.classList).not.toContain('measured');
+  });
+
+  it('draws the links once they have been measured', () => {
+    const { bar } = mount();
+
+    expect(bar.classList).toContain('measured');
+  });
+
   it('keeps the name its floor and no more, so a link is given up before the name is cut shorter', () => {
     const { header } = mount();
 

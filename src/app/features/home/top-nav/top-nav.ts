@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { GIT_CHEAT_SHEET_LINK } from '../../../core/guide/git-cheat-sheet-link';
 import { GUIDE_LINK } from '../../../core/guide/guide-link';
 import { MAIL_SHOWN } from '../../../core/mail/mail-inbox';
 import { LiveAgentsLink } from '../../agents/live-agents-link/live-agents-link';
@@ -28,7 +27,7 @@ const JUMPS: readonly Jump[] = [
 ];
 
 /** A task's pill, jumps to Home's sections, the agents running now, the
- *  inbox, and the ways to the orrery, the guide and the Git cheat sheet.
+ *  inbox, and the ways to the orrery and to the docs (the Guide and the cheat sheets).
  *  The page's tools sit along the foot of the screen instead, as on every screen. */
 @Component({
   selector: 'app-top-nav',
@@ -42,6 +41,5 @@ export class TopNav {
   private readonly hasMail = inject(MAIL_SHOWN);
   /** Mail first, where Home has it: it is the most time-sensitive section. */
   protected readonly jumps = computed(() => (this.hasMail() ? [MAIL_JUMP, ...JUMPS] : JUMPS));
-  protected readonly guideLink = GUIDE_LINK;
-  protected readonly gitCheatSheetLink = GIT_CHEAT_SHEET_LINK;
+  protected readonly docsLink = GUIDE_LINK;
 }

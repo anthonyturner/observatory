@@ -61,14 +61,17 @@ describe('TopNav', () => {
     expect(link?.getAttribute('href')).toBe('/orrery');
   });
 
-  it('leads to the Git cheat sheet inside the app', () => {
+  it('leads to the docs with one link, and not to the Guide or a cheat sheet by itself', () => {
     const fixture = TestBed.createComponent(TopNav);
     fixture.detectChanges();
 
-    const link = (fixture.nativeElement as HTMLElement).querySelector(
-      'a.link[href="/git-cheat-sheet"]',
-    );
-    expect(link?.textContent).toContain('Git cheat sheet');
+    const hrefs = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('a.link'),
+    ).map((link) => [link.textContent?.trim(), link.getAttribute('href')]);
+    expect(hrefs).toContainEqual(['Docs ›', '/docs/guide']);
+    expect(hrefs.filter(([, href]) => href?.startsWith('/docs'))).toHaveLength(1);
+    expect(hrefs.map(([, href]) => href)).not.toContain('/guide');
+    expect(hrefs.map(([, href]) => href)).not.toContain('/git-cheat-sheet');
   });
 
   it('jumps to News and Projects, moving focus there without changing the address', () => {

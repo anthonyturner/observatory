@@ -7,7 +7,7 @@ thing you see means, what you can do with it, and who gets to see it.
 
 In Observatory, open it from the **Guide** link on any screen, which brings
 you straight to that screen's part. The filter box finds a word anywhere in
-the guide, and the contents jump to any part.
+the guide, and the contents jump to any part or to a cheat sheet.
 
 ## Start here
 
@@ -63,13 +63,17 @@ unless you choose to show private projects too.
 ### Getting around
 
 - **Guide.** Every screen has a Guide link beside its way back (on a project
-  screen, at the foot of **More** in the top bar), and Home has one in its top
-  bar. It opens the part of this guide for that screen.
-- **Git cheat sheet.** Home's top bar also has a **Git cheat sheet** link: a
-  plain-English page on the Git commands you meet most, including what to do
-  when a pull says "Diverging branches can't be fast-forwarded". It works like
-  this guide, with a contents and a filter box, and each command comes with a
-  table of what every word means and what happens to your files.
+  screen, at the foot of **More** in the top bar). It opens the part of this
+  guide for that screen.
+- **Docs.** Home's top bar has one **Docs** link. It opens this guide, and
+  the contents beside it list the cheat sheets too, under **Cheat sheets**. The
+  open book is listed part by part; each other book is one entry that opens
+  it. The filter box searches the book you have open.
+- **Git cheat sheet.** The first cheat sheet is a plain-English page on the
+  Git commands you meet most, including what to do when a pull says
+  "Diverging branches can't be fast-forwarded". It works like this guide, and
+  each command comes with a table of what every word means and what happens to
+  your files.
 - **The way back.** The small pill above each screen's title takes you up a
   level: to Home, or to **All projects** (the Orrery). On a project screen,
   **All projects** is at the foot of **More** in the top bar.
@@ -163,8 +167,8 @@ most blocked pull requests across your projects).
 
 The top bar jumps to Home's sections (Mail, News, Projects, and Agents, which
 lands on **Agent usage**) and links to the Agent sessions screen (with how many
-sessions are running), the Inbox (with your unread count), the Orrery and this
-Guide.
+sessions are running), the Inbox (with your unread count), the Orrery and the
+Docs.
 
 ### Jev
 

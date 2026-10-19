@@ -1,11 +1,12 @@
 @let guide = shown();
+@let open = book();
 <header class="hud">
   <div class="way">
     <app-up-link to="/" label="Home" [guide]="null" />
   </div>
   <div class="brand">
-    <h1>{{ book.title }}</h1>
-    <span class="stamp">{{ book.stamp }}</span>
+    <h1>{{ open.title }}</h1>
+    <span class="stamp">{{ open.stamp }}</span>
   </div>
 </header>
 
@@ -23,10 +24,10 @@
     id="guide-contents"
     class="index"
     [class.open]="isIndexOpen()"
-    [attr.aria-label]="contentsLabel"
+    aria-label="Docs contents"
   >
     <app-library-index
-      [searchLabel]="filterLabel"
+      [searchLabel]="filterLabel()"
       listLabel="Contents"
       [shelves]="shelves()"
       [resultLine]="resultLine()"
@@ -35,7 +36,7 @@
     />
   </aside>
   <main #reading class="reading" tabindex="-1">
-    <article class="column" [attr.aria-label]="book.title">
+    <article class="column" [attr.aria-label]="open.title">
       @if (guide.intro.length) {
         <app-doc-blocks [blocks]="guide.intro" />
       }
@@ -45,7 +46,7 @@
           <app-doc-blocks class="section" [blocks]="section.blocks" />
         }
       } @empty {
-        <p class="empty">Nothing in {{ book.name }} matches. Try fewer words.</p>
+        <p class="empty">Nothing in {{ open.name }} matches. Try fewer words.</p>
       }
     </article>
   </main>

@@ -47,13 +47,26 @@
   margin-top: 14px;
 }
 
-h2 {
+.shelf-name {
   margin: 0 0 4px;
   color: var(--detail-heading);
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* A group's heading sits above its shelves, brighter than a shelf's, so the two levels read apart. */
+.group {
+  margin: 22px 0 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--edge);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 

@@ -1,7 +1,7 @@
 import { Routes, provideRouter, withRouterConfig } from '@angular/router';
-import { GIT_CHEAT_SHEET_PATH } from './core/guide/git-cheat-sheet-link';
-import { GUIDE_PATH } from './core/guide/guide-link';
+import { DOCS_PATH } from './core/guide/guide-link';
 import { libraryMatcher } from './core/library/library-route';
+import { docsBookTitle, knownDocsBook, redirectToDocsBook } from './features/guide/docs-route';
 
 const agentDetailPage = () =>
   import('./features/agents/agent-detail-page/agent-detail-page').then((m) => m.AgentDetailPage);
@@ -23,16 +23,19 @@ export const routes: Routes = [
     title: 'Inbox · Observatory',
     loadComponent: () => import('./features/inbox/inbox-page/inbox-page').then((m) => m.InboxPage),
   },
+  { path: DOCS_PATH, pathMatch: 'full', redirectTo: redirectToDocsBook('guide') },
   {
-    path: GUIDE_PATH,
-    title: 'Guide · Observatory',
+    path: `${DOCS_PATH}/:book`,
+    title: docsBookTitle,
+    canActivate: [knownDocsBook],
     loadComponent: () => import('./features/guide/guide-page/guide-page').then((m) => m.GuidePage),
   },
+  // The addresses from before the docs area; each keeps its anchor on the way.
+  { path: 'guide', pathMatch: 'full', redirectTo: redirectToDocsBook('guide') },
   {
-    path: GIT_CHEAT_SHEET_PATH,
-    title: 'Git cheat sheet · Observatory',
-    loadChildren: () =>
-      import('./features/guide/git-cheat-sheet.routes').then((m) => m.GIT_CHEAT_SHEET_ROUTES),
+    path: 'git-cheat-sheet',
+    pathMatch: 'full',
+    redirectTo: redirectToDocsBook('git-cheat-sheet'),
   },
   {
     path: 'agents',

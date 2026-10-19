@@ -1,8 +1,10 @@
-import { GIT_CHEAT_SHEET_BOOK } from '../../core/guide/git-cheat-sheet-book';
+import { TestBed } from '@angular/core/testing';
+import { DOCS_BOOKS } from '../../core/guide/docs-books';
 import { guideOf } from '../../core/guide/guide';
 import { DocBlock } from '../../core/library/doc.types';
 
-const cheatSheet = guideOf(GIT_CHEAT_SHEET_BOOK.markdown);
+const book = TestBed.inject(DOCS_BOOKS).find((candidate) => candidate.slug === 'git-cheat-sheet');
+const cheatSheet = guideOf(book?.markdown ?? '');
 const sections = cheatSheet.parts.flatMap((part) => part.sections);
 
 /** The bold lead-ins of a section's paragraphs, such as "Everyday comparison". */

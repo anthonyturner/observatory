@@ -56,6 +56,6 @@ describe('StarmapHelp', () => {
     help.toggle();
     fixture.detectChanges();
 
-    expect(element.querySelector('a.guide')?.getAttribute('href')).toBe('/guide#issues');
+    expect(element.querySelector('a.guide')?.getAttribute('href')).toBe('/docs/guide#issues');
   });
 });

@@ -94,6 +94,6 @@ describe('HelpCard', () => {
     help.toggle();
     fixture.detectChanges();
 
-    expect(element.querySelector('a.guide')?.getAttribute('href')).toBe('/guide#review-queue');
+    expect(element.querySelector('a.guide')?.getAttribute('href')).toBe('/docs/guide#review-queue');
   });
 });

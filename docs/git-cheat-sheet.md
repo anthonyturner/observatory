@@ -64,7 +64,8 @@ not have, and your branch has commits GitHub does not have. They have
 _diverged_ (split apart, like a road that forks).
 
 A _fast-forward_ is the easy case: you are only behind, so Git just slides your
-branch forward to catch up, like pulling a drawer shut. When you have commits
+branch forward to catch up, like moving a bookmark on to where the story has
+got to. When you have commits
 of your own too, there is nothing to slide, so the two lines have to be
 blended with a _merge_. Your Git has been told to allow fast-forwards only
 (the setting is `pull.ff = only`, or the command had `--ff-only`), so it
@@ -180,8 +181,9 @@ the "Diverging branches" error above; then merge instead.
 This is the safe way to update your own copy of `main`, where you should never
 have commits of your own.
 
-**Everyday comparison:** pulling a drawer shut. It only works if nothing is in
-the way; if something is, you stop and look rather than force it.
+**Everyday comparison:** moving your bookmark on to where everyone else has
+read to. That only works if you have not written pages of your own in the
+meantime; if you have, the two copies need putting together first.
 
 ### Pull when both sides moved
 

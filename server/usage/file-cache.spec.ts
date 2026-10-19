@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
@@ -87,5 +87,16 @@ describe('files on disk', () => {
     assert.deepEqual(await jsonEntryStore<number>(path, 2).read(), {});
     writeFileSync(path, '{broken');
     assert.deepEqual(await jsonEntryStore<number>(path, 1).read(), {});
+  });
+
+  it('shrugs off a save that cannot replace the file, leaving nothing aside', async () => {
+    // A folder in the file's place refuses the rename, as Windows does for a file another reader has open.
+    const folder = join(dir, 'locked');
+    const path = join(folder, 'cache.json');
+    mkdirSync(join(path, 'inside'), { recursive: true });
+
+    await jsonEntryStore<number>(path, 1).write({ a: { key: 'k', value: 7 } });
+
+    assert.deepEqual(readdirSync(folder), ['cache.json']);
   });
 });

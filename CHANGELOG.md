@@ -36,6 +36,7 @@ How to add an entry: [docs/changelog.md](docs/changelog.md).
 
 ### Fixed
 
+- The usage report no longer fails with `EPERM` on Windows when its log cache is open elsewhere, such as in a second dev server or a virus scan. The cache only saves time, so a save that cannot happen is skipped and the next report tries again ([#708](https://github.com/anthonyturner/observatory/pull/708)).
 - In the flat fallback Orrery (when 3D cannot draw), a world that passes behind Earth now goes behind it instead of over it, and you can no longer click it through Earth, as in 3D ([#684](https://github.com/anthonyturner/observatory/pull/684)).
 - On a wide screen, the Review Queue's search box can be clicked and typed in again, and the work-in-progress note's **×** closes it; both had stopped taking the pointer when they moved to the top of the screen ([#651](https://github.com/anthonyturner/observatory/issues/651)).
 - A private repository's Library now shows its images. Before, every screenshot in its README was a broken picture, because GitHub only hands a private file to a browser signed in to GitHub. Observatory now serves a Library's images itself, with the access it already reads the repository with; on the hosted site a visitor can fetch only the images of repositories they may see ([#634](https://github.com/anthonyturner/observatory/issues/634)).

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import type { WikiPage } from './wiki-pages.ts';
+import { wikiPages, type WikiPage } from './wiki-pages.ts';
 import { isGenerated, renderPage, renderSidebar } from './wiki-render.ts';
 
 const REPO = { repoUrl: 'https://github.com/me/app', branch: 'main' };
@@ -56,6 +56,20 @@ describe('renderSidebar', () => {
       `  - [ADR-0001: A](${WIKI}/ADR-0001-a)`,
       `- [Tech stack](${WIKI}/Tech-stack)`,
     ]);
+  });
+});
+
+describe('renderSidebar for the published pages', () => {
+  it('lists a cheat sheet indented under the Guide', () => {
+    const sidebar = renderSidebar(
+      wikiPages([], [{ fileName: 'git-cheat-sheet.md', markdown: '# Git cheat sheet' }]),
+      REPO,
+    );
+
+    const lines = sidebar.split('\n');
+    const guide = lines.indexOf(`- [Guide](${WIKI}/Guide)`);
+    assert.notEqual(guide, -1);
+    assert.equal(lines[guide + 1], `  - [Git cheat sheet](${WIKI}/Git-cheat-sheet)`);
   });
 });
 

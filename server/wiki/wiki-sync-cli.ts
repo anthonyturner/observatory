@@ -6,7 +6,13 @@ import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { argOf } from '../push/push-target.ts';
 import { planSync } from './wiki-plan.ts';
-import { DECISIONS_FOLDER, wikiPages, type DecisionFile, type WikiPage } from './wiki-pages.ts';
+import {
+  DECISIONS_FOLDER,
+  DOCS_FOLDER,
+  wikiPages,
+  type MarkdownFile,
+  type WikiPage,
+} from './wiki-pages.ts';
 import { SIDEBAR_NAME, renderPage, renderSidebar } from './wiki-render.ts';
 import type { RepoLinks } from './wiki-links.ts';
 
@@ -22,12 +28,12 @@ const repo: RepoLinks = {
   branch: BRANCH,
 };
 
-async function decisionFiles(): Promise<DecisionFile[]> {
-  const fileNames = await readdir(DECISIONS_FOLDER);
+async function markdownFilesIn(folder: string): Promise<MarkdownFile[]> {
+  const fileNames = (await readdir(folder)).filter((name) => name.endsWith(PAGE_EXTENSION));
   return Promise.all(
     fileNames.map(async (fileName) => ({
       fileName,
-      markdown: await readFile(join(DECISIONS_FOLDER, fileName), 'utf8'),
+      markdown: await readFile(join(folder, fileName), 'utf8'),
     })),
   );
 }
@@ -65,7 +71,9 @@ const pageFile = (name: string): string => join(out, name + PAGE_EXTENSION);
 await mkdir(out, { recursive: true });
 const plan = planSync(
   await currentPages(out),
-  await generatedPages(wikiPages(await decisionFiles())),
+  await generatedPages(
+    wikiPages(await markdownFilesIn(DECISIONS_FOLDER), await markdownFilesIn(DOCS_FOLDER)),
+  ),
 );
 await Promise.all([...plan.write].map(([name, content]) => writeFile(pageFile(name), content)));
 await Promise.all(plan.remove.map((name) => unlink(pageFile(name))));

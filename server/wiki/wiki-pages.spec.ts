@@ -4,7 +4,7 @@ import { wikiPages } from './wiki-pages.ts';
 
 describe('wikiPages', () => {
   it('publishes the overview pages first, Home from the README and then the Guide', () => {
-    const pages = wikiPages([]);
+    const pages = wikiPages([], []);
 
     assert.deepEqual(
       pages.map(({ source, name }) => [source, name]),
@@ -20,12 +20,15 @@ describe('wikiPages', () => {
   });
 
   it('adds each decision record in number order under Decisions, titled by its heading', () => {
-    const pages = wikiPages([
-      { fileName: '0002-track-work.md', markdown: '# ADR-0002: Track work in GitHub only\n\nBody' },
-      { fileName: '0001-record.md', markdown: 'No heading' },
-      { fileName: '0000-template.md', markdown: '# ADR-NNNN: <title>' },
-      { fileName: 'README.md', markdown: '# Index' },
-    ]).slice(6);
+    const pages = wikiPages(
+      [
+        { fileName: '0002-track-work.md', markdown: '# ADR-0002: Track work in GitHub only\n\nBody' },
+        { fileName: '0001-record.md', markdown: 'No heading' },
+        { fileName: '0000-template.md', markdown: '# ADR-NNNN: <title>' },
+        { fileName: 'README.md', markdown: '# Index' },
+      ],
+      [],
+    ).slice(6);
 
     assert.deepEqual(pages, [
       {
@@ -39,6 +42,41 @@ describe('wikiPages', () => {
         name: 'ADR-0002-track-work',
         title: 'ADR-0002: Track work in GitHub only',
         parent: 'Decisions',
+      },
+    ]);
+  });
+
+  it('publishes every docs cheat sheet under the Guide, named and titled from its file', () => {
+    const pages = wikiPages(
+      [],
+      [
+        { fileName: 'npm-cheat-sheet.md', markdown: '# npm cheat sheet\n\nBody' },
+        { fileName: 'git-cheat-sheet.md', markdown: '# Git cheat sheet\n\nBody' },
+        { fileName: 'gh-cheat-sheet.md', markdown: 'No heading' },
+        { fileName: 'guide.md', markdown: '# Guide' },
+        { fileName: 'cheat-sheet.md', markdown: '# Not a named sheet' },
+        { fileName: 'git-cheat-sheet.md.bak', markdown: '# Stray' },
+      ],
+    ).slice(6);
+
+    assert.deepEqual(pages, [
+      {
+        source: 'docs/gh-cheat-sheet.md',
+        name: 'Gh-cheat-sheet',
+        title: 'Gh-cheat-sheet',
+        parent: 'Guide',
+      },
+      {
+        source: 'docs/git-cheat-sheet.md',
+        name: 'Git-cheat-sheet',
+        title: 'Git cheat sheet',
+        parent: 'Guide',
+      },
+      {
+        source: 'docs/npm-cheat-sheet.md',
+        name: 'Npm-cheat-sheet',
+        title: 'npm cheat sheet',
+        parent: 'Guide',
       },
     ]);
   });

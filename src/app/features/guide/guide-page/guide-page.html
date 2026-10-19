@@ -4,8 +4,8 @@
     <app-up-link to="/" label="Home" [guide]="null" />
   </div>
   <div class="brand">
-    <h1>Guide</h1>
-    <span class="stamp">How every part of Observatory works</span>
+    <h1>{{ book.title }}</h1>
+    <span class="stamp">{{ book.stamp }}</span>
   </div>
 </header>
 
@@ -19,9 +19,14 @@
   >
     {{ isIndexOpen() ? 'Hide contents' : 'Contents' }}
   </button>
-  <aside id="guide-contents" class="index" [class.open]="isIndexOpen()" aria-label="Guide contents">
+  <aside
+    id="guide-contents"
+    class="index"
+    [class.open]="isIndexOpen()"
+    [attr.aria-label]="contentsLabel"
+  >
     <app-library-index
-      searchLabel="Filter the guide"
+      [searchLabel]="filterLabel"
       listLabel="Contents"
       [shelves]="shelves()"
       [resultLine]="resultLine()"
@@ -30,7 +35,7 @@
     />
   </aside>
   <main #reading class="reading" tabindex="-1">
-    <article class="column" aria-label="Guide">
+    <article class="column" [attr.aria-label]="book.title">
       @if (guide.intro.length) {
         <app-doc-blocks [blocks]="guide.intro" />
       }
@@ -40,7 +45,7 @@
           <app-doc-blocks class="section" [blocks]="section.blocks" />
         }
       } @empty {
-        <p class="empty">Nothing in the guide matches. Try fewer words.</p>
+        <p class="empty">Nothing in {{ book.name }} matches. Try fewer words.</p>
       }
     </article>
   </main>

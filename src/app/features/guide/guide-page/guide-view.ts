@@ -1,4 +1,3 @@
-import { GUIDE_LINK } from '../../../core/guide/guide-link';
 import { Guide, GuideSection } from '../../../core/guide/guide';
 import { snippetOf } from '../../../core/library/library-search';
 import { starDiameterOf } from '../../../core/library/page-star';
@@ -8,6 +7,8 @@ import { IndexEntry, IndexShelf } from '../../library/library-page/library-view'
 /** What the contents are drawn from. */
 export interface ContentsInput {
   readonly guide: Guide;
+  /** The page the entries link back to. */
+  readonly link: string;
   readonly terms: readonly string[];
   /** The anchor the address names, lit in the contents; null with none. */
   readonly currentId: string | null;
@@ -17,7 +18,7 @@ function entryOf(section: GuideSection, input: ContentsInput): IndexEntry {
   return {
     slug: section.id,
     title: section.title,
-    link: GUIDE_LINK,
+    link: input.link,
     fragment: section.id,
     diameter: starDiameterOf(section.wordCount),
     isCurrent: section.id === input.currentId,
@@ -33,8 +34,8 @@ export const contentsOf = (input: ContentsInput): IndexShelf[] =>
   }));
 
 /** What a search found, said aloud; null with no search. */
-export function resultLineOf(found: number, terms: readonly string[]): string | null {
+export function resultLineOf(found: number, terms: readonly string[], name: string): string | null {
   if (!terms.length) return null;
-  if (!found) return 'Nothing in the guide matches.';
+  if (!found) return `Nothing in ${name} matches.`;
   return `${plural(found, 'section')} ${found === 1 ? 'matches' : 'match'}.`;
 }

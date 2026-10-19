@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { GUIDE_BOOK, GuideBook } from '../../../core/guide/guide-book';
 import { GUIDE_MARKDOWN } from '../../../core/guide/guide-markdown';
 import { GuidePage } from './guide-page';
 
@@ -24,9 +25,28 @@ Each release is a star.
 Each workflow is a lane.
 `;
 
-function render() {
+const CHEAT_SHEET: GuideBook = {
+  title: 'Git cheat sheet',
+  stamp: 'The Git commands you meet most',
+  name: 'the cheat sheet',
+  link: '/git-cheat-sheet',
+  markdown: `# Git cheat sheet
+
+## Get up to date
+
+### Fetch
+
+Download what is new.
+`,
+};
+
+function render(book?: GuideBook) {
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: GUIDE_MARKDOWN, useValue: MARKDOWN }],
+    providers: [
+      provideRouter([]),
+      { provide: GUIDE_MARKDOWN, useValue: MARKDOWN },
+      ...(book ? [{ provide: GUIDE_BOOK, useValue: book }] : []),
+    ],
   });
   const fixture = TestBed.createComponent(GuidePage);
   fixture.detectChanges();
@@ -71,6 +91,31 @@ describe('GuidePage', () => {
 
     expect(headings(element)).toEqual(['Project tabs', 'Actions']);
     expect(element.querySelector('[role="status"]')?.textContent).toContain('1 section matches.');
+  });
+
+  it('titles itself the Guide unless it is given another book', () => {
+    const { element } = render();
+
+    expect(element.querySelector('h1')?.textContent).toBe('Guide');
+    expect(element.querySelector('article')?.getAttribute('aria-label')).toBe('Guide');
+  });
+
+  it('shows another book under its own title, with contents linking back to it', () => {
+    const { element, filter } = render(CHEAT_SHEET);
+
+    expect(element.querySelector('h1')?.textContent).toBe('Git cheat sheet');
+    expect(element.querySelector('.stamp')?.textContent).toBe('The Git commands you meet most');
+    expect(headings(element)).toEqual(['Get up to date', 'Fetch']);
+    expect(element.querySelector('label')?.textContent).toBe('Filter the cheat sheet');
+    expect(element.querySelector('nav[aria-label="Contents"] a')?.getAttribute('href')).toBe(
+      '/git-cheat-sheet#fetch',
+    );
+
+    filter('nebula');
+
+    expect(element.querySelector('.empty')?.textContent).toContain(
+      'Nothing in the cheat sheet matches.',
+    );
   });
 
   it('says so when nothing matches', () => {

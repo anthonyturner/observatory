@@ -65,6 +65,11 @@ unless you choose to show private projects too.
 - **Guide.** Every screen has a Guide link beside its way back (on a project
   screen, at the foot of **More** in the top bar), and Home has one in its top
   bar. It opens the part of this guide for that screen.
+- **Git cheat sheet.** Home's top bar also has a **Git cheat sheet** link: a
+  plain-English page on the Git commands you meet most, including what to do
+  when a pull says "Diverging branches can't be fast-forwarded". It works like
+  this guide, with a contents and a filter box, and each command comes with a
+  table of what every word means and what happens to your files.
 - **The way back.** The small pill above each screen's title takes you up a
   level: to Home, or to **All projects** (the Orrery). On a project screen,
   **All projects** is at the foot of **More** in the top bar.

@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 /** What a file gave when last read, and the key that says whether it has changed since. */
@@ -58,7 +58,9 @@ export async function valuesPerFile<T>(
 }
 
 /** The entries as one JSON file. A version bump, or a file that will not parse,
- *  starts afresh rather than trusting what it held. */
+ *  starts afresh rather than trusting what it held. Saving is best-effort: the
+ *  file only saves time, so one that cannot be written costs the next report a
+ *  fresh read rather than failing this one. */
 export function jsonEntryStore<T>(path: string, version: number): EntryStore<T> {
   return {
     async read() {
@@ -77,9 +79,14 @@ export function jsonEntryStore<T>(path: string, version: number): EntryStore<T> 
       // Written aside and renamed into place, so two reports writing at once
       // leave one whole file, never a torn one. Compact: pretty-printed, a
       // month of logs' cache runs to megabytes.
+      // Windows refuses the rename while another reader has the file open.
       const aside = `${path}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
-      await writeFile(aside, JSON.stringify({ version, entries }), 'utf8');
-      await rename(aside, path);
+      try {
+        await writeFile(aside, JSON.stringify({ version, entries }), 'utf8');
+        await rename(aside, path);
+      } catch {
+        await rm(aside, { force: true });
+      }
     },
   };
 }

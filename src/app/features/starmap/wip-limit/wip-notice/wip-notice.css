@@ -15,7 +15,7 @@
 @media (min-width: 1440px) and (min-height: 600px) {
   :host {
     position: fixed;
-    top: calc(var(--page-inset-top) + var(--project-bar-height, 0px) + 9px);
+    top: calc(var(--site-bar-bottom) + 9px);
     left: 50%;
     width: max-content;
     max-width: 340px;

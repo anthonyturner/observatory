@@ -1,7 +1,5 @@
 :host {
   display: block;
-  width: var(--project-bar-width, 0px);
-  max-width: 100%;
-  height: var(--project-bar-height, 0px);
+  height: calc(var(--site-bar-top) - var(--page-inset-top) + var(--site-bar-height));
   margin-bottom: 9px;
 }

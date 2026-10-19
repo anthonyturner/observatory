@@ -115,6 +115,20 @@ describe('RunPreviewButton', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
+  it('is a compact one-line row for a bar that cannot wrap, with its note kept whole in a tooltip', () => {
+    const { element, fixture, settle } = setUp({ status: RUNNING });
+    settle();
+    expect(element.classList).not.toContain('compact');
+
+    fixture.componentRef.setInput('compact', true);
+    settle();
+
+    expect(element.classList).toContain('compact');
+    expect(element.querySelector('.note')?.getAttribute('title')).toBe(
+      'Running at localhost:5173/',
+    );
+  });
+
   it('is not there, and asks for nothing, unless the API has confirmed this machine', () => {
     const { element, calls, isConfirmedLocal, settle } = setUp({ isLocal: false });
 

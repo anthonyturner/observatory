@@ -75,3 +75,29 @@ a:focus-visible {
     min-height: 44px;
   }
 }
+
+:host(.compact) .run {
+  flex-wrap: nowrap;
+}
+
+:host(.compact) button,
+:host(.compact) a {
+  min-height: var(--touch-target, 0);
+  white-space: nowrap;
+}
+
+:host(.compact) .note {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 599px) {
+  :host(.compact) .note {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+  }
+}

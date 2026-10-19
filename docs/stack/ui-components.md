@@ -68,8 +68,8 @@ usually works. It is the cost, not the correctness, that rules it out.
 
 There are no breakpoint tokens; each stylesheet writes its own media queries. The Review
 Queue (the header, the tools and the page) uses two tiers that are exact opposites, so every
-size is in one of them. The site header is not part of them: it changes on width alone, below
-1200px.
+size is in one of them. The site header is not part of them: it has no breakpoint at all, and
+changes where its links stop fitting (below).
 
 - **Compact:** `(max-width: 1199px), (max-height: 500px)`. The title shrinks, the legend keeps to
   one row that scrolls sideways, and the tools become a drawer: a Tools button at the bottom left
@@ -87,17 +87,32 @@ Two finer lines sit inside them: the work-in-progress note moves to the top cent
 pointer, `(pointer: coarse)`, never the width. Other screens still use `(max-width: 720px)`
 as their phone line; leave them on it until a screen is moved on purpose.
 
-The **site header** (`shared/site-header`) is the bar across the top of a project screen. At
-1200px and wider it is the page's own row, unchanged. Below 1200px it is the logo, the page's
-title and one Menu button, whose list holds every `NavSection` it is given and the one control
-the page marks `siteHeaderTool` (Run), which stays mounted while the menu is closed. A page that
-adopts it builds its sections once, as `projectTabSections` does for the project shell. Wide but
-short windows keep the row. The menu's open, outside-press, Escape and focus behaviour is the
-`Disclosure` directive (`shared/disclosure`); use it for any drop-down rather than writing it
-again.
+The **site header** (`shared/site-header`) is the bar across the top of a project screen, the
+full width of the window and one row at every size. It never wraps, so its height is the design
+token `--site-bar-height` (44px; 48px under `(pointer: coarse)`), correct on the first frame.
+Left to right: the logo (Home), the page's title, the screen links, a **More** button, then the
+controls the page projects (`siteHeaderTool`, Run; `siteHeaderChip`, the usage chip). More is
+always there, because it also holds the page's `exits` (All projects, the Guide) below a divider.
 
-Anything that must clear the chrome takes its height from a published custom property, not a
-constant: `--project-bar-height`, `--status-strip-height`, `--hud-top-height` and
+There is no width line for the links; they are measured. Each link's width, the logo, the
+controls and the bar are read through `ELEMENT_SIZE`, and `fitLinks` (`links-fit.ts`) says how
+many links stand on the bar. The ones that do not fit leave from the right end, so the order
+never changes, and wait in More's list. When fewer than three fit, the bar is the logo, the
+title, Run and one **Menu** button (☰) holding every link, and the title narrows to 80px before
+a link is given up. A link given up is still measured, taken out of the flow and hidden, so a
+resize, a badge or a font loading re-fits without a hidden copy of the row. Below 600px wide
+the logo drops its wordmark. A test replaces `ELEMENT_SIZE` to give each part a width.
+
+The list is the `Disclosure` directive (`shared/disclosure`): open, outside-press, Escape and
+focus behaviour, with plain links and not a `role="menu"`. Use it for any drop-down rather than
+writing it again. A page that adopts the header builds its sections once, as
+`projectTabSections` does for the project shell: it is the one source of a section's badge and
+quiet state.
+
+A screen under the bar leaves room with `ProjectBarRoom`, which is `--site-bar-top` plus
+`--site-bar-height` tall; anything fixed that must start under the bar starts at
+`--site-bar-bottom`. Anything else that must clear the chrome takes its height from a
+published custom property, not a constant: `--status-strip-height`, `--hud-top-height` and
 `--tools-height`, each published by the `PublishSize` directive from `ELEMENT_SIZE`.
 
 ## Accessibility

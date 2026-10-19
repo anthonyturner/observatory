@@ -26,6 +26,17 @@
       var(--status-strip-height, 0px)
   );
   --page-inset-x: 20px;
+  /* The site bar never wraps, so its height is this token and not a measurement: screens leave
+     room for it from the first frame. A touch screen's bar is taller, for 44px targets. */
+  --site-bar-height: 44px;
+  /* The bar starts at the page's top inset, but never above the 38px that keeps it clear of the
+     Review Queue's wide search, which sits level with the status strip at the top right and takes
+     that room even when the strip has nothing to show. */
+  --site-bar-top: max(
+    var(--page-inset-top),
+    calc(env(safe-area-inset-top, 0px) + var(--page-brand-height, 0px) + 38px)
+  );
+  --site-bar-bottom: calc(var(--site-bar-top) + var(--site-bar-height));
   /* The status strip's top edge, which a control in the screen's top corner lines up with. */
   --status-strip-top: calc(4px + env(safe-area-inset-top, 0px) + var(--page-brand-height, 0px));
 
@@ -462,5 +473,11 @@
 @media (max-width: 720px) {
   :root {
     --page-inset-x: 16px;
+  }
+}
+
+@media (pointer: coarse) {
+  :root {
+    --site-bar-height: 48px;
   }
 }

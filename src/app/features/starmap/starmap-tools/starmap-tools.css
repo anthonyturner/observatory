@@ -1,13 +1,55 @@
-/* pr-starmap's tools, rule for rule. */
+/* One element, two forms. Wide, a dock of two rows along the foot with the settings in a list that
+   opens upward. Below 1200px wide or at 500px tall or less, a Tools button raises the same controls
+   as a sheet over the sky. Both lists are a `.popup`. */
 :host {
+  position: relative;
   display: block;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .tools {
   display: flex;
+  flex-direction: column;
   gap: 9px;
-  align-items: flex-end;
+}
+
+.line {
+  display: flex;
+  gap: 9px;
+  align-items: center;
   flex-wrap: wrap;
+}
+
+/* The footer's two buttons are the row's own items, so Settings sits between them. */
+.footer {
+  display: contents;
+}
+
+.refresh {
+  order: 1;
+}
+
+.settings {
+  position: relative;
+  order: 2;
+}
+
+.help {
+  order: 3;
+}
+
+.hint {
+  order: 4;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--faint);
+  font-family: var(--font-mono);
+}
+
+.toolsbutton,
+.grouplabel {
+  display: none;
 }
 
 .toolgroup {
@@ -19,19 +61,23 @@
   backdrop-filter: blur(14px) saturate(140%);
 }
 
-.toolgroup button {
+.toolgroup button,
+.toolsbutton {
   font-family: inherit;
   font-size: 12px;
-  padding: 8px 13px;
-  min-width: 42px;
-  border: 0;
-  border-right: 1px solid var(--edge-soft);
-  background: transparent;
   color: var(--muted);
   cursor: pointer;
   transition:
     color 0.2s,
     background 0.2s;
+}
+
+.toolgroup button {
+  padding: 8px 13px;
+  min-width: 42px;
+  border: 0;
+  border-right: 1px solid var(--edge-soft);
+  background: transparent;
 }
 
 .toolgroup button:last-child {
@@ -43,32 +89,38 @@
   background: var(--starmap-hover);
 }
 
-.toolgroup button:focus-visible {
+.toolgroup button:focus-visible,
+.toolsbutton:focus-visible {
   outline: 2px solid var(--flow);
   outline-offset: -2px;
 }
 
-.toolgroup button[aria-pressed='true'] {
+.toolgroup button[aria-pressed='true'],
+.toolgroup button[aria-expanded='true'],
+.toolsbutton[aria-expanded='true'] {
   color: var(--ink);
   background: var(--starmap-press);
 }
 
 .toolgroup button:disabled {
   opacity: 0.5;
-  cursor: default;
 }
 
-.vol {
+.vol,
+.field {
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 0 12px;
-  border-right: 1px solid var(--edge-soft);
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--faint);
+}
+
+.vol {
+  gap: 8px;
+  border-right: 1px solid var(--edge-soft);
 }
 
 .vol:last-child {
@@ -81,21 +133,12 @@
   cursor: pointer;
 }
 
-.vol input:focus-visible {
-  outline: 2px solid var(--flow);
-  outline-offset: 3px;
-}
-
 .field {
-  display: flex;
-  align-items: center;
   gap: 6px;
-  padding: 0 12px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--faint);
+  min-height: 34px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 10px;
+  background: var(--panel);
 }
 
 .field input {
@@ -109,106 +152,220 @@
   text-align: right;
 }
 
+.vol input:focus-visible,
 .field input:focus-visible {
   outline: 2px solid var(--flow);
   outline-offset: 2px;
 }
 
-.hint {
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  color: var(--faint);
-  font-family: var(--font-mono);
-  align-self: center;
+/* A list that rises over the sky from the button that opens it. */
+.popup {
+  box-sizing: border-box;
+  border: 1px solid var(--edge-soft);
+  border-radius: 12px;
+  background: var(--panel-strong);
+  backdrop-filter: blur(14px) saturate(140%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity 0.1s,
+    transform 0.1s,
+    visibility 0s 0.1s;
 }
 
-/* In a narrow or short window the tools cover the lower sky; Controls folds
-   them down to itself. */
-.fold {
-  display: none;
+.popup.open {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out,
+    visibility 0s;
+}
+
+.settingspanel {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: min(640px, calc(100vw - 2 * var(--page-inset-x, 20px)));
+  padding: 8px;
+}
+
+/* Wide, the dock is always there, not a list. */
+@media (min-width: 1200px) and (min-height: 501px) {
+  .tools {
+    border: 0;
+    background: none;
+    backdrop-filter: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+}
+
+/* Short of this width the hint would wrap onto a row of its own, a third row for one line. */
+@media (max-width: 1499px) {
+  .hint {
+    display: none;
+  }
 }
 
 @media (max-width: 1199px), (max-height: 500px) {
-  .fold {
+  .toolsbutton {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    margin-left: auto;
-    padding: 8px 15px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 15px;
     border: 1px solid var(--edge-soft);
     border-radius: 10px;
     background: var(--panel);
     backdrop-filter: blur(14px) saturate(140%);
-    color: var(--muted);
-    font-family: inherit;
-    font-size: 12px;
-    cursor: pointer;
   }
 
-  /* The groups keep to one row that scrolls sideways, with Controls pinned at
-     its end, rather than wrapping into rows over the sky. */
+  /* Rises from the button and scrolls inside. It may cover the page row and the legend, which the
+     viewer is looking past, but never the project bar. */
   .tools {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    margin: -4px 0 -4px -4px;
-    padding: 4px 0 4px 4px;
-    /* A button brought into view by focus stops short of the pinned Controls. */
-    scroll-padding-inline-end: 140px;
+    --sheet-top: calc(var(--page-inset-top, 0px) + var(--project-bar-height, 44px) + 8px);
+    /* Clear of the playlist and of an open panel, as the tools row is. */
+    --sheet-room: calc(
+      100vw - var(--page-inset-x, 20px) -
+        max(var(--playlist-clear-right, 20px), calc(var(--panel-clear, 0px) + 10px))
+    );
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 8px);
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    align-items: start;
+    width: min(480px, var(--sheet-room));
+    max-height: min(
+      62dvh,
+      calc(
+        100dvh - var(--sheet-top) - var(--playlist-clear-bottom, 0px) - var(--foot-inset, 18px) -
+          44px - 16px
+      )
+    );
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 12px;
+    border-radius: 14px;
   }
 
-  .tools::-webkit-scrollbar {
+  /* The sections run on in one grid, in the order of the markup. */
+  .line {
+    display: contents;
+  }
+
+  .sky,
+  .settings,
+  .footer {
+    grid-column: 1 / -1;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 9px;
+  }
+
+  .settings {
+    order: 0;
+  }
+
+  .settingstrigger {
     display: none;
+  }
+
+  .grouplabel {
+    display: block;
+    flex: 0 0 100%;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
 
   .toolgroup {
-    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    overflow: visible;
+    backdrop-filter: none;
   }
 
-  /* Drag, scroll and hover mean little to a thumb. */
-  .hint {
-    display: none;
+  /* Each control stands on its own, so a row that wraps never leaves a bare edge. */
+  .toolgroup button,
+  .toolgroup button:last-child,
+  .vol {
+    border: 1px solid var(--edge-soft);
+    border-radius: 10px;
+    background: var(--panel);
   }
 
-  .fold {
-    position: sticky;
-    right: 0;
-    flex: none;
+  .toolgroup button[aria-pressed='true'] {
+    background: var(--starmap-press);
   }
 
-  /* Inside, as the row's scroll edge would clip a ring drawn outside. */
-  .fold:focus-visible {
-    outline: 2px solid var(--flow);
-    outline-offset: -4px;
+  /* The settings are a plain section here, not a second pop-up inside the sheet. */
+  .settingspanel {
+    position: static;
+    width: auto;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    backdrop-filter: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none;
   }
+}
 
-  .fold span {
-    color: var(--flow);
-    transition: transform 0.2s;
-  }
-
-  .fold[aria-expanded='false'] span {
-    transform: rotate(180deg);
-  }
-
-  :host([data-folded]) .tools > :not(.fold) {
-    display: none;
-  }
-
-  :host([data-folded]) .tools {
-    pointer-events: none;
-  }
-
-  :host([data-folded]) .fold {
-    pointer-events: auto;
+/* Short but wide, the sheet takes three columns. */
+@media (max-height: 500px) {
+  .tools {
+    width: min(720px, var(--sheet-room));
   }
 }
 
 /* A thumb needs a taller target than a pointer does. */
-@media (max-width: 1199px) and (pointer: coarse), (max-height: 500px) and (pointer: coarse) {
+@media (pointer: coarse) {
+  :host {
+    --touch-target: 44px;
+  }
+
   .toolgroup button,
-  .fold {
+  .toolsbutton,
+  .field,
+  .vol,
+  .field input,
+  .vol input {
     min-height: 44px;
+  }
+
+  .field input {
+    width: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup,
+  .popup.open {
+    transition: none;
   }
 }

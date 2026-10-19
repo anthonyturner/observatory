@@ -4,8 +4,8 @@ import {
   computed,
   inject,
   input,
-  model,
   output,
+  viewChild,
 } from '@angular/core';
 import { LiveAgentsLink } from '../../agents/live-agents-link/live-agents-link';
 import { MotionPreference } from '../../../core/motion/motion-preference';
@@ -17,8 +17,7 @@ import { BlackHoleSetting, MAX_STALE_DAYS, MIN_STALE_DAYS } from '../black-hole/
 import { MAX_WIP_LIMIT, MIN_WIP_LIMIT, WipLimitSetting } from '../wip-limit/wip-limit-setting';
 import { StoredWholeNumber } from '../../../core/settings/stored-whole-number';
 import { Chart, SkyView, isListOnly } from '../starmap-view';
-
-const FOLDED_KEY = 'observatory.folded';
+import { Disclosure } from '../../../shared/disclosure/disclosure';
 
 /** The screens the first group switches between. */
 const CHARTS: readonly { readonly id: Chart; readonly label: string }[] = [
@@ -30,18 +29,25 @@ const CHARTS: readonly { readonly id: Chart; readonly label: string }[] = [
 ];
 
 /**
- * The bottom tools, by purpose: which sky, Starmap or List, zoom, Next star,
- * what the sky draws and the timeline, the side panels, the repo's agent sessions, Refresh, Motion and Sound, then help.
- * What only the map uses hides on a list. On a small screen Controls folds
- * them away, remembered per viewer.
+ * The Review Queue's tools, by purpose: which sky, Starmap or List, zoom, Next
+ * star and Sprint, what the sky draws and the timeline, the side panels, the
+ * repo's agent sessions, then the settings, Refresh and help. What only the map
+ * uses hides on a list.
+ *
+ * One element is both the dock and the drawer. From 1200px wide and 501px tall
+ * it is a dock along the foot, with the settings behind a Settings button that
+ * opens upward. Below that, a Tools button raises the same controls as a sheet
+ * over the sky, the settings inline; the CSS makes the switch, so nothing is
+ * drawn twice. A control that opens another surface closes the sheet; one that
+ * only changes a setting leaves it open.
  */
 @Component({
   selector: 'app-starmap-tools',
-  imports: [LiveAgentsLink],
+  imports: [LiveAgentsLink, Disclosure],
   templateUrl: './starmap-tools.html',
   styleUrl: './starmap-tools.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[attr.data-folded]': 'folded() ? "" : null' },
+  host: { '[attr.data-open]': 'isRaised() ? "" : null' },
 })
 export class StarmapTools {
   /** The queue's repository (owner/name), whose agents the Agent sessions link counts. */
@@ -99,8 +105,12 @@ export class StarmapTools {
     this.sound.setVolume(Number((event.target as HTMLInputElement).value) / 100);
   }
   protected readonly help = inject(HelpState);
-  /** Folded away on a small screen; the page hides its charts with the tools. */
-  readonly folded = model(readFolded());
+  private readonly drawer = viewChild<Disclosure>('drawer');
+  private readonly settings = viewChild<Disclosure>('settings');
+  /** Whether the sheet or the Settings list is open, so the page can lift the tools over its panels. */
+  protected readonly isRaised = computed(
+    () => !!this.drawer()?.isOpen() || !!this.settings()?.isOpen(),
+  );
   /** Zoom, Starmap / List and the hint mean nothing over a list-only screen. */
   protected readonly skyHidden = computed(() => isListOnly(this.chart()));
   /** Zoom, the sky's layers, the side panels and the hint need the map, not a list. */
@@ -124,22 +134,7 @@ export class StarmapTools {
       : 'Overriding your system setting — click to switch',
   );
 
-  protected toggleFold(): void {
-    const next = !this.folded();
-    this.folded.set(next);
-    try {
-      localStorage.setItem(FOLDED_KEY, next ? '1' : '0');
-    } catch {
-      // This visit only.
-    }
-  }
-}
-
-/** Open when storage is blocked. */
-function readFolded(): boolean {
-  try {
-    return localStorage.getItem(FOLDED_KEY) === '1';
-  } catch {
-    return false;
+  protected pickChart(chart: Chart): void {
+    if (chart !== this.chart()) this.chartChange.emit(chart);
   }
 }

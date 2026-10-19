@@ -12,6 +12,8 @@ const context = (source: string): LinkContext => ({
   pageBySource: new Map([
     ['README.md', 'Home'],
     ['docs/tech-stack.md', 'Tech-stack'],
+    ['docs/guide.md', 'Guide'],
+    ['docs/git-cheat-sheet.md', 'Git-cheat-sheet'],
     ['docs/decisions/README.md', 'Decisions'],
     ['docs/decisions/0007-squash.md', 'ADR-0007-squash'],
   ]),
@@ -30,6 +32,16 @@ describe('rewriteLinks', () => {
 
     assert.equal(fromReadme, `See [the stack](${WIKI}/Tech-stack#build).`);
     assert.equal(fromDecision, `[ADR](${WIKI}/ADR-0007-squash), [index](${WIKI}/Decisions)`);
+  });
+
+  it('points a link between two published docs at the other’s wiki page, keeping the anchor', () => {
+    assert.equal(
+      rewriteLinks(
+        'See the [fetch](git-cheat-sheet.md#fetch) sheet and the [Guide](./guide.md#issues).',
+        context('docs/guide.md'),
+      ),
+      `See the [fetch](${WIKI}/Git-cheat-sheet#fetch) sheet and the [Guide](${WIKI}/Guide#issues).`,
+    );
   });
 
   it('points a link to an unpublished file at GitHub, resolved from the page’s folder', () => {

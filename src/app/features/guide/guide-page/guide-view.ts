@@ -1,21 +1,20 @@
 import type { DocsBook } from '../../../core/guide/docs-books';
-import {
-  Guide,
-  GuidePart,
-  GuideSection,
-  guideMatching,
-  sectionCount,
-} from '../../../core/guide/guide';
+import { Guide, GuidePart, GuideSection, sectionCount } from '../../../core/guide/guide';
 import { docsLink } from '../../../core/guide/guide-link';
 import { snippetOf } from '../../../core/library/library-search';
 import { starDiameterOf } from '../../../core/library/page-star';
 import { plural } from '../../../shared/text/plural';
 import { IndexEntry, IndexShelf } from '../../library/library-page/library-view';
 
-/** A book and its parts, read only when asked for, so a book nobody searches is never parsed. */
+/**
+ * A book and what the search leaves of it, read only when asked for, so a
+ * book nobody opens or searches is never parsed. Every part of the page that
+ * needs a book's matches reads this one value, so they cannot disagree.
+ */
 export interface Reading {
   readonly book: DocsBook;
-  readonly guide: () => Guide;
+  /** The book's parts and sections that hold every search word; all of them with no search. */
+  readonly matched: () => Guide;
 }
 
 /** What the contents are drawn from. */
@@ -81,7 +80,7 @@ function shelvesOf(reading: Reading, input: ContentsInput): IndexShelf[] {
   if (!input.terms.length && !isOpen(book, input)) {
     return [{ name: null, group: book.group, entries: [bookEntry(book)] }];
   }
-  return guideMatching(reading.guide(), input.terms).parts.map((part) => ({
+  return reading.matched().parts.map((part) => ({
     name: shelfName(book, part, input),
     group: book.group,
     entries: part.sections.map((section) => sectionEntry(section, book, input)),
@@ -125,7 +124,7 @@ export function matchesElsewhere(
   if (!terms.length) return 0;
   return readings
     .filter(({ book }) => book.slug !== open.slug)
-    .reduce((sum, reading) => sum + sectionCount(guideMatching(reading.guide(), terms)), 0);
+    .reduce((sum, reading) => sum + sectionCount(reading.matched()), 0);
 }
 
 const matchVerb = (count: number): string => (count === 1 ? 'matches' : 'match');
@@ -142,7 +141,7 @@ export function resultLineOf(
     return `Nothing in ${name} matches; ${plural(elsewhere, 'section')} ${matchVerb(elsewhere)} in the other docs.`;
   }
   const own = `${plural(here, 'section')} ${matchVerb(here)}`;
-  return elsewhere ? `${own}, and ${elsewhere} more in the other docs.` : `${own}.`;
+  return elsewhere ? `${own} in ${name}, and ${elsewhere} more in the other docs.` : `${own}.`;
 }
 
 /** The reading column's words when the open book has no match; the contents hold any elsewhere. */

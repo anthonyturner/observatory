@@ -1,5 +1,5 @@
 import { DocsBook } from '../../../core/guide/docs-books';
-import { guideOf } from '../../../core/guide/guide';
+import { guideMatching, guideOf } from '../../../core/guide/guide';
 import { searchTerms } from '../../../core/library/library-search';
 import { Reading, contentsOf, emptyLineOf, matchesElsewhere, resultLineOf } from './guide-view';
 
@@ -47,18 +47,25 @@ const GUIDE_BOOK = book('guide', 'Guide', 'Guide');
 const FIRST_SHEET = book('first', 'Cheat sheets', 'First cheat sheet', SHEET_MARKDOWN);
 const SECOND_SHEET = book('second', 'Cheat sheets', 'Second cheat sheet');
 
-const reading = (of: DocsBook): Reading => ({ book: of, guide: () => guideOf(of.markdown) });
+const reading = (of: DocsBook, terms: readonly string[] = []): Reading => ({
+  book: of,
+  matched: () => guideMatching(guideOf(of.markdown), terms),
+});
 
-const contents = (
-  overrides: Partial<Parameters<typeof contentsOf>[0]> = {},
-): ReturnType<typeof contentsOf> =>
-  contentsOf({
-    readings: [GUIDE_BOOK, FIRST_SHEET].map(reading),
-    open: GUIDE_BOOK,
-    terms: [],
-    currentId: null,
-    ...overrides,
-  });
+interface Setup {
+  readonly books?: readonly DocsBook[];
+  readonly open?: DocsBook;
+  readonly terms?: readonly string[];
+  readonly currentId?: string | null;
+}
+
+const contents = ({
+  books = [GUIDE_BOOK, FIRST_SHEET],
+  open = GUIDE_BOOK,
+  terms = [],
+  currentId = null,
+}: Setup = {}): ReturnType<typeof contentsOf> =>
+  contentsOf({ readings: books.map((of) => reading(of, terms)), open, terms, currentId });
 
 describe('contentsOf', () => {
   it('draws each part of the open book as a shelf and each section as a star linking to its anchor', () => {
@@ -95,7 +102,7 @@ describe('contentsOf', () => {
 
   it('keeps each group together, in the order the registry first names them, with its other books in one shelf', () => {
     const shelves = contents({
-      readings: [FIRST_SHEET, GUIDE_BOOK, SECOND_SHEET].map(reading),
+      books: [FIRST_SHEET, GUIDE_BOOK, SECOND_SHEET],
       open: GUIDE_BOOK,
     });
 
@@ -121,7 +128,7 @@ describe('contentsOf', () => {
 
   it('names the book on each part where a group holds several, so two sheets stay apart', () => {
     const shelves = contents({
-      readings: [GUIDE_BOOK, FIRST_SHEET, SECOND_SHEET].map(reading),
+      books: [GUIDE_BOOK, FIRST_SHEET, SECOND_SHEET],
       open: FIRST_SHEET,
     });
 
@@ -133,7 +140,7 @@ describe('contentsOf', () => {
   });
 
   describe('with a search', () => {
-    const search = (words: string, overrides = {}): ReturnType<typeof contentsOf> =>
+    const search = (words: string, overrides: Setup = {}): ReturnType<typeof contentsOf> =>
       contents({ terms: searchTerms(words), ...overrides });
 
     it('lists the matching sections of every book, each with where it matched', () => {
@@ -162,7 +169,7 @@ describe('contentsOf', () => {
 
     it('names the book on each part where a group holds several, matching or not', () => {
       const shelves = search('lane', {
-        readings: [GUIDE_BOOK, FIRST_SHEET, SECOND_SHEET].map(reading),
+        books: [GUIDE_BOOK, FIRST_SHEET, SECOND_SHEET],
       });
 
       expect(shelves.map(({ name }) => name)).toEqual([
@@ -185,28 +192,32 @@ describe('contentsOf', () => {
     });
 
     it('reads no book that is not open until a search asks', () => {
-      const guideOfSheet = vi.fn(() => guideOf(MARKDOWN));
-      const lazy: Reading[] = [reading(GUIDE_BOOK), { book: FIRST_SHEET, guide: guideOfSheet }];
+      const matchedSheet = vi.fn(() => guideOf(MARKDOWN));
+      const lazy = (terms: readonly string[]): Reading[] => [
+        reading(GUIDE_BOOK, terms),
+        { book: FIRST_SHEET, matched: matchedSheet },
+      ];
 
-      contents({ readings: lazy });
-      expect(guideOfSheet).not.toHaveBeenCalled();
+      contentsOf({ readings: lazy([]), open: GUIDE_BOOK, terms: [], currentId: null });
+      expect(matchedSheet).not.toHaveBeenCalled();
 
-      contents({ readings: lazy, terms: ['lane'] });
-      expect(guideOfSheet).toHaveBeenCalled();
+      contentsOf({ readings: lazy(['lane']), open: GUIDE_BOOK, terms: ['lane'], currentId: null });
+      expect(matchedSheet).toHaveBeenCalled();
     });
   });
 });
 
 describe('matchesElsewhere', () => {
-  const readings = [GUIDE_BOOK, FIRST_SHEET].map(reading);
+  const readings = (terms: readonly string[]): Reading[] =>
+    [GUIDE_BOOK, FIRST_SHEET].map((of) => reading(of, terms));
 
   it('counts the sections a search leaves in every book but the open one', () => {
-    expect(matchesElsewhere(readings, GUIDE_BOOK, ['fetch'])).toBe(2);
-    expect(matchesElsewhere(readings, FIRST_SHEET, ['workflow'])).toBe(1);
+    expect(matchesElsewhere(readings(['fetch']), GUIDE_BOOK, ['fetch'])).toBe(2);
+    expect(matchesElsewhere(readings(['workflow']), FIRST_SHEET, ['workflow'])).toBe(1);
   });
 
   it('counts none with no search', () => {
-    expect(matchesElsewhere(readings, GUIDE_BOOK, [])).toBe(0);
+    expect(matchesElsewhere(readings([]), GUIDE_BOOK, [])).toBe(0);
   });
 });
 
@@ -225,7 +236,7 @@ describe('resultLineOf', () => {
 
   it('adds the matches in the other docs', () => {
     expect(resultLineOf(counts(2, 3), ['star'], 'the guide')).toBe(
-      '2 sections match, and 3 more in the other docs.',
+      '2 sections match in the guide, and 3 more in the other docs.',
     );
   });
 

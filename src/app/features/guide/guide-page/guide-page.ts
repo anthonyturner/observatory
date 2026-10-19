@@ -12,7 +12,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { map } from 'rxjs';
 import { DOCS_BOOKS } from '../../../core/guide/docs-books';
-import { guideMatching, guideOf, sectionCount } from '../../../core/guide/guide';
+import { guideKeeping, guideMatching, guideOf, sectionCount } from '../../../core/guide/guide';
 import { searchTerms } from '../../../core/library/library-search';
 import { MotionPreference } from '../../../core/motion/motion-preference';
 import { UpLink } from '../../../shared/up-link/up-link';
@@ -29,7 +29,9 @@ const FILTER_LABEL = 'Filter every doc';
  * and an anchor per section so a screen's Guide link lands on its own part.
  * Angular keeps this one component when only the book changes, so the
  * filter's words stay when a result opens another book: the results stay in
- * the contents to step through, and the section opened is one of them.
+ * the contents to step through, and the section opened is one of them. The
+ * reading column also keeps whatever section the address names, so Back or a
+ * link inside the text never lands on an anchor the filter has hidden.
  */
 @Component({
   selector: 'app-guide-page',
@@ -51,28 +53,38 @@ export class GuidePage {
   });
   private readonly fragment = toSignal(this.route.fragment, { initialValue: null });
 
-  private readonly readings: readonly Reading[] = this.books.map((book) => ({
-    book,
-    guide: computed(() => guideOf(book.markdown)),
-  }));
-  /** The book the address names; the route sends an unknown address to the Guide first. */
-  private readonly openReading = computed(
-    () => this.readings.find(({ book }) => book.slug === this.slug()) ?? this.readings[0],
-  );
-  protected readonly book = computed(() => this.openReading().book);
-  protected readonly filterLabel = FILTER_LABEL;
-  /** Where the reader was sent: a book, and the section within it if the address names one. */
-  private readonly place = computed(() => ({ book: this.book().slug, fragment: this.fragment() }));
-
   protected readonly isStill = inject(MotionPreference).isStill;
   protected readonly query = signal('');
   /** On a narrow screen the contents fold away above the text. */
   protected readonly isIndexOpen = signal(false);
+  protected readonly filterLabel = FILTER_LABEL;
 
   private readonly terms = computed(() => searchTerms(this.query()));
-  /** The open book's parts and sections that the filter leaves, for the reading column. */
+  /** Each book read in full, when first asked for. */
+  private readonly guides = this.books.map((book) => computed(() => guideOf(book.markdown)));
+  /**
+   * Each book with what the filter leaves of it, matched once here: the
+   * reading column, the contents and the result line all read this.
+   */
+  private readonly readings: readonly Reading[] = this.books.map((book, at) => ({
+    book,
+    matched: computed(() => guideMatching(this.guides[at](), this.terms())),
+  }));
+  /** Which book the address names; the route sends an unknown address to the Guide first. */
+  private readonly openAt = computed(() =>
+    Math.max(
+      0,
+      this.books.findIndex((book) => book.slug === this.slug()),
+    ),
+  );
+  protected readonly book = computed(() => this.books[this.openAt()]);
+  /** Where the reader was sent: a book, and the section within it if the address names one. */
+  private readonly place = computed(() => ({ book: this.book().slug, fragment: this.fragment() }));
+
+  private readonly matched = computed(() => this.readings[this.openAt()].matched());
+  /** The open book as the reading column draws it: the matches, and the section the address names. */
   protected readonly shown = computed(() =>
-    guideMatching(this.openReading().guide(), this.terms()),
+    guideKeeping(this.matched(), this.guides[this.openAt()](), this.fragment()),
   );
   private readonly elsewhere = computed(() =>
     matchesElsewhere(this.readings, this.book(), this.terms()),
@@ -87,7 +99,7 @@ export class GuidePage {
   );
   protected readonly resultLine = computed(() =>
     resultLineOf(
-      { here: sectionCount(this.shown()), elsewhere: this.elsewhere() },
+      { here: sectionCount(this.matched()), elsewhere: this.elsewhere() },
       this.terms(),
       this.book().name,
     ),

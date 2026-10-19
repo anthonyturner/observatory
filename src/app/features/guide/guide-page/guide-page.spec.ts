@@ -251,7 +251,7 @@ describe('GuidePage', () => {
       filter('is');
 
       expect(element.querySelector('[role="status"]')?.textContent).toBe(
-        '3 sections match, and 1 more in the other docs.',
+        '3 sections match in the guide, and 1 more in the other docs.',
       );
     });
 
@@ -291,6 +291,32 @@ describe('GuidePage', () => {
       expect(element.querySelector('[role="status"]')?.textContent).toBe('1 section matches.');
       const lit = links(element).filter((link) => link.hasAttribute('aria-current'));
       expect(lit.map((link) => link.getAttribute('href'))).toEqual(['/docs/git-cheat-sheet#fetch']);
+      expect(document.activeElement).toBe(element.querySelector('#doc-fetch'));
+    });
+
+    it('keeps the section the address names even when the filter would hide it', async () => {
+      const { element, filter, go } = await open('/docs/guide');
+      filter('lane');
+      expect(headings(element)).toEqual(['Project tabs', 'Actions']);
+
+      await go('/docs/guide#worlds');
+
+      expect(headings(element)).toEqual(['Orrery', 'Worlds', 'Project tabs', 'Actions']);
+      const heading = element.querySelector<HTMLElement>('#doc-worlds');
+      expect(heading?.scrollIntoView).toHaveBeenCalled();
+      expect(document.activeElement).toBe(heading);
+      expect(element.querySelector('[role="status"]')?.textContent).toBe('1 section matches.');
+    });
+
+    it('draws the section Back returns to, though the filter was typed after leaving it', async () => {
+      const { element, filter, go } = await open('/docs/guide#worlds');
+      filter('lane');
+      expect(headings(element)).toEqual(['Orrery', 'Worlds', 'Project tabs', 'Actions']);
+
+      await go('/docs/guide#actions');
+      await go('/docs/guide#worlds');
+
+      expect(document.activeElement).toBe(element.querySelector('#doc-worlds'));
     });
   });
 });

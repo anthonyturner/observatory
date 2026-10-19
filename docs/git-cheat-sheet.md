@@ -6,8 +6,8 @@ every word and flag means, what happens to your files, and an everyday
 comparison to hang it on.
 
 Nothing here runs anything. It only explains, so it is safe to read with a
-terminal open beside it. The filter box finds a word on this page or in any other doc, and
-the contents jump to any command.
+terminal open beside it. The filter box finds a word on this page or in any
+other doc, and the contents jump to any command.
 
 Three words come up everywhere:
 

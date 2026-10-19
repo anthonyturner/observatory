@@ -36,6 +36,7 @@ describe('the Git cheat sheet', () => {
     const error = sections.find((section) => section.title.startsWith('The error'));
 
     expect(error?.text).toContain("Diverging branches can't be fast-forwarded");
+    expect(error?.text).toContain('fatal: Not possible to fast-forward, aborting.');
     expect(error?.text).toContain('git merge origin/main');
     expect(error?.text).toContain('git pull --no-ff --tags origin main');
   });
@@ -93,5 +94,11 @@ describe('the Git cheat sheet', () => {
       'If something looks lost',
     ]);
     expect(strayed.map((section) => section.title)).toEqual([]);
+    expect(
+      danger?.sections
+        .filter(isCommand)
+        .filter((section) => !section.blocks.some((block) => block.kind === 'table'))
+        .map((section) => section.title),
+    ).toEqual([]);
   });
 });

@@ -45,10 +45,18 @@ page on your phone, and your branch is the desk you actually work at.
 
 ### The error Diverging branches can't be fast-forwarded
 
-You see this when you run a pull and Git stops with:
+You see this when you run a pull and Git stops with a hint and then a fatal
+line, like this (the hint lists the two ways out, shortened here):
 
 ```text
-fatal: Diverging branches can't be fast-forwarded, aborting.
+hint: Diverging branches can't be fast-forwarded, you need to either:
+hint:
+hint:   git merge --no-ff
+hint:
+hint: or:
+hint:
+hint:   git rebase
+fatal: Not possible to fast-forward, aborting.
 ```
 
 **In plain English:** both sides moved on. GitHub's `main` has commits you do
@@ -198,6 +206,12 @@ lines were changed on both sides, it pauses with a conflict for you to fix.
 
 Note that `main` here is GitHub's `main`, merged into whichever branch you are
 standing on. Check with `git status` which branch that is.
+
+If your Git is set to rebase on pull (`pull.rebase = true`), `--no-ff` alone
+does not make it merge: add `--no-rebase`, as in
+`git pull --no-rebase --no-ff --tags origin main`. Otherwise it rewrites your
+commits on top of GitHub's instead, and a conflict then needs
+`git rebase --abort` rather than `git merge --abort`.
 
 **Everyday comparison:** you unpack the parcel and fit the new things in among
 your own, even though your shelf was not empty.
@@ -583,6 +597,12 @@ ask.
 git push --force
 ```
 
+| Piece                | What it means                                                  |
+| -------------------- | -------------------------------------------------------------- |
+| `git push`           | Upload your commits to GitHub.                                 |
+| `--force`            | Replace GitHub's branch with yours, whatever it held.          |
+| `--force-with-lease` | The same, but refuse if someone pushed since you last fetched. |
+
 Replaces GitHub's copy of a branch with yours, even if that deletes commits
 other people have. `--force-with-lease` is a little safer (it refuses if
 someone pushed since you last looked) but still rewrites history. Never on
@@ -593,6 +613,12 @@ someone pushed since you last looked) but still rewrites history. Never on
 ```text
 git reset --hard <commit>
 ```
+
+| Piece       | What it means                                                        |
+| ----------- | -------------------------------------------------------------------- |
+| `git reset` | Move your branch to another commit.                                  |
+| `--hard`    | Also overwrite your files to match it, discarding uncommitted edits. |
+| `<commit>`  | Where to move to: a commit id, or a name such as `origin/main`.      |
 
 Moves your branch to `<commit>` and **discards every uncommitted edit** in your
 files. The edits are not recoverable. Committed work can often be found again
@@ -605,6 +631,14 @@ git branch -D <name>
 git push origin --delete <name>
 ```
 
+| Piece             | What it means                                                 |
+| ----------------- | ------------------------------------------------------------- |
+| `git branch -D`   | Delete a local branch, even if its work was never merged.     |
+| `-d`              | The safe lowercase form: refuses when the work is not merged. |
+| `git push origin` | Talk to GitHub.                                               |
+| `--delete`        | Remove the named branch there instead of uploading to it.     |
+| `<name>`          | The branch. Replace it with the real name.                    |
+
 The first removes a branch from your computer even if its work was never
 merged; the lowercase `-d` refuses to do that. The second deletes it on
 GitHub. Commits only that branch had can become hard to find.
@@ -614,6 +648,13 @@ GitHub. Commits only that branch had can become hard to find.
 ```text
 git clean -fd
 ```
+
+| Piece       | What it means                                                  |
+| ----------- | -------------------------------------------------------------- |
+| `git clean` | Delete files Git is not tracking.                              |
+| `-f`        | "Force": really delete. Git refuses to clean without it.       |
+| `-d`        | Include untracked folders, not only files.                     |
+| `-n`        | "Dry run": list what would go, deleting nothing. Use it first. |
 
 Deletes files and folders Git is not tracking (`-f` force, `-d` include
 folders). They were never saved, so they are gone for good. Add `-n` to
@@ -630,6 +671,10 @@ others build on them.
 ```text
 git reflog
 ```
+
+| Piece        | What it means                                             |
+| ------------ | --------------------------------------------------------- |
+| `git reflog` | List every place `HEAD` has been, newest first, with ids. |
 
 `git reflog` lists where `HEAD` (where you are) has been, even through resets
 and branch changes, so a committed piece of work can often be found by its id

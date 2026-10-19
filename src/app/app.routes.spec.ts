@@ -39,11 +39,36 @@ describe('the app’s routes', () => {
     expect(leaf.title).toBe('Library · Observatory');
   });
 
-  it('opens the Git cheat sheet with the Guide page, under its own title', async () => {
-    const { leaf } = await open('/git-cheat-sheet');
+  it('opens each book at its own address, under its own title', async () => {
+    const guide = await open('/docs/guide');
+    expect(guide.leaf.title).toBe('Guide · Observatory');
+    expect(guide.leaf.component).toBe(GuidePage);
 
-    expect(leaf.title).toBe('Git cheat sheet · Observatory');
-    expect(leaf.component).toBe(GuidePage);
+    const sheet = await open('/docs/git-cheat-sheet');
+    expect(sheet.leaf.title).toBe('Git cheat sheet · Observatory');
+    expect(sheet.leaf.component).toBe(GuidePage);
+  });
+
+  it('keeps the anchor and the query when an old address moves to the docs', async () => {
+    const moves = [
+      ['/guide', '/docs/guide'],
+      ['/guide#releases', '/docs/guide#releases'],
+      ['/git-cheat-sheet', '/docs/git-cheat-sheet'],
+      [
+        '/git-cheat-sheet#fetch-download-what-is-new',
+        '/docs/git-cheat-sheet#fetch-download-what-is-new',
+      ],
+      ['/guide?q=star#orrery', '/docs/guide?q=star#orrery'],
+    ];
+    for (const [from, to] of moves) {
+      expect((await open(from)).router.url, from).toBe(to);
+    }
+  });
+
+  it('sends the docs address with no book, and an unknown book, to the Guide', async () => {
+    expect((await open('/docs')).router.url).toBe('/docs/guide');
+    expect((await open('/docs/nowhere')).router.url).toBe('/docs/guide');
+    expect((await open('/docs/guide/nowhere')).router.url).toBe('/');
   });
 
   it('keeps a pull request link’s query on the Queue', async () => {

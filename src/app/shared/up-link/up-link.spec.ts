@@ -23,7 +23,7 @@ describe('UpLink', () => {
   it('links to the screen’s part of the Guide beside it', () => {
     const guide = render('releases').querySelector('a.guide');
 
-    expect(guide?.getAttribute('href')).toBe('/guide#releases');
+    expect(guide?.getAttribute('href')).toBe('/docs/guide#releases');
     expect(guide?.textContent).toBe('Guide');
   });
 

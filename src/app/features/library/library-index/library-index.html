@@ -12,36 +12,45 @@
 <p class="result" role="status">{{ resultLine() }}</p>
 
 <nav [attr.aria-label]="listLabel()">
-  @for (shelf of shelves(); track shelf.name) {
-    <section class="shelf">
-      <h2>{{ shelf.name }}</h2>
-      <ol class="chart">
-        @for (entry of shelf.entries; track entry.slug) {
-          <li>
-            <a
-              data-page
-              [routerLink]="entry.link"
-              [fragment]="entry.fragment ?? undefined"
-              [attr.aria-current]="entry.isCurrent ? 'page' : null"
-              (keydown)="walk($event)"
-            >
-              <span class="star" aria-hidden="true"
-                ><span
-                  class="dot"
-                  [style.width.px]="entry.diameter"
-                  [style.height.px]="entry.diameter"
-                ></span
-              ></span>
-              <span class="words">
-                <span class="title">{{ entry.title }}</span>
-                @if (entry.snippet) {
-                  <span class="snippet">{{ entry.snippet }}</span>
-                }
-              </span>
-            </a>
-          </li>
+  @for (group of groups(); track $index) {
+    @if (group.name) {
+      <h2 class="group">{{ group.name }}</h2>
+    }
+    @for (shelf of group.shelves; track $index) {
+      <section class="shelf">
+        @if (shelf.name && group.name) {
+          <h3 class="shelf-name">{{ shelf.name }}</h3>
+        } @else if (shelf.name) {
+          <h2 class="shelf-name">{{ shelf.name }}</h2>
         }
-      </ol>
-    </section>
+        <ol class="chart">
+          @for (entry of shelf.entries; track entry.slug) {
+            <li>
+              <a
+                data-page
+                [routerLink]="entry.link"
+                [fragment]="entry.fragment ?? undefined"
+                [attr.aria-current]="entry.isCurrent ? 'page' : null"
+                (keydown)="walk($event)"
+              >
+                <span class="star" aria-hidden="true"
+                  ><span
+                    class="dot"
+                    [style.width.px]="entry.diameter"
+                    [style.height.px]="entry.diameter"
+                  ></span
+                ></span>
+                <span class="words">
+                  <span class="title">{{ entry.title }}</span>
+                  @if (entry.snippet) {
+                    <span class="snippet">{{ entry.snippet }}</span>
+                  }
+                </span>
+              </a>
+            </li>
+          }
+        </ol>
+      </section>
+    }
   }
 </nav>

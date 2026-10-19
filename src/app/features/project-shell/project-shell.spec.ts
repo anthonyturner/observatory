@@ -135,13 +135,13 @@ describe('ProjectShell', () => {
     expect(exits().map((link) => link.textContent?.trim())).toEqual(['All projects', 'Guide']);
     expect(exits().map((link) => link.getAttribute('href'))).toEqual([
       '/orrery',
-      '/guide#releases',
+      '/docs/guide#releases',
     ]);
     expect(header.querySelector('.end app-run-preview-button button')).not.toBeNull();
 
     await harness.navigateByUrl('/p/me/app/journal');
     settle();
-    expect(exits()[1].getAttribute('href')).toBe('/guide#journal');
+    expect(exits()[1].getAttribute('href')).toBe('/docs/guide#journal');
     expect(
       barLinks()
         .find((link) => link.getAttribute('aria-current'))

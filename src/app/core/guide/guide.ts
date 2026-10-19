@@ -5,7 +5,7 @@ import { blocksText } from '../library/library-search';
 
 /** One feature's explanation: a third-level heading and everything under it. */
 export interface GuideSection {
-  /** Its heading's anchor, so `/guide#releases` lands on it. */
+  /** Its heading's anchor, so `/docs/guide#releases` lands on it. */
   readonly id: string;
   readonly title: string;
   /** Its heading first, then its text. */

@@ -39,7 +39,7 @@ const SCREENS: readonly NavSection[] = [
 
 const EXITS: readonly NavSection[] = [
   { id: 'all', label: 'All projects', link: '/orrery' },
-  { id: 'guide', label: 'Guide', link: '/guide', fragment: 'releases' },
+  { id: 'guide', label: 'Guide', link: '/docs/guide', fragment: 'releases' },
 ];
 
 /** Widths the fake browser gives each part, in px. */
@@ -188,7 +188,7 @@ describe('SiteHeader', () => {
       expect(folded()).toEqual([]);
       expect(exits().map((link) => [words(link), link.getAttribute('href')])).toEqual([
         ['All projects', '/orrery'],
-        ['Guide', '/guide#releases'],
+        ['Guide', '/docs/guide#releases'],
       ]);
     });
 

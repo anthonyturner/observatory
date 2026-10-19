@@ -21,8 +21,29 @@ export interface IndexEntry {
 
 /** One shelf of the index, drawn as a constellation. */
 export interface IndexShelf {
-  readonly name: string;
+  /** Its heading; null for a shelf drawn without one. */
+  readonly name: string | null;
+  /** The heading over a run of shelves, such as "Cheat sheets"; left out where the index has none. */
+  readonly group?: string;
   readonly entries: readonly IndexEntry[];
+}
+
+/** A run of shelves under one group heading; a null name is shelves with no group. */
+export interface IndexGroup {
+  readonly name: string | null;
+  readonly shelves: readonly IndexShelf[];
+}
+
+/** The shelves cut into runs that share a group, in the order they came. */
+export function groupsOf(shelves: readonly IndexShelf[]): IndexGroup[] {
+  const groups: { name: string | null; shelves: IndexShelf[] }[] = [];
+  for (const shelf of shelves) {
+    const name = shelf.group ?? null;
+    const last = groups.at(-1);
+    if (last?.name === name) last.shelves.push(shelf);
+    else groups.push({ name, shelves: [shelf] });
+  }
+  return groups;
 }
 
 export interface ArticleView {

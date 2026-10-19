@@ -2,12 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  computed,
   inject,
   input,
   model,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { IndexShelf } from '../library-page/library-view';
+import { IndexShelf, groupsOf } from '../library-page/library-view';
 
 /** How far each key moves the focus through the index's pages. */
 const KEY_STEPS: Readonly<Record<string, (at: number, last: number) => number>> = {
@@ -34,6 +35,7 @@ const PAGE_LINKS = 'a[data-page]';
 export class LibraryIndex {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  /** Shelves that share a `group` stand under that group's heading; none need one. */
   readonly shelves = input.required<readonly IndexShelf[]>();
   /** What a search found, said aloud; null with no search. */
   readonly resultLine = input.required<string | null>();
@@ -43,6 +45,8 @@ export class LibraryIndex {
   /** The search box's label, and the list's name, for what the entries are. */
   readonly searchLabel = input('Search pages');
   readonly listLabel = input('Pages');
+
+  protected readonly groups = computed(() => groupsOf(this.shelves()));
 
   protected search(event: Event): void {
     if (event.target instanceof HTMLInputElement) this.query.set(event.target.value);

@@ -396,7 +396,7 @@ passes behind the shadow. Its streaks turn with the scene's `time`, so it holds
 still when motion is off.
 
 A pull request idle past the threshold falls toward it. The threshold is 14
-days, set per browser with **hole** in the tools (`BlackHoleSetting`, 1 to 90).
+days, set per browser with **Hole days** in the tools' Settings (`BlackHoleSetting`, 1 to 90).
 `fallOf(idleDays, threshold)` is 0 up to the threshold, then
 `1 − e^(−(days past) / 21)`. `placeByHole` moves the laid-out star 75% × pull
 of the way in to a 240-unit floor while turning it 0.9 × pull rad about the
@@ -557,7 +557,7 @@ request there. Replay shows no chains: they are the queue as it is.
 
 `wipCheck(items, limit)` in `wip-limit/wip-check.ts` counts the live queue's
 open pull requests that are not drafts; snoozed and dismissed ones still count.
-Past the limit (8, set per browser with **wip** in the tools, `WipLimitSetting`,
+Past the limit (8, set per browser with **WIP limit** in the tools' Settings, `WipLimitSetting`,
 1 to 50), `CometLayer` draws the comets, their tails and labels at 30% opacity
 (`FADED_ALPHA`) and the page shows a note at the top. Closing it keeps it
 closed until the count or limit changes. It is a nudge only: a faded comet

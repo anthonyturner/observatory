@@ -142,6 +142,38 @@ describe('StarmapPage', () => {
     ]).toEqual(['220px', '44px']);
   });
 
+  it('leaves the timeline to its own toggle, whatever the Tools drawer does', () => {
+    localStorage.setItem('observatory.timeline', 'open');
+    const { fixture, element, http, button } = render();
+    const row = (day: string) => ({ day, open: 2, opened: [], merged: [], closed: [] });
+    http.expectOne('/api/ledger?repo=me/a').flush({
+      generatedAt: new Date().toISOString(),
+      rows: [row('2026-10-01'), row('2026-10-02')],
+      titles: {},
+      finished: [],
+      mergedBranches: [],
+    });
+    fixture.detectChanges();
+    const tools = element.querySelector<HTMLButtonElement>('.toolsbutton') as HTMLButtonElement;
+    expect(element.querySelector('app-timeline')).not.toBeNull();
+
+    tools.click();
+    fixture.detectChanges();
+    expect(tools.getAttribute('aria-expanded')).toBe('true');
+    expect(element.querySelector('app-timeline')).not.toBeNull();
+
+    button('Timeline')?.click();
+    fixture.detectChanges();
+    expect(tools.getAttribute('aria-expanded')).toBe('false');
+    expect(element.querySelector('app-timeline')).toBeNull();
+
+    tools.click();
+    fixture.detectChanges();
+    tools.click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-timeline')).toBeNull();
+  });
+
   it('sends the live agents in this repository to the sky as satellites', () => {
     const { fixture, element, http } = render(null, {}, [
       pull(7, 'failing', { branch: 'feat/7-thing', base: 'main' }),

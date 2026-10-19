@@ -466,7 +466,7 @@ Crews and satellites are **only on your own computer**.
 ### The black hole
 
 A black hole sits at the centre of the map and pulls in neglected work. A pull
-request left idle past a threshold (14 days, changed with **hole** in the
+request left idle past a threshold (14 days, changed with **Hole days** in the
 tools) spirals slowly toward it, further the longer it waits, its light
 reddening and stretching toward the hole. None falls all the way in. A commit,
 a review, a snooze ending or a merge resets the count, and the star drifts back
@@ -493,7 +493,7 @@ The search box finds finished work too.
   one to read the issue. Every window names what it holds first, **Issue** or
   **Pull request**, before its state, because the colours alone can look alike.
 - **Fading comets.** Past a work-in-progress limit (8 open pull requests,
-  drafts aside, changed with **wip** in the tools), the comets fade and a note
+  drafts aside, changed with **WIP limit** in the tools' Settings), the comets fade and a note
   at the top suggests finishing something before starting more. Close the note
   with **×**; it stays closed until the open count or the limit changes.
   Nothing is blocked.
@@ -597,11 +597,21 @@ or press **Replay** to watch the sky change, **[** and **]** to step, and
 - **Move around.** Drag to pan, scroll to zoom, **Fit** to see everything.
   Cards and screens move by their headers; double-click a header to put it
   back.
-- **Small windows.** Under 1200px wide, or on a phone, the Review Queue
-  tightens up: the filter chips and the tools along the bottom each keep to one
-  row that you scroll sideways, and **Controls** folds the tools away to give
-  the sky back. The side panels (Agents, Done, Merge plan, Since you last
-  looked) keep clear of the tools and stop below the header.
+- **Tools.** Along the bottom, in two rows: which sky, Starmap or List, zoom,
+  Next star, Sprint and what the sky draws on the first; the panels, Agent
+  sessions, Refresh, **Settings**, and help on the second. **Settings** opens a
+  list upward with the work-in-progress limit, the black hole's days, Motion,
+  Sound and its volume.
+- **Small windows.** Under 1200px wide, or in a window 500px tall or less, the
+  tools gather behind one **Tools** button at the bottom left. It raises a
+  sheet over the sky with every tool in the same order, Settings included; the
+  sheet scrolls when the window is short. Choosing something that opens
+  another screen or panel (Next star, Sprint, a panel, the timeline, help or
+  another sky) closes the sheet; changing a setting leaves it open. **Esc** or
+  a press outside closes it. The timeline has its own **Timeline** button and
+  is never hidden by the sheet. The filter chips keep to one row that you
+  scroll sideways, and the side panels (Agents, Done, Merge plan, Since you
+  last looked) keep clear of the tools and stop below the header.
 
 ### PR screen
 

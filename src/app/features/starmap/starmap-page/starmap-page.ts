@@ -286,7 +286,6 @@ export class StarmapPage {
   protected readonly showComets = signal(true);
   protected readonly selectedComet = signal<Comet | null>(null);
   protected readonly comets = computed(() => cometsOf(this.issues.report(), this.now().getTime()));
-  protected readonly folded = signal(false);
   protected readonly refreshing = signal(false);
   /** The pull request whose star is selected, its card open. */
   protected readonly openPull = signal<number | null>(null);

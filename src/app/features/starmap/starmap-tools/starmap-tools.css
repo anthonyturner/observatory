@@ -233,7 +233,7 @@
   /* Rises from the button and scrolls inside. It may cover the page row and the legend, which the
      viewer is looking past, but never the project bar. */
   .tools {
-    --sheet-top: calc(var(--page-inset-top, 0px) + var(--project-bar-height, 44px) + 8px);
+    --sheet-top: calc(var(--site-bar-bottom) + 8px);
     /* Clear of the playlist and of an open panel, as the tools row is. */
     --sheet-room: calc(
       100vw - var(--page-inset-x, 20px) -

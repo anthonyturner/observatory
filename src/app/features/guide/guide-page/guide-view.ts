@@ -1,4 +1,4 @@
-import { DocsBook } from '../../../core/guide/docs-books';
+import type { DocsBook } from '../../../core/guide/docs-books';
 import { Guide, GuideSection } from '../../../core/guide/guide';
 import { docsLink } from '../../../core/guide/guide-link';
 import { snippetOf } from '../../../core/library/library-search';

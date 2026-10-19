@@ -7,7 +7,7 @@ import {
   Router,
   UrlTree,
 } from '@angular/router';
-import { DocsBook } from '../../core/guide/docs-books';
+import type { DocsBook } from '../../core/guide/docs-books';
 import { DOCS_PATH, GUIDE_LINK } from '../../core/guide/guide-link';
 
 /**
@@ -16,7 +16,10 @@ import { DOCS_PATH, GUIDE_LINK } from '../../core/guide/guide-link';
  */
 
 /** The book the address names, or undefined for a slug no book has. */
-async function bookAt(route: ActivatedRouteSnapshot, injector: Injector): Promise<DocsBook | undefined> {
+async function bookAt(
+  route: ActivatedRouteSnapshot,
+  injector: Injector,
+): Promise<DocsBook | undefined> {
   const { DOCS_BOOKS } = await import('../../core/guide/docs-books');
   return injector.get(DOCS_BOOKS).find((book) => book.slug === route.paramMap.get('book'));
 }
@@ -41,4 +44,7 @@ export const docsBookTitle: ResolveFn<string> = async (route) => {
 export const redirectToDocsBook =
   (slug: string) =>
   ({ fragment, queryParams }: PartialMatchRouteSnapshot): UrlTree =>
-    inject(Router).createUrlTree([DOCS_PATH, slug], { fragment: fragment ?? undefined, queryParams });
+    inject(Router).createUrlTree([DOCS_PATH, slug], {
+      fragment: fragment ?? undefined,
+      queryParams,
+    });

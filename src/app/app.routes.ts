@@ -30,7 +30,7 @@ export const routes: Routes = [
     canActivate: [knownDocsBook],
     loadComponent: () => import('./features/guide/guide-page/guide-page').then((m) => m.GuidePage),
   },
-  // The addresses from before the docs area; each keeps its anchor on the way.
+  // Old links, kept working with their anchor.
   { path: 'guide', pathMatch: 'full', redirectTo: redirectToDocsBook('guide') },
   {
     path: 'git-cheat-sheet',

@@ -20,12 +20,7 @@
   >
     {{ isIndexOpen() ? 'Hide contents' : 'Contents' }}
   </button>
-  <aside
-    id="guide-contents"
-    class="index"
-    [class.open]="isIndexOpen()"
-    aria-label="Docs contents"
-  >
+  <aside id="guide-contents" class="index" [class.open]="isIndexOpen()" aria-label="Docs contents">
     <app-library-index
       [searchLabel]="filterLabel()"
       listLabel="Contents"

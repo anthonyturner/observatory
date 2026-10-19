@@ -183,6 +183,7 @@ describe('GuidePage', () => {
     await go('/docs/git-cheat-sheet');
 
     expect(reading.scrollTop).toBe(0);
+    expect(document.activeElement).toBe(reading);
   });
 
   it('narrows the text and the contents to the sections a filter finds', async () => {

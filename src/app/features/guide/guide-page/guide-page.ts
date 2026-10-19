@@ -86,7 +86,8 @@ export class GuidePage {
 
   /**
    * Brings the section a link named into view and gives its heading the focus;
-   * with no section named, a book just opened starts at its top.
+   * with no section named, a book just opened starts at its top, with the focus
+   * on its text, since the contents entry that opened it is no longer there.
    */
   private showSection(fragment: string | null): void {
     const column = this.reading()?.nativeElement;
@@ -94,6 +95,7 @@ export class GuidePage {
     const target = fragment && column.ownerDocument.getElementById(HEADING_ID_PREFIX + fragment);
     if (!target) {
       column.scrollTop = 0;
+      column.focus({ preventScroll: true });
       return;
     }
     target.scrollIntoView({ block: 'start' });

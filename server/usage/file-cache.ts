@@ -85,7 +85,8 @@ export function jsonEntryStore<T>(path: string, version: number): EntryStore<T> 
         await writeFile(aside, JSON.stringify({ version, entries }), 'utf8');
         await rename(aside, path);
       } catch {
-        await rm(aside, { force: true });
+        // The same lock can refuse the cleanup; a stray temp file is harmless.
+        await rm(aside, { force: true }).catch(() => undefined);
       }
     },
   };

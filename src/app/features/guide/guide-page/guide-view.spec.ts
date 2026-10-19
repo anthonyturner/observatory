@@ -1,6 +1,7 @@
 import { DocsBook } from '../../../core/guide/docs-books';
 import { guideOf } from '../../../core/guide/guide';
-import { contentsOf, resultLineOf } from './guide-view';
+import { searchTerms } from '../../../core/library/library-search';
+import { Reading, contentsOf, emptyLineOf, matchesElsewhere, resultLineOf } from './guide-view';
 
 const MARKDOWN = `# Guide
 
@@ -15,27 +16,45 @@ Each release is a star sized by what it shipped.
 Each workflow is a lane.
 `;
 
-const book = (slug: string, group: DocsBook['group'], title: string): DocsBook => ({
+const SHEET_MARKDOWN = `# Sheet
+
+## Get up to date
+
+### Fetch
+
+Download what is new. A workflow may run it for you.
+
+### Pull
+
+Fetch, then merge.
+`;
+
+const book = (
+  slug: string,
+  group: DocsBook['group'],
+  title: string,
+  markdown = MARKDOWN,
+): DocsBook => ({
   slug,
   group,
   title,
   stamp: '',
   name: `the ${slug}`,
-  markdown: MARKDOWN,
+  markdown,
 });
 
 const GUIDE_BOOK = book('guide', 'Guide', 'Guide');
-const FIRST_SHEET = book('first', 'Cheat sheets', 'First cheat sheet');
+const FIRST_SHEET = book('first', 'Cheat sheets', 'First cheat sheet', SHEET_MARKDOWN);
 const SECOND_SHEET = book('second', 'Cheat sheets', 'Second cheat sheet');
-const GUIDE = guideOf(MARKDOWN);
+
+const reading = (of: DocsBook): Reading => ({ book: of, guide: () => guideOf(of.markdown) });
 
 const contents = (
   overrides: Partial<Parameters<typeof contentsOf>[0]> = {},
 ): ReturnType<typeof contentsOf> =>
   contentsOf({
-    books: [GUIDE_BOOK, FIRST_SHEET],
+    readings: [GUIDE_BOOK, FIRST_SHEET].map(reading),
     open: GUIDE_BOOK,
-    guide: GUIDE,
     terms: [],
     currentId: null,
     ...overrides,
@@ -68,7 +87,7 @@ describe('contentsOf', () => {
 
     expect(shelves.map(({ name, group }) => [name, group])).toEqual([
       [null, 'Guide'],
-      ['Project tabs', 'Cheat sheets'],
+      ['Get up to date', 'Cheat sheets'],
     ]);
     expect(shelves[0].entries[0].link).toBe('/docs/guide');
     expect(shelves[1].entries[0].link).toBe('/docs/first');
@@ -76,7 +95,7 @@ describe('contentsOf', () => {
 
   it('keeps each group together, in the order the registry first names them, with its other books in one shelf', () => {
     const shelves = contents({
-      books: [FIRST_SHEET, GUIDE_BOOK, SECOND_SHEET],
+      readings: [FIRST_SHEET, GUIDE_BOOK, SECOND_SHEET].map(reading),
       open: GUIDE_BOOK,
     });
 
@@ -100,28 +119,131 @@ describe('contentsOf', () => {
     ]);
   });
 
-  it('shows where a search found each section', () => {
-    const [shelf] = contents({ terms: ['shipped'] });
+  it('names the book on each part where a group holds several, so two sheets stay apart', () => {
+    const shelves = contents({
+      readings: [GUIDE_BOOK, FIRST_SHEET, SECOND_SHEET].map(reading),
+      open: FIRST_SHEET,
+    });
 
-    expect(shelf.entries[0].snippet).toContain('sized by what it shipped');
-    expect(shelf.entries[1].snippet).toBeNull();
+    expect(shelves.map(({ name }) => name)).toEqual([
+      null,
+      'First cheat sheet · Get up to date',
+      null,
+    ]);
+  });
+
+  describe('with a search', () => {
+    const search = (words: string, overrides = {}): ReturnType<typeof contentsOf> =>
+      contents({ terms: searchTerms(words), ...overrides });
+
+    it('lists the matching sections of every book, each with where it matched', () => {
+      const shelves = search('workflow');
+
+      expect(
+        shelves.map(({ name, group, entries }) => [
+          name,
+          group,
+          entries.map((entry) => `${entry.link}#${entry.fragment}`),
+        ]),
+      ).toEqual([
+        ['Project tabs', 'Guide', ['/docs/guide#actions']],
+        ['Get up to date', 'Cheat sheets', ['/docs/first#fetch']],
+      ]);
+      expect(shelves[0].entries[0].snippet).toContain('Each workflow is a lane');
+      expect(shelves[1].entries[0].snippet).toContain('A workflow may run it for you');
+    });
+
+    it('lists matches in other books even when the open book has none', () => {
+      const shelves = search('merge');
+
+      expect(shelves.map((shelf) => shelf.group)).toEqual(['Cheat sheets']);
+      expect(shelves[0].entries.map((entry) => entry.title)).toEqual(['Pull']);
+    });
+
+    it('names the book on each part where a group holds several, matching or not', () => {
+      const shelves = search('lane', {
+        readings: [GUIDE_BOOK, FIRST_SHEET, SECOND_SHEET].map(reading),
+      });
+
+      expect(shelves.map(({ name }) => name)).toEqual([
+        'Project tabs',
+        'Second cheat sheet · Project tabs',
+      ]);
+    });
+
+    it('lights a section only in the open book, not the same anchor in another', () => {
+      const shelves = search('workflow', { open: FIRST_SHEET, currentId: 'fetch' });
+
+      expect(shelves.flatMap((shelf) => shelf.entries).map((entry) => entry.isCurrent)).toEqual([
+        false,
+        true,
+      ]);
+    });
+
+    it('draws nothing when no book matches', () => {
+      expect(search('nebula')).toEqual([]);
+    });
+
+    it('reads no book that is not open until a search asks', () => {
+      const guideOfSheet = vi.fn(() => guideOf(MARKDOWN));
+      const lazy: Reading[] = [reading(GUIDE_BOOK), { book: FIRST_SHEET, guide: guideOfSheet }];
+
+      contents({ readings: lazy });
+      expect(guideOfSheet).not.toHaveBeenCalled();
+
+      contents({ readings: lazy, terms: ['lane'] });
+      expect(guideOfSheet).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('matchesElsewhere', () => {
+  const readings = [GUIDE_BOOK, FIRST_SHEET].map(reading);
+
+  it('counts the sections a search leaves in every book but the open one', () => {
+    expect(matchesElsewhere(readings, GUIDE_BOOK, ['fetch'])).toBe(2);
+    expect(matchesElsewhere(readings, FIRST_SHEET, ['workflow'])).toBe(1);
+  });
+
+  it('counts none with no search', () => {
+    expect(matchesElsewhere(readings, GUIDE_BOOK, [])).toBe(0);
   });
 });
 
 describe('resultLineOf', () => {
+  const counts = (here: number, elsewhere: number) => ({ here, elsewhere });
+
   it('says nothing with no search', () => {
-    expect(resultLineOf(3, [], 'the guide')).toBeNull();
+    expect(resultLineOf(counts(3, 1), [], 'the guide')).toBeNull();
   });
 
-  it('counts the sections found, or says none were', () => {
-    expect(resultLineOf(1, ['star'], 'the guide')).toBe('1 section matches.');
-    expect(resultLineOf(2, ['star'], 'the guide')).toBe('2 sections match.');
-    expect(resultLineOf(0, ['comet'], 'the guide')).toBe('Nothing in the guide matches.');
+  it('counts the sections found in the open book, or says none were', () => {
+    expect(resultLineOf(counts(1, 0), ['star'], 'the guide')).toBe('1 section matches.');
+    expect(resultLineOf(counts(2, 0), ['star'], 'the guide')).toBe('2 sections match.');
+    expect(resultLineOf(counts(0, 0), ['comet'], 'the guide')).toBe('Nothing in the docs matches.');
   });
 
-  it('names the book it searched', () => {
-    expect(resultLineOf(0, ['comet'], 'the cheat sheet')).toBe(
-      'Nothing in the cheat sheet matches.',
+  it('adds the matches in the other docs', () => {
+    expect(resultLineOf(counts(2, 3), ['star'], 'the guide')).toBe(
+      '2 sections match, and 3 more in the other docs.',
+    );
+  });
+
+  it('names the open book, and counts the other docs, when only they match', () => {
+    expect(resultLineOf(counts(0, 1), ['fetch'], 'the guide')).toBe(
+      'Nothing in the guide matches; 1 section matches in the other docs.',
+    );
+    expect(resultLineOf(counts(0, 4), ['fetch'], 'the cheat sheet')).toBe(
+      'Nothing in the cheat sheet matches; 4 sections match in the other docs.',
+    );
+  });
+});
+
+describe('emptyLineOf', () => {
+  it('names the book, and points at the contents when the other docs match', () => {
+    expect(emptyLineOf('the guide', 0)).toBe('Nothing in the guide matches. Try fewer words.');
+    expect(emptyLineOf('the guide', 2)).toBe(
+      'Nothing in the guide matches. The other docs do: the contents list where.',
     );
   });
 });

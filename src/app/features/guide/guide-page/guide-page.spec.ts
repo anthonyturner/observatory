@@ -195,23 +195,102 @@ describe('GuidePage', () => {
     expect(element.querySelector('[role="status"]')?.textContent).toContain('1 section matches.');
   });
 
-  it('filters only the open book, naming it when nothing matches', async () => {
-    const { element, filter } = await open('/docs/git-cheat-sheet');
-
-    filter('nebula');
-
-    expect(element.querySelector('label')?.textContent).toBe('Filter the cheat sheet');
-    expect(element.querySelector('.empty')?.textContent).toContain(
-      'Nothing in the cheat sheet matches.',
-    );
-  });
-
-  it('says so when nothing matches', async () => {
+  it('says so when nothing matches anywhere', async () => {
     const { element, filter } = await open('/docs/guide');
 
     filter('nebula');
 
     expect(headings(element)).toEqual([]);
     expect(element.querySelector('.empty')?.textContent).toContain('Nothing in the guide matches.');
+    expect(element.querySelector('[role="status"]')?.textContent).toBe(
+      'Nothing in the docs matches.',
+    );
+    expect(links(element)).toEqual([]);
+  });
+
+  describe('filtering every doc', () => {
+    it('is labelled as a search of every doc', async () => {
+      const { element } = await open('/docs/git-cheat-sheet');
+
+      expect(element.querySelector('label')?.textContent).toBe('Filter every doc');
+    });
+
+    it('lists matches from every book with where each matched, linking to its book and anchor', async () => {
+      const { element, filter } = await open('/docs/guide');
+
+      filter('lane');
+      expect(links(element).map((link) => link.getAttribute('href'))).toEqual([
+        '/docs/guide#actions',
+      ]);
+
+      filter('download');
+
+      expect(links(element).map((link) => link.getAttribute('href'))).toEqual([
+        '/docs/git-cheat-sheet#fetch',
+      ]);
+      expect(element.querySelector('nav .snippet')?.textContent).toContain('Download what is new.');
+    });
+
+    it('says nothing in this book matches, and counts the other docs, when only they match', async () => {
+      const { element, filter } = await open('/docs/guide');
+
+      filter('download');
+
+      expect(headings(element)).toEqual([]);
+      expect(element.querySelector('.empty')?.textContent).toContain(
+        'Nothing in the guide matches.',
+      );
+      expect(element.querySelector('[role="status"]')?.textContent).toBe(
+        'Nothing in the guide matches; 1 section matches in the other docs.',
+      );
+    });
+
+    it('counts the other docs beside the open book own matches', async () => {
+      const { element, filter } = await open('/docs/guide');
+
+      filter('is');
+
+      expect(element.querySelector('[role="status"]')?.textContent).toBe(
+        '3 sections match, and 1 more in the other docs.',
+      );
+    });
+
+    it('names the book on each part of a group that holds several, so two sheets stay apart', async () => {
+      const { element, filter } = await open('/docs/guide', [GUIDE, CHEAT_SHEET, NPM_SHEET]);
+
+      filter('install');
+
+      expect(
+        Array.from(element.querySelectorAll('nav h3.shelf-name')).map((h) => h.textContent),
+      ).toEqual(['npm cheat sheet · Install']);
+      expect(element.querySelector('nav h2.group')?.textContent).toBe('Cheat sheets');
+    });
+
+    it('restores the normal contents once the filter is cleared', async () => {
+      const { element, filter } = await open('/docs/guide#releases');
+      const before = links(element).map((link) => link.getAttribute('href'));
+
+      filter('download');
+      filter('');
+
+      expect(links(element).map((link) => link.getAttribute('href'))).toEqual(before);
+      expect(links(element).filter((link) => link.hasAttribute('aria-current'))).toHaveLength(1);
+      expect(element.querySelector('[role="status"]')?.textContent?.trim()).toBe('');
+    });
+
+    it('keeps the filter when a result opens another book, narrowing that book to the matches', async () => {
+      const { element, filter, go } = await open('/docs/guide');
+      filter('download');
+
+      await go('/docs/git-cheat-sheet#fetch');
+
+      expect(element.querySelector<HTMLInputElement>('input[type="search"]')?.value).toBe(
+        'download',
+      );
+      expect(headings(element)).toEqual(['Get up to date', 'Fetch']);
+      expect(element.querySelector('[role="status"]')?.textContent).toBe('1 section matches.');
+      const lit = links(element).filter((link) => link.hasAttribute('aria-current'));
+      expect(lit.map((link) => link.getAttribute('href'))).toEqual(['/docs/git-cheat-sheet#fetch']);
+    });
   });
 });

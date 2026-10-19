@@ -120,5 +120,28 @@ export function guideMatching(guide: Guide, terms: readonly string[]): Guide {
   return { intro: [], parts };
 }
 
+const hasHeading = (blocks: readonly DocBlock[], id: string): boolean =>
+  blocks.some((block) => block.kind === 'heading' && block.id === id);
+
+/**
+ * What a search leaves, plus whatever holds the heading `id` names, so a link
+ * or the Back button can never land on an anchor the search has hidden.
+ */
+export function guideKeeping(found: Guide, whole: Guide, id: string | null): Guide {
+  if (!id || found === whole) return found;
+  const shown = new Set(found.parts.flatMap((part) => part.sections.map((section) => section.id)));
+  const parts = whole.parts
+    .map((part) => ({
+      part,
+      isNamed: hasHeading(part.lead, id),
+      sections: part.sections.filter(
+        (section) => shown.has(section.id) || hasHeading(section.blocks, id),
+      ),
+    }))
+    .filter(({ isNamed, sections }) => isNamed || sections.length > 0)
+    .map(({ part, sections }) => ({ ...part, sections }));
+  return { intro: found.intro, parts };
+}
+
 export const sectionCount = (guide: Guide): number =>
   guide.parts.reduce((sum, part) => sum + part.sections.length, 0);

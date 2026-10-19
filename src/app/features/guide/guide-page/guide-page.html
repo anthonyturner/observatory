@@ -22,7 +22,7 @@
   </button>
   <aside id="guide-contents" class="index" [class.open]="isIndexOpen()" aria-label="Docs contents">
     <app-library-index
-      [searchLabel]="filterLabel()"
+      [searchLabel]="filterLabel"
       listLabel="Contents"
       [shelves]="shelves()"
       [resultLine]="resultLine()"
@@ -41,7 +41,7 @@
           <app-doc-blocks class="section" [blocks]="section.blocks" />
         }
       } @empty {
-        <p class="empty">Nothing in {{ open.name }} matches. Try fewer words.</p>
+        <p class="empty">{{ emptyLine() }}</p>
       }
     </article>
   </main>

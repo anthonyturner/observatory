@@ -1,4 +1,4 @@
-import { guideMatching, guideOf, sectionCount } from './guide';
+import { guideKeeping, guideMatching, guideOf, sectionCount } from './guide';
 
 const MARKDOWN = `# Observatory guide
 
@@ -101,6 +101,38 @@ describe('guideMatching', () => {
 
   it('finds nothing when no section holds every word', () => {
     expect(guideMatching(guide, ['comet']).parts).toEqual([]);
+  });
+});
+
+describe('guideKeeping', () => {
+  const guide = guideOf(MARKDOWN);
+  const found = guideMatching(guide, ['city']);
+  const ids = (shown: typeof guide): string[][] =>
+    shown.parts.map((part) => part.sections.map((section) => section.id));
+
+  it('leaves a search as it is when the address names nothing', () => {
+    expect(guideKeeping(found, guide, null)).toBe(found);
+  });
+
+  it('leaves the whole guide as it is with no search', () => {
+    expect(guideKeeping(guide, guide, 'stars')).toBe(guide);
+  });
+
+  it('adds the section the address names, in the order of the book', () => {
+    expect(ids(guideKeeping(found, guide, 'stars'))).toEqual([['night-side'], ['stars']]);
+    expect(ids(guideKeeping(found, guide, 'worlds'))).toEqual([['worlds', 'night-side']]);
+  });
+
+  it('keeps the section holding a deeper heading the address names', () => {
+    expect(ids(guideKeeping(found, guide, 'kind'))).toEqual([['night-side'], ['stars']]);
+  });
+
+  it('keeps a part the address names, with only the sections the search found', () => {
+    expect(ids(guideKeeping(found, guide, 'review-queue'))).toEqual([['night-side'], []]);
+  });
+
+  it('adds nothing for an anchor the book does not have', () => {
+    expect(ids(guideKeeping(found, guide, 'nowhere'))).toEqual([['night-side']]);
   });
 });
 

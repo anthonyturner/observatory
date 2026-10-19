@@ -6,8 +6,8 @@ the glow of a galaxy. This guide walks through every screen and says what each
 thing you see means, what you can do with it, and who gets to see it.
 
 In Observatory, open it from the **Guide** link on any screen, which brings
-you straight to that screen's part. The filter box finds a word anywhere in
-the guide, and the contents jump to any part or to a cheat sheet.
+you straight to that screen's part. The filter box finds a word in
+the guide or in any cheat sheet, and the contents jump to any part or sheet.
 
 ## Start here
 
@@ -68,7 +68,12 @@ unless you choose to show private projects too.
 - **Docs.** Home's top bar has one **Docs** link. It opens this guide, and
   the contents beside it list the cheat sheets too, under **Cheat sheets**. The
   open book is listed part by part; each other book is one entry that opens
-  it. The filter box searches the book you have open.
+  it. The filter box searches every book at once. While it has words in it,
+  the contents list the matching sections of every book, each with the line
+  where it matched, under the book's group. If the book you have open has no
+  match but another does, the page says so and the contents show where.
+  Opening a result keeps your words in the box, so you can step through the
+  matches; empty the box to bring back the normal contents.
 - **Git cheat sheet.** The first cheat sheet is a plain-English page on the
   Git commands you meet most, including what to do when a pull says
   "Diverging branches can't be fast-forwarded". It works like this guide, and

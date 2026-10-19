@@ -62,16 +62,20 @@ unless you choose to show private projects too.
 
 ### Getting around
 
-- **Guide.** Every screen has a Guide link beside its way back, and Home has
-  one in its top bar. It opens the part of this guide for that screen.
+- **Guide.** Every screen has a Guide link beside its way back (on a project
+  screen, at the foot of **More** in the top bar), and Home has one in its top
+  bar. It opens the part of this guide for that screen.
 - **The way back.** The small pill above each screen's title takes you up a
-  level: to Home, or to **All projects** (the Orrery).
-- **Project tabs.** Each project's screens share one row of tabs: Queue,
+  level: to Home, or to **All projects** (the Orrery). On a project screen,
+  **All projects** is at the foot of **More** in the top bar.
+- **The project bar.** The top of every project screen is one bar the width of
+  the window: the **Observatory** logo (Home), the project's name, the
+  project's screens as links, **More**, then **Run**. The screens are Queue,
   Releases, Actions, Journal, Library, Depth, Architecture, Security, Insights,
-  Deployments and Milestones. A tab can carry a count (Security shows open alerts), and a
-  tab with nothing in it for this project fades back, dimmed and in italics. On a
-  narrow window (under 1200px wide) the row gives way to a header with the logo,
-  the project's name and one **Menu** button; press it for the list of screens.
+  Deployments and Milestones. A link can carry a count (Security shows open
+  alerts), and one with nothing in it for this project fades back, dimmed and
+  in italics. The bar never wraps: links that do not fit move into **More**,
+  last first, and when fewer than three fit it becomes one **Menu** button.
 - **Help card.** Press **?** on Home, the Orrery or the Review Queue for a
   short card about that screen. Each card links here for the longer story.
 - **Keys.** **Esc** closes things, **F8** jumps to the notices, and the arrow
@@ -667,22 +671,26 @@ Click a card to light only that agent's stars.
 
 ## Project tabs
 
-Each project has these screens beside its Review Queue, in the row of tabs at
-the top. The row, with the way back to All projects and the Run button beside it,
-stays put as you switch screens, so a server that is still starting carries on.
+Each project has these screens beside its Review Queue, as links in the bar
+across the top, like a website's header: the **Observatory** logo, which goes
+Home, the project's name, the screens, **More**, and **Run** at the right. The
+bar stays put as you switch screens, so a server that is still starting carries
+on.
 
-On a window under 1200px wide the row would not fit, so the top of every project
-screen becomes one header, like a website's: the **Observatory** logo, which goes
-Home, the project's name, and one **Menu** button. A small dot on the button
-means a screen has a count waiting, such as open security alerts. Press the
-button for the list: **All projects**, **Guide** (this screen's part), every
-screen of the project (the one you are on is marked, with its count and its
-faded state as in the row), then **Run**. Choosing a link goes there and closes
-the list. **Esc**, a click anywhere else or moving on to another control also
-closes it. **Run** keeps working while the list is closed; its progress note
-shows when you open it again.
+The bar is one line high at any width. As the window narrows, the last screens
+move into **More**, one at a time, and the first ones stay where they are. Press
+**More** for the list: the screens that moved, then, below a line, **All
+projects** and **Guide** (this screen's part). **More** is always there, so
+those two always have a home. If the screen you are on is in the list, **More**
+is marked as the page, and a small dot on it means a screen in the list has a
+count waiting, such as open security alerts. When fewer than three screens fit,
+the links give way to one **Menu** button with the same list holding every
+screen (the one you are on is marked, with its count and its faded state as on
+the bar), then **All projects** and **Guide**. Choosing a link goes there and
+closes the list. **Esc**, a click anywhere else or moving on to another control
+also closes it. **Run** stays on the bar at every width.
 
-Beside the tabs (in the **Menu** on a narrow window), and on the project's card on Home, is a **Run** button. It
+Beside the screens on the bar, and on the project's card on Home, is a **Run** button. It
 starts the project's dev server in its clone on your computer (the project's
 `dev` script, else its `start` script) on a free port, so a port something else
 holds never stalls it, and opens the site in a new tab once the site answers.

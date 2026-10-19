@@ -207,7 +207,7 @@ h1 {
 @media (min-width: 1200px) and (min-height: 501px) {
   .side {
     position: fixed;
-    top: calc(var(--page-inset-top) + var(--project-bar-height, 0px) + 9px);
+    top: calc(var(--site-bar-bottom) + 9px);
     right: var(--page-inset-x);
     align-items: flex-end;
     gap: 10px;

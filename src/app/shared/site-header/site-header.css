@@ -1,42 +1,80 @@
-/* The bar floats over the screen below it. A screen is a fixed layer of its own, so nothing
-   inside one can rise above the bar: a panel or card that would reach the bar starts below it
-   instead, by `--project-bar-height`, which the page publishes. 1200px is where the Review
-   Queue's wide tier starts. */
+/* The bar floats over the screen below it, across its full width, at the height of the token
+   `--site-bar-height`. A screen is a fixed layer of its own, so nothing inside one can rise above
+   the bar: each screen leaves that much room (see `ProjectBarRoom`). */
 :host {
   position: fixed;
-  top: var(--page-inset-top);
-  left: var(--page-inset-x);
+  top: var(--site-bar-top);
+  right: 0;
+  left: 0;
   z-index: 6;
   display: block;
-  width: fit-content;
-  max-width: calc(100% - 2 * var(--page-inset-x));
+  height: var(--site-bar-height);
 }
 
-/* Above the search list (7), under the notices (9), while the menu is open. */
+/* Above the search list (7), under the notices (9), while the list is open. */
 :host(.open) {
   z-index: 8;
 }
 
-/* Wide: only what the page projects, as a row. The wrappers take no box of their own, so the
-   projected controls are the row's items. */
+/* The bar's glass is its own layer: a `backdrop-filter` on the bar itself would make it the
+   backdrop root of the list, which would then blur the bar and not the sky behind it. */
 .bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
+  position: relative;
+  isolation: isolate;
+  height: 100%;
+  padding-inline: var(--page-inset-x);
 }
 
-.row,
-.menu,
-.tool {
-  display: contents;
+.bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-bottom: 1px solid var(--edge-soft);
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* The row's parts carry their own gaps inside their own boxes, so each one's measured width is
+   what it takes from the bar. */
+.inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* Nothing of the links is drawn until the bar has been measured, so a first frame never shows
+   a row that is about to change. */
+.bar:not(.measured) :is(.links, .menu-toggle) {
+  visibility: hidden;
 }
 
 .logo,
-.title,
-.toggle,
-nav {
-  display: none;
+.title {
+  position: relative;
+}
+
+.logo::after,
+.title::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 1px;
+  height: 20px;
+  background: var(--edge-soft);
+  transform: translateY(-50%);
+}
+
+.logo {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  padding-right: 16px;
+  color: var(--ink);
+  text-decoration: none;
 }
 
 .mark {
@@ -58,14 +96,6 @@ nav {
   stroke: none;
 }
 
-.logo {
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  color: var(--ink);
-  text-decoration: none;
-}
-
 .wordmark {
   font-family: var(--font-serif);
   font-size: 17px;
@@ -75,10 +105,14 @@ nav {
   text-transform: uppercase;
 }
 
+/* The name is squeezed before a link is given up, but no further than its floor, which the
+   component sets from the same number it measures with. */
 .title {
   flex: 0 1 auto;
-  min-width: 0;
+  min-width: var(--title-floor, 0px);
+  max-width: 240px;
   overflow: hidden;
+  padding: 0 16px 0 14px;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -88,12 +122,112 @@ nav {
   white-space: nowrap;
 }
 
-.toggle {
+.links {
+  display: flex;
+  flex: none;
+  height: 100%;
+}
+
+.link,
+.more {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+/* A screen this project has nothing on takes a little less room; its label dims itself. */
+.link.quiet {
+  padding-inline: 9px;
+}
+
+.more {
+  gap: 6px;
+}
+
+.link:hover,
+.more:hover {
+  background: var(--starmap-hover);
+  color: var(--ink);
+}
+
+.link:hover,
+.link:focus-visible,
+.panel a:hover,
+.panel a:focus-visible {
+  --label-dim: 1;
+}
+
+/* The page being read carries a bar under it, so it never rests on colour alone. */
+.link[aria-current='page'],
+.more.current {
+  border-bottom-color: var(--flow);
+  background: var(--starmap-press);
+  color: var(--ink);
+}
+
+/* Given up to the list: still measured, so the bar knows what it would take to bring it back. */
+.link.folded,
+.inactive {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Two borders make the chevron: down to open, up while open. */
+.chevron {
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+[aria-expanded='true'] > .chevron {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--security-badge);
+}
+
+.end {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+.menu-toggle {
+  display: flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   gap: 5px;
   min-width: 36px;
   min-height: 36px;
+  margin-left: 8px;
   padding: 0 8px;
   border: 1px solid var(--edge-soft);
   border-radius: 999px;
@@ -103,7 +237,7 @@ nav {
   transition: border-color 0.2s;
 }
 
-.toggle:hover {
+.menu-toggle:hover {
   border-color: var(--flow);
 }
 
@@ -113,165 +247,129 @@ nav {
   line-height: 1;
 }
 
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--security-badge);
-}
-
-a:focus-visible,
-.toggle:focus-visible {
+.link:focus-visible,
+.more:focus-visible,
+.menu-toggle:focus-visible,
+.logo:focus-visible,
+.panel a:focus-visible {
   outline: 2px solid var(--flow);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
-@media (max-width: 1199px) {
-  /* The bar keeps its natural width, as in the wide row, so the room the page reserves for it
-     (`--project-bar-width`) is the room it takes and what sat beside it still can. */
-  .bar {
-    position: relative;
-    isolation: isolate;
-    flex-wrap: nowrap;
-    gap: 10px;
-    padding: 0 6px 0 12px;
-  }
+/* Hung from the bar's inner edge, on the side its button is: the right for More, the left for the
+   Menu. It can never run off the screen. */
+.panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: var(--page-inset-x);
+  width: 280px;
+  max-width: calc(100vw - 2 * var(--page-inset-x));
+  max-height: calc(100dvh - var(--site-bar-bottom) - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--edge-soft);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  backdrop-filter: blur(14px) saturate(140%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition:
+    opacity 0.1s,
+    transform 0.1s,
+    visibility 0s 0.1s;
+}
 
-  /* The bar's glass is its own layer: a `backdrop-filter` on the bar itself would make it the
-     backdrop root of the menu, which would then blur the bar and not the sky behind it. */
-  .bar::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border: 1px solid var(--edge-soft);
-    border-radius: 999px;
-    background: var(--panel);
-    backdrop-filter: blur(14px) saturate(140%);
-  }
+.bar.menu .panel {
+  right: auto;
+  left: var(--page-inset-x);
+}
 
-  .row {
-    display: none;
-  }
+.panel.open {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out,
+    visibility 0s;
+}
 
-  .logo,
-  .toggle {
-    display: inline-flex;
-  }
+.folded-links,
+.exits {
+  display: flex;
+  flex-direction: column;
+}
 
-  .title {
-    display: block;
-  }
+/* The ways out sit below a divider; with no screens above them there is nothing to divide. */
+.exits {
+  border-top: 1px solid var(--edge);
+}
 
-  /* Hung from the bar's left edge, which the page insets, so the list can never run off the screen. */
-  .menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    display: block;
-    width: 280px;
-    max-width: calc(100vw - 2 * var(--page-inset-x));
-    max-height: calc(100dvh - var(--page-inset-top) - var(--project-bar-height, 44px) - 16px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    border: 1px solid var(--edge-soft);
-    border-radius: 14px;
-    background: var(--panel-strong);
-    backdrop-filter: blur(14px) saturate(140%);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-6px);
-    transition:
-      opacity 0.1s,
-      transform 0.1s,
-      visibility 0s 0.1s;
-  }
+.folded-links:empty + .exits {
+  border-top: 0;
+}
 
-  .menu.open {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition:
-      opacity 0.15s ease-out,
-      transform 0.15s ease-out,
-      visibility 0s;
-  }
+.panel a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 4px 12px;
+  border-left: 2px solid transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
 
-  nav {
-    display: flex;
-    flex-direction: column;
-  }
+.panel a + a {
+  border-top: 1px solid var(--edge-soft);
+}
 
-  nav a {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 36px;
-    padding: 4px 12px;
-    border-bottom: 1px solid var(--edge-soft);
-    border-left: 2px solid transparent;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    text-decoration: none;
-    transition:
-      color 0.2s,
-      background 0.2s;
-  }
+.panel a:hover {
+  background: var(--starmap-hover);
+  color: var(--ink);
+}
 
-  nav a:hover {
-    color: var(--ink);
-    background: var(--starmap-hover);
-  }
+.panel a[aria-current='page'] {
+  border-left-color: var(--flow);
+  background: var(--starmap-press);
+  color: var(--ink);
+}
 
-  nav a:hover,
-  nav a:focus-visible {
-    --label-dim: 1;
-  }
-
-  nav a:focus-visible {
-    outline-offset: -4px;
-  }
-
-  nav a[aria-current='page'] {
-    color: var(--ink);
-    background: var(--starmap-press);
-    border-left-color: var(--flow);
-  }
-
-  .tool {
-    display: block;
-    padding: 8px 12px;
-  }
-
-  /* Nothing to run on this machine: no empty strip at the foot of the list. */
-  .tool:has(> :empty) {
+/* Under 600px the bar is the logo's mark, the name and the buttons. */
+@media (max-width: 599px) {
+  .wordmark {
     display: none;
   }
 }
 
-@media (max-width: 1199px) and (pointer: coarse) {
-  .logo,
-  .toggle,
-  nav a {
+/* Every target is at least 44px; the bar itself is taller on a touch screen. */
+@media (pointer: coarse) {
+  .menu-toggle {
+    min-width: 44px;
     min-height: 44px;
   }
 
-  .toggle {
-    min-width: 44px;
+  .panel a {
+    min-height: 44px;
   }
 
   /* Run sizes its buttons by this. */
-  .tool {
+  .end {
     --touch-target: 44px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menu,
-  .menu.open {
+  .panel,
+  .panel.open {
     transition: none;
   }
 }

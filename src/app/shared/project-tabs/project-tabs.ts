@@ -1,8 +1,3 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { NavSection } from '../site-header/nav-section';
-import { SectionLabel } from '../site-header/section-label';
-
 /** One screen of a project, reached at `/p/:owner/:repo/<path>`. */
 export interface ProjectTab {
   readonly id: string;
@@ -28,9 +23,8 @@ export const MILESTONES_TAB: ProjectTab = {
 };
 
 /**
- * Every per-project screen, in the order the strip shows them. A new screen
- * adds its entry here and its route in `app.routes.ts`, and passes its `id`
- * as the strip's `current` on its page.
+ * Every per-project screen, in the order the site bar shows them. A new screen
+ * adds its entry here and its route in `app.routes.ts`.
  */
 export const PROJECT_TABS: readonly ProjectTab[] = [
   { id: 'queue', label: 'Queue', path: '' },
@@ -57,21 +51,3 @@ export const guidePartOf = (tab: ProjectTab): string =>
 /** Where a tab lives for one repository, `owner/name`. */
 export const projectTabLink = (repo: string, tab: ProjectTab): string =>
   tab.path ? `/p/${repo}/${tab.path}` : `/p/${repo}`;
-
-/**
- * A project's screens as a row of links, the current one marked as the page.
- * It only navigates, and shows the sections it is given: what is current, and
- * each one's badge and quiet state, are worked out once by
- * `projectTabSections`. Below 1200px the site header's menu lists the same
- * sections instead, and hides this row.
- */
-@Component({
-  selector: 'app-project-tabs',
-  imports: [RouterLink, SectionLabel],
-  templateUrl: './project-tabs.html',
-  styleUrl: './project-tabs.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
-export class ProjectTabs {
-  readonly tabs = input.required<readonly NavSection[]>();
-}

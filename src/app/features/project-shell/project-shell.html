@@ -1,11 +1,4 @@
-<app-site-header
-  [sections]="sections()"
-  [title]="repoName()"
-  appPublishWidth="--project-bar-width"
-  appPublishHeight="--project-bar-height"
->
-  <app-up-link [to]="allProjects.link" [label]="allProjects.label" [guide]="guide()" />
-  <app-project-tabs [tabs]="tabs()" />
-  <app-run-preview-button siteHeaderTool [repo]="repo()" />
+<app-site-header [screens]="screens()" [exits]="exits()" [title]="repoName()">
+  <app-run-preview-button siteHeaderTool compact [repo]="repo()" />
 </app-site-header>
 <router-outlet />

@@ -53,8 +53,8 @@ function quietIds(tabs: readonly QuietTab[], repo: string): Observable<ReadonlyS
 /**
  * Every screen of `repo` as a section, the one with the id `current` marked as
  * the page, each with its badge and whether it recedes. This is the only place
- * those are worked out, so the strip and the header's menu, which both show
- * them, ask the badges and the project only once. Call it where a signal can
+ * those are worked out, so the bar's links and the list behind its More button,
+ * which both show them, ask the badges and the project only once. Call it where a signal can
  * be made from an Observable: a field initialiser or a constructor.
  */
 export function projectTabSections(

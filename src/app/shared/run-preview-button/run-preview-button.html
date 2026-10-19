@@ -38,7 +38,13 @@
       </button>
     }
     @if (!shown.liveUrl) {
-      <span class="note" [class.problem]="shown.isProblem" role="status">{{ shown.note }}</span>
+      <span
+        class="note"
+        [class.problem]="shown.isProblem"
+        [attr.title]="shown.note"
+        role="status"
+        >{{ shown.note }}</span
+      >
     }
   </div>
 }

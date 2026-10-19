@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -113,12 +114,15 @@ function runViewOf(
   templateUrl: './run-preview-button.html',
   styleUrl: './run-preview-button.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.compact]': 'compact()' },
 })
 export class RunPreviewButton {
   /** `owner/name`. */
   readonly repo = input.required<string>();
   /** The pull request to preview; absent for the project's own site. */
   readonly pull = input<number | undefined>(undefined);
+  /** One line high, for a bar that cannot wrap: the note is cut to one line, and only a screen reader hears it on a phone. */
+  readonly compact = input(false, { transform: booleanAttribute });
 
   private readonly previews = inject(RunPreviews);
   private readonly isLocal = inject(ViewerSession).isConfirmedLocal;

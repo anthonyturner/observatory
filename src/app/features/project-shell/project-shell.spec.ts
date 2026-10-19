@@ -70,7 +70,11 @@ async function setUp() {
         },
       },
       { provide: QUIET_TABS, useValue: [] },
-      { provide: ELEMENT_SIZE, useValue: () => of({ width: 480, height: 28 }) },
+      {
+        provide: ELEMENT_SIZE,
+        useValue: (element: Element) =>
+          of({ width: element.classList.contains('inner') ? 1600 : 40, height: 44 }),
+      },
     ],
   });
   const harness = await RouterTestingHarness.create('/p/me/app/releases');
@@ -82,8 +86,10 @@ async function setUp() {
   };
   const runPreview = () => TestBed.inject(RunPreviews).runFor('me/app');
   const currentTab = (): string | null | undefined =>
-    element.querySelector('app-project-tabs a[aria-current="page"]')?.getAttribute('href');
-  return { harness, element, opened, serverIsUp, settle, runPreview, currentTab };
+    element.querySelector('app-site-header nav a.link[aria-current="page"]')?.getAttribute('href');
+  const guideHref = (): string | null | undefined =>
+    element.querySelector('app-site-header .exits a:last-child')?.getAttribute('href');
+  return { harness, element, opened, serverIsUp, settle, runPreview, currentTab, guideHref };
 }
 
 describe('ProjectShell', () => {
@@ -91,53 +97,53 @@ describe('ProjectShell', () => {
   afterEach(() => vi.useRealTimers());
 
   it('marks the screen below it as the page, and points the Guide link at its part', async () => {
-    const { harness, element, currentTab, settle } = await setUp();
+    const { harness, currentTab, guideHref, settle } = await setUp();
     settle();
 
     expect(currentTab()).toBe('/p/me/app/releases');
-    expect(element.querySelector('app-up-link a.guide')?.getAttribute('href')).toContain(
-      'releases',
-    );
+    expect(guideHref()).toContain('releases');
 
     await harness.navigateByUrl('/p/me/app');
     settle();
     expect(currentTab()).toBe('/p/me/app');
-    expect(element.querySelector('app-up-link a.guide')?.getAttribute('href')).toContain(
-      'review-queue',
-    );
+    expect(guideHref()).toContain('review-queue');
 
     await harness.navigateByUrl('/p/me/app/library/docs/stack');
     settle();
     expect(currentTab()).toBe('/p/me/app/library');
   });
 
-  it('gives the header’s menu the way up, this screen’s Guide, every screen and then Run', async () => {
+  it('gives the bar every screen in order, and the ways out, All projects then this screen’s Guide, behind More', async () => {
     const { harness, element, settle } = await setUp();
     settle();
     const header = element.querySelector('app-site-header') as HTMLElement;
-    const menuLinks = () => [...header.querySelectorAll<HTMLAnchorElement>('.menu nav a')];
-    const hrefs = () => menuLinks().map((link) => link.getAttribute('href'));
+    const barLinks = () => [...header.querySelectorAll<HTMLAnchorElement>('nav a.link')];
+    const exits = () => [...header.querySelectorAll<HTMLAnchorElement>('.panel .exits a')];
 
     expect(header.querySelector('.title')?.textContent).toBe('app');
+    expect(barLinks().map((link) => link.getAttribute('href'))).toEqual(
+      PROJECT_TABS.map((tab) => (tab.path ? `/p/me/app/${tab.path}` : '/p/me/app')),
+    );
+    expect(barLinks().map((link) => link.textContent?.trim())).toEqual(
+      PROJECT_TABS.map((tab) => tab.label),
+    );
     expect(
-      menuLinks()
-        .slice(0, 3)
-        .map((link) => link.textContent?.trim()),
-    ).toEqual(['All projects', 'Guide', 'Queue']);
-    expect(hrefs().slice(0, 3)).toEqual(['/orrery', '/guide#releases', '/p/me/app']);
-    expect(menuLinks()).toHaveLength(2 + PROJECT_TABS.length);
-    expect(
-      menuLinks()
+      barLinks()
         .find((link) => link.getAttribute('aria-current'))
         ?.getAttribute('href'),
     ).toBe('/p/me/app/releases');
-    expect(header.querySelector('.menu .tool app-run-preview-button button')).not.toBeNull();
+    expect(exits().map((link) => link.textContent?.trim())).toEqual(['All projects', 'Guide']);
+    expect(exits().map((link) => link.getAttribute('href'))).toEqual([
+      '/orrery',
+      '/guide#releases',
+    ]);
+    expect(header.querySelector('.end app-run-preview-button button')).not.toBeNull();
 
     await harness.navigateByUrl('/p/me/app/journal');
     settle();
-    expect(hrefs()[1]).toBe('/guide#journal');
+    expect(exits()[1].getAttribute('href')).toBe('/guide#journal');
     expect(
-      menuLinks()
+      barLinks()
         .find((link) => link.getAttribute('aria-current'))
         ?.getAttribute('href'),
     ).toBe('/p/me/app/journal');
@@ -166,24 +172,5 @@ describe('ProjectShell', () => {
 
     expect(preview.status()).toEqual(RUNNING);
     expect(opened).toEqual(['http://localhost:5173/']);
-  });
-
-  it('publishes the bar’s size for the screens to leave room for, until it goes', async () => {
-    const { harness, settle } = await setUp();
-    const root = document.documentElement.style;
-    settle();
-
-    expect([
-      root.getPropertyValue('--project-bar-width'),
-      root.getPropertyValue('--project-bar-height'),
-    ]).toEqual(['480px', '28px']);
-
-    await harness.navigateByUrl('/');
-    settle();
-
-    expect([
-      root.getPropertyValue('--project-bar-width'),
-      root.getPropertyValue('--project-bar-height'),
-    ]).toEqual(['', '']);
   });
 });

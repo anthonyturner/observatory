@@ -195,7 +195,7 @@ h1 {
 
 .panel.side {
   left: auto;
-  top: calc(var(--page-inset-top) + var(--project-bar-height, 0px) + 12px);
+  top: calc(var(--site-bar-bottom) + 12px);
   right: var(--page-inset-x);
   width: 380px;
   max-height: none;

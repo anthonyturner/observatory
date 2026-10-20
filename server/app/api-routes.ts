@@ -88,7 +88,11 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
         if (isFresh(query)) reads.forgetIssue(repo, number);
         return reads.issue(repo, number);
       },
-      '/api/logs': (query) => reads.logs(repoOf(query)),
+      '/api/logs': (query) => {
+        const repo = repoOf(query);
+        if (isFresh(query)) reads.forgetLogs(repo);
+        return reads.logs(repo);
+      },
       '/api/pull': (query) => {
         const [repo, number] = [repoOf(query), numberOf(query)];
         // Refresh on the PR screen asks for it anew rather than a minute-old copy.

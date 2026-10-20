@@ -218,6 +218,8 @@ export interface ApiReads {
   usage(): Promise<UsageReport | null>;
   agentUsage(): Promise<AgentUsageReport | null>;
   logs(repo: string): Promise<LogSnapshot | LogsUnconfigured>;
+  /** The next read of these logs goes to the folder, not the cache. */
+  forgetLogs(repo: string): void;
   /** One report card per agent, from the handoffs and the pull requests they opened. */
   agents(repo: string): Promise<AgentsReport>;
 }
@@ -322,6 +324,7 @@ export function cachedReads(sources: ReadSources): ApiReads {
     async () => liveSitesReport(github, await github.ownedRepos(await github.viewer())),
     liveSitesLifetime,
   );
+  const logsOf = keyedCache(sources.logs, LOGS_TTL_MS);
   const milestonesOf = keyedCache((repo) => milestonesReport(github, repo), MILESTONES_TTL_MS);
   const inboxOf = keyedCache(() => inboxReport(github, new Date()), INBOX_TTL_MS);
   const pullStateOf = keyedCache(async (key) => {
@@ -376,7 +379,8 @@ export function cachedReads(sources: ReadSources): ApiReads {
     forgetInbox: () => inboxOf.forget(ONE_INBOX),
     usage: sources.usage,
     agentUsage: sources.agentUsage,
-    logs: cachedByKey(sources.logs, LOGS_TTL_MS),
+    logs: (repo) => logsOf.read(repo),
+    forgetLogs: (repo) => logsOf.forget(repo),
     agents: cachedByKey(
       async (repo) => reportCards(await sources.handoffs(), await github.agentPulls(repo), repo),
       AGENTS_TTL_MS,

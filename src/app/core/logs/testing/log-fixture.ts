@@ -6,6 +6,7 @@ import { LogFault, LogSnapshot } from '../log-snapshot';
 export const LOG_FIXTURE: LogSnapshot = {
   generatedAt: '2026-09-26T10:00:00.000Z',
   source: 'Rivals Pulse',
+  clearedAt: null,
   span: { from: '2026-09-20T08:00:00', to: '2026-09-26T09:30:00' },
   totals: { lines: 1500, files: 4, error: 7, warn: 12, info: 1481, faults: 4, omitted: 0 },
   windows: [

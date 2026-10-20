@@ -203,8 +203,16 @@ describe('hostedApi', () => {
     assert.deepEqual(stateAsked, ['me/app#12']);
   });
 
-  it('has no runs, crew or dev-server routes, even for the owner: code runs on the local server only', async () => {
-    const { handle } = site();
+  it('has no runs, crew, dev-server or log-clear routes, even for the owner: those belong to the local server only', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'on' });
+    const asVisitor = (method: string, path: string) =>
+      handle(
+        new Request(`${SITE}${path}`, {
+          method,
+          headers: { 'x-observatory': '1', 'content-type': 'application/json' },
+          ...(method === 'POST' ? { body: '{"repo":"me/app"}' } : {}),
+        }),
+      );
     const asOwner = (method: string, path: string) =>
       handle(
         new Request(`${SITE}${path}`, {
@@ -228,6 +236,11 @@ describe('hostedApi', () => {
       for (const path of ['/api/dev-servers?repo=me/app', '/api/dev-servers?repo=me/app&pull=4']) {
         assert.equal((await asOwner(method, path)).status, 404, `dev-servers ${method} ${path}`);
       }
+    }
+    for (const method of ['GET', 'POST', 'DELETE']) {
+      const path = '/api/logs/clear?repo=me/app';
+      assert.equal((await asOwner(method, path)).status, 404, `log clear (owner) ${method}`);
+      assert.equal((await asVisitor(method, path)).status, 404, `log clear (visitor) ${method}`);
     }
   });
 

@@ -75,6 +75,7 @@ import { LogsFeed } from '../../../core/logs/logs-feed';
 import { LogKey } from '../../../core/logs/log-levels';
 import { LogStar } from '../../../core/logs/log-layout';
 import { LogCard } from '../../logs/log-card/log-card';
+import { LogClear } from '../../logs/log-clear/log-clear';
 import { LogList } from '../../logs/log-list/log-list';
 import { MeteorRecord } from '../../logs/meteor-record/meteor-record';
 import { LogSkyView } from '../log-sky-view';
@@ -182,6 +183,7 @@ export interface SkyState {
     AgentsPanel,
     DonePanel,
     LogCard,
+    LogClear,
     LogList,
     MeteorRecord,
     StarmapHelp,
@@ -943,6 +945,10 @@ export class StarmapPage {
   protected refresh(): void {
     if (this.chart() === 'usage') {
       this.usage.refresh();
+      return;
+    }
+    if (this.chart() === 'logs') {
+      this.logs.refresh();
       return;
     }
     this.refreshing.set(true);

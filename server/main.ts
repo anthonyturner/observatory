@@ -20,7 +20,9 @@ import { guardLoopback } from './http/loopback-guard.ts';
 import { createApiServer } from './http/api-server.ts';
 import { withLocalSession } from './http/session.ts';
 import { fsLogFolder } from './logs/log-folder.ts';
+import { storeLogClears } from './logs/log-clears.ts';
 import { fileLogsConfig } from './logs/logs-config.ts';
+import { withLogClearRoutes } from './logs/logs-routes.ts';
 import { logsReport } from './logs/logs-report.ts';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -78,10 +80,10 @@ const port = Number(process.env['OBSERVATORY_API_PORT'] ?? DEFAULT_PORT);
 const github = ghCliReader();
 const clones = fileCloneFinder();
 const merger = gitPairMerger();
-const logsConfig = fileLogsConfig();
-const logFolder = fsLogFolder();
 const handoffs = fileHandoffStore();
 const store = fileStore();
+const logClears = storeLogClears(store);
+const logSources = { config: fileLogsConfig(), folder: fsLogFolder(), clears: logClears };
 const edits = storeEditStore(store);
 const reads = cachedReads({
   github,
@@ -90,7 +92,7 @@ const reads = cachedReads({
   collisions: (repo) => collisionsReport(github, clones, merger, repo),
   usage: () => usageReport(),
   agentUsage: () => agentUsageReport(),
-  logs: (repo) => logsReport(logsConfig, logFolder, repo, new Date()),
+  logs: (repo) => logsReport(logSources, repo, new Date()),
   handoffs: async () => handoffs.read(),
 });
 const triage = storeTriageStore(store);
@@ -177,15 +179,18 @@ const ownerAndFeedRoutes = withLiveAgentFeedRoute(
 );
 
 // Only this server reads a clone on this machine or runs one; the hosted API has no such route.
-const ownerTable = withDevServerRoutes(
-  withArchitectureRoutes(
-    withDepthRoutes(
-      withPrincipleRoutes(withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader())),
-      depthReports(clones),
+const ownerTable = withLogClearRoutes(
+  withDevServerRoutes(
+    withArchitectureRoutes(
+      withDepthRoutes(
+        withPrincipleRoutes(withAgentChangesRoutes(ownerAndFeedRoutes, agentChangesReader())),
+        depthReports(clones),
+      ),
+      architectureMaps(clones),
     ),
-    architectureMaps(clones),
+    devServers,
   ),
-  devServers,
+  { clears: logClears, forgetLogs: (repo) => reads.forgetLogs(repo), now: () => new Date() },
 );
 
 // The MCP endpoint sits outside the loopback guard: Claude Code posts to it

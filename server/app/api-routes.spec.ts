@@ -82,6 +82,7 @@ const reads = {
   milestones: async (repo: string) => ({ repo, milestones: { open: [] } }),
   forgetMilestones: (repo: string) => forgotten.push(`milestones ${repo}`),
   logs: async (repo: string) => ({ configured: false, reason: 'not-set', repo }),
+  forgetLogs: (repo: string) => forgotten.push(`logs ${repo}`),
   agentUsage: async () => ({
     generatedAt: 'x',
     days: 30,
@@ -355,6 +356,15 @@ describe('ownerRoutes', () => {
       reason: 'not-set',
       repo: 'me/app',
     });
+  });
+
+  it('reads a repository’s logs afresh only when Refresh asks', async () => {
+    forgotten.length = 0;
+    await get('/api/logs?repo=me/app');
+    assert.deepEqual(forgotten, []);
+
+    await get('/api/logs?repo=me/app&fresh=1');
+    assert.deepEqual(forgotten, ['logs me/app']);
   });
 
   it('refuses a malformed repository name', async () => {

@@ -50,12 +50,19 @@ const worse = (a: LogWindow, b: LogWindow): number =>
  * with how often and when. Raw lines never leave it.
  */
 export class LogFold {
+  private readonly clearedAt: string | null;
   private readonly windows = new Map<string, WindowTally>();
   private readonly faults = new Map<string, FaultTally>();
   private readonly days = new Map<string, { readonly day: string } & Counts>();
   private first: string | null = null;
   private last: string | null = null;
   private lines = 0;
+
+  /** A line logged at or before `clearedAt`, a log time (see `localTimeOf`), is not
+   *  counted anywhere, so every figure restarts after it. */
+  constructor(clearedAt: string | null = null) {
+    this.clearedAt = clearedAt;
+  }
 
   /** Counts a window even before, or without, any line of its own. */
   addWindow(id: string): void {
@@ -64,7 +71,7 @@ export class LogFold {
 
   addLine(window: string, raw: string): void {
     const line = parseLogLine(raw);
-    if (!line) return;
+    if (!line || this.isCleared(line)) return;
     this.count(this.tallyOf(window), line);
     if (line.level !== 'info') this.addFault(window, line, line.level);
   }
@@ -77,6 +84,7 @@ export class LogFold {
     return {
       generatedAt: source.generatedAt,
       source: source.source,
+      clearedAt: this.clearedAt,
       span: { from: this.first, to: this.last },
       totals: {
         lines: this.lines,
@@ -93,6 +101,10 @@ export class LogFold {
         .map(({ day, error, warn, info }) => ({ day, error, warn, info }))
         .sort((a, b) => a.day.localeCompare(b.day)),
     };
+  }
+
+  private isCleared(line: LogLine): boolean {
+    return this.clearedAt !== null && line.at <= this.clearedAt;
   }
 
   private tallyOf(id: string): WindowTally {

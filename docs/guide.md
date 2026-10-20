@@ -674,6 +674,15 @@ threads to the same fault in other windows. Personal details are stripped
 before anything reaches the page. Preview visitors see it only if you allow
 it, and then more is hidden.
 
+An error you have already fixed keeps its star until Overwolf rotates the old
+log file away. Press **Clear**, at the top right, to ignore everything logged up
+to that moment: every count, date and day restarts, and anything that fires
+again shows up fresh, counted from then. **Reset** counts everything again. A
+clear is kept for that project, survives a restart, and never touches the log
+files. It is on your own computer only, and the hosted site shows the cleared
+view after your next push. **Refresh** reads the log folder again; after a
+clear it takes a few seconds on a large folder.
+
 ### Usage
 
 The **Usage** view shows your Claude Code limits: the week used so far, where

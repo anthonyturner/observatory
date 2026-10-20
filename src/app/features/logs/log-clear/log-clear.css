@@ -1,0 +1,60 @@
+:host {
+  display: block;
+}
+
+.clear {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.act {
+  padding: 5px 13px;
+  border: 1px solid var(--edge-soft);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  backdrop-filter: blur(14px) saturate(140%);
+  transition:
+    border-color 0.25s,
+    color 0.25s;
+}
+
+.act:hover:not(:disabled) {
+  border-color: var(--flow);
+  color: var(--ink);
+}
+
+.act:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+.act:disabled {
+  opacity: 0.4;
+  cursor: progress;
+}
+
+.note {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.note--failed {
+  color: var(--starmap-stale-ink);
+}
+
+@media (pointer: coarse) {
+  .act {
+    min-height: 44px;
+    padding-inline: 18px;
+  }
+}

@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LogsFeed } from '../../core/logs/logs-feed';
-import { LOG_FIXTURE } from '../../core/logs/testing/log-fixture';
+import { LOG_FIXTURE, LOG_FIXTURE_WITH_OLDER } from '../../core/logs/testing/log-fixture';
 import { LogSkyView } from './log-sky-view';
 
 function view() {
@@ -58,5 +58,81 @@ describe('LogSkyView', () => {
     logs.follow();
 
     expect(logs.selected()?.fault?.text).toBe(fault?.fault?.text);
+  });
+
+  describe('older faults', () => {
+    const fault = (logs: ReturnType<typeof view>['logs'], id: number) =>
+      logs.layout().stars.some((star) => star.fault?.id === id);
+
+    it('leaves them out of the sky, and says how many there are', () => {
+      const { logs, request } = view();
+      request.flush(LOG_FIXTURE_WITH_OLDER);
+
+      expect(logs.olderCount()).toBe(3);
+      expect(logs.isShowingOlder()).toBe(false);
+      expect(fault(logs, 6)).toBe(false);
+      expect(logs.chips().find((chip) => chip.id === 'error')?.count).toBe(7);
+    });
+
+    it('draws them and counts them in while they are shown, and leaves them out again', () => {
+      const { logs, request } = view();
+      request.flush(LOG_FIXTURE_WITH_OLDER);
+
+      logs.toggleOlder();
+
+      expect(logs.isShowingOlder()).toBe(true);
+      expect(fault(logs, 6)).toBe(true);
+      expect(logs.chips().find((chip) => chip.id === 'error')?.count).toBe(27);
+      expect(logs.olderCount()).toBe(3);
+
+      logs.toggleOlder();
+
+      expect(fault(logs, 6)).toBe(false);
+      expect(logs.chips().find((chip) => chip.id === 'error')?.count).toBe(7);
+    });
+
+    it('starts hidden again when faults return after none were older', () => {
+      const { logs, request } = view();
+      request.flush(LOG_FIXTURE_WITH_OLDER);
+      logs.toggleOlder();
+
+      logs.refresh();
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne('/api/logs?repo=me/a&fresh=1').flush(LOG_FIXTURE);
+      expect(logs.olderCount()).toBe(0);
+      expect(logs.isShowingOlder()).toBe(false);
+
+      logs.refresh();
+      http.expectOne('/api/logs?repo=me/a&fresh=1').flush(LOG_FIXTURE_WITH_OLDER);
+
+      expect(logs.olderCount()).toBe(3);
+      expect(logs.isShowingOlder()).toBe(false);
+      expect(fault(logs, 6)).toBe(false);
+    });
+
+    it('lets go of a picked older fault when the older are hidden again', () => {
+      const { logs, request } = view();
+      request.flush(LOG_FIXTURE_WITH_OLDER);
+      logs.toggleOlder();
+      logs.pick(logs.layout().stars.find((star) => star.fault?.id === 6) ?? null);
+      expect(logs.selected()).not.toBeNull();
+      expect(logs.traced()).not.toBeNull();
+
+      logs.toggleOlder();
+      logs.follow();
+
+      expect(logs.selected()).toBeNull();
+      expect(logs.traced()).toBeNull();
+    });
+
+    it('is shown afresh for the next project, not carried over', () => {
+      const { logs, request } = view();
+      request.flush(LOG_FIXTURE_WITH_OLDER);
+      logs.toggleOlder();
+
+      logs.watch('me/b');
+
+      expect(logs.isShowingOlder()).toBe(false);
+    });
   });
 });

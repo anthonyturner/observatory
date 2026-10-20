@@ -23,9 +23,11 @@ export const LOG_LEVELS: readonly LogLevelLook[] = [
   { key: 'quiet', label: 'quiet windows', token: '--log-quiet' },
 ];
 
-/** A fault that fired this close to the newest log line is still burning. */
-export const RECENT_DAYS = 3;
-export const DAY_MS = 86_400_000;
+/** A fault that fired this close to the newest log line is still burning. It is shorter than the
+ *  day the server leaves a fault out after, so the ring still tells the live from the merely shown. */
+export const RECENT_HOURS = 3;
+export const HOUR_MS = 3_600_000;
+export const DAY_MS = 24 * HOUR_MS;
 
 /** A kind of star's colour as CSS, for the DOM parts. */
 export const logColour = (key: LogKey): string =>

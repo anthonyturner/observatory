@@ -1,6 +1,6 @@
 import { continuedSeed, seededRandom } from '../instrument/seeded-random';
 import { formatCount, windowName } from './log-format';
-import { DAY_MS, LogKey, LogPalette, RECENT_DAYS } from './log-levels';
+import { HOUR_MS, LogKey, LogPalette, RECENT_HOURS } from './log-levels';
 import { LogFault, LogSnapshot, LogWindow } from './log-snapshot';
 
 /** One star of the log sky, before the engine gives it motion: pr-starmap's
@@ -12,7 +12,7 @@ export interface LogStar {
   /** The window, on a quiet star. */
   readonly win?: LogWindow;
   readonly key: LogKey;
-  /** Still burning: it fired within three days of the newest line. */
+  /** Still burning: it fired within three hours of the newest line. */
   readonly urgent: boolean;
   /** `×1,204` under the star; empty on a quiet one. */
   readonly tag: string;
@@ -85,10 +85,10 @@ const DRAWS_PER_STAR = 8;
 export const windowKey = (window: LogWindow): LogKey =>
   window.error ? 'error' : window.warn ? 'warn' : 'quiet';
 
-/** Whether a fault fired within `RECENT_DAYS` of the newest line in the folder. */
+/** Whether a fault fired within `RECENT_HOURS` of the newest line in the folder. */
 export function burning(snapshot: LogSnapshot, fault: LogFault): boolean {
   if (!snapshot.span.to) return false;
-  return Date.parse(snapshot.span.to) - Date.parse(fault.lastAt) < RECENT_DAYS * DAY_MS;
+  return Date.parse(snapshot.span.to) - Date.parse(fault.lastAt) < RECENT_HOURS * HOUR_MS;
 }
 
 /** A random stream that knows how many draws it has given. */

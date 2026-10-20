@@ -159,4 +159,112 @@ describe('LogFold', () => {
       assert.equal(snapshot.totals.faults, 1);
     });
   });
+
+  describe('older faults', () => {
+    // The newest line is 2026-09-22T12:00:00, so a fault last seen before 2026-09-21T12:00:00
+    // is older.
+    const folded = (extra: (fold: LogFold) => void = () => undefined) => {
+      const fold = new LogFold();
+      fold.addWindow('desktop');
+      fold.addLine('desktop', line('2026-09-19T08:00:00', 'ERROR', 'fixed 1 failed'));
+      fold.addLine('desktop', line('2026-09-19T08:00:01', 'ERROR', 'fixed 2 failed'));
+      fold.addLine('desktop', line('2026-09-20T08:00:00', 'WARN', 'slow'));
+      fold.addLine('desktop', line('2026-09-21T12:00:00', 'ERROR', 'edge'));
+      fold.addLine('desktop', line('2026-09-22T11:00:00', 'ERROR', 'live 1'));
+      fold.addLine('desktop', line('2026-09-22T11:30:00', 'INFO', 'hello'));
+      fold.addLine('hud', line('2026-09-22T12:00:00', 'INFO', 'newest'));
+      extra(fold);
+      return fold.snapshot(SOURCE);
+    };
+
+    it('sets aside a fault last seen over a day before the newest line, not one exactly a day before', () => {
+      const snapshot = folded();
+
+      assert.deepEqual(
+        snapshot.faults.map((fault) => fault.text),
+        ['edge', 'live #'],
+      );
+      assert.deepEqual(
+        snapshot.older.faults.map((fault) => [fault.id, fault.text, fault.count]),
+        [
+          [3, 'fixed # failed', 2],
+          [4, 'slow', 1],
+        ],
+      );
+      assert.equal(snapshot.older.count, 2);
+    });
+
+    it('rebuilds the totals and window counts from what is current', () => {
+      const snapshot = folded();
+
+      assert.deepEqual(snapshot.totals, {
+        lines: 4,
+        files: 2,
+        error: 2,
+        warn: 0,
+        info: 2,
+        faults: 2,
+        omitted: 0,
+      });
+      assert.deepEqual(
+        snapshot.windows.map(({ id, lines, error, warn, info }) => [id, lines, error, warn, info]),
+        [
+          ['desktop', 3, 2, 0, 1],
+          ['hud', 1, 0, 0, 1],
+        ],
+      );
+    });
+
+    it('tells how much the older faults fired in each window', () => {
+      assert.deepEqual(folded().older.windows, [{ id: 'desktop', error: 2, warn: 1 }]);
+    });
+
+    it('leaves the day strip counting every line, the older faults included', () => {
+      assert.deepEqual(
+        folded().timeline.map(({ day, error, warn }) => [day, error, warn]),
+        [
+          ['2026-09-19', 2, 0],
+          ['2026-09-20', 0, 1],
+          ['2026-09-21', 1, 0],
+          ['2026-09-22', 1, 0],
+        ],
+      );
+    });
+
+    it('caps current and older faults apart, so a stale one never crowds out a live one', () => {
+      const snapshot = folded((fold) => {
+        for (let index = 0; index < MAX_FAULTS + 5; index++) {
+          const at = `2026-09-19T08:${String(index % 60).padStart(2, '0')}:00`;
+          fold.addLine('desktop', line(at, 'WARN', `stale ${'x'.repeat(index)}`));
+        }
+        fold.addLine('desktop', line('2026-09-22T11:59:00', 'WARN', 'live warning'));
+      });
+
+      assert.equal(snapshot.faults.length, 3);
+      assert.equal(snapshot.totals.omitted, 0);
+      assert.equal(snapshot.older.faults.length, MAX_FAULTS);
+      assert.equal(snapshot.older.count, MAX_FAULTS + 7);
+      assert.equal(
+        snapshot.older.windows[0]?.warn,
+        1 + MAX_FAULTS + 5,
+        'the older counts include the faults past the cap',
+      );
+    });
+
+    it('sets nothing aside in an empty folder', () => {
+      assert.deepEqual(new LogFold().snapshot(SOURCE).older, { count: 0, faults: [], windows: [] });
+    });
+
+    it('measures a day from the newest line left after a clear', () => {
+      const fold = new LogFold('2026-09-22T00:00:00');
+      fold.addLine('desktop', line('2026-09-19T23:00:00', 'ERROR', 'cleared'));
+      fold.addLine('desktop', line('2026-09-22T01:00:00', 'ERROR', 'first after'));
+      fold.addLine('desktop', line('2026-09-22T02:00:00', 'ERROR', 'second after'));
+
+      const snapshot = fold.snapshot(SOURCE);
+
+      assert.equal(snapshot.faults.length, 2);
+      assert.equal(snapshot.older.count, 0);
+    });
+  });
 });

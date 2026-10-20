@@ -2,7 +2,7 @@
   display: block;
 }
 
-.clear {
+.controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;

@@ -112,13 +112,17 @@
         (reachesBelow)="searchReachesBelow.set($event)"
       />
     }
-    @if (chart() === 'logs' && logs.snapshot() && session.isConfirmedLocal()) {
-      <app-log-clear
+    @if (chart() === 'logs' && logs.snapshot()) {
+      <app-log-controls
+        [canClear]="session.isConfirmedLocal()"
         [clearedAt]="logs.clearedAt()"
         [isWaiting]="logs.isWaiting()"
         [failure]="logs.failure()"
+        [olderCount]="logs.olderCount()"
+        [isShowingOlder]="logs.isShowingOlder()"
         (cleared)="logs.clearToNow()"
         (restored)="logs.restore()"
+        (olderToggled)="logs.toggleOlder()"
       />
     }
     <app-wip-notice [check]="wip()" [paused]="wipPaused()" />

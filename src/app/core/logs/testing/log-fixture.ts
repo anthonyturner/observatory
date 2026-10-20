@@ -1,4 +1,4 @@
-import { LogFault, LogSnapshot } from '../log-snapshot';
+import { LogFault, LogSnapshot, NO_OLDER } from '../log-snapshot';
 
 /** A small log folder, folded, for the log sky's tests: a busy centre window,
  *  a fault shared by two windows, a warnings-only window, a quiet one, and one
@@ -55,11 +55,35 @@ export const LOG_FIXTURE: LogSnapshot = {
       activeDays: 1,
     }),
   ],
+  older: NO_OLDER,
   timeline: [
     { day: '2026-09-20', error: 1, warn: 0, info: 100 },
     { day: '2026-09-22', error: 3, warn: 4, info: 500 },
     { day: '2026-09-26', error: 3, warn: 8, info: 881 },
   ],
+};
+
+/** A fault that stopped firing a day before the newest line, and so is kept out of the sky. */
+export const OLDER_FAULT: LogFault = fault(6, 'hero_lookup', 'error', {
+  text: 'old failure',
+  count: 20,
+  firstAt: '2026-09-20T08:00:00',
+  lastAt: '2026-09-24T08:00:00',
+  activeDays: 2,
+});
+
+/** The same folder with three faults set aside as older, one of them listed: 20 errors in
+ *  `hero_lookup`, and 10 warnings in each of it and `desktop`. */
+export const LOG_FIXTURE_WITH_OLDER: LogSnapshot = {
+  ...LOG_FIXTURE,
+  older: {
+    count: 3,
+    faults: [OLDER_FAULT],
+    windows: [
+      { id: 'hero_lookup', error: 20, warn: 10 },
+      { id: 'desktop', error: 0, warn: 10 },
+    ],
+  },
 };
 
 function window(

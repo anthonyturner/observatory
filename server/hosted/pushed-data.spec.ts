@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { CollisionsReport } from '../collisions/collisions-report.ts';
+import { NO_OLDER } from '../logs/log-stale.ts';
 import { collisionsFrom, logsFrom, usageFrom, withPushedConflicts } from './pushed-data.ts';
 
 const live: CollisionsReport = {
@@ -87,8 +88,24 @@ describe('logsFrom', () => {
       timeline: [],
     };
 
-    assert.deepEqual(logsFrom(older), { ...older, clearedAt: null });
+    assert.deepEqual(logsFrom(older), { ...older, clearedAt: null, older: NO_OLDER });
     assert.equal(logsFrom({ ...older, clearedAt: '2026-10-20T09:30:00Z' })?.clearedAt, null);
+  });
+
+  it('reads a snapshot pushed before faults were told apart by age as having no older faults', () => {
+    const before = {
+      generatedAt: 'x',
+      source: 'App',
+      totals: {},
+      windows: [],
+      faults: [],
+      timeline: [],
+    };
+    const kept = { count: 1, faults: [], windows: [{ id: 'a', error: 1, warn: 0 }] };
+
+    assert.deepEqual(logsFrom(before)?.older, NO_OLDER);
+    assert.deepEqual(logsFrom({ ...before, older: kept })?.older, kept);
+    assert.deepEqual(logsFrom({ ...before, older: 'many' })?.older, NO_OLDER);
   });
 
   it('reads a Log Sky snapshot and refuses anything else', () => {
@@ -104,6 +121,7 @@ describe('logsFrom', () => {
     assert.deepEqual(logsFrom({ ...logs, clearedAt: '2026-10-20T09:30:00' }), {
       ...logs,
       clearedAt: '2026-10-20T09:30:00',
+      older: NO_OLDER,
     });
     assert.equal(logsFrom({ ...logs, faults: 'many' }), null);
     assert.equal(logsFrom({ configured: false, reason: 'not-set' }), null);

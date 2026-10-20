@@ -1,0 +1,44 @@
+@if (canClear() || olderCount() > 0) {
+  <div class="controls" role="group" aria-label="Log Sky controls" [attr.aria-busy]="isWaiting()">
+    @if (olderCount() > 0) {
+      <button
+        type="button"
+        class="act"
+        title="Faults that stopped firing a day before the newest log line are left out of the sky. Press to count them in, and again to leave them out."
+        (click)="olderToggled.emit()"
+      >
+        {{ olderLabel() }}
+      </button>
+    }
+    @if (canClear()) {
+      <button
+        type="button"
+        class="act"
+        title="Ignore every error and warning logged up to now. Anything that fires again shows up fresh."
+        [disabled]="isWaiting()"
+        (click)="cleared.emit()"
+      >
+        Clear
+      </button>
+      @if (since(); as at) {
+        <button
+          type="button"
+          class="act"
+          title="Count everything in the logs again."
+          [disabled]="isWaiting()"
+          (click)="restored.emit()"
+        >
+          Reset
+        </button>
+        <span class="note">Cleared {{ at }}</span>
+      }
+      @if (failure(); as why) {
+        <span class="note note--failed" role="alert">{{
+          why === 'unreachable'
+            ? 'Could not reach the API. Is it running?'
+            : 'The change did not go through.'
+        }}</span>
+      }
+    }
+  </div>
+}

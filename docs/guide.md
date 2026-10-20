@@ -669,19 +669,28 @@ Switch to **List** for rows, or click an issue to read it in a window.
 
 The **Logs** view draws an app's own log folder: one group per app window, one
 star per distinct error (red) or warning (amber), sized by how often it
-happened, ringed if it is still happening. Click one for the message and
-threads to the same fault in other windows. Personal details are stripped
-before anything reaches the page. Preview visitors see it only if you allow
-it, and then more is hidden.
+happened, ringed if it fired in the last three hours of the log. Click one for
+the message and threads to the same fault in other windows. Personal details
+are stripped before anything reaches the page. Preview visitors see it only if
+you allow it, and then more is hidden.
 
-An error you have already fixed keeps its star until Overwolf rotates the old
-log file away. Press **Clear**, at the top right, to ignore everything logged up
-to that moment: every count, date and day restarts, and anything that fires
-again shows up fresh, counted from then. **Reset** counts everything again. A
-clear is kept for that project, survives a restart, and never touches the log
-files. It is on your own computer only, and the hosted site shows the cleared
-view after your next push. **Refresh** reads the log folder again; after a
-clear it takes a few seconds on a large folder.
+An error that has stopped firing fades out on its own. Anything not seen for a
+day before the newest line in the log is left out, with its counts, so the
+stars you see are the ones still happening. The day is measured from that
+newest line, not from now, so an app you have not run for a while still shows
+its last faults. **Show N older**, at the top right, brings them back until you
+reload the page, and **Hide** puts them away again. It is there for every
+viewer, not only on your own computer. The strip of days along the bottom always
+counts them, and says so while they are left out.
+
+An error you fixed within the last day keeps its star until it ages out, or
+until Overwolf rotates the old log file away. Press **Clear**, at the top right,
+to ignore everything logged up to that moment: every count, date and day
+restarts, and anything that fires again shows up fresh, counted from then.
+**Reset** counts everything again. A clear is kept for that project, survives a
+restart, and never touches the log files. It is on your own computer only, and
+the hosted site shows the cleared view after your next push. **Refresh** reads
+the log folder again; after a clear it takes a few seconds on a large folder.
 
 ### Usage
 

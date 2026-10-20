@@ -5,10 +5,11 @@ import {
   meteorCaption,
   meteorDays,
   meteorGeometry,
+  meteorNote,
   meteorTip,
   tipLeft,
 } from './meteor-record';
-import { LOG_FIXTURE } from './testing/log-fixture';
+import { LOG_FIXTURE, LOG_FIXTURE_WITH_OLDER } from './testing/log-fixture';
 
 const days = meteorDays(LOG_FIXTURE);
 
@@ -82,6 +83,13 @@ describe('meteorCaption', () => {
     });
     expect(meteorCaption(days, 'error', 'en-US')?.what).toBe('Errors per day');
     expect(meteorCaption(days, 'error', 'en-US')?.after).toBe('on Sep 22 · √ height');
+  });
+});
+
+describe('meteorNote', () => {
+  it('says the strip counts the older faults, only while some are set aside', () => {
+    expect(meteorNote(LOG_FIXTURE_WITH_OLDER)).toBe('older faults counted too');
+    expect(meteorNote(LOG_FIXTURE)).toBeNull();
   });
 });
 

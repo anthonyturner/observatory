@@ -1,6 +1,7 @@
 import type { Collision } from '../collisions/collision-pairs.ts';
 import type { CollisionCheck, CollisionsReport } from '../collisions/collisions-report.ts';
 import { clearedAtFrom } from '../logs/log-clears.ts';
+import { olderFrom } from '../logs/log-stale.ts';
 import type { LogSnapshot, LogsUnconfigured } from '../logs/log-types.ts';
 import { repoKey } from '../store/store.ts';
 import type { UsageReport } from '../usage/usage-types.ts';
@@ -54,8 +55,14 @@ export function logsFrom(value: unknown): LogSnapshot | null {
     typeof source === 'string' &&
     isNode(totals) &&
     [windows, faults, timeline].every(Array.isArray);
-  // A snapshot pushed before the sky could be cleared has no `clearedAt`.
-  return valid ? ({ ...value, clearedAt: clearedAtFrom(value) } as unknown as LogSnapshot) : null;
+  // A snapshot pushed before the sky could be cleared, or told older faults apart, lacks those fields.
+  return valid
+    ? ({
+        ...value,
+        clearedAt: clearedAtFrom(value),
+        older: olderFrom(value['older']),
+      } as unknown as LogSnapshot)
+    : null;
 }
 
 /** A pushed usage report, or null if `value` is not one. The page checks every reading again. */

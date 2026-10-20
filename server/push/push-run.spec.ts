@@ -83,6 +83,7 @@ const logs: LogSnapshot = {
   totals: { lines: 0, files: 0, error: 0, warn: 0, info: 0, faults: 0, omitted: 0 },
   windows: [],
   faults: [],
+  older: { count: 0, faults: [], windows: [] },
   timeline: [],
 };
 const checked: CollisionsReport = {

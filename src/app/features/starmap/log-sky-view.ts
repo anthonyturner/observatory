@@ -1,7 +1,8 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { LogSkyLayout, LogStar, layoutLogs } from '../../core/logs/log-layout';
 import { logLegend } from '../../core/logs/log-legend';
 import { LogFilter, LogKey } from '../../core/logs/log-levels';
+import { withOlder } from '../../core/logs/log-older';
 import { logStamp } from '../../core/logs/log-stamp';
 import { sameFaultStar, traceOnPick } from '../../core/logs/log-trace';
 import { LogsFeed } from '../../core/logs/logs-feed';
@@ -37,9 +38,22 @@ export class LogSkyView {
   readonly selected = signal<LogStar | null>(null);
   readonly traced = signal<LogStar | null>(null);
 
-  readonly snapshot = computed(() => {
+  private readonly received = computed(() => {
     const state = this.feed.state();
     return state.status === 'ready' ? state.snapshot : null;
+  });
+  /** Faults the sky leaves out as older, whether or not they are shown. */
+  readonly olderCount = computed(() => this.received()?.older.count ?? 0);
+  /** Off whenever nothing is older, so faults that return after a Clear or Reset start hidden. */
+  private readonly showingOlder = linkedSignal<number, boolean>({
+    source: this.olderCount,
+    computation: (count, previous) => count > 0 && (previous?.value ?? false),
+  });
+  readonly isShowingOlder = this.showingOlder.asReadonly();
+  /** What the sky shows: the snapshot, with its older faults counted in only while they are shown. */
+  readonly snapshot = computed(() => {
+    const received = this.received();
+    return received && this.showingOlder() ? withOlder(received) : received;
   });
   readonly layout = computed<LogSkyLayout>(() => layoutLogs(this.snapshot(), LOG_PALETTE));
   readonly chips = computed((): LegendChip[] =>
@@ -85,7 +99,13 @@ export class LogSkyView {
   });
 
   watch(repo: string): void {
+    this.showingOlder.set(false);
     this.feed.watch(repo);
+  }
+
+  /** Brings the older faults into the sky, or leaves them out again. */
+  toggleOlder(): void {
+    this.showingOlder.update((showing) => !showing);
   }
 
   /** Reads the folder again now, not the copy the API kept. */

@@ -303,7 +303,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['Ring', 'Still happening: seen in the last 3 hours of logs.'],
       [
         'Older',
-        'An error or warning not seen for a day before the newest log line is left out, and so are its counts. “Show N older”, beside Clear, brings them back until you reload; “Hide” puts them away again.',
+        'An error or warning not seen for a day before the newest log line is left out, and so are its counts. “Show N older”, at the top right, brings them back until you reload; “Hide” puts them away again.',
       ],
       [
         'Click',

@@ -678,10 +678,10 @@ An error that has stopped firing fades out on its own. Anything not seen for a
 day before the newest line in the log is left out, with its counts, so the
 stars you see are the ones still happening. The day is measured from that
 newest line, not from now, so an app you have not run for a while still shows
-its last faults. **Show N older**, at the top right beside **Clear**, brings
-them back until you reload the page, and **Hide** puts them away again. The
-strip of days along the bottom always counts them, and says so while they are
-left out.
+its last faults. **Show N older**, at the top right, brings them back until you
+reload the page, and **Hide** puts them away again. It is there for every
+viewer, not only on your own computer. The strip of days along the bottom always
+counts them, and says so while they are left out.
 
 An error you fixed within the last day keeps its star until it ages out, or
 until Overwolf rotates the old log file away. Press **Clear**, at the top right,

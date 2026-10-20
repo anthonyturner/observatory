@@ -91,6 +91,40 @@ describe('LogSkyView', () => {
       expect(logs.chips().find((chip) => chip.id === 'error')?.count).toBe(7);
     });
 
+    it('starts hidden again when faults return after none were older', () => {
+      const { logs, request } = view();
+      request.flush(LOG_FIXTURE_WITH_OLDER);
+      logs.toggleOlder();
+
+      logs.refresh();
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne('/api/logs?repo=me/a&fresh=1').flush(LOG_FIXTURE);
+      expect(logs.olderCount()).toBe(0);
+      expect(logs.isShowingOlder()).toBe(false);
+
+      logs.refresh();
+      http.expectOne('/api/logs?repo=me/a&fresh=1').flush(LOG_FIXTURE_WITH_OLDER);
+
+      expect(logs.olderCount()).toBe(3);
+      expect(logs.isShowingOlder()).toBe(false);
+      expect(fault(logs, 6)).toBe(false);
+    });
+
+    it('lets go of a picked older fault when the older are hidden again', () => {
+      const { logs, request } = view();
+      request.flush(LOG_FIXTURE_WITH_OLDER);
+      logs.toggleOlder();
+      logs.pick(logs.layout().stars.find((star) => star.fault?.id === 6) ?? null);
+      expect(logs.selected()).not.toBeNull();
+      expect(logs.traced()).not.toBeNull();
+
+      logs.toggleOlder();
+      logs.follow();
+
+      expect(logs.selected()).toBeNull();
+      expect(logs.traced()).toBeNull();
+    });
+
     it('is shown afresh for the next project, not carried over', () => {
       const { logs, request } = view();
       request.flush(LOG_FIXTURE_WITH_OLDER);

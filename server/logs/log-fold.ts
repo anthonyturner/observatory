@@ -42,7 +42,8 @@ const later = (a: string | null, b: string): string => (a === null || b > a ? b 
 const louder = (a: FaultTally, b: FaultTally): number =>
   a.level === b.level ? b.count - a.count : a.level === 'error' ? -1 : 1;
 
-/** The worst window first. */
+/** The worst window first. `withOlder` in the browser (`log-older.ts`) ranks them the same
+ *  way again once older faults rejoin the counts; keep the two in step. */
 const worse = (a: LogWindow, b: LogWindow): number =>
   b.error - a.error || b.warn - a.warn || b.lines - a.lines;
 

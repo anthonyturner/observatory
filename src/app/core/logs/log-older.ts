@@ -1,6 +1,7 @@
 import { LogSnapshot, LogWindow, NO_OLDER } from './log-snapshot';
 
-/** The worst window first, the order the server ranks them in and the sky lays them out in. */
+/** The worst window first, the order the server ranks them in (`worse` in `log-fold.ts`) and the
+ *  sky lays them out in. Adding the older counts can change the order, so it is ranked again here. */
 const worse = (a: LogWindow, b: LogWindow): number =>
   b.error - a.error || b.warn - a.warn || b.lines - a.lines;
 

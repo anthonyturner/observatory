@@ -14,7 +14,7 @@ import { PrScreen } from '../pr-screen/pr-screen';
 import { StarmapSound } from '../sound/starmap-sound';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
-import { LOG_FIXTURE } from '../../../core/logs/testing/log-fixture';
+import { LOG_FIXTURE, LOG_FIXTURE_WITH_OLDER } from '../../../core/logs/testing/log-fixture';
 import { VideoBackground } from '../../../core/playlist/video-background';
 import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { StarmapPage } from './starmap-page';
@@ -314,10 +314,10 @@ describe('StarmapPage', () => {
   });
 
   describe('the Log Sky’s Clear', () => {
-    function logSky(access: string) {
+    function logSky(access: string, snapshot: object = LOG_FIXTURE) {
       const page = render('logs');
       page.http.expectOne('/api/session').flush({ access, signIn: null });
-      page.http.expectOne('/api/logs?repo=me/a').flush(LOG_FIXTURE);
+      page.http.expectOne('/api/logs?repo=me/a').flush(snapshot);
       page.fixture.detectChanges();
       return page;
     }
@@ -343,6 +343,16 @@ describe('StarmapPage', () => {
         const { button } = logSky(access);
 
         expect(button('Clear'), access).toBeUndefined();
+        TestBed.resetTestingModule();
+      }
+    });
+
+    it('gives every viewer Show N older, and only the owner on this machine Clear', () => {
+      for (const access of ['local', 'owner', 'visitor']) {
+        const { button } = logSky(access, LOG_FIXTURE_WITH_OLDER);
+
+        expect(button('Show 3 older'), access).toBeDefined();
+        expect(button('Clear') !== undefined, access).toBe(access === 'local');
         TestBed.resetTestingModule();
       }
     });

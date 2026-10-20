@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { LogSkyLayout, LogStar, layoutLogs } from '../../core/logs/log-layout';
 import { logLegend } from '../../core/logs/log-legend';
 import { LogFilter, LogKey } from '../../core/logs/log-levels';
@@ -42,16 +42,19 @@ export class LogSkyView {
     const state = this.feed.state();
     return state.status === 'ready' ? state.snapshot : null;
   });
-  private readonly showingOlder = signal(false);
-
+  /** Faults the sky leaves out as older, whether or not they are shown. */
+  readonly olderCount = computed(() => this.received()?.older.count ?? 0);
+  /** Off whenever nothing is older, so faults that return after a Clear or Reset start hidden. */
+  private readonly showingOlder = linkedSignal<number, boolean>({
+    source: this.olderCount,
+    computation: (count, previous) => count > 0 && (previous?.value ?? false),
+  });
+  readonly isShowingOlder = this.showingOlder.asReadonly();
   /** What the sky shows: the snapshot, with its older faults counted in only while they are shown. */
   readonly snapshot = computed(() => {
     const received = this.received();
     return received && this.showingOlder() ? withOlder(received) : received;
   });
-  /** Faults the sky leaves out as older, whether or not they are shown. */
-  readonly olderCount = computed(() => this.received()?.older.count ?? 0);
-  readonly isShowingOlder = this.showingOlder.asReadonly();
   readonly layout = computed<LogSkyLayout>(() => layoutLogs(this.snapshot(), LOG_PALETTE));
   readonly chips = computed((): LegendChip[] =>
     logLegend(this.snapshot(), this.layout()).map((entry) => ({

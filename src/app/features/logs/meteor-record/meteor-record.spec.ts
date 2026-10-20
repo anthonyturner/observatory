@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { LogSnapshot } from '../../../core/logs/log-snapshot';
-import { LOG_FIXTURE } from '../../../core/logs/testing/log-fixture';
+import { LOG_FIXTURE, LOG_FIXTURE_WITH_OLDER } from '../../../core/logs/testing/log-fixture';
 import { MeteorRecord } from './meteor-record';
 
 function render(snapshot: LogSnapshot = LOG_FIXTURE) {
@@ -18,6 +18,14 @@ describe('MeteorRecord', () => {
     expect(what.textContent).toBe('Errors and warnings per day');
     expect(range.querySelector('b')?.textContent).toBe('11');
     expect(range.textContent).toContain('√ height');
+  });
+
+  it('says it counts the older faults while the sky leaves them out', () => {
+    const { element } = render(LOG_FIXTURE_WITH_OLDER);
+
+    expect(element.querySelector('figcaption > span')?.textContent).toContain(
+      'Errors and warnings per day · older faults counted too',
+    );
   });
 
   it('gives the day under the pointer its counts', () => {

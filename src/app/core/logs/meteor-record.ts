@@ -133,6 +133,11 @@ export function meteorCaption(
   };
 }
 
+/** The strip counts every day's lines, so while older faults are hidden from the sky it still
+ *  holds theirs; this says so. */
+export const meteorNote = (snapshot: LogSnapshot): string | null =>
+  snapshot.older.count > 0 ? 'older faults counted too' : null;
+
 /** The day under a pointer `x` pixels into a strip `width` wide, if any. */
 export const dayAt = (days: readonly LogDay[], x: number, width: number): LogDay | null =>
   days[Math.floor((x / width) * days.length)] ?? null;

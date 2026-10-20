@@ -18,6 +18,7 @@ import {
   meteorCaption,
   meteorDays,
   meteorGeometry,
+  meteorNote,
   meteorTip,
   tipLeft,
 } from '../../../core/logs/meteor-record';
@@ -50,6 +51,12 @@ export class MeteorRecord {
   private palette: MeteorPalette | null = null;
   protected readonly days = computed(() => meteorDays(this.snapshot()));
   protected readonly caption = computed(() => meteorCaption(this.days(), this.filter()));
+  /** What the strip counts, and a note when that is more than the sky shows. */
+  protected readonly what = computed(() => {
+    const note = meteorNote(this.snapshot());
+    const words = this.caption()?.what;
+    return note ? `${words} · ${note}` : words;
+  });
   protected readonly tip = signal<{ readonly text: string; readonly left: number } | null>(null);
 
   constructor() {

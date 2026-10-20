@@ -35,12 +35,32 @@ export interface LogDay {
   readonly info: number;
 }
 
+/** One window's share of the older faults: what showing them adds back to its counts. */
+export interface LogOlderWindow {
+  readonly id: string;
+  readonly error: number;
+  readonly warn: number;
+}
+
+/** The faults that stopped firing a day before the newest log line, kept out of the figures
+ *  around them until they are shown. */
+export interface LogOlder {
+  /** Distinct older faults, listed or not. */
+  readonly count: number;
+  readonly faults: readonly LogFault[];
+  /** Their occurrences by window, the ones past the list's cap too. */
+  readonly windows: readonly LogOlderWindow[];
+}
+
+export const NO_OLDER: LogOlder = { count: 0, faults: [], windows: [] };
+
 export interface LogTotals {
   readonly lines: number;
   readonly files: number;
   readonly error: number;
   readonly warn: number;
   readonly info: number;
+  /** Distinct current faults. */
   readonly faults: number;
   /** Faults past the chart's cap, counted in the totals only. */
   readonly omitted: number;
@@ -57,6 +77,8 @@ export interface LogSnapshot {
   readonly totals: LogTotals;
   readonly windows: readonly LogWindow[];
   readonly faults: readonly LogFault[];
+  readonly older: LogOlder;
+  /** Every day since the clear, the older faults' occurrences included. */
   readonly timeline: readonly LogDay[];
 }
 
@@ -124,6 +146,21 @@ function parseDay(value: unknown): LogDay | null {
   };
 }
 
+function parseOlderWindow(value: unknown): LogOlderWindow | null {
+  if (!isObject(value) || !isString(value['id'])) return null;
+  return { id: value['id'], error: countOf(value['error']), warn: countOf(value['warn']) };
+}
+
+/** A snapshot from before faults were told apart by age has none older. */
+function parseOlder(value: unknown): LogOlder {
+  const older = isObject(value) ? value : {};
+  return {
+    count: countOf(older['count']),
+    faults: listOf(older['faults'], parseFault),
+    windows: listOf(older['windows'], parseOlderWindow),
+  };
+}
+
 function parseTotals(value: unknown): LogTotals {
   const totals = isObject(value) ? value : {};
   return {
@@ -154,6 +191,7 @@ export function parseLogsResponse(value: unknown): LogSnapshot | LogsUnconfigure
     totals: parseTotals(value['totals']),
     windows: listOf(value['windows'], parseWindow),
     faults: listOf(value['faults'], parseFault),
+    older: parseOlder(value['older']),
     timeline: listOf(value['timeline'], parseDay),
   };
 }

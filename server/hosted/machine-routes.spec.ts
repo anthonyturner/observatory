@@ -192,6 +192,19 @@ describe('pushed logs', () => {
     faults: [
       { id: 1, level: 'error', window: 'api', service: null, text: 'mail bob@example.com bounced' },
     ],
+    older: {
+      count: 1,
+      faults: [
+        {
+          id: 2,
+          level: 'error',
+          window: 'api',
+          service: null,
+          text: 'mail eve@example.com bounced',
+        },
+      ],
+      windows: [{ id: 'api', error: 1, warn: 0 }],
+    },
     timeline: [],
   };
   const visitorLogs = async (handle: ReturnType<typeof site>['handle']) =>
@@ -219,5 +232,6 @@ describe('pushed logs', () => {
     assert.equal((await visitorLogs(closed.handle)).status, 403);
     const shown = (await (await visitorLogs(open.handle)).json()) as typeof logs;
     assert.equal(shown.faults[0].text, 'mail [hidden] bounced');
+    assert.equal(shown.older.faults[0].text, 'mail [hidden] bounced');
   });
 });

@@ -42,10 +42,29 @@ export interface LogTotals {
   readonly error: number;
   readonly warn: number;
   readonly info: number;
-  /** Distinct faults, charted or not. */
+  /** Distinct current faults, charted or not. */
   readonly faults: number;
   /** Faults past the chart's cap, counted in the totals only. */
   readonly omitted: number;
+}
+
+/** One window's share of the older faults: what showing them adds back to its counts. */
+export interface LogOlderWindow {
+  readonly id: string;
+  readonly error: number;
+  readonly warn: number;
+}
+
+/** The faults that stopped firing a day or more before the newest log line. The snapshot's
+ *  totals, windows and faults leave them out; this carries them so showing them needs no
+ *  second request. */
+export interface LogOlder {
+  /** Distinct older faults, listed or not. */
+  readonly count: number;
+  /** Capped like the current ones, ranked after them. */
+  readonly faults: readonly LogFault[];
+  /** Their occurrences, by window, however many fall past the cap. */
+  readonly windows: readonly LogOlderWindow[];
 }
 
 /** What `GET /api/logs` answers for a configured folder: pr-starmap's `logs/current`. */
@@ -59,6 +78,8 @@ export interface LogSnapshot {
   readonly totals: LogTotals;
   readonly windows: readonly LogWindow[];
   readonly faults: readonly LogFault[];
+  readonly older: LogOlder;
+  /** Every day since the clear, the older faults' occurrences included. */
   readonly timeline: readonly LogDay[];
 }
 

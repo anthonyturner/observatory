@@ -49,7 +49,7 @@ describe('logStamp', () => {
     const refreshed = new Date(LOG_FIXTURE.generatedAt).toLocaleString('en-US');
 
     expect(logStamp(LOG_FIXTURE, layout, 'en-US')).toBe(
-      `Rivals Pulse · 1,500 lines · Sep 20 → Sep 26 · 3 still burning · refreshed ${refreshed}`,
+      `Rivals Pulse · 1,500 lines · Sep 20 → Sep 26 · 2 still burning · refreshed ${refreshed}`,
     );
   });
 
@@ -58,7 +58,7 @@ describe('logStamp', () => {
     const refreshed = new Date(LOG_FIXTURE.generatedAt).toLocaleString('en-US');
 
     expect(logStamp(cleared, layout, 'en-US')).toBe(
-      `Rivals Pulse · 1,500 lines · Sep 20 → Sep 26 · 3 still burning · cleared Sep 25, 04:12 AM · refreshed ${refreshed}`,
+      `Rivals Pulse · 1,500 lines · Sep 20 → Sep 26 · 2 still burning · cleared Sep 25, 04:12 AM · refreshed ${refreshed}`,
     );
   });
 

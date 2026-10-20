@@ -99,7 +99,7 @@ describe('layoutLogs', () => {
       {
         kind: 'fault',
         key: 'warn',
-        urgent: true,
+        urgent: false,
         tag: '×2',
         x: 1814.4214150028088,
         y: 944.7366644624198,
@@ -160,9 +160,16 @@ describe('layoutLogs', () => {
 });
 
 describe('burning', () => {
-  it('holds while a fault fired within three days of the newest line', () => {
-    const [recent, older] = LOG_FIXTURE.faults.filter((fault) => fault.window !== 'hero_lookup');
-    expect(burning(LOG_FIXTURE, recent)).toBe(true);
-    expect(burning(LOG_FIXTURE, older)).toBe(false);
+  // The fixture's newest line is 2026-09-26T09:30:00.
+  const firedAt = (lastAt: string) => ({ ...LOG_FIXTURE.faults[0], lastAt });
+
+  it('holds while a fault fired within three hours of the newest line', () => {
+    expect(burning(LOG_FIXTURE, firedAt('2026-09-26T09:00:00'))).toBe(true);
+    expect(burning(LOG_FIXTURE, firedAt('2026-09-26T06:30:01'))).toBe(true);
+  });
+
+  it('stops three hours before the newest line, not three days', () => {
+    expect(burning(LOG_FIXTURE, firedAt('2026-09-26T06:30:00'))).toBe(false);
+    expect(burning(LOG_FIXTURE, firedAt('2026-09-25T09:30:00'))).toBe(false);
   });
 });

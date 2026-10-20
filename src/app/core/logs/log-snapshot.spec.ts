@@ -1,5 +1,5 @@
 import { isLogSnapshot, parseLogsResponse } from './log-snapshot';
-import { LOG_FIXTURE } from './testing/log-fixture';
+import { LOG_FIXTURE, LOG_FIXTURE_WITH_OLDER } from './testing/log-fixture';
 
 describe('parseLogsResponse', () => {
   it('reads a snapshot as the API sends it', () => {
@@ -24,6 +24,31 @@ describe('parseLogsResponse', () => {
     const cleared = { ...LOG_FIXTURE, clearedAt: '2026-09-26T09:00:00' };
 
     expect(parseLogsResponse(cleared)).toEqual(cleared);
+  });
+
+  it('reads the older faults, and a snapshot from before they were told apart as having none', () => {
+    const before: Record<string, unknown> = { ...LOG_FIXTURE };
+    delete before['older'];
+
+    expect(parseLogsResponse(JSON.parse(JSON.stringify(LOG_FIXTURE_WITH_OLDER)))).toEqual(
+      LOG_FIXTURE_WITH_OLDER,
+    );
+    expect(parseLogsResponse(before)).toEqual(LOG_FIXTURE);
+    expect(parseLogsResponse({ ...before, older: 'many' })).toEqual(LOG_FIXTURE);
+  });
+
+  it('leaves out an older fault or window that does not parse', () => {
+    const { older } = LOG_FIXTURE_WITH_OLDER;
+    const parsed = parseLogsResponse({
+      ...LOG_FIXTURE,
+      older: {
+        count: 3,
+        faults: [{ id: 1, level: 'info' }, ...older.faults],
+        windows: [{ error: 1 }, ...older.windows],
+      },
+    });
+
+    expect(isLogSnapshot(parsed) && parsed.older).toEqual(older);
   });
 
   it('says why there is no snapshot', () => {

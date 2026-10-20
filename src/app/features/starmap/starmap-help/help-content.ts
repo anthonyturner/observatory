@@ -300,14 +300,18 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['Star', 'One distinct error (red) or warning (amber).'],
       ['Filter', 'Click errors or warnings at the top to show only those.'],
       ['Size', 'How many times it happened.'],
-      ['Ring', 'Still happening: seen in the last 3 days of logs.'],
+      ['Ring', 'Still happening: seen in the last 3 hours of logs.'],
+      [
+        'Older',
+        'An error or warning not seen for a day before the newest log line is left out, and so are its counts. “Show N older”, beside Clear, brings them back until you reload; “Hide” puts them away again.',
+      ],
       [
         'Click',
         'The message, copy it or find it in the code, and threads to the same fault in other windows. The threads stay when you close the card; click empty sky to clear them.',
       ],
       [
         'Strip',
-        'Errors and warnings per day. Hover a day for its counts; a clicked star shades its lifetime.',
+        'Errors and warnings per day, the older ones too, so it can count more than the sky does. Hover a day for its counts; a clicked star shades its lifetime.',
       ],
       ['Sound', 'The same sound as the Review Queue: quiet until something happens on the sky.'],
       [
@@ -320,7 +324,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
     title: 'Log Sky — list',
     guide: 'log-sky',
     rows: [
-      ['Rows', 'Every error and warning, grouped by window, worst window first.'],
+      [
+        'Rows',
+        'Every error and warning still firing, grouped by window, worst window first. “Show N older” adds the ones that stopped.',
+      ],
       ['×n', 'How many times that message was logged.'],
       ['Filter', 'Click errors or warnings at the top to show only those.'],
       ['Click', 'Jumps to its star on the Log Sky.'],

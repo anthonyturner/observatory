@@ -75,7 +75,7 @@ import { LogsFeed } from '../../../core/logs/logs-feed';
 import { LogKey } from '../../../core/logs/log-levels';
 import { LogStar } from '../../../core/logs/log-layout';
 import { LogCard } from '../../logs/log-card/log-card';
-import { LogClear } from '../../logs/log-clear/log-clear';
+import { LogControls } from '../../logs/log-controls/log-controls';
 import { LogList } from '../../logs/log-list/log-list';
 import { MeteorRecord } from '../../logs/meteor-record/meteor-record';
 import { LogSkyView } from '../log-sky-view';
@@ -183,7 +183,7 @@ export interface SkyState {
     AgentsPanel,
     DonePanel,
     LogCard,
-    LogClear,
+    LogControls,
     LogList,
     MeteorRecord,
     StarmapHelp,

@@ -1,6 +1,18 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
-import { Subscription, catchError, interval, map, of, startWith, switchMap } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  Observable,
+  Subject,
+  Subscription,
+  catchError,
+  interval,
+  map,
+  merge,
+  of,
+  startWith,
+  switchMap,
+} from 'rxjs';
 import { LogSnapshot, isLogSnapshot, parseLogsResponse } from './log-snapshot';
 
 /** Where one repository's Log Sky stands. Only `ready` carries a snapshot. */
@@ -11,37 +23,97 @@ export type LogsState =
   | { readonly status: 'ready'; readonly snapshot: LogSnapshot };
 
 const LOGS_URL = '/api/logs';
+const CLEAR_URL = '/api/logs/clear';
+/** The API accepts writes only with this header, which no other site can add. */
+const WRITE_HEADERS = new HttpHeaders({ 'x-observatory': '1' });
 /** The API reads a log folder at most every five minutes. */
 const REFRESH_MS = 5 * 60_000;
 
 /** Reads one repository's log snapshot, now and every five minutes, while
- *  the view that provides it is open. */
+ *  the view that provides it is open; reads it again on demand, and clears or
+ *  resets what the sky counts. */
 @Injectable()
 export class LogsFeed {
   private readonly http = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly current = signal<LogsState>({ status: 'reading' });
+  private readonly waiting = signal(false);
+  private readonly refused = signal(false);
+  private readonly asked = new Subject<void>();
+  private repo: string | null = null;
   private watching: Subscription | null = null;
 
   readonly state = this.current.asReadonly();
+  /** A clear, a reset or an on-demand read is on its way: the sky has not caught up yet. */
+  readonly isWaiting = this.waiting.asReadonly();
+  /** The last clear or reset did not reach the API. */
+  readonly isRefused = this.refused.asReadonly();
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.watching?.unsubscribe());
+    this.destroyRef.onDestroy(() => this.watching?.unsubscribe());
   }
 
   watch(repo: string): void {
     this.watching?.unsubscribe();
+    this.repo = repo;
     this.current.set({ status: 'reading' });
-    this.watching = interval(REFRESH_MS)
-      .pipe(
+    this.waiting.set(false);
+    this.refused.set(false);
+    this.watching = merge(
+      interval(REFRESH_MS).pipe(
         startWith(0),
-        switchMap(() =>
-          this.http.get<unknown>(LOGS_URL, { params: { repo } }).pipe(
-            map((body) => stateOf(parseLogsResponse(body))),
-            catchError(() => of<LogsState>({ status: 'unreachable' })),
-          ),
-        ),
-      )
-      .subscribe((state) => this.current.set(state));
+        map(() => false),
+      ),
+      this.asked.pipe(map(() => true)),
+    )
+      .pipe(switchMap((fresh) => this.read(repo, fresh)))
+      .subscribe((state) => {
+        this.current.set(state);
+        this.waiting.set(false);
+      });
+  }
+
+  /** Reads the folder again now, not the copy the API kept. Nothing happens before `watch`. */
+  refresh(): void {
+    if (this.repo === null) return;
+    this.waiting.set(true);
+    this.asked.next();
+  }
+
+  /** The sky ignores every line logged up to now. */
+  clearToNow(): void {
+    this.change((repo) => this.http.post<unknown>(CLEAR_URL, { repo }, { headers: WRITE_HEADERS }));
+  }
+
+  /** Every line counts again. */
+  restore(): void {
+    this.change((repo) =>
+      this.http.delete<unknown>(CLEAR_URL, { params: { repo }, headers: WRITE_HEADERS }),
+    );
+  }
+
+  private read(repo: string, fresh: boolean): Observable<LogsState> {
+    const params: Record<string, string> = fresh ? { repo, fresh: '1' } : { repo };
+    return this.http.get<unknown>(LOGS_URL, { params }).pipe(
+      map((body) => stateOf(parseLogsResponse(body))),
+      catchError(() => of<LogsState>({ status: 'unreachable' })),
+    );
+  }
+
+  /** The API answers a change at once; the folder is read again afterwards, which is the slow part. */
+  private change(send: (repo: string) => Observable<unknown>): void {
+    if (this.repo === null) return;
+    this.refused.set(false);
+    this.waiting.set(true);
+    send(this.repo)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.asked.next(),
+        error: () => {
+          this.refused.set(true);
+          this.waiting.set(false);
+        },
+      });
   }
 }
 

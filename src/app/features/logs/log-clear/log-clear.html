@@ -1,0 +1,26 @@
+<div class="clear" role="group" aria-label="Clear the Log Sky" [attr.aria-busy]="isWaiting()">
+  <button
+    type="button"
+    class="act"
+    title="Ignore every error and warning logged up to now. Anything that fires again shows up fresh."
+    [disabled]="isWaiting()"
+    (click)="cleared.emit()"
+  >
+    Clear
+  </button>
+  @if (since(); as at) {
+    <button
+      type="button"
+      class="act"
+      title="Count everything in the logs again."
+      [disabled]="isWaiting()"
+      (click)="restored.emit()"
+    >
+      Reset
+    </button>
+    <span class="note">Cleared {{ at }}</span>
+  }
+  @if (isRefused()) {
+    <span class="note note--refused" role="alert">Could not reach the API. Is it running?</span>
+  }
+</div>

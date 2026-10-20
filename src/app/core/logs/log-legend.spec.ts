@@ -53,6 +53,15 @@ describe('logStamp', () => {
     );
   });
 
+  it('says when the sky was cleared, before when it was refreshed', () => {
+    const cleared = { ...LOG_FIXTURE, clearedAt: '2026-09-25T04:12:00' };
+    const refreshed = new Date(LOG_FIXTURE.generatedAt).toLocaleString('en-US');
+
+    expect(logStamp(cleared, layout, 'en-US')).toBe(
+      `Rivals Pulse · 1,500 lines · Sep 20 → Sep 26 · 3 still burning · cleared Sep 25, 04:12 AM · refreshed ${refreshed}`,
+    );
+  });
+
   it('says so before any logs are read', () => {
     expect(logStamp(null, layoutLogs(null, TEST_PALETTE))).toBe('no logs yet');
   });

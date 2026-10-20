@@ -51,6 +51,8 @@ export interface LogSnapshot {
   readonly generatedAt: string;
   /** The folder's own name, e.g. `Rivals Pulse`. */
   readonly source: string;
+  /** When the sky was last cleared, as a log time: nothing at or before it is counted. */
+  readonly clearedAt: string | null;
   readonly span: { readonly from: string | null; readonly to: string | null };
   readonly totals: LogTotals;
   readonly windows: readonly LogWindow[];
@@ -143,6 +145,7 @@ export function parseLogsResponse(value: unknown): LogSnapshot | LogsUnconfigure
   return {
     generatedAt: value['generatedAt'],
     source: value['source'],
+    clearedAt: stringOrNull(value['clearedAt']),
     span: { from: stringOrNull(span['from']), to: stringOrNull(span['to']) },
     totals: parseTotals(value['totals']),
     windows: listOf(value['windows'], parseWindow),

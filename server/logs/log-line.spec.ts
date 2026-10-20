@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { levelOf, parseLogLine, shapeMessage, windowOf } from './log-line.ts';
+import {
+  isLogTime,
+  levelOf,
+  localTimeOf,
+  parseLogLine,
+  shapeMessage,
+  windowOf,
+} from './log-line.ts';
 
 describe('parseLogLine', () => {
   it('reads the day, the time and the level of an Overwolf line', () => {
@@ -64,5 +71,33 @@ describe('windowOf', () => {
     assert.equal(windowOf('desktop.html.1463.log'), 'desktop');
     assert.equal(windowOf('desktop.html.log'), 'desktop');
     assert.equal(windowOf('background.log'), 'background');
+  });
+});
+
+describe('localTimeOf', () => {
+  it('writes the machine’s own time in a log line’s form, with no zone', () => {
+    assert.equal(localTimeOf(new Date(2026, 8, 3, 1, 5, 9, 999)), '2026-09-03T01:05:09');
+  });
+
+  it('is what a later line compares after, as text', () => {
+    const cleared = localTimeOf(new Date(2026, 9, 20, 9, 30, 0));
+
+    assert.ok(parseLogLine('2026-10-20 09:30:01,000 (ERROR) <a> (:1) - x')!.at > cleared);
+    assert.ok(parseLogLine('2026-10-20 09:29:59,999 (ERROR) <a> (:1) - x')!.at <= cleared);
+  });
+});
+
+describe('isLogTime', () => {
+  it('accepts the log’s own form and nothing else', () => {
+    assert.equal(isLogTime('2026-09-23T01:43:37'), true);
+    for (const other of [
+      '2026-09-23T01:43:37Z',
+      '2026-09-23',
+      '2026-09-23T01:43:37.000Z',
+      7,
+      null,
+    ]) {
+      assert.equal(isLogTime(other), false, String(other));
+    }
   });
 });

@@ -28,14 +28,21 @@ export function fsLogFolder(): LogFolder {
   };
 }
 
+/** What a read of the folder is stamped with, and where it starts counting. */
+export interface LogRead {
+  readonly now: Date;
+  /** A log time: lines at or before it are left out. Null reads every line. */
+  readonly clearedAt: string | null;
+}
+
 /** Every log file in `dir`, folded into one snapshot stamped `now`. */
 export async function readLogSnapshot(
   folder: LogFolder,
   dir: string,
-  now: Date,
+  { now, clearedAt }: LogRead,
 ): Promise<LogSnapshot> {
   const files = folder.files(dir);
-  const fold = new LogFold();
+  const fold = new LogFold(clearedAt);
   for (const file of files) {
     const window = windowOf(file);
     fold.addWindow(window);

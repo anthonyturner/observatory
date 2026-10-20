@@ -112,6 +112,15 @@
         (reachesBelow)="searchReachesBelow.set($event)"
       />
     }
+    @if (chart() === 'logs' && logs.snapshot() && session.isConfirmedLocal()) {
+      <app-log-clear
+        [clearedAt]="logs.clearedAt()"
+        [isWaiting]="logs.isWaiting()"
+        [isRefused]="logs.isRefused()"
+        (cleared)="logs.clearToNow()"
+        (restored)="logs.restore()"
+      />
+    }
     <app-wip-notice [check]="wip()" [paused]="wipPaused()" />
   </app-starmap-header>
   @if (docked()) {
@@ -152,7 +161,7 @@
     [timelineOn]="timelineFold.isOpen()"
     [next]="next()"
     [sprintPhase]="sprint.phase()"
-    [refreshing]="refreshing() || usage.isRefreshing()"
+    [refreshing]="refreshing() || usage.isRefreshing() || logs.isWaiting()"
     (chartChange)="setChart($event)"
     (viewChange)="setView($event)"
     (zoomIn)="sky.zoomIn()"

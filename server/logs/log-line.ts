@@ -41,6 +41,20 @@ export function parseLogLine(raw: string): LogLine | null {
   return { day, at: `${day}T${time}`, level: levelOf(level), rest };
 }
 
+const LOG_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+
+/** Whether `value` is a log time, the form `LogLine.at` takes. */
+export const isLogTime = (value: unknown): value is string =>
+  typeof value === 'string' && LOG_TIME.test(value);
+
+/** `date` in a log time's own form, local to this machine: `2026-09-23T01:43:37`. A UTC string
+ *  would compare wrongly against the lines it is meant to cut off. */
+export function localTimeOf(date: Date): string {
+  const two = (n: number): string => String(n).padStart(2, '0');
+  const day = `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}`;
+  return `${day}T${two(date.getHours())}:${two(date.getMinutes())}:${two(date.getSeconds())}`;
+}
+
 export function levelOf(raw: string): LogLevel {
   const level = raw.toUpperCase();
   if (level.startsWith('ERR') || level === 'FATAL') return 'error';

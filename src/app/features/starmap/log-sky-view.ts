@@ -62,6 +62,12 @@ export class LogSkyView {
       ? `fogged · ${ageWords(snapshot.generatedAt, this.now())} old`
       : null;
   });
+  /** When the sky was last cleared, or null while every line counts. */
+  readonly clearedAt = computed(() => this.snapshot()?.clearedAt ?? null);
+  /** A clear, a reset or a fresh read is on its way. */
+  readonly isWaiting = this.feed.isWaiting;
+  /** The last clear or reset did not reach the API. */
+  readonly isRefused = this.feed.isRefused;
   /** Whether the meteor record has days to show. */
   readonly hasDays = computed(() => (this.snapshot()?.timeline.length ?? 0) > 0);
   readonly message = computed((): LogSkyMessage | null => {
@@ -80,6 +86,21 @@ export class LogSkyView {
 
   watch(repo: string): void {
     this.feed.watch(repo);
+  }
+
+  /** Reads the folder again now, not the copy the API kept. */
+  refresh(): void {
+    this.feed.refresh();
+  }
+
+  /** Every error and warning logged up to now is ignored from here on. */
+  clearToNow(): void {
+    this.feed.clearToNow();
+  }
+
+  /** Undoes the clear: every line counts again. */
+  restore(): void {
+    this.feed.restore();
   }
 
   /** A click on the sky: a star opens its card and traces its fault; empty sky clears both. */

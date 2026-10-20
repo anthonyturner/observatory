@@ -14,6 +14,7 @@ import { PrScreen } from '../pr-screen/pr-screen';
 import { StarmapSound } from '../sound/starmap-sound';
 import { StarmapSky } from '../starmap-sky/starmap-sky';
 import { WipLimitSetting } from '../wip-limit/wip-limit-setting';
+import { LOG_FIXTURE } from '../../../core/logs/testing/log-fixture';
 import { VideoBackground } from '../../../core/playlist/video-background';
 import { ELEMENT_SIZE } from '../../../shared/element-size/element-size';
 import { StarmapPage } from './starmap-page';
@@ -310,6 +311,50 @@ describe('StarmapPage', () => {
     expect(element.querySelector('app-starmap-header h2')?.textContent).toBe('Log Sky');
     expect(element.querySelector('.stamp')?.textContent).toBe('no logs yet');
     expect(element.querySelector('.state')?.textContent).toContain('No logs charted yet.');
+  });
+
+  describe('the Log Sky’s Clear', () => {
+    function logSky(access: string) {
+      const page = render('logs');
+      page.http.expectOne('/api/session').flush({ access, signIn: null });
+      page.http.expectOne('/api/logs?repo=me/a').flush(LOG_FIXTURE);
+      page.fixture.detectChanges();
+      return page;
+    }
+
+    it('is the owner’s on this machine: Clear records now, and the sky is read again', () => {
+      const { fixture, http, button } = logSky('local');
+
+      button('Clear')?.click();
+      const clear = http.expectOne('/api/logs/clear');
+      expect(clear.request.method).toBe('POST');
+      clear.flush({ clearedAt: '2026-09-26T09:45:00' });
+      http
+        .expectOne('/api/logs?repo=me/a&fresh=1')
+        .flush({ ...LOG_FIXTURE, clearedAt: '2026-09-26T09:45:00' });
+      fixture.detectChanges();
+
+      expect(button('Reset')).toBeDefined();
+      expect(fixture.nativeElement.querySelector('.stamp')?.textContent).toContain('cleared');
+    });
+
+    it('is shown to no one off this machine', () => {
+      for (const access of ['owner', 'visitor']) {
+        const { button } = logSky(access);
+
+        expect(button('Clear'), access).toBeUndefined();
+        TestBed.resetTestingModule();
+      }
+    });
+
+    it('has Refresh read the logs afresh', () => {
+      const { fixture, http, button } = logSky('local');
+
+      button('Refresh')?.click();
+      fixture.detectChanges();
+
+      http.expectOne('/api/logs?repo=me/a&fresh=1').flush(LOG_FIXTURE);
+    });
   });
 
   it('lists the issues as pr-starmap does, with its stamp, legend and chips', () => {

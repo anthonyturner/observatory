@@ -310,6 +310,10 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
         'Errors and warnings per day. Hover a day for its counts; a clicked star shades its lifetime.',
       ],
       ['Sound', 'The same sound as the Review Queue: quiet until something happens on the sky.'],
+      [
+        'Clear',
+        'On your own computer only. Ignores every error and warning logged up to now, so one you have fixed stops lighting a star; one that fires again shows up fresh, counted from now. Reset counts everything again. Refresh reads the logs again.',
+      ],
     ],
   },
   'logs-list': {
@@ -320,6 +324,7 @@ export const HELP: Readonly<Record<HelpKey, HelpScreen>> = {
       ['×n', 'How many times that message was logged.'],
       ['Filter', 'Click errors or warnings at the top to show only those.'],
       ['Click', 'Jumps to its star on the Log Sky.'],
+      ['Clear', 'Ignores everything logged up to now; Reset counts it all again. See the Log Sky.'],
     ],
   },
 };

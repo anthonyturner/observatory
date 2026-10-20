@@ -53,6 +53,8 @@ export interface LogSnapshot {
   readonly generatedAt: string;
   /** The folder's own name, e.g. `Rivals Pulse`. */
   readonly source: string;
+  /** When the owner last cleared the sky, as a log time: nothing at or before it is counted. */
+  readonly clearedAt: string | null;
   readonly span: { readonly from: string | null; readonly to: string | null };
   readonly totals: LogTotals;
   readonly windows: readonly LogWindow[];

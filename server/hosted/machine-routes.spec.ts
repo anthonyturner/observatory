@@ -185,6 +185,7 @@ describe('pushed logs', () => {
   const logs = {
     generatedAt: '2026-09-26T00:00:00Z',
     source: 'App',
+    clearedAt: null,
     span: { from: null, to: null },
     totals: { lines: 1, files: 1, error: 1, warn: 0, info: 0, faults: 1, omitted: 0 },
     windows: [],

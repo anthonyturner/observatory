@@ -77,6 +77,20 @@ describe('usageFrom', () => {
 });
 
 describe('logsFrom', () => {
+  it('reads a snapshot pushed before the sky could be cleared as not cleared', () => {
+    const older = {
+      generatedAt: 'x',
+      source: 'App',
+      totals: {},
+      windows: [],
+      faults: [],
+      timeline: [],
+    };
+
+    assert.deepEqual(logsFrom(older), { ...older, clearedAt: null });
+    assert.equal(logsFrom({ ...older, clearedAt: '2026-10-20T09:30:00Z' })?.clearedAt, null);
+  });
+
   it('reads a Log Sky snapshot and refuses anything else', () => {
     const logs = {
       generatedAt: 'x',
@@ -87,7 +101,10 @@ describe('logsFrom', () => {
       timeline: [],
     };
 
-    assert.deepEqual(logsFrom(logs), logs);
+    assert.deepEqual(logsFrom({ ...logs, clearedAt: '2026-10-20T09:30:00' }), {
+      ...logs,
+      clearedAt: '2026-10-20T09:30:00',
+    });
     assert.equal(logsFrom({ ...logs, faults: 'many' }), null);
     assert.equal(logsFrom({ configured: false, reason: 'not-set' }), null);
   });

@@ -87,4 +87,76 @@ describe('LogFold', () => {
       ['noisy', 'quiet', 'empty'],
     );
   });
+
+  describe('cleared', () => {
+    const cleared = () => {
+      const fold = new LogFold('2026-09-21T12:00:00');
+      fold.addWindow('desktop');
+      fold.addLine('desktop', line('2026-09-20T10:00:00', 'ERROR', 'old failure'));
+      fold.addLine('desktop', line('2026-09-21T12:00:00', 'ERROR', 'match 1 failed'));
+      fold.addLine('desktop', line('2026-09-21T12:00:01', 'ERROR', 'match 2 failed'));
+      fold.addLine('desktop', line('2026-09-22T09:00:00', 'ERROR', 'match 3 failed'));
+      fold.addLine('desktop', line('2026-09-22T09:00:01', 'INFO', '== new session =='));
+      return fold.snapshot(SOURCE);
+    };
+
+    it('restarts every figure after the clear, a line at the clear itself included', () => {
+      const snapshot = cleared();
+
+      assert.equal(snapshot.clearedAt, '2026-09-21T12:00:00');
+      assert.deepEqual(snapshot.faults, [
+        {
+          id: 1,
+          level: 'error',
+          window: 'desktop',
+          service: null,
+          text: 'match # failed',
+          count: 2,
+          firstAt: '2026-09-21T12:00:01',
+          lastAt: '2026-09-22T09:00:00',
+          activeDays: 2,
+        },
+      ]);
+      assert.deepEqual(snapshot.span, { from: '2026-09-21T12:00:01', to: '2026-09-22T09:00:01' });
+      assert.deepEqual(snapshot.totals, {
+        lines: 3,
+        files: 2,
+        error: 2,
+        warn: 0,
+        info: 1,
+        faults: 1,
+        omitted: 0,
+      });
+      assert.deepEqual(snapshot.timeline, [
+        { day: '2026-09-21', error: 1, warn: 0, info: 0 },
+        { day: '2026-09-22', error: 1, warn: 0, info: 1 },
+      ]);
+      assert.equal(snapshot.windows[0]?.sessions, 1);
+    });
+
+    it('keeps a window whose lines were all cleared, quiet', () => {
+      const fold = new LogFold('2026-09-30T00:00:00');
+      fold.addWindow('desktop');
+      fold.addLine('desktop', line('2026-09-20T10:00:00', 'ERROR', 'old failure'));
+
+      const snapshot = fold.snapshot(SOURCE);
+
+      assert.deepEqual(snapshot.faults, []);
+      assert.deepEqual(snapshot.span, { from: null, to: null });
+      assert.deepEqual(
+        snapshot.windows.map((window) => [window.id, window.lines]),
+        [['desktop', 0]],
+      );
+    });
+
+    it('reads every line when nothing is cleared', () => {
+      const fold = new LogFold();
+      fold.addLine('desktop', line('2026-09-20T10:00:00', 'ERROR', 'old failure'));
+
+      const snapshot = fold.snapshot(SOURCE);
+
+      assert.equal(snapshot.clearedAt, null);
+      assert.equal(snapshot.totals.faults, 1);
+    });
+  });
 });

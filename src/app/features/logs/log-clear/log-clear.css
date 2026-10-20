@@ -48,7 +48,7 @@
   color: var(--faint);
 }
 
-.note--refused {
+.note--failed {
   color: var(--starmap-stale-ink);
 }
 

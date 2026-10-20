@@ -15,6 +15,9 @@ describe('parseLogsResponse', () => {
 
     expect(parseLogsResponse(older)).toEqual(LOG_FIXTURE);
     expect(parseLogsResponse({ ...older, clearedAt: 7 })).toEqual(LOG_FIXTURE);
+    for (const clearedAt of ['2026-09-26T09:00:00Z', '2026-09-26', 'yesterday', '']) {
+      expect(parseLogsResponse({ ...older, clearedAt }), clearedAt).toEqual(LOG_FIXTURE);
+    }
   });
 
   it('keeps when the sky was cleared', () => {

@@ -111,20 +111,33 @@ describe('LogsFeed', () => {
     expect(feed.isWaiting()).toBe(false);
   });
 
-  it('says so when a clear does not reach the API, and leaves the sky as it was', () => {
+  it('says the API was not there when a clear gets no answer, and leaves the sky as it was', () => {
     const { feed, http } = watch();
     http.expectOne('/api/logs?repo=me/app').flush(LOG_FIXTURE);
 
     feed.clearToNow();
-    http.expectOne('/api/logs/clear').flush('no', { status: 403, statusText: 'Forbidden' });
+    http.expectOne('/api/logs/clear').error(new ProgressEvent('error'));
 
-    expect(feed.isRefused()).toBe(true);
+    expect(feed.failure()).toBe('unreachable');
     expect(feed.isWaiting()).toBe(false);
     expect(feed.state()).toEqual({ status: 'ready', snapshot: LOG_FIXTURE });
     http.verify();
 
     feed.clearToNow();
-    expect(feed.isRefused()).toBe(false);
+    expect(feed.failure()).toBeNull();
     http.expectOne('/api/logs/clear');
+  });
+
+  it('says only that a change did not go through when the API answered with a refusal', () => {
+    const { feed, http } = watch();
+    http.expectOne('/api/logs?repo=me/app').flush(LOG_FIXTURE);
+
+    feed.restore();
+    http
+      .expectOne('/api/logs/clear?repo=me/app')
+      .flush('no', { status: 403, statusText: 'Forbidden' });
+
+    expect(feed.failure()).toBe('rejected');
+    expect(feed.isWaiting()).toBe(false);
   });
 });

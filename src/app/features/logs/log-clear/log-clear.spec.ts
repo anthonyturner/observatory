@@ -2,7 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { formatAt } from '../../../core/logs/log-format';
 import { LogClear } from './log-clear';
 
-function render(inputs: { clearedAt?: string | null; isWaiting?: boolean; isRefused?: boolean }) {
+function render(inputs: {
+  clearedAt?: string | null;
+  isWaiting?: boolean;
+  failure?: 'unreachable' | 'rejected' | null;
+}) {
   const fixture: ComponentFixture<LogClear> = TestBed.createComponent(LogClear);
   for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
   fixture.detectChanges();
@@ -46,9 +50,16 @@ describe('LogClear', () => {
     expect(button('Reset')?.disabled).toBe(true);
   });
 
-  it('says when the API could not be reached', () => {
-    const { element } = render({ isRefused: true });
+  it('says when the API could not be reached, and otherwise only that it did not go through', () => {
+    const unreachable = render({ failure: 'unreachable' });
+    expect(unreachable.element.querySelector('[role="alert"]')?.textContent).toContain(
+      'Could not reach the API',
+    );
+    TestBed.resetTestingModule();
 
-    expect(element.querySelector('[role="alert"]')?.textContent).toContain('Could not reach');
+    const rejected = render({ failure: 'rejected' });
+    expect(rejected.element.querySelector('[role="alert"]')?.textContent).toContain(
+      'The change did not go through.',
+    );
   });
 });

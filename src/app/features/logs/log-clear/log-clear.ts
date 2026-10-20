@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { formatAt } from '../../../core/logs/log-format';
+import { LogChangeFailure } from '../../../core/logs/logs-feed';
 
 /**
  * The Log Sky's Clear and Reset. Clear ignores every error and warning logged up
@@ -17,8 +18,8 @@ export class LogClear {
   readonly clearedAt = input<string | null>(null);
   /** A clear, a reset or a fresh read is on its way. */
   readonly isWaiting = input(false);
-  /** The last press did not reach the API. */
-  readonly isRefused = input(false);
+  /** Why the last press did not take, or null. */
+  readonly failure = input<LogChangeFailure | null>(null);
   readonly cleared = output<void>();
   readonly restored = output<void>();
 

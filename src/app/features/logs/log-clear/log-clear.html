@@ -20,7 +20,11 @@
     </button>
     <span class="note">Cleared {{ at }}</span>
   }
-  @if (isRefused()) {
-    <span class="note note--refused" role="alert">Could not reach the API. Is it running?</span>
+  @if (failure(); as why) {
+    <span class="note note--failed" role="alert">{{
+      why === 'unreachable'
+        ? 'Could not reach the API. Is it running?'
+        : 'The change did not go through.'
+    }}</span>
   }
 </div>

@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -22,6 +22,9 @@ export type LogsState =
   | { readonly status: 'unconfigured'; readonly reason: 'not-set' | 'not-found' }
   | { readonly status: 'ready'; readonly snapshot: LogSnapshot };
 
+/** Why a clear or reset did not take: the API was not there, or it answered with a refusal. */
+export type LogChangeFailure = 'unreachable' | 'rejected';
+
 const LOGS_URL = '/api/logs';
 const CLEAR_URL = '/api/logs/clear';
 /** The API accepts writes only with this header, which no other site can add. */
@@ -38,7 +41,7 @@ export class LogsFeed {
   private readonly destroyRef = inject(DestroyRef);
   private readonly current = signal<LogsState>({ status: 'reading' });
   private readonly waiting = signal(false);
-  private readonly refused = signal(false);
+  private readonly failed = signal<LogChangeFailure | null>(null);
   private readonly asked = new Subject<void>();
   private repo: string | null = null;
   private watching: Subscription | null = null;
@@ -46,8 +49,8 @@ export class LogsFeed {
   readonly state = this.current.asReadonly();
   /** A clear, a reset or an on-demand read is on its way: the sky has not caught up yet. */
   readonly isWaiting = this.waiting.asReadonly();
-  /** The last clear or reset did not reach the API. */
-  readonly isRefused = this.refused.asReadonly();
+  /** Why the last clear or reset did not take, or null when it did. */
+  readonly failure = this.failed.asReadonly();
 
   constructor() {
     this.destroyRef.onDestroy(() => this.watching?.unsubscribe());
@@ -58,7 +61,7 @@ export class LogsFeed {
     this.repo = repo;
     this.current.set({ status: 'reading' });
     this.waiting.set(false);
-    this.refused.set(false);
+    this.failed.set(null);
     this.watching = merge(
       interval(REFRESH_MS).pipe(
         startWith(0),
@@ -103,14 +106,16 @@ export class LogsFeed {
   /** The API answers a change at once; the folder is read again afterwards, which is the slow part. */
   private change(send: (repo: string) => Observable<unknown>): void {
     if (this.repo === null) return;
-    this.refused.set(false);
+    this.failed.set(null);
     this.waiting.set(true);
     send(this.repo)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => this.asked.next(),
-        error: () => {
-          this.refused.set(true);
+        error: (error: unknown) => {
+          this.failed.set(
+            error instanceof HttpErrorResponse && error.status === 0 ? 'unreachable' : 'rejected',
+          );
           this.waiting.set(false);
         },
       });

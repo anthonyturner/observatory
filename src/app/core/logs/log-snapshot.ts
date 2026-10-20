@@ -75,6 +75,10 @@ const isCount = (value: unknown): value is number =>
 const isString = (value: unknown): value is string => typeof value === 'string';
 const countOf = (value: unknown): number => (isCount(value) ? value : 0);
 const stringOrNull = (value: unknown): string | null => (isString(value) ? value : null);
+/** A log time, `2026-09-23T01:43:37`: the one form a clear is kept in. */
+const LOG_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+const logTimeOrNull = (value: unknown): string | null =>
+  isString(value) && LOG_TIME.test(value) ? value : null;
 const listOf = <T>(value: unknown, parse: (item: unknown) => T | null): T[] =>
   Array.isArray(value) ? value.map(parse).filter((item): item is T => item !== null) : [];
 
@@ -145,7 +149,7 @@ export function parseLogsResponse(value: unknown): LogSnapshot | LogsUnconfigure
   return {
     generatedAt: value['generatedAt'],
     source: value['source'],
-    clearedAt: stringOrNull(value['clearedAt']),
+    clearedAt: logTimeOrNull(value['clearedAt']),
     span: { from: stringOrNull(span['from']), to: stringOrNull(span['to']) },
     totals: parseTotals(value['totals']),
     windows: listOf(value['windows'], parseWindow),

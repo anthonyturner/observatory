@@ -66,8 +66,8 @@ export class LogSkyView {
   readonly clearedAt = computed(() => this.snapshot()?.clearedAt ?? null);
   /** A clear, a reset or a fresh read is on its way. */
   readonly isWaiting = this.feed.isWaiting;
-  /** The last clear or reset did not reach the API. */
-  readonly isRefused = this.feed.isRefused;
+  /** Why the last clear or reset did not take, or null. */
+  readonly failure = this.feed.failure;
   /** Whether the meteor record has days to show. */
   readonly hasDays = computed(() => (this.snapshot()?.timeline.length ?? 0) > 0);
   readonly message = computed((): LogSkyMessage | null => {

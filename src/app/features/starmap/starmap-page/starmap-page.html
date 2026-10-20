@@ -116,7 +116,7 @@
       <app-log-clear
         [clearedAt]="logs.clearedAt()"
         [isWaiting]="logs.isWaiting()"
-        [isRefused]="logs.isRefused()"
+        [failure]="logs.failure()"
         (cleared)="logs.clearToNow()"
         (restored)="logs.restore()"
       />

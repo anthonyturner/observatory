@@ -61,9 +61,24 @@ describe('withLogClearRoutes', () => {
 
     const bare = await handle(new Request(URL_OF(), { method: 'POST', body: '{}' }));
     const nameless = await handle(post('nope'));
+    const namelessReset = await handle(
+      new Request(URL_OF('?repo=nope'), { method: 'DELETE', headers: WRITE }),
+    );
 
     assert.equal(bare.status, 403);
     assert.equal(nameless.status, 400);
+    assert.equal(namelessReset.status, 400);
     assert.equal(stored.size, 0);
+  });
+
+  it('refuses a reset without the write header, and leaves the clear in place', async () => {
+    const { stored, forgotten, handle } = setup();
+    await handle(post('me/app'));
+
+    const bare = await handle(new Request(URL_OF('?repo=me/app'), { method: 'DELETE' }));
+
+    assert.equal(bare.status, 403);
+    assert.equal(stored.get('me/app'), '2026-10-20T09:30:00');
+    assert.deepEqual(forgotten, ['me/app']);
   });
 });

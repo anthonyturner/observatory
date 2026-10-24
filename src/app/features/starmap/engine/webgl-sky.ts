@@ -28,14 +28,7 @@ import { InstanceBatch } from './instance-batch';
 import { FLOW_INK, LINK_GAP, LINK_INK, trimSegment } from './link-ink';
 import { NewsEffects3D } from './news-3d';
 import { Threads3D } from './threads-3d';
-import {
-  drawClusterLabel,
-  drawFog,
-  drawGrid,
-  drawReticle,
-  drawStarLabel,
-  starRadius,
-} from './canvas-sky';
+import { drawFog, drawGrid, drawLabels, drawReticle, starRadius } from './canvas-sky';
 import { rnd } from './rnd';
 import { LogThreads, NewsEffect3D, SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
 import { FieldStar, SkyStar } from './sky-model';
@@ -352,8 +345,7 @@ function drawOverlay(f: SkyFrame): void {
   const { ctx } = f;
   for (const layer of f.layers) layer.beneath?.(ctx, f);
   for (const layer of f.layers) layer.flat?.(ctx, f);
-  for (const c of f.clusters) drawClusterLabel(f, c);
-  if (f.camera.current.scale > 0.5) for (const s of f.stars) drawStarLabel(f, s);
+  drawLabels(f);
   const selected = f.selected;
   if (selected && selected.kind !== 'comet') {
     const [x, y] = f.toScreen(selected.ax, selected.ay, selected.az);

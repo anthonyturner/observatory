@@ -4,6 +4,9 @@ export interface ProjectTab {
   readonly label: string;
   /** Below the project's route; empty for the Review Queue, which is the project's own page. */
   readonly path: string;
+  /** Other places below the project's route that belong to this screen: a pull request's
+   *  file, opened in its own tab, is still the Review Queue's. */
+  readonly alsoAt?: readonly string[];
 }
 
 /** The Actions screen, which Home's project cards also link to. */
@@ -27,7 +30,7 @@ export const MILESTONES_TAB: ProjectTab = {
  * adds its entry here and its route in `app.routes.ts`.
  */
 export const PROJECT_TABS: readonly ProjectTab[] = [
-  { id: 'queue', label: 'Queue', path: '' },
+  { id: 'queue', label: 'Queue', path: '', alsoAt: ['pull'] },
   { id: 'releases', label: 'Releases', path: 'releases' },
   ACTIONS_TAB,
   { id: 'journal', label: 'Journal', path: 'journal' },
@@ -42,7 +45,7 @@ export const PROJECT_TABS: readonly ProjectTab[] = [
 
 /** The tab at `path` below a project's route, if there is one. */
 export const projectTabAt = (path: string): ProjectTab | undefined =>
-  PROJECT_TABS.find((tab) => tab.path === path);
+  PROJECT_TABS.find((tab) => tab.path === path || tab.alsoAt?.includes(path));
 
 /** The anchor of a tab's part of the Guide: the tab's id, except the Review Queue's own name. */
 export const guidePartOf = (tab: ProjectTab): string =>

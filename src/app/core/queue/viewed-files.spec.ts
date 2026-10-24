@@ -10,6 +10,8 @@ const README = { path: 'README.md', fingerprint: 'f2' };
 const service = (): ViewedFiles => TestBed.inject(ViewedFiles);
 const fileOf = (path: string, lines: string[]): DiffFile => ({
   path,
+  newPath: path,
+  isDeleted: false,
   additions: 0,
   deletions: 0,
   isBinary: false,

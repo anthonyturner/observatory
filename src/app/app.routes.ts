@@ -71,6 +71,12 @@ export const routes: Routes = [
           import('./features/starmap/starmap-page/starmap-page').then((m) => m.StarmapPage),
       },
       {
+        path: 'pull/:number/file',
+        title: 'File · Observatory',
+        loadComponent: () =>
+          import('./features/pull-file/pull-file-page/pull-file-page').then((m) => m.PullFilePage),
+      },
+      {
         path: 'releases',
         title: 'Releases · Observatory',
         loadComponent: () =>

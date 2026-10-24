@@ -69,6 +69,7 @@ export class SheetDiffTab {
         diffBytes: since.diffBytes,
         truncated: since.diffTruncated,
         codeHidden: since.diffHidden,
+        fileTarget: null,
         viewedKey: sinceLookDiffKey(this.repo(), detail.number, since.base, since.head),
       };
     }
@@ -79,6 +80,8 @@ export class SheetDiffTab {
       diffBytes: detail.diffBytes,
       truncated: detail.diffTruncated,
       codeHidden: detail.diffHidden,
+      // Only the whole pull request's diff is of the head: a file opened whole shows the head.
+      fileTarget: { repo: this.repo(), number: detail.number, sha: detail.headOid },
       viewedKey: pullDiffKey(this.repo(), detail.number),
     };
   });

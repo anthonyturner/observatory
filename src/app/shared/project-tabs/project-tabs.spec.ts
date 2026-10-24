@@ -14,6 +14,10 @@ describe('projectTabAt', () => {
     expect(projectTabAt('security')?.id).toBe('security');
     expect(projectTabAt('nowhere')).toBeUndefined();
   });
+
+  it('counts a pull request’s page as the Queue’s', () => {
+    expect(projectTabAt('pull')?.id).toBe('queue');
+  });
 });
 
 describe('guidePartOf', () => {

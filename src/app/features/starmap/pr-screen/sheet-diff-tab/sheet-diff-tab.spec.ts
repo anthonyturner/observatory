@@ -65,6 +65,29 @@ describe('SheetDiffTab', () => {
     expect(paths()).toEqual(['src/old.ts', 'src/new.ts']);
   });
 
+  it('links each file of the whole diff to its page at the head, and none in the changes since the last look', () => {
+    const { fixture, element, toggle, http } = render(LOOKED);
+    const hrefs = () =>
+      Array.from(element.querySelectorAll('a.whole')).map((link) => link.getAttribute('href'));
+    http.expectOne(SINCE_URL).flush({
+      base: LOOKED,
+      head: HEAD,
+      newCommits: 2,
+      diff: fileDiff('src/new.ts'),
+      diffBytes: 90,
+    });
+    fixture.detectChanges();
+    expect(hrefs()).toEqual([]);
+
+    toggle()!.click();
+    fixture.detectChanges();
+
+    expect(hrefs()).toEqual([
+      `/p/me/app/pull/572/file?sha=${HEAD}&path=src%2Fold.ts`,
+      `/p/me/app/pull/572/file?sha=${HEAD}&path=src%2Fnew.ts`,
+    ]);
+  });
+
   it('falls back to the whole diff with a note after a force-push', () => {
     const { fixture, element, paths, http } = render(LOOKED);
 

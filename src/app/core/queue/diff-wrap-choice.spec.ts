@@ -24,6 +24,25 @@ describe('DiffWrapChoice', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 
+  it('follows the pick made in another tab, here and in every open diff', () => {
+    const choice = TestBed.inject(DiffWrapChoice);
+    const storedElsewhere = (newValue: string | null, key: string | null = STORAGE_KEY) =>
+      window.dispatchEvent(new StorageEvent('storage', { key, newValue }));
+
+    storedElsewhere('scroll');
+    expect(choice.wraps()).toBe(false);
+
+    storedElsewhere(null);
+    expect(choice.wraps()).toBe(true);
+
+    storedElsewhere('scroll');
+    storedElsewhere('scroll', 'observatory.motion');
+    expect(choice.wraps()).toBe(false);
+
+    storedElsewhere(null, null);
+    expect(choice.wraps()).toBe(true);
+  });
+
   it('still works for this visit where storage throws', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');

@@ -1,0 +1,3 @@
+<pre
+  #code
+>@for (line of lines(); track $index) {<span [class]="line.kind"><span class="n" aria-hidden="true">{{ line.oldNumber }}</span><span class="n" aria-hidden="true">{{ line.newNumber }}</span><span class="s">{{ line.sign }}</span><span class="c">@if (line.parts; as parts) {@for (part of parts; track $index) {<span [class.w]="part.changed">{{ part.text }}</span>}} @else {{{ line.text }}}</span></span>}</pre>

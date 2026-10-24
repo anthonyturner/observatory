@@ -318,14 +318,14 @@ export function cachedReads(sources: ReadSources): ApiReads {
     async (key) => {
       const [repo, base, sha, path] = key.split(KEY_SEPARATOR);
       const diff = await github.compareDiff(repo, base, sha).catch((error: unknown) => {
-        // Too large for GitHub to give, most often: the file is shown without its changes.
+        // Too large for GitHub to give, most often: the file is shown with a note, not its changes.
         console.error(`Could not read ${repo}'s changes from ${base} to ${sha}:`, error);
-        return '';
+        return null;
       });
-      return patchOfFile(diff, path);
+      return diff === null ? null : patchOfFile(diff, path);
     },
-    // An empty patch may be a failure that passes, so it is asked for again soon.
-    (patch) => (patch ? COMMIT_TTL_MS : PULL_TTL_MS),
+    // A refusal may be a failure that passes, so it is asked for again soon.
+    (patch) => (patch === null ? PULL_TTL_MS : COMMIT_TTL_MS),
   );
   const actionsOf = keyedCache((repo) => actionsReport(github, repo), ACTIONS_TTL_MS);
   const ciHealthOf = keyedCache((repo) => ciHealthReport(github, repo), CI_HEALTH_TTL_MS);

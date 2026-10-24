@@ -44,6 +44,8 @@ const pull = (number: number): QueuePull => ({
 const stateAsked: string[] = [];
 /** Each pull request whose diff GitHub was asked for. */
 const diffsAsked: string[] = [];
+/** Each file GitHub was asked to read. */
+const filesRead: string[] = [];
 /** Each workflow run GitHub was asked to rerun. */
 const reruns: number[] = [];
 /** Each time GitHub was asked for the token's notifications, or to mark them read. */
@@ -86,7 +88,12 @@ const github = {
     return 'diff --git a/x b/x\n+secret code';
   },
   commitDiff: async () => 'diff --git a/y b/y\n+secret commit',
-  fileRead: async () => ({ kind: 'found', bytes: Buffer.from('secret file\n') }),
+  fileRead: async (_repo: string, path: string) => {
+    filesRead.push(path);
+    return path === 'gone'
+      ? { kind: 'missing' }
+      : { kind: 'found', bytes: Buffer.from('secret file\n') };
+  },
   compareDiff: async () => 'diff --git a/x b/x\n@@ -0,0 +1 @@\n+secret file\n',
   rerunFailedJobs: async (_repo: string, runId: number) => void reruns.push(runId),
   notifications: async () => {
@@ -488,6 +495,32 @@ describe('hostedApi', () => {
     assert.deepEqual([open.state, open.text], ['shown', 'secret file\n']);
     assert.match(open.patch, /\+secret file/);
     assert.equal((await read('me/secret', ownerCookie)).state, 'shown');
+  });
+
+  it('tells a visitor the same of a private repository’s file whether it exists or not, and reads neither', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+    filesRead.length = 0;
+    const answer = async (path: string) => {
+      const response = await get(
+        handle,
+        `/api/pull-file?repo=me/secret&number=7&sha=${'a'.repeat(40)}&path=${path}`,
+      );
+      const {
+        fetchedAt,
+        path: asked,
+        ...rest
+      } = (await response.json()) as Record<string, unknown>;
+      assert.equal(asked, path);
+      assert.equal(typeof fetchedAt, 'string');
+      return rest;
+    };
+
+    const existing = await answer('x');
+    const missing = await answer('gone');
+
+    assert.deepEqual(existing, missing);
+    assert.equal(existing['state'], 'hidden');
+    assert.deepEqual(filesRead, []);
   });
 
   it('answers a file of a repository a visitor may not see as one that does not exist', async () => {

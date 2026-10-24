@@ -7,7 +7,7 @@ import {
   patchOfFile,
   pullFileOf,
   pullFileRequestFrom,
-  withoutFileCode,
+  hiddenPullFile,
 } from './pull-file.ts';
 
 const SHA = 'a'.repeat(40);
@@ -34,7 +34,10 @@ const DIFF = [
   '',
 ].join('\n');
 
-function sources(read: FileRead, patch = 'PATCH'): PullFileSources & { asked: string[] } {
+function sources(
+  read: FileRead,
+  patch: string | null = 'PATCH',
+): PullFileSources & { asked: string[] } {
   const asked: string[] = [];
   return {
     asked,
@@ -61,6 +64,27 @@ describe('patchOfFile', () => {
     assert.match(patchOfFile(DIFF, 'README.md'), /^diff --git a\/README.md b\/README.md\n/);
   });
 
+  it('does not take a file named for part of another header for the file it ends with', () => {
+    const shadowed = [
+      'diff --git a/x b/y b/x b/y',
+      '@@ -1 +1 @@',
+      '-no',
+      '+no',
+      'diff --git a/y b/y',
+      '@@ -1 +1 @@',
+      '-yes',
+      '+yes',
+      '',
+    ].join('\n');
+
+    assert.equal(patchOfFile(shadowed, 'y'), shadowed.split('\n').slice(4).join('\n'));
+    assert.equal(
+      patchOfFile(shadowed, 'x b/y'),
+      shadowed.split('\n').slice(0, 4).join('\n') + '\n',
+    );
+    assert.equal(patchOfFile(shadowed.split('\n').slice(0, 4).join('\n') + '\n', 'y'), '');
+  });
+
   it('is empty for a file the diff does not change, or one it names only as the old path', () => {
     assert.equal(patchOfFile(DIFF, 'src/old.ts'), '');
     assert.equal(patchOfFile(DIFF, 'a b.ts'), '');
@@ -83,6 +107,7 @@ describe('pullFileRequestFrom', () => {
       `sha=${SHA}&path=a.ts`,
       `number=0&sha=${SHA}&path=a.ts`,
       `number=7&sha=--x&path=a.ts`,
+      `number=7&sha=${SHA.slice(0, 7)}&path=a.ts`,
       `number=7&sha=${SHA}`,
       `number=7&sha=${SHA}&path=a/../b.ts`,
     ]) {
@@ -105,6 +130,7 @@ describe('pullFileOf', () => {
       text: 'one\ntwo\n',
       bytes: 8,
       patch: 'PATCH',
+      changesUnavailable: false,
       githubUrl: `https://github.com/me/app/blob/${SHA}/src/a%20b.ts`,
       fetchedAt: AT,
     });
@@ -112,6 +138,12 @@ describe('pullFileOf', () => {
       `file me/app src/a b.ts ${SHA}`,
       `patch me/app release/1 ${SHA} src/a b.ts`,
     ]);
+  });
+
+  it('says the changes are unavailable, not absent, when GitHub would not give them', async () => {
+    const file = await pullFileOf(sources(found('a\n'), null), request, AT);
+
+    assert.deepEqual([file.state, file.patch, file.changesUnavailable], ['shown', '', true]);
   });
 
   it('says a file over the limit is too large, with its size, and reads no changes', async () => {
@@ -148,17 +180,21 @@ describe('pullFileOf', () => {
   });
 });
 
-describe('withoutFileCode', () => {
-  it('keeps where the file is and drops what it holds', async () => {
-    const file = await pullFileOf(sources(found('secret\n')), request, AT);
+describe('hiddenPullFile', () => {
+  it('says the same of a file whatever is there, and carries nothing of it', async () => {
+    const hidden = hiddenPullFile(request, AT);
 
-    const hidden = withoutFileCode(file);
-
-    assert.deepEqual(
-      [hidden.state, hidden.text, hidden.patch, hidden.bytes],
-      ['hidden', '', '', 0],
-    );
-    assert.equal(hidden.githubUrl, file.githubUrl);
-    assert.doesNotMatch(JSON.stringify(hidden), /secret/);
+    assert.deepEqual(hidden, {
+      path: 'src/a b.ts',
+      sha: SHA,
+      headOid: SHA,
+      state: 'hidden',
+      text: '',
+      bytes: 0,
+      patch: '',
+      changesUnavailable: false,
+      githubUrl: 'https://github.com/me/app/pull/7',
+      fetchedAt: AT,
+    });
   });
 });

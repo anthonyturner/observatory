@@ -11,7 +11,7 @@ import { githubApiReader } from '../github/github-api-reader.ts';
 import { storeHistoryStore } from '../history/history-store.ts';
 import { type ApiHandler, createApiHandler, json } from '../http/api-handler.ts';
 import { withoutCode } from '../queue/pull-detail.ts';
-import { withoutFileCode } from '../queue/pull-file.ts';
+import { hiddenPullFile } from '../queue/pull-file.ts';
 import { hiddenWeather } from '../queue/pull-weather.ts';
 import { withRerunRoute } from '../queue/rerun-routes.ts';
 import { withActionsRerunRoute } from '../actions/actions-rerun.ts';
@@ -100,10 +100,12 @@ function visitorReads(reads: ApiReads, repos: () => Promise<RepoRef[]>): ApiRead
       const commit = await reads.commit(repo, sha);
       return (await isPublic(repo)) ? commit : withoutCode(commit);
     },
-    pullFile: async (request) => {
-      const file = await reads.pullFile(request);
-      return (await isPublic(request.repo)) ? file : withoutFileCode(file);
-    },
+    // Not read at all for a private repository: no GitHub quota is spent, and whether the file
+    // exists is not told.
+    pullFile: async (request) =>
+      (await isPublic(request.repo))
+        ? reads.pullFile(request)
+        : hiddenPullFile(request, new Date().toISOString()),
     weather: async (repo) =>
       (await isPublic(repo)) ? reads.weather(repo) : hiddenWeather(await reads.queue(repo)),
   };

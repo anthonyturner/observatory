@@ -420,6 +420,7 @@ export class NewsEffects3D {
   constructor(private readonly ctx: Context) {}
 
   update(requests: readonly NewsEffect3D[]): void {
+    if (!requests.length && !this.playing.size) return;
     const active = new Set<object>();
     for (const request of requests) {
       active.add(request.key);

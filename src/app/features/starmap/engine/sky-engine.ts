@@ -1,5 +1,6 @@
 import { CameraController, clampScale } from './camera-controller';
 import { CanvasSkyRenderer } from './canvas-sky';
+import { FramePace } from './frame-pace';
 import { Chart, SkyFrame, SkyLayer, SkyRenderer } from './sky-frame';
 import { SkyLayout, buildField, carryOver } from './sky-layout';
 import { FieldStar, SkyCluster, SkyStar, WORLD } from './sky-model';
@@ -61,6 +62,7 @@ export class SkyEngine {
   private webgl: SkyRenderer | null = null;
   private clock = 0;
   private lastFrame = 0;
+  private readonly pace = new FramePace();
   private looping = false;
   private disposed = false;
   private faulted = false;
@@ -274,6 +276,7 @@ export class SkyEngine {
   kick(): void {
     if (this.looping || this.disposed) return;
     this.lastFrame = performance.now() / 1000;
+    this.pace.restart();
     this.loop();
   }
 
@@ -375,24 +378,31 @@ export class SkyEngine {
       return;
     }
     this.looping = true;
-    try {
-      this.draw();
-    } catch (error) {
-      if (this.renderer.kind === 'webgl') {
-        this.fallBackTo2D();
-      } else if (!this.faulted) {
-        this.faulted = true;
-        this.host.failed?.(error);
+    if (this.pace.take(performance.now() / 1000, this.interacting())) {
+      try {
+        this.draw();
+      } catch (error) {
+        if (this.renderer.kind === 'webgl') {
+          this.fallBackTo2D();
+        } else if (!this.faulted) {
+          this.faulted = true;
+          this.host.failed?.(error);
+        }
       }
-    }
-    // A frozen sky still eases the camera, so panning and zooming stay smooth, and
-    // draws a flash that is still to play.
-    if (this.host.frozen() && this.camera.settled() && !this.animating()) {
-      this.looping = false;
-      return;
+      // A frozen sky still eases the camera, so panning and zooming stay smooth, and
+      // draws a flash that is still to play.
+      if (this.host.frozen() && this.camera.settled() && !this.animating()) {
+        this.looping = false;
+        return;
+      }
     }
     document.defaultView?.requestAnimationFrame(this.loop);
   };
+
+  /** Whether the viewer, not the ambient drift, is moving the sky, so it draws at full rate. */
+  private interacting(): boolean {
+    return this.dragging || !this.camera.settled() || this.animating();
+  }
 
   private animating(): boolean {
     const wall = performance.now() / 1000;

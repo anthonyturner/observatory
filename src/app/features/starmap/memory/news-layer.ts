@@ -16,6 +16,9 @@ import {
   squashStreakProgress,
 } from './squash-collapse';
 
+/** What a sky with no news hands the 3D scene each frame, so it allocates nothing. */
+const NO_EFFECTS: readonly NewsEffect3D[] = [];
+
 const ease = (p: number): number => 1 - Math.pow(1 - p, 3);
 
 /** The sky's current news: the events, and whether they have been seen. */
@@ -396,8 +399,8 @@ export class NewsLayer implements SkyLayer {
   }
 
   /** The bursts playing now, for the 3D scene to build. */
-  effects3D(f: SkyFrame): NewsEffect3D[] {
-    if (f.chart !== 'prs') return [];
+  effects3D(f: SkyFrame): readonly NewsEffect3D[] {
+    if (f.chart !== 'prs' || !this.news.events.length) return NO_EFFECTS;
     const byPr = starsByPr(f.stars);
     const playing: NewsEffect3D[] = [];
     for (const ev of this.news.events) {

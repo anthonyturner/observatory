@@ -53,7 +53,11 @@ export class Owned {
   }
 }
 
-export const vec = (x: number, y: number, z = 0): Vector3 => new Vector3(x, -y, z);
+/** Sets `target` to a sky point, turning the sky's y-down into the scene's y-up. */
+export const place = (target: Vector3, x: number, y: number, z = 0): Vector3 =>
+  target.set(x, -y, z);
+
+export const vec = (x: number, y: number, z = 0): Vector3 => place(new Vector3(), x, y, z);
 
 /** One tool box for the scene builders: textures, sprites and lines it owns. */
 export class Kit {

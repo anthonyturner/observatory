@@ -52,6 +52,29 @@ export function galaxyUniforms(view: GalaxyView) {
   };
 }
 
+/** The galaxy's uniforms, as `galaxyUniforms` works them out. */
+export type GalaxyUniforms = ReturnType<typeof galaxyUniforms>;
+
+/** How far out from its centre the disc still shows, in sky units: where
+ *  `exp(-r / .115)` has faded to nothing. */
+const DISC_REACH = 0.35;
+
+/**
+ * The most any visible part of the galaxy has moved on screen between two
+ * views, in texels of a picture `texelsHigh` tall: the sum of what the
+ * parallax, the zoom and the arms' turn each carry furthest. Where the aspect
+ * differs the picture is the wrong shape, so nothing can be said and it is
+ * infinite.
+ */
+export function galaxyShift(from: GalaxyUniforms, to: GalaxyUniforms, texelsHigh: number): number {
+  if (from.aspect !== to.aspect) return Infinity;
+  const toTexels = to.zoom * texelsHigh;
+  const drift = Math.hypot(to.driftX - from.driftX, to.driftY - from.driftY) * toTexels;
+  const zoom = 0.5 * Math.max(to.aspect, 1) * texelsHigh * Math.abs(Math.log(to.zoom / from.zoom));
+  const spin = Math.abs(to.spin - from.spin) * DISC_REACH * toTexels;
+  return drift + zoom + spin;
+}
+
 /** The angle of arm `arm` (0 or 1) at radius `r`, as the shader winds it. */
 export const armAngle = (r: number, arm: number, spin: number): number =>
   GALAXY_WIND * Math.log(r) + spin + arm * Math.PI;

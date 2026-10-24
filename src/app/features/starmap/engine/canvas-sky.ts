@@ -1,3 +1,4 @@
+import { GlowHalos } from './glow-halos';
 import { FLOW_INK, LINK_GAP, LINK_INK, trimSegment } from './link-ink';
 import { rnd } from './rnd';
 import { SkyFrame, SkyRenderer } from './sky-frame';
@@ -406,6 +407,7 @@ export function drawFog(f: SkyFrame): void {
 export class CanvasSkyRenderer implements SkyRenderer {
   readonly kind = 'canvas';
   private readonly glow: HTMLCanvasElement;
+  private readonly halos: GlowHalos;
   private readonly grain: HTMLCanvasElement;
   private nebula: HTMLCanvasElement | null = null;
 
@@ -415,6 +417,7 @@ export class CanvasSkyRenderer implements SkyRenderer {
     private readonly project: (x: number, y: number) => [number, number],
   ) {
     this.glow = document.createElement('canvas');
+    this.halos = new GlowHalos(document);
     this.grain = buildGrain(document);
     this.resize();
   }
@@ -464,14 +467,9 @@ export class CanvasSkyRenderer implements SkyRenderer {
 
       // Two radii: a tight halo for shape, a wide one for atmosphere, then the
       // unblurred layer last so the cores stay sharp inside their own glow.
+      this.halos.update(this.glow, ctx.canvas.width);
       ctx.globalCompositeOperation = 'lighter';
-      ctx.filter = 'blur(6px)';
-      ctx.globalAlpha = 0.7;
-      ctx.drawImage(this.glow, 0, 0, width, height);
-      ctx.filter = 'blur(22px)';
-      ctx.globalAlpha = 0.22;
-      ctx.drawImage(this.glow, 0, 0, width, height);
-      ctx.filter = 'none';
+      this.halos.draw(ctx, width, height);
       ctx.globalAlpha = 1;
       ctx.drawImage(this.glow, 0, 0, width, height);
     }

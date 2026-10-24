@@ -21,10 +21,7 @@ import {
   WebGLRenderer,
 } from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { CameraController } from './camera-controller';
 import { Kit, Owned, place, vec } from './gpu-kit';
 import { InstanceBatch } from './instance-batch';
@@ -43,9 +40,9 @@ import { rnd } from './rnd';
 import { LogThreads, NewsEffect3D, SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
 import { FieldStar, SkyStar } from './sky-model';
 import { STAR_INSTANCED_FRAGMENT, STAR_INSTANCED_VERTEX } from '../../../shared/gl/star-shader';
-import { GALAXY_FRAGMENT, GALAXY_VERTEX } from './galaxy-shader';
-import { galaxyUniforms, galaxyView } from './galaxy-geometry';
+import { GalaxyLayer } from './galaxy-layer';
 import { SkyInstances } from './sky-instances';
+import { FinishPass, SkyBloomPass } from './sky-passes';
 import {
   DISC_FRAGMENT,
   DISC_VERTEX,
@@ -103,41 +100,16 @@ function field3D(
   };
 }
 
-interface SceneModel {
-  update(f: SkyFrame): void;
-  dispose(): void;
-}
+/** What the sky's passes work at: CSS resolution on Retina displays, which a
+ *  blur would not show more of. */
+const sceneRatio = (): number => Math.min(globalThis.devicePixelRatio || 1, 1.25);
 
-/** A spiral galaxy behind everything: a full-screen layer at the far plane. */
-function galaxy3D(scene: Scene, owned: Owned): (f: SkyFrame) => void {
-  const material = owned.own(
-    new ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-        aspect: { value: 1 },
-        zoom: { value: 1 },
-        spin: { value: 0 },
-        drift: { value: new Vector2() },
-      },
-      vertexShader: GALAXY_VERTEX,
-      fragmentShader: GALAXY_FRAGMENT,
-      depthTest: false,
-      depthWrite: false,
-    }),
-  );
-  const sky = new Mesh(owned.own(new PlaneGeometry(2, 2)), material);
-  sky.frustumCulled = false;
-  sky.renderOrder = -1;
-  scene.add(sky);
-  return (f) => {
-    const t = f.frozen ? 0 : f.t;
-    const { aspect, zoom, spin, driftX, driftY } = galaxyUniforms(galaxyView(f));
-    material.uniforms['time'].value = t;
-    material.uniforms['aspect'].value = aspect;
-    material.uniforms['zoom'].value = zoom;
-    material.uniforms['spin'].value = spin;
-    material.uniforms['drift'].value.set(driftX, driftY);
-  };
+/** The disc of the galaxy is drawn this many texels to a pixel of the scene. */
+const GALAXY_DETAIL = 0.75;
+
+interface SceneModel {
+  update(f: SkyFrame, gl: WebGLRenderer): void;
+  dispose(): void;
 }
 
 interface InstancedDraw<K extends string> {
@@ -172,7 +144,7 @@ function buildScene3D(
   data: SkyScene,
 ): SceneModel {
   const { owned } = kit;
-  const updateGalaxy = galaxy3D(scene, owned);
+  const galaxy = new GalaxyLayer(scene, owned);
   const updateField = field3D(scene, owned, data.field);
   // Soft cloud cells at distinct depths form the nebula volume.
   const cloudMap = kit.texture((c, size) => {
@@ -338,11 +310,12 @@ function buildScene3D(
   };
 
   return {
-    update(f: SkyFrame): void {
+    update(f: SkyFrame, gl: WebGLRenderer): void {
       const { t } = f;
       const cam = f.camera.current;
-      updateGalaxy(f);
-      updateField(t, Math.min(globalThis.devicePixelRatio || 1, 1.25));
+      const ratio = sceneRatio();
+      galaxy.update(f, gl, ratio * GALAXY_DETAIL);
+      updateField(t, ratio);
       for (const { cloud, x, y, z, phase } of clouds) {
         place(cloud.position, x + Math.sin(t * 0.035 + phase) * 50, y, z);
       }
@@ -402,9 +375,8 @@ export class WebGLSkyRenderer implements SkyRenderer {
   private readonly camera3d = new PerspectiveCamera(30, 1, 1, 100000);
   private readonly composer: EffectComposer;
   private readonly renderPass: RenderPass;
-  private readonly bloom: UnrealBloomPass;
-  private readonly output = new OutputPass();
-  private readonly finish: ShaderPass;
+  private readonly bloom: SkyBloomPass;
+  private readonly finish = new FinishPass();
   private readonly owned = new Owned();
   private readonly kit: Kit;
   private model: SceneModel | null = null;
@@ -436,20 +408,9 @@ export class WebGLSkyRenderer implements SkyRenderer {
     this.composer = new EffectComposer(this.gl);
     this.renderPass = new RenderPass(this.scene, this.camera3d);
     // Restraint: only luminous cores feed bloom, never the whole nebula.
-    this.bloom = new UnrealBloomPass(new Vector2(1, 1), 0.4, 0.5, 0.75);
-    this.finish = new ShaderPass({
-      uniforms: { tDiffuse: { value: null }, time: { value: 0 } },
-      vertexShader:
-        'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-      fragmentShader: `uniform sampler2D tDiffuse; uniform float time; varying vec2 vUv;
-        void main() { vec3 c = texture2D(tDiffuse,vUv).rgb;
-          float vignette = 1. - .72 * smoothstep(.2,.8,length(vUv-.5));
-          float grain = fract(sin(dot(gl_FragCoord.xy + floor(time*24.),vec2(12.9898,78.233)))*43758.5453)-.5;
-          gl_FragColor = vec4(max(vec3(0.),c*vignette+grain*.018),1.); }`,
-    });
+    this.bloom = new SkyBloomPass(new Vector2(1, 1), 0.4, 0.5, 0.75);
     this.composer.addPass(this.renderPass);
     this.composer.addPass(this.bloom);
-    this.composer.addPass(this.output);
     this.composer.addPass(this.finish);
     this.canvas.addEventListener('webglcontextlost', this.lostContext);
     this.canvas.addEventListener('webglcontextrestored', this.restoredContext);
@@ -483,7 +444,7 @@ export class WebGLSkyRenderer implements SkyRenderer {
     this.gl.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2));
     this.gl.setSize(width, height);
     // Bloom is deliberately limited to CSS resolution on Retina displays.
-    this.composer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 1.25));
+    this.composer.setPixelRatio(sceneRatio());
     this.composer.setSize(width, height);
   }
 
@@ -497,8 +458,8 @@ export class WebGLSkyRenderer implements SkyRenderer {
     this.camera3d.position.set(cam.x, -cam.y, this.camera.distance);
     this.camera3d.updateProjectionMatrix();
     this.camera3d.updateMatrixWorld();
-    this.model.update(f);
-    this.finish.uniforms['time'].value = f.t;
+    this.model.update(f, this.gl);
+    this.finish.time.value = f.t;
     this.composer.render();
     drawOverlay(f);
   }
@@ -507,7 +468,7 @@ export class WebGLSkyRenderer implements SkyRenderer {
     this.canvas.removeEventListener('webglcontextlost', this.lostContext);
     this.canvas.removeEventListener('webglcontextrestored', this.restoredContext);
     this.owned.disposeAll();
-    for (const pass of [this.renderPass, this.bloom, this.output, this.finish]) pass.dispose();
+    for (const pass of [this.renderPass, this.bloom, this.finish]) pass.dispose();
     this.composer.dispose();
     this.gl.dispose();
     this.canvas.remove();

@@ -358,6 +358,16 @@ both hold still when motion is off. The coloured nebula clouds stay, and the
 field stars (`buildField`) keep their places and count but now follow the
 same power law as the Orrery's: mostly faint, a few bright.
 
+The disc costs six noise samples a pixel, so `GalaxyLayer` draws it into a
+picture three quarters the scene's size and redraws that only when the camera,
+the zoom or the arms' turn has moved it a quarter of a picture pixel
+(`galaxyShift`); the faint haze of stars is sharp, so it is added at full size
+every frame. A change to what the disc looks like goes in `GALAXY_DISC_FRAGMENT`
+and must stay smooth: fine detail belongs in `GALAXY_FRAGMENT`. After the
+scene, the bloom works at half size (`SkyBloomPass`), and one pass (`FinishPass`)
+does the tone mapping, the vignette and the grain. The 2D fallback blurs its
+glow layer on shrunken copies (`GlowHalos`), not with a full-screen blur.
+
 ### The Spiral of Done (data: finished work)
 
 The galaxy's arms hold the last 60 days of finished work (`engine/done-layer.ts`).

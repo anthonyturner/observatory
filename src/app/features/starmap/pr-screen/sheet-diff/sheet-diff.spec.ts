@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { PullFileTarget } from '../../../../core/queue/pull-file';
 import { SheetDiff, SheetDiffWording } from './sheet-diff';
 
 const DIFF = [
@@ -15,13 +16,20 @@ const DIFF = [
   '+added',
 ].join('\n');
 
-function render(diff = DIFF, options: { truncated?: boolean; wording?: SheetDiffWording } = {}) {
+interface RenderOptions {
+  truncated?: boolean;
+  wording?: SheetDiffWording;
+  fileTarget?: PullFileTarget | null;
+}
+
+function render(diff = DIFF, options: RenderOptions = {}) {
   const fixture = TestBed.createComponent(SheetDiff);
   fixture.componentRef.setInput('diff', diff);
   fixture.componentRef.setInput('diffBytes', diff.length || 300 * 1024);
   fixture.componentRef.setInput('truncated', options.truncated ?? false);
   fixture.componentRef.setInput('viewedKey', 'me/app#9');
   if (options.wording) fixture.componentRef.setInput('wording', options.wording);
+  fixture.componentRef.setInput('fileTarget', options.fileTarget ?? null);
   fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
   const header = (index: number) =>
@@ -133,6 +141,87 @@ describe('SheetDiff', () => {
     expect(header(0).querySelector('.name')?.textContent).toBe('x.ts');
     expect(header(0).querySelector('.add')?.textContent).toBe('+1');
     expect(header(0).querySelector('.del')?.textContent).toBe('−1');
+  });
+
+  describe('opening a file whole', () => {
+    const SHA = 'a'.repeat(40);
+    const TARGET = { repo: 'me/app', number: 9, sha: SHA };
+    const BINARY = [
+      'diff --git a/logo.png b/logo.png',
+      'new file mode 100644',
+      'Binary files /dev/null and b/logo.png differ',
+    ].join('\n');
+    const DELETED = [
+      'diff --git a/gone.ts b/gone.ts',
+      'deleted file mode 100644',
+      '--- a/gone.ts',
+      '+++ /dev/null',
+      '@@ -1 +0,0 @@',
+      '-bye',
+    ].join('\n');
+    const RENAMED = [
+      'diff --git a/old name.ts b/src/new name.ts',
+      'rename from old name.ts',
+      'rename to src/new name.ts',
+      '@@ -1 +1 @@',
+      '-a',
+      '+b',
+    ].join('\n');
+    const QUOTED = [
+      'diff --git "a/caf\\303\\251.md" "b/caf\\303\\251.md"',
+      '@@ -1 +1 @@',
+      '-a',
+      '+b',
+    ].join('\n');
+    const QUOTED_RENAME = [
+      'diff --git a/old.md "b/caf\\303\\251.md"',
+      'rename from old.md',
+      'rename to "caf\\303\\251.md"',
+      '@@ -1 +1 @@',
+      '-a',
+      '+b',
+    ].join('\n');
+
+    const links = (diff: string, target: typeof TARGET | null = TARGET) => {
+      const view = render(diff, { fileTarget: target });
+      return [...view.element.querySelectorAll<HTMLAnchorElement>('a.whole')].map((link) => ({
+        href: link.getAttribute('href'),
+        label: link.getAttribute('aria-label'),
+      }));
+    };
+
+    it('offers a link on each text file, to a new tab, pinned to the commit', () => {
+      expect(links(DIFF)).toEqual([
+        {
+          href: `/p/me/app/pull/9/file?sha=${SHA}&path=x.ts`,
+          label: 'Open whole file x.ts in a new tab',
+        },
+        {
+          href: `/p/me/app/pull/9/file?sha=${SHA}&path=y.ts`,
+          label: 'Open whole file y.ts in a new tab',
+        },
+      ]);
+      const link = render(DIFF, { fileTarget: TARGET }).element.querySelector('a.whole');
+      expect([link?.getAttribute('target'), link?.getAttribute('rel')]).toEqual([
+        '_blank',
+        'noopener',
+      ]);
+    });
+
+    it('opens a renamed file at its new path', () => {
+      expect(links(RENAMED).map(({ href }) => href)).toEqual([
+        `/p/me/app/pull/9/file?sha=${SHA}&path=src%2Fnew+name.ts`,
+      ]);
+    });
+
+    it('offers none for a binary file, a deleted one, or a path git quotes', () => {
+      expect(links([BINARY, DELETED, QUOTED, QUOTED_RENAME].join('\n'))).toEqual([]);
+    });
+
+    it('offers none where the diff has no page for its files', () => {
+      expect(links(DIFF, null)).toEqual([]);
+      expect(render(DIFF).element.querySelector('a.whole')).toBeNull();
+    });
   });
 
   describe('an opened file', () => {

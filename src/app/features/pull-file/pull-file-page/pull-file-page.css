@@ -1,0 +1,82 @@
+/* The Releases page's header and messages, shared; this page lays its header in the flow
+   so the file below starts wherever the header ends, as the Library does. */
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--queue-sky);
+}
+
+.hud {
+  position: static;
+  flex: none;
+  padding-bottom: 12px;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+}
+
+a {
+  color: var(--flow);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 2px;
+}
+
+h1 {
+  font-size: 28px;
+  overflow-wrap: anywhere;
+}
+
+.where {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.note.warn {
+  color: var(--warm);
+}
+
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.count {
+  min-width: 11ch;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+}
+
+.code {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid var(--edge-soft);
+  padding-bottom: calc(40px + var(--playlist-clear-bottom, 0px));
+}
+
+.code:focus {
+  outline: none;
+}
+
+.state a {
+  pointer-events: auto;
+}

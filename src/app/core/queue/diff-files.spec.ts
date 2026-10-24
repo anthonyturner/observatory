@@ -1,4 +1,4 @@
-import { diffFilesOf, diffLinesOf, pathPartsOf } from './diff-files';
+import { diffFilesOf, diffLinesOf, newSideStartOf, pathPartsOf } from './diff-files';
 
 const DIFF = [
   'diff --git a/src/app.ts b/src/app.ts',
@@ -43,6 +43,84 @@ describe('diffFilesOf', () => {
 
   it('finds no files in an empty diff', () => {
     expect(diffFilesOf('')).toEqual([]);
+  });
+
+  describe('where a file is after the change', () => {
+    const only = (...lines: string[]) => diffFilesOf(lines.join('\n'))[0];
+
+    it('is the path itself for a file that kept it, spaces and all', () => {
+      const file = only('diff --git a/my notes.md b/my notes.md', '@@ -1 +1 @@', '-a', '+b');
+
+      expect([file.path, file.newPath, file.isDeleted]).toEqual([
+        'my notes.md',
+        'my notes.md',
+        false,
+      ]);
+    });
+
+    it('is the rename’s new path, while path stays the old one so viewed ticks hold', () => {
+      const file = only(
+        'diff --git a/src/old.ts b/src/new name.ts',
+        'similarity index 90%',
+        'rename from src/old.ts',
+        'rename to src/new name.ts',
+        '@@ -1 +1 @@',
+        '-a',
+        '+b',
+      );
+
+      expect([file.path, file.newPath]).toEqual(['src/old.ts', 'src/new name.ts']);
+    });
+
+    it('is none for a path git quotes, which no link can be built from', () => {
+      const file = only(
+        'diff --git "a/caf\\303\\251.md" "b/caf\\303\\251.md"',
+        '@@ -1 +1 @@',
+        '-a',
+      );
+
+      expect(file.newPath).toBeNull();
+    });
+
+    it('is none for a rename to a path git quotes', () => {
+      const file = only(
+        'diff --git a/old.md "b/caf\\303\\251.md"',
+        'rename from old.md',
+        'rename to "caf\\303\\251.md"',
+        '@@ -1 +1 @@',
+        '-a',
+      );
+
+      expect(file.newPath).toBeNull();
+    });
+
+    it('marks a deleted file', () => {
+      const file = only(
+        'diff --git a/gone.ts b/gone.ts',
+        'deleted file mode 100644',
+        '--- a/gone.ts',
+        '+++ /dev/null',
+        '@@ -1 +0,0 @@',
+        '-bye',
+      );
+
+      expect(file.isDeleted).toBe(true);
+    });
+  });
+});
+
+describe('newSideStartOf', () => {
+  it('reads where the new side starts', () => {
+    expect(newSideStartOf('@@ -3,2 +5,4 @@ fn')).toBe(5);
+    expect(newSideStartOf('@@ -3 +5 @@')).toBe(5);
+  });
+
+  it('puts a hunk that adds nothing after the line it names', () => {
+    expect(newSideStartOf('@@ -4,2 +3,0 @@')).toBe(4);
+  });
+
+  it('is none for a header that cannot be read', () => {
+    expect(newSideStartOf('@@ nonsense @@')).toBeNull();
   });
 });
 

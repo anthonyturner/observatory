@@ -19,6 +19,7 @@ import { LIBRARY_IMAGE_PATH } from '../library/library-types.ts';
 import { issueNumberFrom } from '../issues/issue-detail.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
+import { PULL_FILE_PATH, pullFileRequestFrom } from '../queue/pull-file.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { WEATHER_PATH } from '../queue/pull-weather.ts';
 import { RISK_PATH, riskGlanceOf } from '../queue/risk-routes.ts';
@@ -134,6 +135,8 @@ export function visitorRoutes(
         reads.pull(await visibleRepo(query), pullNumberFrom(query.get('number'))),
       '/api/pull-state': async (query) =>
         reads.pullState(await visibleRepo(query), pullNumberFrom(query.get('number'))),
+      [PULL_FILE_PATH]: async (query) =>
+        reads.pullFile(pullFileRequestFrom(await visibleRepo(query), query)),
       '/api/commit': async (query) =>
         reads.commit(await visibleRepo(query), commitShaFrom(query.get('sha'))),
       [WEATHER_PATH]: async (query) => reads.weather(await visibleRepo(query)),

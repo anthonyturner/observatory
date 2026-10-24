@@ -52,6 +52,7 @@ const reads = {
   milestones: async (repo: string) => ({ repo, milestones: { open: [] } }),
   issue: async (repo: string, number: number) => ({ repo, number }),
   pullState: async () => ({ state: 'MERGED', title: 'Add a thing' }),
+  pullFile: async (request: object) => ({ ...request }),
   commit: async (_repo: string, sha: string) => ({ sha, diff: 'diff --git a/x b/x' }),
   pull: async (_repo: string, number: number) => ({
     number,
@@ -227,6 +228,22 @@ describe('visitorRoutes', () => {
     assert.deepEqual(await response.json(), { sha: 'abc1234', diff: 'diff --git a/x b/x' });
     assert.equal((await get(handle, '/api/commit?repo=me/secret&sha=abc1234')).status, 404);
     assert.equal((await get(handle, '/api/commit?repo=me/app&sha=nothex')).status, 400);
+  });
+
+  it('reads a file of a visible repository’s pull request only, and refuses one that is not a file', async () => {
+    const handle = visitor(false);
+    const sha = 'b'.repeat(40);
+    const ask = (repo: string, path = 'src/a.ts') =>
+      get(handle, `/api/pull-file?repo=${repo}&number=7&sha=${sha}&path=${path}`);
+
+    assert.deepEqual(await (await ask('me/app')).json(), {
+      repo: 'me/app',
+      number: 7,
+      sha,
+      path: 'src/a.ts',
+    });
+    assert.equal((await ask('me/secret')).status, 404);
+    assert.equal((await ask('me/app', '../a.ts')).status, 400);
   });
 
   it('rates a pull request’s risk in a visible repository, by the rules alone', async () => {

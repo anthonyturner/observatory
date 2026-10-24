@@ -2,7 +2,13 @@ import { DiffSpan, wordChangesOf } from './diff-words';
 
 /** One file of a unified diff, its lines kept raw until it is opened. */
 export interface DiffFile {
+  /** Where the file was before the change: the same as `newPath` unless it was renamed. */
   readonly path: string;
+  /** Where the file is after it, or null when the header does not give it in plain text,
+   *  as git quotes a path with unusual characters. */
+  readonly newPath: string | null;
+  /** The change removes the file, so there is nothing of it at the head. */
+  readonly isDeleted: boolean;
   readonly additions: number;
   readonly deletions: number;
   /** Git named the file binary and sent none of it. */
@@ -35,6 +41,13 @@ export interface PathParts {
 const FILE_START = /^(?=diff --git )/m;
 const FILE_HEADER = 'diff --git';
 const PATH = /^diff --git a\/(.+?) b\//;
+/** The header of a file that kept its path: both sides name the same one. */
+const SAME_PATH = /^diff --git a\/(.+) b\/\1$/;
+/** A path git quotes starts with a quote, and is not given in plain text. */
+const RENAME_TO = /^rename to ([^"].*)$/;
+const DELETED_FILE = /^deleted file mode /;
+/** `@@ -12,7 +12,8 @@`'s new side: where it starts and how many lines it holds. */
+const NEW_SIDE = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/;
 const UNNAMED = 'file';
 const HUNK = '@@';
 /** `@@ -12,7 +12,8 @@`: where the hunk starts in the old file and in the new. */
@@ -49,6 +62,18 @@ const BLANK = ' ';
 const isAdded = (line: string): boolean => line.startsWith('+') && !line.startsWith('+++');
 const isRemoved = (line: string): boolean => line.startsWith('-') && !line.startsWith('---');
 
+/** The path after the change: the header's own when the file kept its path, else the rename's. */
+function newPathOf(lines: readonly string[]): string | null {
+  const same = SAME_PATH.exec(lines[0])?.[1];
+  if (same) return same;
+  for (const line of lines) {
+    if (line.startsWith(HUNK)) return null;
+    const renamed = RENAME_TO.exec(line)?.[1];
+    if (renamed) return renamed;
+  }
+  return null;
+}
+
 /** A diff split by file, each counted, none of it drawn yet: most are never opened. */
 export function diffFilesOf(diff: string): DiffFile[] {
   return diff
@@ -58,6 +83,8 @@ export function diffFilesOf(diff: string): DiffFile[] {
       const lines = part.split('\n');
       return {
         path: part.match(PATH)?.[1] ?? UNNAMED,
+        newPath: newPathOf(lines),
+        isDeleted: lines.some((line) => DELETED_FILE.test(line)),
         additions: lines.filter(isAdded).length,
         deletions: lines.filter(isRemoved).length,
         isBinary:
@@ -121,8 +148,18 @@ function numbered(raw: readonly string[]): DiffLine[] {
   });
 }
 
+/**
+ * Where a hunk header says the new side's lines begin, or null when it cannot be read. A hunk
+ * that adds nothing names the line before its place, so the removed lines sit after that one.
+ */
+export function newSideStartOf(header: string): number | null {
+  const start = NEW_SIDE.exec(header);
+  if (!start) return null;
+  return Number(start[1]) + (start[2] === '0' ? 1 : 0);
+}
+
 /** Each run of removed lines is paired, line by line, with the added run that follows it. */
-function markWordChanges(lines: DiffLine[]): void {
+export function markWordChanges(lines: DiffLine[]): void {
   let start = 0;
   while (start < lines.length) {
     const removedEnd = runEnd(lines, start, 'd');

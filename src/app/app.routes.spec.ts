@@ -27,6 +27,14 @@ describe('the app’s routes', () => {
     }
   });
 
+  it('gives a pull request’s file page the pull request’s number, beside the project’s owner and repo', async () => {
+    const { leaf } = await open('/p/me/app/pull/7/file?sha=abc1234&path=src%2Fa.ts');
+
+    expect(leaf.params).toEqual({ owner: 'me', repo: 'app', number: '7' });
+    expect(leaf.queryParams).toEqual({ sha: 'abc1234', path: 'src/a.ts' });
+    expect(leaf.title).toBe('File · Observatory');
+  });
+
   it('names the Queue and the Releases by title', async () => {
     expect((await open('/p/me/app')).leaf.title).toBe('Review Queue · Observatory');
     expect((await open('/p/me/app/releases')).leaf.title).toBe('Releases · Observatory');

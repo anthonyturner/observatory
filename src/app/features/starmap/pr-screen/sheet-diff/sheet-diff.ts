@@ -14,8 +14,10 @@ import {
   diffLinesOf,
   pathPartsOf,
 } from '../../../../core/queue/diff-files';
-import { DiffWrapChoice } from '../../../../core/queue/diff-wrap-choice';
+import { PullFileTarget, pullFileLinkOf } from '../../../../core/queue/pull-file';
 import { SeenFile, ViewedFiles, seenFileOf } from '../../../../core/queue/viewed-files';
+import { DiffLines } from '../../../../shared/diff-lines/diff-lines';
+import { DiffWrapToggle } from '../../../../shared/diff-wrap-toggle/diff-wrap-toggle';
 
 const BYTES_PER_KB = 1024;
 
@@ -42,6 +44,7 @@ interface FileEntry {
  *  thousands of lines, and most are never read. */
 @Component({
   selector: 'app-sheet-diff',
+  imports: [DiffLines, DiffWrapToggle],
   templateUrl: './sheet-diff.html',
   styleUrl: './sheet-diff.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,9 +58,10 @@ export class SheetDiff {
   /** The preview withholds a private repository's code. */
   readonly codeHidden = input(false);
   readonly wording = input<SheetDiffWording>(GITHUB_DIFF_WORDING);
+  /** Gives each text file a link to its page in full; none where this diff has no such page. */
+  readonly fileTarget = input<PullFileTarget | null>(null);
 
   private readonly viewedFiles = inject(ViewedFiles);
-  private readonly wrapChoice = inject(DiffWrapChoice);
 
   protected readonly files = computed((): readonly FileEntry[] =>
     diffFilesOf(this.diff()).map((file) => ({
@@ -88,12 +92,11 @@ export class SheetDiff {
         path,
         lines,
         expanded: lines !== null && !this.closed().has(file),
+        wholeFileHref: pullFileLinkOf(this.fileTarget(), file),
         viewed: this.viewedFiles.isViewed(this.viewedKey(), seen),
       };
     }),
   );
-  /** Long lines wrap under their code, or scroll sideways: one choice for every diff. */
-  protected readonly wrap = this.wrapChoice.wraps;
   protected readonly viewedCount = computed(
     () => this.views().filter((view) => view.viewed).length,
   );
@@ -106,10 +109,6 @@ export class SheetDiff {
     }
     this.expand(file);
     this.viewedFiles.mark(this.viewedKey(), seen);
-  }
-
-  protected onWrapChange(event: Event): void {
-    if (event.target instanceof HTMLInputElement) this.wrapChoice.choose(event.target.checked);
   }
 
   /** The tick only marks the file: opening and closing stay with its header. */

@@ -638,8 +638,19 @@ Opening a pull request shows it in full without leaving Observatory:
   changes later comes back unticked.
 - **Since last look.** The Diff tab opens on just the changes since you last
   looked, with a switch to the full diff.
+- **Open whole file.** Each text file in the Diff tab has an **Open whole
+  file** link. It opens the file in full in a new tab, at the pull request's
+  latest commit: added lines are green, and each removed line is red, just
+  before the line that now stands where it was. **Previous** and **Next** step
+  through the changes, and the first is in view when the page opens. The tab
+  has its own address, so you can reload it or send it to someone. If the
+  pull request gets new commits, the tab keeps the commit it was opened at and
+  offers **Show the latest**. A file over 1 MB links to GitHub instead, and
+  binary and deleted files have no link, nor do the Commits tab or Since last
+  look. Preview visitors do not see a private project's code.
 - **Wrap long lines.** Diffs wrap long lines so you read them without
-  scrolling sideways. Untick the box to scroll instead; every diff remembers.
+  scrolling sideways. Untick the box to scroll instead; every diff, and every
+  open tab, remembers.
 - **Merge box.** Along the foot: whether it is a draft, conflicts, how checks
   went, and the review decision. Merge with squash, a merge commit or rebase,
   after one Confirm. It merges only the commit you saw.

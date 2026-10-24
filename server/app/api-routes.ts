@@ -12,6 +12,7 @@ import { PREVIEW_PATH } from '../deployments/deployments-report.ts';
 import { LIVE_SITES_PATH } from '../deployments/live-site.ts';
 import { commitShaFrom } from '../queue/commit-diff.ts';
 import { pullNumberFrom } from '../queue/pull-detail.ts';
+import { PULL_FILE_PATH, pullFileRequestFrom } from '../queue/pull-file.ts';
 import { repoNameFrom } from '../queue/repo-name.ts';
 import { WEATHER_PATH } from '../queue/pull-weather.ts';
 import { withSinceLook } from '../queue/since-look.ts';
@@ -100,6 +101,7 @@ export function ownerRoutes(reads: ApiReads, triage: TriageStore, editor: PullEd
         return reads.pull(repo, number);
       },
       '/api/pull-state': (query) => reads.pullState(repoOf(query), numberOf(query)),
+      [PULL_FILE_PATH]: (query) => reads.pullFile(pullFileRequestFrom(repoOf(query), query)),
       [WEATHER_PATH]: (query) => reads.weather(repoOf(query)),
       '/api/commit': (query) => reads.commit(repoOf(query), commitShaFrom(query.get('sha'))),
       '/api/since-look': (query) =>

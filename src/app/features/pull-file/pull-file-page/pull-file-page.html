@@ -1,0 +1,64 @@
+<header class="hud">
+  <app-project-bar-room />
+  @if (head(); as head) {
+    <nav class="links" aria-label="This file">
+      <a [routerLink]="head.pullLink" [queryParams]="{ pr: head.number }"
+        ><span aria-hidden="true">&lsaquo;</span> Pull request #{{ head.number }}</a
+      >
+      @if (head.githubUrl) {
+        <a [href]="head.githubUrl" target="_blank" rel="noopener noreferrer"
+          >On GitHub <span aria-hidden="true">↗</span></a
+        >
+      }
+    </nav>
+    <div class="brand">
+      <h1>{{ head.name }}</h1>
+      <span class="stamp">{{ head.stamp }}</span>
+    </div>
+    <p class="where">{{ head.folder }}</p>
+    @if (head.renamedFrom; as from) {
+      <p class="note">Renamed from {{ from }}</p>
+    }
+    @if (head.latest; as latest) {
+      <p class="note warn">
+        The pull request has newer commits than this one.
+        <a routerLink="." [queryParams]="{ sha: latest, path: head.path }">Show the latest</a>
+      </p>
+    }
+  }
+  @if (changesNote(); as note) {
+    <p class="note warn">{{ note }}</p>
+  }
+  @if (lines()) {
+    <div class="tools">
+      <div class="steps">
+        <button type="button" class="abtn" [disabled]="!hasPrevious()" (click)="previous()">
+          Previous
+        </button>
+        <span class="count" aria-live="polite">{{ changeText() }}</span>
+        <button type="button" class="abtn" [disabled]="!hasNext()" (click)="next()">Next</button>
+      </div>
+      <app-diff-wrap-toggle />
+    </div>
+  }
+</header>
+
+@if (lines(); as lines) {
+  <main class="code" tabindex="-1">
+    <app-diff-lines [lines]="lines" [reveal]="reveal()" />
+  </main>
+}
+
+@if (message(); as message) {
+  <div class="state" role="status">
+    <strong>{{ message.headline }}</strong>
+    @if (message.detail) {
+      <span>{{ message.detail }}</span>
+    }
+    @if (message.link; as link) {
+      <a [href]="link.url" target="_blank" rel="noopener noreferrer"
+        >{{ link.label }} <span aria-hidden="true">↗</span></a
+      >
+    }
+  </div>
+}

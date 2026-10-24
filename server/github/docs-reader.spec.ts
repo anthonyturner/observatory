@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { readFileBytes, readFilePaths, readFileText, treePathsOf } from './docs-reader.ts';
+import {
+  readFile,
+  readFileBytes,
+  readFilePaths,
+  readFileText,
+  treePathsOf,
+} from './docs-reader.ts';
 
 describe('treePathsOf', () => {
   it('lists the files in a tree, not its folders or odd entries', () => {
@@ -91,5 +97,50 @@ describe('readFileBytes', () => {
     };
 
     await assert.rejects(readFileBytes(down, 'me/app', 'a.png', 'main', LIMIT), /502/);
+  });
+});
+
+describe('readFile', () => {
+  const TEXT = Buffer.from('hello\n');
+  const asFile = (extra: Record<string, unknown>): Record<string, unknown> => ({
+    type: 'file',
+    size: TEXT.length,
+    sha: 'abc123',
+    encoding: 'base64',
+    content: TEXT.toString('base64'),
+    ...extra,
+  });
+  const LIMIT = 1024;
+
+  it('says what it found: the bytes', async () => {
+    const read = await readFile(async () => asFile({}), 'me/app', 'a.txt', 'main', LIMIT);
+
+    assert.deepEqual(read, { kind: 'found', bytes: TEXT });
+  });
+
+  it('tells a file over the limit, with its size, from one that is not there', async () => {
+    const large = async (): Promise<unknown> => asFile({ size: LIMIT + 1 });
+    const missing = async (): Promise<unknown> => {
+      throw new Error('gh: Not Found (HTTP 404)');
+    };
+
+    assert.deepEqual(await readFile(large, 'me/app', 'a.txt', 'main', LIMIT), {
+      kind: 'too-large',
+      size: LIMIT + 1,
+    });
+    assert.deepEqual(await readFile(missing, 'me/app', 'a.txt', 'main', LIMIT), {
+      kind: 'missing',
+    });
+    assert.deepEqual(await readFile(async () => [], 'me/app', 'docs', 'main', LIMIT), {
+      kind: 'missing',
+    });
+  });
+
+  it('passes on a failure that is not a missing file', async () => {
+    const down = async (): Promise<unknown> => {
+      throw new Error('HTTP 502');
+    };
+
+    await assert.rejects(readFile(down, 'me/app', 'a.txt', 'main', LIMIT), /502/);
   });
 });

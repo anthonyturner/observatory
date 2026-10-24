@@ -30,10 +30,11 @@ const setUp = (frozen = false) => {
   const display = new Display();
   vi.spyOn(performance, 'now').mockImplementation(() => display.now);
   const frames = vi.fn();
+  const scenes = vi.fn();
   const renderer: SkyRenderer & { mount(): void } = {
     kind: 'webgl',
     mount: () => undefined,
-    setScene: () => undefined,
+    setScene: scenes,
     frame: frames,
     toScreen: () => [0, 0],
     resize: () => undefined,
@@ -59,7 +60,7 @@ const setUp = (frozen = false) => {
     loadWebGL: () => Promise.resolve(renderer),
   };
   const engine = new SkyEngine(host);
-  return { engine, display, frames, canvas };
+  return { engine, display, frames, scenes, canvas };
 };
 
 /** Lets the engine's 3D renderer arrive, then lets the camera finish its first ease. */
@@ -127,5 +128,22 @@ describe('SkyEngine frame rate', () => {
     engine.resize();
 
     expect(frames.mock.calls.length - before).toBe(2);
+  });
+});
+
+describe('SkyEngine refresh', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('hands the renderer the same field of faint stars on every refresh', async () => {
+    const { engine, display, scenes } = setUp();
+    await settle(engine, display);
+    scenes.mockClear();
+
+    engine.setSky(() => undefined);
+    engine.setSky(() => undefined, { carry: true });
+
+    const fields = scenes.mock.calls.map(([scene]) => scene.field);
+    expect(fields).toHaveLength(2);
+    expect(fields[1]).toBe(fields[0]);
   });
 });

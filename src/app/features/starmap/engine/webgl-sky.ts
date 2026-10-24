@@ -1,342 +1,16 @@
-import {
-  AdditiveBlending,
-  BufferGeometry,
-  Color,
-  Float32BufferAttribute,
-  Line,
-  LineBasicMaterial,
-  LineDashedMaterial,
-  LineSegments,
-  Material,
-  Mesh,
-  PerspectiveCamera,
-  PlaneGeometry,
-  SphereGeometry,
-  Points,
-  ReinhardToneMapping,
-  Scene,
-  ShaderMaterial,
-  Sprite,
-  Vector2,
-  WebGLRenderer,
-} from 'three';
+import { PerspectiveCamera, ReinhardToneMapping, Scene, Vector2, WebGLRenderer } from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { CameraController } from './camera-controller';
-import { Kit, Owned, place, vec } from './gpu-kit';
-import { InstanceBatch } from './instance-batch';
-import { FLOW_INK, LINK_GAP, LINK_INK, trimSegment } from './link-ink';
-import { NewsEffects3D } from './news-3d';
-import { Threads3D } from './threads-3d';
 import { drawFog, drawGrid, drawLabels, drawReticle, starRadius } from './canvas-sky';
-import { rnd } from './rnd';
-import { LogThreads, NewsEffect3D, SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
-import { FieldStar, SkyStar } from './sky-model';
-import { STAR_INSTANCED_FRAGMENT, STAR_INSTANCED_VERTEX } from '../../../shared/gl/star-shader';
-import { GalaxyLayer } from './galaxy-layer';
-import { SkyInstances } from './sky-instances';
+import { Kit, Owned } from './gpu-kit';
+import { SceneModel, buildScene3D, sceneRatio } from './scene-3d';
+import { SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
 import { FinishPass, SkyBloomPass } from './sky-passes';
-import {
-  DISC_FRAGMENT,
-  DISC_VERTEX,
-  PLANET_FRAGMENT,
-  PLANET_VERTEX,
-  PULSE_FRAGMENT,
-  PULSE_VERTEX,
-} from './star-system-shaders';
 
 /* pr-starmap's WebGL sky: a perspective camera over the same world, bloom on
    the luminous cores only, a vignette and grain pass, a nebula of cloud
    sprites at depth. Words and marks are drawn over it by the 2D overlay. */
-
-/** A single GPU draw for hundreds of stars, spread through an actual volume. */
-function field3D(
-  scene: Scene,
-  owned: Owned,
-  field: readonly FieldStar[],
-): (t: number, ratio: number) => void {
-  const positions: number[] = [];
-  const colours: number[] = [];
-  const sizes: number[] = [];
-  const phases: number[] = [];
-  for (const s of field) {
-    positions.push(s.x, -s.y, s.z);
-    const col = new Color(s.tint).multiplyScalar(s.a);
-    colours.push(col.r, col.g, col.b);
-    sizes.push(s.r);
-    phases.push(s.phase, s.rate);
-  }
-  const geometry = owned.own(new BufferGeometry());
-  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new Float32BufferAttribute(colours, 3));
-  geometry.setAttribute('size', new Float32BufferAttribute(sizes, 1));
-  geometry.setAttribute('phase', new Float32BufferAttribute(phases, 2));
-  const material = owned.own(
-    new ShaderMaterial({
-      uniforms: { time: { value: 0 }, pixelRatio: { value: 1 } },
-      vertexShader: `attribute vec3 color; attribute float size; attribute vec2 phase;
-        uniform float time; uniform float pixelRatio; varying vec3 ink;
-        void main() { float tw = .62 + .38 * sin(time * phase.y + phase.x);
-          ink = color * tw; vec4 p = modelViewMatrix * vec4(position,1.);
-          gl_Position = projectionMatrix * p; gl_PointSize = (1. + size * 2.) * pixelRatio; }`,
-      fragmentShader: `varying vec3 ink; void main() { float r = length(gl_PointCoord - .5) * 2.;
-        if (r > 1.) discard; gl_FragColor = vec4(ink, (1. - smoothstep(.1,1.,r))); }`,
-      transparent: true,
-      depthWrite: false,
-      blending: AdditiveBlending,
-    }),
-  );
-  scene.add(new Points(geometry, material));
-  return (t, ratio) => {
-    material.uniforms['time'].value = t;
-    material.uniforms['pixelRatio'].value = ratio;
-  };
-}
-
-/** What the sky's passes work at: CSS resolution on Retina displays, which a
- *  blur would not show more of. */
-const sceneRatio = (): number => Math.min(globalThis.devicePixelRatio || 1, 1.25);
-
-/** The disc of the galaxy is drawn this many texels to a pixel of the scene. */
-const GALAXY_DETAIL = 0.75;
-
-interface SceneModel {
-  update(f: SkyFrame, gl: WebGLRenderer): void;
-  dispose(): void;
-}
-
-interface InstancedDraw<K extends string> {
-  /** The shape drawn once per instance. */
-  readonly base: BufferGeometry;
-  readonly batch: InstanceBatch<K>;
-  readonly material: ShaderMaterial;
-  /** Draws the shape as a line, not as a surface. */
-  readonly line?: boolean;
-}
-
-/** Adds one draw call for a batch of marks, and returns what sends the frame's
- *  rewritten values to the GPU. */
-function addInstanced<K extends string>(
-  scene: Scene,
-  kit: Kit,
-  { base, batch, material, line }: InstancedDraw<K>,
-): () => void {
-  const { geometry, upload } = kit.instanced(base, batch);
-  const owned = kit.owned.own(material);
-  const object = line ? new Line(geometry, owned) : new Mesh(geometry, owned);
-  // The base shape's bounds say nothing of where the instances are.
-  object.frustumCulled = false;
-  if (batch.count > 0) scene.add(object);
-  return upload;
-}
-
-function buildScene3D(
-  scene: Scene,
-  kit: Kit,
-  camera: CameraController,
-  data: SkyScene,
-): SceneModel {
-  const { owned } = kit;
-  const galaxy = new GalaxyLayer(scene, owned);
-  const updateField = field3D(scene, owned, data.field);
-  // Soft cloud cells at distinct depths form the nebula volume.
-  const cloudMap = kit.texture((c, size) => {
-    const g = c.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    g.addColorStop(0, '#ffffff');
-    g.addColorStop(0.4, '#ffffff55');
-    g.addColorStop(1, '#ffffff00');
-    c.fillStyle = g;
-    c.fillRect(0, 0, size, size);
-  });
-  const clouds: { cloud: Sprite; x: number; y: number; z: number; phase: number }[] = [];
-  const nr = rnd(31337);
-  for (let i = 0; i < 18; i++) {
-    const cloud = kit.sprite(cloudMap, ['#3b2a8f', '#12507a', '#57208f', '#0f6a72'][i % 4], 0.009);
-    const x = nr() * 9000 - 2600;
-    const y = nr() * 5000 - 1600;
-    const z = -1500 - nr() * 7000;
-    cloud.position.copy(vec(x, y, z));
-    cloud.scale.setScalar(1400 + nr() * 2200);
-    scene.add(cloud);
-    clouds.push({ cloud, x, y, z, phase: nr() * 6.28 });
-  }
-
-  const instances = new SkyInstances(data.stars);
-  const time = { value: 0 };
-  const quad = owned.own(new PlaneGeometry(1, 1));
-  const ball = owned.own(new SphereGeometry(1, 16, 12));
-  const ring = owned.own(
-    new BufferGeometry().setFromPoints(
-      Array.from({ length: 65 }, (_, i) =>
-        vec(Math.cos((i / 64) * Math.PI * 2), Math.sin((i / 64) * Math.PI * 2)),
-      ),
-    ),
-  );
-  const glow = (vertexShader: string, fragmentShader: string): ShaderMaterial =>
-    new ShaderMaterial({
-      uniforms: { time },
-      vertexShader,
-      fragmentShader,
-      transparent: true,
-      depthWrite: false,
-      blending: AdditiveBlending,
-    });
-  // One draw per kind. All four sit at the same depth, so three.js draws them in
-  // the order they are added: planets first, as they write depth, which hides
-  // the glow behind one and still lets the glow in front of it add on top.
-  const uploads = [
-    addInstanced(scene, kit, {
-      base: ball,
-      batch: instances.planets,
-      material: new ShaderMaterial({
-        vertexShader: PLANET_VERTEX,
-        fragmentShader: PLANET_FRAGMENT,
-        transparent: true,
-      }),
-    }),
-    addInstanced(scene, kit, {
-      base: quad,
-      batch: instances.discs,
-      material: glow(DISC_VERTEX, DISC_FRAGMENT),
-    }),
-    addInstanced(scene, kit, {
-      base: quad,
-      batch: instances.bodies,
-      material: glow(STAR_INSTANCED_VERTEX, STAR_INSTANCED_FRAGMENT),
-    }),
-    addInstanced(scene, kit, {
-      base: ring,
-      batch: instances.pulses,
-      line: true,
-      material: new ShaderMaterial({
-        vertexShader: PULSE_VERTEX,
-        fragmentShader: PULSE_FRAGMENT,
-        transparent: true,
-        depthWrite: false,
-      }),
-    }),
-  ];
-  const connections = data.clusters
-    .filter((c) => c.stars.length > 1 && !c.arm)
-    .map((cluster) => {
-      const object = kit.segments(
-        cluster.stars.slice(1).flatMap(() => [vec(0, 0), vec(0, 0)]),
-        LINK_INK,
-        0.5,
-      );
-      scene.add(object);
-      return { cluster, object };
-    });
-  const route = data.clusters.flatMap((c) =>
-    c.stars.length ? [c.stars[0], c.stars[c.stars.length - 1]] : [],
-  );
-  const flow = kit.line(
-    route.map((s) => vec(s.ax, s.ay, s.az)),
-    FLOW_INK,
-    0.55,
-    true,
-  );
-  Object.assign(flow.material, { dashSize: 1.5, gapSize: 7.5 });
-  scene.add(flow);
-  const dashTime = { value: 0 };
-  (flow.material as Material).onBeforeCompile = (shader) => {
-    shader.uniforms['dashTime'] = dashTime;
-    shader.fragmentShader =
-      'uniform float dashTime;\n' +
-      shader.fragmentShader.replace(
-        'mod( vLineDistance, totalSize )',
-        'mod( vLineDistance - dashTime, totalSize )',
-      );
-  };
-
-  const news = new NewsEffects3D({
-    scene,
-    kit,
-    camera,
-    toScreen: (x, y, z) => camera.project(x, y, z),
-  });
-
-  const threads = new Threads3D(scene, kit);
-
-  // Refilled each frame; the news effects read it at once and keep nothing of it.
-  const bursts: NewsEffect3D[] = [];
-  const collectEffects = (f: SkyFrame): readonly NewsEffect3D[] => {
-    bursts.length = 0;
-    for (const layer of f.layers) {
-      const playing = layer.effects3D?.(f);
-      if (playing?.length) bursts.push(...playing);
-    }
-    return bursts;
-  };
-  const firstThreads = (f: SkyFrame): LogThreads | null => {
-    for (const layer of f.layers) {
-      const traced = layer.threads3D?.(f);
-      if (traced) return traced;
-    }
-    return null;
-  };
-
-  const updateLine = (object: Line, members: readonly SkyStar[]): void => {
-    const p = object.geometry.attributes['position'];
-    members.forEach((s, i) => p.setXYZ(i, s.ax, -s.ay, s.az));
-    p.needsUpdate = true;
-    object.geometry.computeBoundingSphere();
-  };
-
-  /** Each segment of a constellation, stopped short of its stars by their
-   *  on-screen gap carried back to each star's depth. */
-  const updateSegments = (f: SkyFrame, object: LineSegments, members: readonly SkyStar[]): void => {
-    const p = object.geometry.attributes['position'];
-    const scale = f.camera.current.scale;
-    const gap = (s: SkyStar): number =>
-      (starRadius(f, s, f.born(s)) + LINK_GAP) / (scale * camera.depth(s.az));
-    const at = (s: SkyStar) => ({ x: s.ax, y: -s.ay, z: s.az });
-    for (let i = 1; i < members.length; i++) {
-      const a = members[i - 1];
-      const b = members[i];
-      const [from, to] = trimSegment(at(a), at(b), gap(a), gap(b)) ?? [at(a), at(a)];
-      p.setXYZ(2 * i - 2, from.x, from.y, from.z);
-      p.setXYZ(2 * i - 1, to.x, to.y, to.z);
-    }
-    p.needsUpdate = true;
-    object.geometry.computeBoundingSphere();
-  };
-
-  return {
-    update(f: SkyFrame, gl: WebGLRenderer): void {
-      const { t } = f;
-      const cam = f.camera.current;
-      const ratio = sceneRatio();
-      galaxy.update(f, gl, ratio * GALAXY_DETAIL);
-      updateField(t, ratio);
-      for (const { cloud, x, y, z, phase } of clouds) {
-        place(cloud.position, x + Math.sin(t * 0.035 + phase) * 50, y, z);
-      }
-      time.value = f.frozen ? 0 : t;
-      instances.update(f, (z) => camera.depth(z));
-      for (const upload of uploads) upload();
-      for (const { object, cluster } of connections) {
-        updateSegments(f, object, cluster.stars);
-        (object.material as LineBasicMaterial).opacity =
-          (0.5 + Math.sin(t * 0.62 + cluster.cx * 0.004) * 0.12) * f.dimCluster(cluster);
-      }
-      flow.visible = f.chart === 'prs' && route.length > 1;
-      if (route.length) {
-        updateLine(flow, route);
-        flow.computeLineDistances();
-      }
-      (flow.material as LineDashedMaterial).scale = cam.scale;
-      dashTime.value = t * 30;
-      news.update(collectEffects(f));
-      // Log threads follow the same fault across windows, bowed in 3D.
-      threads.update(firstThreads(f), cam.scale);
-    },
-    dispose(): void {
-      news.dispose();
-      threads.dispose();
-    },
-  };
-}
 
 /** Marks that annotate the sky rather than model it stay in screen space,
  *  projected through each star's depth so they still land on it. */
@@ -419,11 +93,10 @@ export class WebGLSkyRenderer implements SkyRenderer {
     this.canvas.hidden = hidden;
   }
 
+  /** The first scene builds the sky; each one after updates it in place. */
   setScene(data: SkyScene): void {
-    this.model?.dispose();
-    this.scene.clear();
-    this.owned.disposeAll();
-    this.model = buildScene3D(this.scene, this.kit, this.camera, data);
+    this.model ??= buildScene3D(this.scene, this.kit, this.camera);
+    this.model.load(data);
     this.lastScene = data;
   }
 
@@ -468,6 +141,13 @@ export class WebGLSkyRenderer implements SkyRenderer {
 
   private lastScene: SkyScene | null = null;
 
+  private teardown(): void {
+    this.model?.dispose();
+    this.model = null;
+    this.scene.clear();
+    this.owned.disposeAll();
+  }
+
   private readonly lostContext = (event: Event): void => {
     event.preventDefault();
     this.lost = true;
@@ -479,6 +159,8 @@ export class WebGLSkyRenderer implements SkyRenderer {
     this.lost = false;
     try {
       this.resize();
+      // The context's resources are gone, so the sky is built from nothing.
+      this.teardown();
       if (this.lastScene) this.setScene(this.lastScene);
       this.canvas.style.visibility = '';
       this.onLost(false);

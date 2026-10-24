@@ -106,7 +106,7 @@ export class Instanced<K extends string> {
       this.current = this.owned.own(this.build());
       this.built = batch.arrays;
     } else {
-      for (const name of Object.keys(this.current.attributes)) {
+      for (const name of Object.keys(batch.widths)) {
         this.current.getAttribute(name).needsUpdate = true;
       }
     }

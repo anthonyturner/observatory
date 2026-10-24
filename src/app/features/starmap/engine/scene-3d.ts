@@ -207,6 +207,8 @@ export function buildScene3D(scene: Scene, kit: Kit, camera: CameraController): 
       instances.load(data.stars);
       for (const draw of draws) draw.reload();
       links.load(data.clusters);
+      // Threads join stars of the old layout; the next frame traces them again.
+      threads.dispose();
     },
     update(f: SkyFrame, gl: WebGLRenderer): void {
       const { t } = f;

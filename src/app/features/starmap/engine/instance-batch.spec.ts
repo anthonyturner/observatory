@@ -37,4 +37,29 @@ describe('InstanceBatch', () => {
 
     expect(Array.from(b.arrays.aInk)).toEqual([1, 0.5, 0.25]);
   });
+
+  it('keeps its arrays while it resizes within them, and counts the instances it holds', () => {
+    const b = batch();
+    const { aPos } = b.arrays;
+
+    b.resize(1);
+
+    expect(b.count).toBe(1);
+    expect(b.arrays.aPos).toBe(aPos);
+  });
+
+  it('reallocates, with room to spare, only when it outgrows its arrays', () => {
+    const b = batch();
+    const { aPos } = b.arrays;
+
+    b.resize(5);
+
+    expect(b.count).toBe(5);
+    expect(b.arrays.aPos).not.toBe(aPos);
+    expect(b.arrays.aPos.length).toBe(5 * 3);
+    const grown = b.arrays.aPos;
+    b.resize(4);
+    b.resize(5);
+    expect(b.arrays.aPos).toBe(grown);
+  });
 });

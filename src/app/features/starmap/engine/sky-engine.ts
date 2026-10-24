@@ -118,7 +118,6 @@ export class SkyEngine {
     if (carry) carryOver(this.stars, sky.stars, this.bornAt);
     this.stars = sky.stars;
     this.clusters = sky.clusters;
-    this.field = buildField();
     this.renderer.setScene(this.scene());
     if (this.webgl && this.webgl !== this.renderer) this.webgl.setScene(this.scene());
     this.kick();

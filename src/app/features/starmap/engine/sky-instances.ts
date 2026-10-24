@@ -67,14 +67,20 @@ interface Member {
 }
 
 export class SkyInstances {
-  readonly bodies: ReturnType<typeof bodyBatch>;
-  readonly discs: ReturnType<typeof discBatch>;
-  readonly planets: ReturnType<typeof planetBatch>;
-  readonly pulses: ReturnType<typeof pulseBatch>;
-  private readonly members: readonly Member[];
+  readonly bodies = bodyBatch(0);
+  readonly discs = discBatch(0);
+  readonly planets = planetBatch(0);
+  readonly pulses = pulseBatch(0);
+  private members: readonly Member[] = [];
 
-  /** Writes the values that never change; `update` writes the rest each frame. */
-  constructor(stars: readonly SkyStar[]) {
+  constructor(stars: readonly SkyStar[] = []) {
+    this.load(stars);
+  }
+
+  /** Lays the batches out for these stars and writes the values that never
+   *  change; `update` writes the rest each frame. The batches are the same
+   *  objects as before, resized, so a layout costs no new buffers while it fits. */
+  load(stars: readonly SkyStar[]): void {
     let discs = 0;
     let planets = 0;
     let pulses = 0;
@@ -95,10 +101,10 @@ export class SkyInstances {
         planets += worlds.length;
         return member;
       });
-    this.bodies = bodyBatch(this.members.length);
-    this.discs = discBatch(discs);
-    this.planets = planetBatch(planets);
-    this.pulses = pulseBatch(pulses);
+    this.bodies.resize(this.members.length);
+    this.discs.resize(discs);
+    this.planets.resize(planets);
+    this.pulses.resize(pulses);
 
     const tones = PLANET_TONES.map((hex) => new Color(hex));
     const ink = new Color();

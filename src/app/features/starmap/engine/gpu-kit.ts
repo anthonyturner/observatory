@@ -29,9 +29,19 @@ export interface Disposable {
 export class Owned {
   private readonly resources = new Set<Disposable>();
 
+  /** How many resources are held; a scene that updates in place keeps it steady. */
+  get size(): number {
+    return this.resources.size;
+  }
+
   own<T extends Disposable>(resource: T): T {
     this.resources.add(resource);
     return resource;
+  }
+
+  /** Releases one resource ahead of the rest. Freeing one already freed is fine. */
+  free(resource: Disposable): void {
+    if (this.resources.delete(resource)) resource.dispose();
   }
 
   release(root: Object3D): void {
@@ -63,11 +73,71 @@ export const place = (target: Vector3, x: number, y: number, z = 0): Vector3 =>
 
 export const vec = (x: number, y: number, z = 0): Vector3 => place(new Vector3(), x, y, z);
 
-/** A shape drawn once per instance, with the batch's values as its attributes. */
-export interface Instanced {
-  readonly geometry: InstancedBufferGeometry;
+/**
+ * A shape drawn once per instance of a batch, with the batch's arrays as its
+ * attributes. The geometry follows the batch: it is rebuilt only when the batch
+ * grew past its arrays, and otherwise just told to send them again.
+ */
+export class Instanced<K extends string> {
+  private built: object;
+  private moving: InstancedBufferAttribute[] = [];
+  private current: InstancedBufferGeometry;
+
+  constructor(
+    private readonly owned: Owned,
+    private readonly base: BufferGeometry,
+    private readonly batch: InstanceBatch<K>,
+  ) {
+    this.built = batch.arrays;
+    this.current = this.owned.own(this.build());
+    this.current.instanceCount = batch.count;
+  }
+
+  get geometry(): InstancedBufferGeometry {
+    return this.current;
+  }
+
+  /** Follows the batch after it was laid out again, and returns the geometry to
+   *  draw; every value is sent, as the layout rewrote them all. */
+  sync(): InstancedBufferGeometry {
+    const { batch } = this;
+    if (this.built !== batch.arrays) {
+      this.owned.free(this.current);
+      this.current = this.owned.own(this.build());
+      this.built = batch.arrays;
+    } else {
+      for (const name of Object.keys(batch.widths)) {
+        this.current.getAttribute(name).needsUpdate = true;
+      }
+    }
+    this.current.instanceCount = batch.count;
+    return this.current;
+  }
+
   /** Sends the values the frame rewrote to the GPU. */
-  upload(): void;
+  upload(): void {
+    for (const attribute of this.moving) attribute.needsUpdate = true;
+  }
+
+  private build(): InstancedBufferGeometry {
+    const { base, batch } = this;
+    const geometry = new InstancedBufferGeometry();
+    // Copies, so that freeing this geometry leaves the buffers of the others alone.
+    geometry.index = base.index?.clone() ?? null;
+    for (const [name, attribute] of Object.entries(base.attributes)) {
+      geometry.setAttribute(name, attribute.clone());
+    }
+    this.moving = [];
+    for (const name of Object.keys(batch.widths) as K[]) {
+      const attribute = new InstancedBufferAttribute(batch.arrays[name], batch.widths[name]);
+      if (batch.dynamic.includes(name)) {
+        attribute.setUsage(DynamicDrawUsage);
+        this.moving.push(attribute);
+      }
+      geometry.setAttribute(name, attribute);
+    }
+    return geometry;
+  }
 }
 
 /** One tool box for the scene builders: textures, sprites and lines it owns. */
@@ -115,28 +185,8 @@ export class Kit {
   }
 
   /** `base` repeated for every instance in `batch`, whose arrays become the attributes. */
-  instanced<K extends string>(base: BufferGeometry, batch: InstanceBatch<K>): Instanced {
-    const geometry = this.owned.own(new InstancedBufferGeometry());
-    geometry.index = base.index;
-    for (const [name, attribute] of Object.entries(base.attributes)) {
-      geometry.setAttribute(name, attribute);
-    }
-    const moving: InstancedBufferAttribute[] = [];
-    for (const name of Object.keys(batch.widths) as K[]) {
-      const attribute = new InstancedBufferAttribute(batch.arrays[name], batch.widths[name]);
-      if (batch.dynamic.includes(name)) {
-        attribute.setUsage(DynamicDrawUsage);
-        moving.push(attribute);
-      }
-      geometry.setAttribute(name, attribute);
-    }
-    geometry.instanceCount = batch.count;
-    return {
-      geometry,
-      upload: () => {
-        for (const attribute of moving) attribute.needsUpdate = true;
-      },
-    };
+  instanced<K extends string>(base: BufferGeometry, batch: InstanceBatch<K>): Instanced<K> {
+    return new Instanced(this.owned, base, batch);
   }
 
   /** Unjoined segments, one per pair of points. */

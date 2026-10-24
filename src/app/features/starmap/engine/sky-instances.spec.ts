@@ -164,6 +164,35 @@ describe('SkyInstances', () => {
   });
 });
 
+describe('SkyInstances.load', () => {
+  it('lays the same batches out for new stars, rewriting what never changes', () => {
+    const instances = new SkyInstances([star({ cost: 5000, urgent: true, issues: [1, 2] })]);
+    const { bodies, discs, planets, pulses } = instances;
+
+    instances.load([star({ bucket: 'failing' }), star(), star()]);
+
+    expect([instances.bodies, instances.discs, instances.planets, instances.pulses]).toEqual([
+      bodies,
+      discs,
+      planets,
+      pulses,
+    ]);
+    expect([bodies.count, discs.count, planets.count, pulses.count]).toEqual([3, 0, 0, 0]);
+    expect(bodies.arrays.aKind[0]).toBe(STAR_TYPES.indexOf('giant'));
+  });
+
+  it('places the new stars, not the old', () => {
+    const instances = new SkyInstances([star()]);
+    const next = star();
+    Object.assign(next, { ax: 7, ay: 8, az: 9 });
+
+    instances.load([next]);
+    instances.update(frame(), flat);
+
+    expect(Array.from(instances.bodies.arrays.aPos.slice(0, 3))).toEqual([7, -8, 9]);
+  });
+});
+
 describe('the attributes the shaders read', () => {
   const declared = (shader: string): string[] =>
     [...shader.matchAll(/attribute \w+ ([^;]+);/g)].flatMap((m) =>

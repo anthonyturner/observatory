@@ -15,9 +15,19 @@ import { WholeFile, wholeFileOf } from '../../../core/queue/whole-file';
 import { DiffLines } from '../../../shared/diff-lines/diff-lines';
 import { DiffWrapToggle } from '../../../shared/diff-wrap-toggle/diff-wrap-toggle';
 import { ProjectBarRoom } from '../../../shared/project-bar-room/project-bar-room';
-import { FileMessage, NOT_A_FILE, changeLabel, shortSha, stateMessage } from './pull-file-words';
+import {
+  CHANGES_UNAVAILABLE_LABEL,
+  CHANGES_UNAVAILABLE_NOTE,
+  FileMessage,
+  MISMATCH_NOTE,
+  NOT_A_FILE,
+  changeLabel,
+  shortSha,
+  stateMessage,
+} from './pull-file-words';
 
-const COMMIT = /^[0-9a-f]{7,40}$/i;
+/** The whole hash: a short one never equals the head's, so it would always look out of date. */
+const COMMIT = /^[0-9a-f]{40}$/i;
 
 const sameAsk = (a: PullFileAsk | null, b: PullFileAsk | null): boolean =>
   a === b ||
@@ -90,12 +100,19 @@ export class PullFilePage {
     this.ask() ? stateMessage(this.feed.state()) : NOT_A_FILE,
   );
   protected readonly lines = computed(() => this.whole()?.lines ?? null);
-  protected readonly isMismatched = computed(() => this.whole()?.isMismatched ?? false);
+  private readonly isUnavailable = computed(() => this.file()?.changesUnavailable ?? false);
+  /** Why no change is marked, when that is not because there are none. */
+  protected readonly changesNote = computed((): string | null => {
+    if (this.isUnavailable()) return CHANGES_UNAVAILABLE_NOTE;
+    return this.whole()?.isMismatched ? MISMATCH_NOTE : null;
+  });
   protected readonly reveal = computed(() => this.whole()?.changes[this.changeIndex()] ?? null);
   protected readonly hasPrevious = computed(() => this.changeIndex() > 0);
   protected readonly hasNext = computed(() => this.changeIndex() < this.changeCount() - 1);
   protected readonly changeText = computed(() =>
-    changeLabel(this.changeIndex(), this.changeCount()),
+    this.isUnavailable()
+      ? CHANGES_UNAVAILABLE_LABEL
+      : changeLabel(this.changeIndex(), this.changeCount()),
   );
 
   /** The file's name large, its folder beneath, and where to go back to. */

@@ -82,6 +82,18 @@ describe('diffFilesOf', () => {
       expect(file.newPath).toBeNull();
     });
 
+    it('is none for a rename to a path git quotes', () => {
+      const file = only(
+        'diff --git a/old.md "b/caf\\303\\251.md"',
+        'rename from old.md',
+        'rename to "caf\\303\\251.md"',
+        '@@ -1 +1 @@',
+        '-a',
+      );
+
+      expect(file.newPath).toBeNull();
+    });
+
     it('marks a deleted file', () => {
       const file = only(
         'diff --git a/gone.ts b/gone.ts',

@@ -9,6 +9,7 @@ const file = (extra: Partial<PullFile> = {}): PullFile => ({
   text: '',
   bytes: 0,
   patch: '',
+  changesUnavailable: false,
   githubUrl: 'https://github.com/me/app/blob/x/src/a.ts',
   ...extra,
 });

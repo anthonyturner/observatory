@@ -60,6 +60,14 @@ export function fileMessage(file: PullFile): FileMessage | null {
   }
 }
 
+export const MISMATCH_NOTE =
+  'These changes do not match this version of the file, so none are marked.';
+
+export const CHANGES_UNAVAILABLE_NOTE =
+  'GitHub would not give the changes to this file, so none are marked.';
+
+export const CHANGES_UNAVAILABLE_LABEL = 'Changes not available';
+
 export const shortSha = (sha: string): string => sha.slice(0, SHORT_SHA_LENGTH);
 
 /** "Change 2 of 5", or that there are none to step through. */

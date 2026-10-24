@@ -39,6 +39,7 @@ const answer = (extra: Record<string, unknown> = {}) => ({
   text: TEXT,
   bytes: TEXT.length,
   patch: PATCH,
+  changesUnavailable: false,
   githubUrl: `https://github.com/me/app/blob/${SHA}/src/a.ts`,
   fetchedAt: '2026-10-24T00:00:00Z',
   ...extra,
@@ -147,6 +148,19 @@ describe('PullFilePage', () => {
     expect([none.button('Previous').disabled, none.button('Next').disabled]).toEqual([true, true]);
   });
 
+  it('says the changes are not available, rather than that there are none, when GitHub would not give them', async () => {
+    const { harness, http, text, codeLines } = await open();
+
+    http.expectOne(URL_OF(SHA)).flush(answer({ patch: '', changesUnavailable: true }));
+    harness.detectChanges();
+
+    expect(text('.note.warn')).toBe(
+      'GitHub would not give the changes to this file, so none are marked.',
+    );
+    expect(text('.count')).toBe('Changes not available');
+    expect(codeLines().map((line) => line.kind)).toHaveLength(10);
+  });
+
   it('says the changes do not fit the text, and marks none', async () => {
     const { harness, http, text, codeLines } = await open();
 
@@ -253,6 +267,7 @@ describe('PullFilePage', () => {
     for (const address of [
       `/p/me/app/pull/7/file?path=src%2Fa.ts`,
       `/p/me/app/pull/7/file?sha=nothex&path=src%2Fa.ts`,
+      `/p/me/app/pull/7/file?sha=${SHA.slice(0, 7)}&path=src%2Fa.ts`,
       `/p/me/app/pull/7/file?sha=${SHA}`,
       `/p/me/app/pull/0/file?sha=${SHA}&path=a.ts`,
       `/p/me/app/pull/x/file?sha=${SHA}&path=a.ts`,

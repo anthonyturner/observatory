@@ -45,7 +45,9 @@ function marksOf(hunks: readonly DiffLine[], fileLines: readonly string[]): Mark
       continue;
     } else if (line.kind === 'd') {
       const removed = { ...line, text: withoutReturn(line.text), parts: null };
-      removedBefore.set(next, [...(removedBefore.get(next) ?? []), removed]);
+      const run = removedBefore.get(next) ?? [];
+      run.push(removed);
+      removedBefore.set(next, run);
     } else {
       if (line.newNumber === null || fileLines[line.newNumber - 1] !== withoutReturn(line.text)) {
         return null;

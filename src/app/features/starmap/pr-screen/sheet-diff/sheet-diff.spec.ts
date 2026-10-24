@@ -173,6 +173,14 @@ describe('SheetDiff', () => {
       '-a',
       '+b',
     ].join('\n');
+    const QUOTED_RENAME = [
+      'diff --git a/old.md "b/caf\\303\\251.md"',
+      'rename from old.md',
+      'rename to "caf\\303\\251.md"',
+      '@@ -1 +1 @@',
+      '-a',
+      '+b',
+    ].join('\n');
 
     const links = (diff: string, target: typeof TARGET | null = TARGET) => {
       const view = render(diff, { fileTarget: target });
@@ -207,7 +215,7 @@ describe('SheetDiff', () => {
     });
 
     it('offers none for a binary file, a deleted one, or a path git quotes', () => {
-      expect(links([BINARY, DELETED, QUOTED].join('\n'))).toEqual([]);
+      expect(links([BINARY, DELETED, QUOTED, QUOTED_RENAME].join('\n'))).toEqual([]);
     });
 
     it('offers none where the diff has no page for its files', () => {

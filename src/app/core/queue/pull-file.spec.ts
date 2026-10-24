@@ -31,6 +31,7 @@ describe('parsePullFile', () => {
       text: 'one\n',
       bytes: 4,
       patch: ANSWER.patch,
+      changesUnavailable: false,
       githubUrl: ANSWER.githubUrl,
     });
   });
@@ -44,8 +45,15 @@ describe('parsePullFile', () => {
       text: '',
       bytes: 0,
       patch: '',
+      changesUnavailable: false,
       githubUrl: '',
     });
+  });
+
+  it('keeps the word that the changes could not be read', () => {
+    expect(
+      parsePullFile({ ...ANSWER, patch: '', changesUnavailable: true })?.changesUnavailable,
+    ).toBe(true);
   });
 
   it('refuses an answer without a path, a commit, a text or a state it knows', () => {

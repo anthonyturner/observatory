@@ -26,10 +26,8 @@
       </p>
     }
   }
-  @if (isMismatched()) {
-    <p class="note warn">
-      These changes do not match this version of the file, so none are marked.
-    </p>
+  @if (changesNote(); as note) {
+    <p class="note warn">{{ note }}</p>
   }
   @if (lines()) {
     <div class="tools">

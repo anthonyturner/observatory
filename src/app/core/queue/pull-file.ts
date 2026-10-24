@@ -27,6 +27,8 @@ export interface PullFile {
   readonly bytes: number;
   /** The file's section of the pull request's diff up to `sha`; empty when it has none. */
   readonly patch: string;
+  /** GitHub would not give the diff, so an empty `patch` does not mean the file has no changes. */
+  readonly changesUnavailable: boolean;
   /** The file at `sha` on GitHub, or the pull request where the file is missing. */
   readonly githubUrl: string;
 }
@@ -44,6 +46,7 @@ export function parsePullFile(value: unknown): PullFile | null {
     text,
     bytes: isCount(bytes) ? bytes : 0,
     patch: isString(patch) ? patch : '',
+    changesUnavailable: value['changesUnavailable'] === true,
     githubUrl: isString(githubUrl) ? githubUrl : '',
   };
 }

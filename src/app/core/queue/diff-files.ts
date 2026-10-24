@@ -43,7 +43,8 @@ const FILE_HEADER = 'diff --git';
 const PATH = /^diff --git a\/(.+?) b\//;
 /** The header of a file that kept its path: both sides name the same one. */
 const SAME_PATH = /^diff --git a\/(.+) b\/\1$/;
-const RENAME_TO = /^rename to (.+)$/;
+/** A path git quotes starts with a quote, and is not given in plain text. */
+const RENAME_TO = /^rename to ([^"].*)$/;
 const DELETED_FILE = /^deleted file mode /;
 /** `@@ -12,7 +12,8 @@`'s new side: where it starts and how many lines it holds. */
 const NEW_SIDE = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/;

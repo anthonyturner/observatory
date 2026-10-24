@@ -306,48 +306,81 @@ export function drawMass(
   c.restore();
 }
 
-export function drawClusterLabel(f: SkyFrame, cluster: SkyCluster): void {
+/** No glyph of a sky font is wider than this many ems, so a line is at most this per character. */
+const GLYPH_EM = 0.6;
+
+const TAG_SIZE = 11;
+const CAPTION_SIZE = 10.5;
+const TAG_FONT = `500 ${TAG_SIZE}px "IBM Plex Mono", monospace`;
+const CAPTION_FONT = `300 ${CAPTION_SIZE}px "IBM Plex Sans", sans-serif`;
+const CAPTION_SCALE = 1.35;
+const LABEL_SCALE = 0.5;
+
+/** Draws a line of words centred on x, unless all of it is off the screen: words nobody can see cost the same to set. */
+function say(f: SkyFrame, words: string, size: number, x: number, y: number): void {
+  const reach = (words.length * size * GLYPH_EM) / 2;
+  if (x < -reach || x > f.width + reach) return;
+  if (y < -size || y > f.height + size * 1.5) return;
+  f.ctx.fillText(words, x, y);
+}
+
+function drawClusterLabel(f: SkyFrame, cluster: SkyCluster): void {
   if (!cluster.stars.length || cluster.halo) return;
   const { ctx } = f;
   const scale = f.camera.current.scale;
   const [sx, sy] = f.toScreen(cluster.cx, cluster.labelY, cluster.z);
   const a = f.dimCluster(cluster);
-  ctx.save();
-  ctx.textAlign = 'center';
   ctx.globalAlpha = 0.9 * a;
   ctx.fillStyle = cluster.colour;
-  ctx.font = `italic 300 ${Math.max(18, 30 * Math.min(scale, 1.2))}px "Cormorant Garamond", Georgia, serif`;
-  ctx.fillText(cluster.label, sx, sy);
+  const name = Math.max(18, 30 * Math.min(scale, 1.2));
+  ctx.font = `italic 300 ${name}px "Cormorant Garamond", Georgia, serif`;
+  say(f, cluster.label, name, sx, sy);
   ctx.globalAlpha = 0.5 * a;
   ctx.fillStyle = '#8d9bc4';
-  ctx.font = `500 ${Math.max(9, 10.5 * Math.min(scale, 1.2))}px "IBM Plex Mono", monospace`;
-  ctx.fillText(cluster.sub, sx, sy + 20);
-  ctx.restore();
+  const sub = Math.max(9, 10.5 * Math.min(scale, 1.2));
+  ctx.font = `500 ${sub}px "IBM Plex Mono", monospace`;
+  say(f, cluster.sub, sub, sx, sy + 20);
 }
 
-export function drawStarLabel(f: SkyFrame, star: SkyStar): void {
-  if (star.custom) return;
-  const grow = f.born(star);
-  if (grow < 0.6 || !star.tag) return;
-  const { ctx } = f;
+function drawStarLabel(f: SkyFrame, star: SkyStar, captioned: boolean): void {
+  if (star.custom || !star.tag) return;
   const [sx, sy] = f.toScreen(star.ax, star.ay, star.az);
+  const grow = f.born(star);
+  if (grow < 0.6) return;
+  const { ctx } = f;
   const r = starRadius(f, star, 1);
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.globalAlpha = 0.85 * f.dim(star) * grow;
+  const lit = f.dim(star) * grow;
+  ctx.globalAlpha = 0.85 * lit;
   ctx.fillStyle = '#eaf0ff';
-  ctx.font = '500 11px "IBM Plex Mono", monospace';
-  ctx.fillText(star.tag, sx, sy + r * 1.6 + 17);
+  say(f, star.tag, TAG_SIZE, sx, sy + r * 1.6 + 17);
   if (star.quick) {
     ctx.fillStyle = QUICK_COLOUR;
-    ctx.fillText('✦ quick win', sx, sy - r * 1.6 - 10);
+    say(f, '✦ quick win', TAG_SIZE, sx, sy - r * 1.6 - 10);
   }
-  if (f.camera.current.scale > 1.35) {
-    ctx.globalAlpha = 0.5 * f.dim(star) * grow;
+  if (captioned) {
+    ctx.globalAlpha = 0.5 * lit;
     ctx.fillStyle = '#8d9bc4';
-    ctx.font = '300 10.5px "IBM Plex Sans", sans-serif';
+    ctx.font = CAPTION_FONT;
     const words = star.caption.length > 40 ? `${star.caption.slice(0, 38)}…` : star.caption;
-    ctx.fillText(words, sx, sy + r * 1.6 + 31);
+    say(f, words, CAPTION_SIZE, sx, sy + r * 1.6 + 31);
+    ctx.font = TAG_FONT;
+  }
+}
+
+/**
+ * Every constellation's name and every star's tag, in one pass, so the
+ * alignment and font are set once for the lot. Saving, setting and restoring
+ * the context round each line cost about as much as drawing it.
+ */
+export function drawLabels(f: SkyFrame): void {
+  const { ctx } = f;
+  ctx.save();
+  ctx.textAlign = 'center';
+  for (const c of f.clusters) drawClusterLabel(f, c);
+  const scale = f.camera.current.scale;
+  if (scale > LABEL_SCALE) {
+    ctx.font = TAG_FONT;
+    for (const s of f.stars) drawStarLabel(f, s, scale > CAPTION_SCALE);
   }
   ctx.restore();
 }
@@ -477,8 +510,7 @@ export class CanvasSkyRenderer implements SkyRenderer {
     ctx.globalCompositeOperation = 'source-over';
     for (const layer of f.layers) layer.flat?.(ctx, f);
     drawCustomReticle(f);
-    for (const c of f.clusters) drawClusterLabel(f, c);
-    if (f.camera.current.scale > 0.5) for (const s of f.stars) drawStarLabel(f, s);
+    drawLabels(f);
     for (const layer of f.layers) layer.labels?.(ctx, f);
 
     drawFog(f);

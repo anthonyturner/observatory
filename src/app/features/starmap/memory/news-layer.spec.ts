@@ -24,6 +24,17 @@ const merge = (startAt: number): NewsEvent => ({
 const frame = (wall: number, frozen: boolean): SkyFrame =>
   ({ chart: 'prs', stars: [], wall, frozen }) as unknown as SkyFrame;
 
+describe('NewsLayer with no news', () => {
+  it('hands the 3D scene the same empty list every frame, so none is allocated', () => {
+    const layer = new NewsLayer();
+
+    const first = layer.effects3D(frame(10, false));
+
+    expect(first).toEqual([]);
+    expect(layer.effects3D(frame(11, false))).toBe(first);
+  });
+});
+
 describe('NewsLayer on a merge', () => {
   const layer = new NewsLayer();
   layer.news = {

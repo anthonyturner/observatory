@@ -26,7 +26,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { CameraController } from './camera-controller';
-import { Kit, Owned, vec } from './gpu-kit';
+import { Kit, Owned, place, vec } from './gpu-kit';
 import { FLOW_INK, LINK_GAP, LINK_INK, trimSegment } from './link-ink';
 import { NewsEffects3D } from './news-3d';
 import { Threads3D } from './threads-3d';
@@ -39,7 +39,7 @@ import {
   starRadius,
 } from './canvas-sky';
 import { rnd } from './rnd';
-import { SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
+import { LogThreads, NewsEffect3D, SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
 import { FieldStar, SkyStar } from './sky-model';
 import {
   STAR_FRAGMENT,
@@ -328,6 +328,24 @@ function buildScene3D(
 
   const threads = new Threads3D(scene, kit);
 
+  // Refilled each frame; the news effects read it at once and keep nothing of it.
+  const bursts: NewsEffect3D[] = [];
+  const collectEffects = (f: SkyFrame): readonly NewsEffect3D[] => {
+    bursts.length = 0;
+    for (const layer of f.layers) {
+      const playing = layer.effects3D?.(f);
+      if (playing?.length) bursts.push(...playing);
+    }
+    return bursts;
+  };
+  const firstThreads = (f: SkyFrame): LogThreads | null => {
+    for (const layer of f.layers) {
+      const traced = layer.threads3D?.(f);
+      if (traced) return traced;
+    }
+    return null;
+  };
+
   const updateLine = (object: Line, members: readonly SkyStar[]): void => {
     const p = object.geometry.attributes['position'];
     members.forEach((s, i) => p.setXYZ(i, s.ax, -s.ay, s.az));
@@ -361,7 +379,7 @@ function buildScene3D(
       updateGalaxy(f);
       updateField(t, Math.min(globalThis.devicePixelRatio || 1, 1.25));
       for (const { cloud, x, y, z, phase } of clouds) {
-        cloud.position.copy(vec(x + Math.sin(t * 0.035 + phase) * 50, y, z));
+        place(cloud.position, x + Math.sin(t * 0.035 + phase) * 50, y, z);
       }
       for (const { star, body, pulse, disc, planets } of points) {
         const grow = f.born(star);
@@ -372,7 +390,7 @@ function buildScene3D(
         const r = star.mag * Math.max(cam.scale, 0.42) * grow;
         // Magnitude is data: cancel perspective shrinkage at each sprite's depth.
         const unit = 1 / (cam.scale * camera.depth(star.az));
-        body.position.copy(vec(star.ax, star.ay, star.az));
+        place(body.position, star.ax, star.ay, star.az);
         body.scale.setScalar(r * STAR_QUAD_REACH * 2 * unit);
         const look = body.material.uniforms;
         const detail = smoothstep(FAR_CORE_PX, NEAR_CORE_PX, r * FAR_DISC);
@@ -404,12 +422,11 @@ function buildScene3D(
           const sx = ox * Math.cos(turn) - oy * Math.sin(turn);
           const sy = ox * Math.sin(turn) + oy * Math.cos(turn);
           mesh.visible = detail > 0.02 && grow > 0;
-          mesh.position.copy(
-            vec(
-              star.ax + sx * unit,
-              star.ay + sy * unit,
-              star.az + Math.sin(angle) * planet.orbit * r * unit,
-            ),
+          place(
+            mesh.position,
+            star.ax + sx * unit,
+            star.ay + sy * unit,
+            star.az + Math.sin(angle) * planet.orbit * r * unit,
           );
           mesh.scale.setScalar(Math.max(planet.size * r, MIN_PLANET_PX / 2) * unit);
           mesh.material.uniforms['star'].value.copy(body.position);
@@ -433,12 +450,9 @@ function buildScene3D(
       }
       (flow.material as LineDashedMaterial).scale = cam.scale;
       dashTime.value = t * 30;
-      news.update(f.layers.flatMap((layer) => layer.effects3D?.(f) ?? []));
+      news.update(collectEffects(f));
       // Log threads follow the same fault across windows, bowed in 3D.
-      threads.update(
-        f.layers.map((layer) => layer.threads3D?.(f) ?? null).find((each) => each !== null) ?? null,
-        cam.scale,
-      );
+      threads.update(firstThreads(f), cam.scale);
     },
     dispose(): void {
       news.dispose();

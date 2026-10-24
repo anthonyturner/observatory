@@ -85,7 +85,7 @@ export interface SkyLayer {
   /** Whether something is still to play, so a still sky keeps drawing it. */
   animating?(wall: number): boolean;
   /** Bursts for the 3D scene to play, where the 2D sky would draw them itself. */
-  effects3D?(frame: SkyFrame): NewsEffect3D[];
+  effects3D?(frame: SkyFrame): readonly NewsEffect3D[];
   /** Log threads for the 3D scene to draw in depth, where the 2D sky draws them flat. */
   threads3D?(frame: SkyFrame): LogThreads | null;
 }

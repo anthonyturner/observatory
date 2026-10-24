@@ -216,8 +216,9 @@ function buildScene3D(
       depthWrite: false,
       blending: AdditiveBlending,
     });
-  // One draw per kind. Planets go in first: they write depth, so the glow
-  // behind one is hidden and the glow in front of it still adds on top.
+  // One draw per kind. All four sit at the same depth, so three.js draws them in
+  // the order they are added: planets first, as they write depth, which hides
+  // the glow behind one and still lets the glow in front of it add on top.
   const uploads = [
     addInstanced(scene, kit, {
       base: ball,

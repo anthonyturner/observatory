@@ -69,6 +69,23 @@ describe('DiffLines', () => {
     expect(element.classList.contains('wrap')).toBe(false);
   });
 
+  it('lays out only the lines near the window for a long file, and every line of a short one', () => {
+    // Drawing two thousand lines is the cost being avoided; the class is all that is asked about.
+    TestBed.overrideComponent(DiffLines, { set: { template: '<pre #code></pre>' } });
+    const fixture = TestBed.createComponent(DiffLines);
+    const isLong = (count: number): boolean => {
+      fixture.componentRef.setInput(
+        'lines',
+        Array.from({ length: count }, (_, index) => line({ text: `line ${index}` })),
+      );
+      fixture.detectChanges();
+      return (fixture.nativeElement as HTMLElement).classList.contains('long');
+    };
+
+    expect(isLong(2000)).toBe(false);
+    expect(isLong(2001)).toBe(true);
+  });
+
   it('brings the line to reveal into the middle of the window, and none when not asked', () => {
     const { element } = render(2);
 

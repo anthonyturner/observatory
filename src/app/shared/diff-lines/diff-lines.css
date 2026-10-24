@@ -28,6 +28,12 @@ pre > span {
   width: auto;
 }
 
+/* A long file's lines far from the window are left unlaid until they come near it. */
+:host(.long) pre > span {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 1lh;
+}
+
 /* The numbers are for finding a line, not part of it: a copy leaves them behind. */
 .n {
   box-sizing: content-box;

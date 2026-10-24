@@ -3,12 +3,17 @@ import {
   Component,
   ElementRef,
   afterRenderEffect,
+  computed,
   inject,
   input,
   viewChild,
 } from '@angular/core';
 import { DiffLine } from '../../core/queue/diff-files';
 import { DiffWrapChoice } from '../../core/queue/diff-wrap-choice';
+
+/** Past this many lines, the browser lays out only the ones near the window: a 1 MB file is
+ *  about 20,000 lines, and drawing them all took twice as long (measured in headless Edge). */
+const LONG_FILE_LINES = 2000;
 
 /**
  * Lines of code as a diff draws them: an old and a new number, a sign, and the code, with
@@ -20,7 +25,7 @@ import { DiffWrapChoice } from '../../core/queue/diff-wrap-choice';
   templateUrl: './diff-lines.html',
   styleUrl: './diff-lines.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class.wrap]': 'wraps()' },
+  host: { '[class.wrap]': 'wraps()', '[class.long]': 'isLong()' },
 })
 export class DiffLines {
   readonly lines = input.required<readonly DiffLine[]>();
@@ -28,6 +33,7 @@ export class DiffLines {
   readonly reveal = input<number | null>(null);
 
   protected readonly wraps = inject(DiffWrapChoice).wraps;
+  protected readonly isLong = computed(() => this.lines().length > LONG_FILE_LINES);
   private readonly code = viewChild.required<ElementRef<HTMLElement>>('code');
 
   constructor() {

@@ -122,9 +122,10 @@ export class Instanced<K extends string> {
   private build(): InstancedBufferGeometry {
     const { base, batch } = this;
     const geometry = new InstancedBufferGeometry();
-    geometry.index = base.index;
+    // Copies, so that freeing this geometry leaves the buffers of the others alone.
+    geometry.index = base.index?.clone() ?? null;
     for (const [name, attribute] of Object.entries(base.attributes)) {
-      geometry.setAttribute(name, attribute);
+      geometry.setAttribute(name, attribute.clone());
     }
     this.moving = [];
     for (const name of Object.keys(batch.widths) as K[]) {

@@ -2,6 +2,9 @@ import {
   AdditiveBlending,
   BufferGeometry,
   CanvasTexture,
+  DynamicDrawUsage,
+  InstancedBufferAttribute,
+  InstancedBufferGeometry,
   Line,
   LineBasicMaterial,
   LineDashedMaterial,
@@ -14,6 +17,7 @@ import {
   Texture,
   Vector3,
 } from 'three';
+import { InstanceBatch } from './instance-batch';
 
 /* The GPU tool box the 3D sky and its effects share. */
 
@@ -59,6 +63,13 @@ export const place = (target: Vector3, x: number, y: number, z = 0): Vector3 =>
 
 export const vec = (x: number, y: number, z = 0): Vector3 => place(new Vector3(), x, y, z);
 
+/** A shape drawn once per instance, with the batch's values as its attributes. */
+export interface Instanced {
+  readonly geometry: InstancedBufferGeometry;
+  /** Sends the values the frame rewrote to the GPU. */
+  upload(): void;
+}
+
 /** One tool box for the scene builders: textures, sprites and lines it owns. */
 export class Kit {
   constructor(
@@ -101,6 +112,31 @@ export class Kit {
     const object = new Line(geometry, material);
     if (dashed) object.computeLineDistances();
     return object;
+  }
+
+  /** `base` repeated for every instance in `batch`, whose arrays become the attributes. */
+  instanced<K extends string>(base: BufferGeometry, batch: InstanceBatch<K>): Instanced {
+    const geometry = this.owned.own(new InstancedBufferGeometry());
+    geometry.index = base.index;
+    for (const [name, attribute] of Object.entries(base.attributes)) {
+      geometry.setAttribute(name, attribute);
+    }
+    const moving: InstancedBufferAttribute[] = [];
+    for (const name of Object.keys(batch.widths) as K[]) {
+      const attribute = new InstancedBufferAttribute(batch.arrays[name], batch.widths[name]);
+      if (batch.dynamic.includes(name)) {
+        attribute.setUsage(DynamicDrawUsage);
+        moving.push(attribute);
+      }
+      geometry.setAttribute(name, attribute);
+    }
+    geometry.instanceCount = batch.count;
+    return {
+      geometry,
+      upload: () => {
+        for (const attribute of moving) attribute.needsUpdate = true;
+      },
+    };
   }
 
   /** Unjoined segments, one per pair of points. */

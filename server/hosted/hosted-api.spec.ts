@@ -86,6 +86,8 @@ const github = {
     return 'diff --git a/x b/x\n+secret code';
   },
   commitDiff: async () => 'diff --git a/y b/y\n+secret commit',
+  fileRead: async () => ({ kind: 'found', bytes: Buffer.from('secret file\n') }),
+  compareDiff: async () => 'diff --git a/x b/x\n@@ -0,0 +1 @@\n+secret file\n',
   rerunFailedJobs: async (_repo: string, runId: number) => void reruns.push(runId),
   notifications: async () => {
     inboxAsked.push('read');
@@ -464,6 +466,39 @@ describe('hostedApi', () => {
     assert.deepEqual([secret.diff, secret.diffHidden], ['', true]);
     assert.match((await read('me/app')).diff, /secret commit/);
     assert.match((await read('me/secret', ownerCookie)).diff, /secret commit/);
+  });
+
+  it('withholds a private repository’s whole file from a visitor, and only from a visitor', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'all' });
+    const read = async (repo: string, cookie?: string) =>
+      (await (
+        await get(
+          handle,
+          `/api/pull-file?repo=${repo}&number=7&sha=${'a'.repeat(40)}&path=x`,
+          cookie,
+        )
+      ).json()) as { state: string; text: string; patch: string; bytes: number };
+
+    const secret = await read('me/secret');
+    assert.deepEqual(
+      [secret.state, secret.text, secret.patch, secret.bytes],
+      ['hidden', '', '', 0],
+    );
+    const open = await read('me/app');
+    assert.deepEqual([open.state, open.text], ['shown', 'secret file\n']);
+    assert.match(open.patch, /\+secret file/);
+    assert.equal((await read('me/secret', ownerCookie)).state, 'shown');
+  });
+
+  it('answers a file of a repository a visitor may not see as one that does not exist', async () => {
+    const { handle } = site({ ...ENV, PUBLIC_PREVIEW: 'on' });
+
+    const response = await get(
+      handle,
+      `/api/pull-file?repo=me/secret&number=7&sha=${'a'.repeat(40)}&path=x`,
+    );
+
+    assert.equal(response.status, 404);
   });
 
   it('withholds a private repository’s red flags from a visitor, and only from a visitor', async () => {

@@ -50,6 +50,7 @@ const reads = {
   forgetIssues: (repo: string) => forgotten.push(`issues ${repo}`),
   pull: async (repo: string, number: number) => ({ repo, number }),
   commit: async (repo: string, sha: string) => ({ repo, sha }),
+  pullFile: async (request: object) => ({ ...request }),
   sinceLook: async () => ({ newCommits: 2 }),
   sinceLookDiff: async (repo: string, base: string, head: string) => ({ repo, base, head }),
   pullState: async (_repo: string, number: number) => ({
@@ -243,6 +244,29 @@ describe('ownerRoutes', () => {
     for (const sha of ['', 'xyz1234', '--output=x', '5645cda/../x']) {
       const bad = await handle(new Request(`http://x/api/commit?repo=me/app&sha=${sha}`));
       assert.equal(bad.status, 400, sha);
+    }
+  });
+
+  it('reads one file of a pull request at a commit, and refuses a request that is not one', async () => {
+    const sha = 'a'.repeat(40);
+
+    assert.deepEqual(
+      await get(`/api/pull-file?repo=me/app&number=7&sha=${sha.toUpperCase()}&path=src/a b.ts`),
+      {
+        repo: 'me/app',
+        number: 7,
+        sha,
+        path: 'src/a b.ts',
+      },
+    );
+    for (const bad of [
+      `number=0&sha=${sha}&path=a.ts`,
+      `number=7&sha=nothex&path=a.ts`,
+      `number=7&sha=${sha}`,
+      `number=7&sha=${sha}&path=../a.ts`,
+    ]) {
+      const response = await handle(new Request(`http://x/api/pull-file?repo=me/app&${bad}`));
+      assert.equal(response.status, 400, bad);
     }
   });
 

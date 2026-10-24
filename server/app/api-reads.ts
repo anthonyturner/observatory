@@ -45,6 +45,13 @@ import { projectsReport } from '../projects/projects-report.ts';
 import { type CommitDiff, commitDiffOf } from '../queue/commit-diff.ts';
 import { type PullDetail, pullDetailOf } from '../queue/pull-detail.ts';
 import {
+  PULL_FILE_MAX_BYTES,
+  type PullFile,
+  type PullFileRequest,
+  patchOfFile,
+  pullFileOf,
+} from '../queue/pull-file.ts';
+import {
   type PullWeather,
   type WeatherReport,
   pullWeatherOf,
@@ -112,6 +119,9 @@ const MILESTONES_TTL_MS = 5 * 60_000;
 /** GitHub asks that notifications be polled no more than once a minute (`X-Poll-Interval`). */
 const INBOX_TTL_MS = 60_000;
 
+/** Joins the parts of a cache key that may hold `@`, `#` or `/` but never a control character. */
+const KEY_SEPARATOR = '\0';
+
 /** The projects report's one key in its cache. */
 const ALL_PROJECTS = 'all';
 /** The live sites' one key in their cache. */
@@ -170,6 +180,8 @@ export interface ApiReads {
   sinceLook(repo: string, base: string, head: string): Promise<SinceLook>;
   /** The same, with the diff between the two heads, for the PR screen's Diff tab. */
   sinceLookDiff(repo: string, base: string, head: string): Promise<SinceLookDiff>;
+  /** One file of a pull request at one commit, with the pull request's changes to it. */
+  pullFile(request: PullFileRequest): Promise<PullFile>;
   /** Whether one pull request is open, merged or closed, and its title. */
   pullState(repo: string, number: number): Promise<PullState>;
   labels(repo: string): Promise<RawLabel[]>;
@@ -299,6 +311,22 @@ export function cachedReads(sources: ReadSources): ApiReads {
     // An empty diff may be a failure that passes, so it is asked for again soon.
     (answer) => (answer.diff ? COMMIT_TTL_MS : PULL_TTL_MS),
   );
+  // Only the file's section of the compare is kept: a large compare is megabytes.
+  const patchKey = (repo: string, base: string, sha: string, path: string): string =>
+    [repo, base, sha, path].join(KEY_SEPARATOR);
+  const patchOf = keyedCache(
+    async (key) => {
+      const [repo, base, sha, path] = key.split(KEY_SEPARATOR);
+      const diff = await github.compareDiff(repo, base, sha).catch((error: unknown) => {
+        // Too large for GitHub to give, most often: the file is shown without its changes.
+        console.error(`Could not read ${repo}'s changes from ${base} to ${sha}:`, error);
+        return '';
+      });
+      return patchOfFile(diff, path);
+    },
+    // An empty patch may be a failure that passes, so it is asked for again soon.
+    (patch) => (patch ? COMMIT_TTL_MS : PULL_TTL_MS),
+  );
   const actionsOf = keyedCache((repo) => actionsReport(github, repo), ACTIONS_TTL_MS);
   const ciHealthOf = keyedCache((repo) => ciHealthReport(github, repo), CI_HEALTH_TTL_MS);
   const runJobsOf = keyedCache(async (key) => {
@@ -350,6 +378,16 @@ export function cachedReads(sources: ReadSources): ApiReads {
     commit: (repo, sha) => commitOf.read(commitKey(repo, sha)),
     sinceLook: (repo, base, head) => sinceLookOfHeads.read(headsKey(repo, base, head)),
     sinceLookDiff: (repo, base, head) => sinceLookDiffOfHeads.read(headsKey(repo, base, head)),
+    pullFile: (request) =>
+      pullFileOf(
+        {
+          heads: (repo, number) => pullOf.read(numberKey(repo, number)),
+          file: (repo, path, sha) => github.fileRead(repo, path, sha, PULL_FILE_MAX_BYTES),
+          patch: (repo, base, sha, path) => patchOf.read(patchKey(repo, base, sha, path)),
+        },
+        request,
+        new Date().toISOString(),
+      ),
     pullState: (repo, number) => pullStateOf.read(numberKey(repo, number)),
     labels: cachedByKey((repo) => github.repoLabels(repo), LABELS_TTL_MS),
     collisions: cachedByKey(sources.collisions, COLLISIONS_TTL_MS),

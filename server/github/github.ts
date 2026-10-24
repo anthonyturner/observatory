@@ -8,7 +8,7 @@ import type { CommitReader } from './commit-reader.ts';
 import type { CompareReader } from './compare-reader.ts';
 import type { DeploymentReader } from './deployment-reader.ts';
 import type { DiscussionReader } from './discussion-reader.ts';
-import type { DocsReader } from './docs-reader.ts';
+import type { DocsReader, FileReader } from './docs-reader.ts';
 import type { FateReader } from './fate-reader.ts';
 import type { GitHubReader } from './github-reader.ts';
 import type { InboxMarker } from './inbox-marker.ts';
@@ -47,6 +47,7 @@ export type GitHub = GitHubReader &
   MergedPullReader &
   ActionsReader &
   DocsReader &
+  FileReader &
   WikiReader &
   SecurityReader &
   NotificationReader &

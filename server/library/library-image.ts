@@ -1,4 +1,5 @@
 import { BadRequest, NotFound } from '../http/api-handler.ts';
+import { repoPathFrom } from '../queue/repo-path.ts';
 import { imageTypeOf } from '../wiki/image-types.ts';
 import type { LibrarySources } from './library-report.ts';
 
@@ -42,19 +43,6 @@ function refFrom(value: string | null): string | null {
   return value;
 }
 
-function pathFrom(value: string | null): string {
-  const segments = (value ?? '').split('/');
-  const isPlain = (segment: string): boolean =>
-    segment !== '' &&
-    segment !== '.' &&
-    segment !== '..' &&
-    ![...segment].some((char) => char === '\\' || char.charCodeAt(0) < 32);
-  if (!value || !segments.every(isPlain)) {
-    throw new BadRequest('path must be a file in the repository');
-  }
-  return value;
-}
-
 /**
  * `GET /api/library/image?repo=owner/name&path=docs/shot.png[&ref=main]`: one
  * image file of the repository, read with the API's own GitHub access, so a
@@ -67,7 +55,7 @@ export async function libraryImageResponse(
   repo: string,
   query: URLSearchParams,
 ): Promise<Response> {
-  const path = pathFrom(query.get('path'));
+  const path = repoPathFrom(query.get('path'));
   const { bytes, type } = await read(repo, refFrom(query.get('ref')), path);
   return new Response(new Uint8Array(bytes), {
     headers: {

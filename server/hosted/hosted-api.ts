@@ -11,6 +11,7 @@ import { githubApiReader } from '../github/github-api-reader.ts';
 import { storeHistoryStore } from '../history/history-store.ts';
 import { type ApiHandler, createApiHandler, json } from '../http/api-handler.ts';
 import { withoutCode } from '../queue/pull-detail.ts';
+import { withoutFileCode } from '../queue/pull-file.ts';
 import { hiddenWeather } from '../queue/pull-weather.ts';
 import { withRerunRoute } from '../queue/rerun-routes.ts';
 import { withActionsRerunRoute } from '../actions/actions-rerun.ts';
@@ -81,7 +82,7 @@ function pushedReads(live: ApiReads, store: Store): ApiReads {
   };
 }
 
-/** What a visitor reads: a private repository's pull requests and commits without
+/** What a visitor reads: a private repository's pull requests, commits and files without
  *  their code, and its pull requests without the red flags read from it. One
  *  whose privacy is not known counts as private. */
 function visitorReads(reads: ApiReads, repos: () => Promise<RepoRef[]>): ApiReads {
@@ -98,6 +99,10 @@ function visitorReads(reads: ApiReads, repos: () => Promise<RepoRef[]>): ApiRead
     commit: async (repo, sha) => {
       const commit = await reads.commit(repo, sha);
       return (await isPublic(repo)) ? commit : withoutCode(commit);
+    },
+    pullFile: async (request) => {
+      const file = await reads.pullFile(request);
+      return (await isPublic(request.repo)) ? file : withoutFileCode(file);
     },
     weather: async (repo) =>
       (await isPublic(repo)) ? reads.weather(repo) : hiddenWeather(await reads.queue(repo)),

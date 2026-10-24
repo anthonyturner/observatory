@@ -8,15 +8,34 @@ export const SYSTEM_TILT = 0.34;
 /** The disc's quad reaches this far past the disc's own reach, so its edge fades clear. */
 export const DISC_QUAD_MARGIN = 1.05;
 
-export const QUAD_VERTEX = `varying vec2 vUv;
-  void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;
+/* Every shader here draws all the stars' marks of one kind in a single call.
+   What would be a uniform for one mark is an instance attribute, passed on to
+   the fragment shader as a varying; `aPos` and `aSize` place and scale the
+   mark's unit shape. */
+
+/** The disc's per-instance values: `aKind` is (weight, seed), `aSpin` is
+ *  (turn, inner, star) and `aFade` is (detail, opacity). */
+export const DISC_VERTEX = `attribute vec3 aPos, aInk, aSpin;
+  attribute vec2 aKind, aFade;
+  attribute float aSize;
+  varying vec2 vUv;
+  varying vec3 ink;
+  varying float weight, seed, turn, inner, star, detail, opacity;
+  void main() {
+    vUv = uv; ink = aInk;
+    weight = aKind.x; seed = aKind.y;
+    turn = aSpin.x; inner = aSpin.y; star = aSpin.z;
+    detail = aFade.x; opacity = aFade.y;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position * aSize + aPos, 1.);
+  }`;
 
 /** A disc of gas that turns faster near the star, brighter on the side
  *  coming towards you, its far half passing behind the star. */
 export const DISC_FRAGMENT = `${SIMPLEX_GLSL}
   varying vec2 vUv;
-  uniform vec3 ink;
-  uniform float time, turn, inner, star, weight, detail, opacity, seed;
+  varying vec3 ink;
+  varying float turn, inner, star, weight, detail, opacity, seed;
+  uniform float time;
   void main() {
     vec2 q = (vUv - .5) * 2. * ${DISC_QUAD_MARGIN.toFixed(2)};
     q.y = -q.y;
@@ -38,16 +57,36 @@ export const DISC_FRAGMENT = `${SIMPLEX_GLSL}
     gl_FragColor = vec4(colour, 1.);
   }`;
 
-export const PLANET_VERTEX = `varying vec3 wp; varying vec3 wn;
-  void main() { vec4 p = modelMatrix * vec4(position, 1.); wp = p.xyz;
-    wn = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * p; }`;
+/** A planet's per-instance values: its `aStar` is where the star it orbits is. */
+export const PLANET_VERTEX = `attribute vec3 aPos, aTone, aStar;
+  attribute float aSize, aOpacity;
+  varying vec3 wp, wn, tone, star;
+  varying float opacity;
+  void main() {
+    vec4 p = modelMatrix * vec4(position * aSize + aPos, 1.);
+    wp = p.xyz; wn = normalize(mat3(modelMatrix) * normal);
+    tone = aTone; star = aStar; opacity = aOpacity;
+    gl_Position = projectionMatrix * viewMatrix * p;
+  }`;
 
 /** A small world lit by its own star: a day side towards it, a night side away. */
-export const PLANET_FRAGMENT = `varying vec3 wp; varying vec3 wn;
-  uniform vec3 tone, star; uniform float opacity;
+export const PLANET_FRAGMENT = `varying vec3 wp, wn, tone, star;
+  varying float opacity;
   void main() {
     vec3 N = normalize(wn), L = normalize(star - wp), V = normalize(cameraPosition - wp);
     float day = max(dot(N, L), 0.);
     vec3 colour = tone * (.12 + day * 1.3) + tone * pow(1. - max(dot(N, V), 0.), 3.) * .3;
     gl_FragColor = vec4(colour, opacity);
   }`;
+
+/** An urgent star's expanding ring: `aAlpha` fades it as it grows. */
+export const PULSE_VERTEX = `attribute vec3 aPos, aInk;
+  attribute float aSize, aAlpha;
+  varying vec4 ring;
+  void main() {
+    ring = vec4(aInk, aAlpha);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position * aSize + aPos, 1.);
+  }`;
+
+export const PULSE_FRAGMENT = `varying vec4 ring;
+  void main() { gl_FragColor = ring; }`;

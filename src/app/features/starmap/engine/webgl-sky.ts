@@ -27,6 +27,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { CameraController } from './camera-controller';
 import { Kit, Owned, place, vec } from './gpu-kit';
+import { InstanceBatch } from './instance-batch';
 import { FLOW_INK, LINK_GAP, LINK_INK, trimSegment } from './link-ink';
 import { NewsEffects3D } from './news-3d';
 import { Threads3D } from './threads-3d';
@@ -41,47 +42,22 @@ import {
 import { rnd } from './rnd';
 import { LogThreads, NewsEffect3D, SkyFrame, SkyRenderer, SkyScene } from './sky-frame';
 import { FieldStar, SkyStar } from './sky-model';
-import {
-  STAR_FRAGMENT,
-  STAR_QUAD_REACH,
-  STAR_TYPES,
-  STAR_VERTEX,
-} from '../../../shared/gl/star-shader';
-import { starLook } from './star-type';
+import { STAR_INSTANCED_FRAGMENT, STAR_INSTANCED_VERTEX } from '../../../shared/gl/star-shader';
 import { GALAXY_FRAGMENT, GALAXY_VERTEX } from './galaxy-shader';
 import { galaxyUniforms, galaxyView } from './galaxy-geometry';
-import { IssuePlanet, PLANET_TONES, issuePlanets, massOf, systemTurn } from './star-system';
+import { SkyInstances } from './sky-instances';
 import {
   DISC_FRAGMENT,
-  DISC_QUAD_MARGIN,
+  DISC_VERTEX,
   PLANET_FRAGMENT,
   PLANET_VERTEX,
-  QUAD_VERTEX,
-  SYSTEM_TILT,
+  PULSE_FRAGMENT,
+  PULSE_VERTEX,
 } from './star-system-shaders';
 
 /* pr-starmap's WebGL sky: a perspective camera over the same world, bloom on
    the luminous cores only, a vignette and grain pass, a nebula of cloud
    sprites at depth. Words and marks are drawn over it by the 2D overlay. */
-
-/* A star's drawn disc, as a share of starRadius. Far off it is the old small
-   core; close up it grows into the gap the links leave, so the surface shows,
-   without changing starRadius itself, which the link gaps are measured from. */
-const FAR_DISC = 0.46;
-const NEAR_DISC = 0.75;
-/** The on-screen core radius, in pixels, over which surface detail fades in. */
-const FAR_CORE_PX = 2.5;
-const NEAR_CORE_PX = 8;
-
-/** A planet is never smaller than this many screen pixels across. */
-const MIN_PLANET_PX = 1.2;
-/** The disc of gas starts this far out from the star's drawn disc. */
-const DISC_CLEARANCE = 1.3;
-
-const smoothstep = (from: number, to: number, x: number): number => {
-  const k = Math.min(Math.max((x - from) / (to - from), 0), 1);
-  return k * k * (3 - 2 * k);
-};
 
 /** A single GPU draw for hundreds of stars, spread through an actual volume. */
 function field3D(
@@ -164,6 +140,31 @@ function galaxy3D(scene: Scene, owned: Owned): (f: SkyFrame) => void {
   };
 }
 
+interface InstancedDraw<K extends string> {
+  /** The shape drawn once per instance. */
+  readonly base: BufferGeometry;
+  readonly batch: InstanceBatch<K>;
+  readonly material: ShaderMaterial;
+  /** Draws the shape as a line, not as a surface. */
+  readonly line?: boolean;
+}
+
+/** Adds one draw call for a batch of marks, and returns what sends the frame's
+ *  rewritten values to the GPU. */
+function addInstanced<K extends string>(
+  scene: Scene,
+  kit: Kit,
+  { base, batch, material, line }: InstancedDraw<K>,
+): () => void {
+  const { geometry, upload } = kit.instanced(base, batch);
+  const owned = kit.owned.own(material);
+  const object = line ? new Line(geometry, owned) : new Mesh(geometry, owned);
+  // The base shape's bounds say nothing of where the instances are.
+  object.frustumCulled = false;
+  if (batch.count > 0) scene.add(object);
+  return upload;
+}
+
 function buildScene3D(
   scene: Scene,
   kit: Kit,
@@ -195,97 +196,61 @@ function buildScene3D(
     clouds.push({ cloud, x, y, z, phase: nr() * 6.28 });
   }
 
+  const instances = new SkyInstances(data.stars);
+  const time = { value: 0 };
   const quad = owned.own(new PlaneGeometry(1, 1));
-  const starQuad = (star: SkyStar): Mesh<PlaneGeometry, ShaderMaterial> => {
-    const look = starLook(star);
-    const material = owned.own(
-      new ShaderMaterial({
-        uniforms: {
-          ink: { value: new Color(star.colour) },
-          type: { value: STAR_TYPES.indexOf(look.type) },
-          activity: { value: look.activity },
-          seed: { value: (star.spin * 97) % 61 },
-          time: { value: 0 },
-          detail: { value: 0 },
-          opacity: { value: 0 },
-          disc: { value: FAR_DISC },
-        },
-        vertexShader: STAR_VERTEX,
-        fragmentShader: STAR_FRAGMENT,
+  const ball = owned.own(new SphereGeometry(1, 16, 12));
+  const ring = owned.own(
+    new BufferGeometry().setFromPoints(
+      Array.from({ length: 65 }, (_, i) =>
+        vec(Math.cos((i / 64) * Math.PI * 2), Math.sin((i / 64) * Math.PI * 2)),
+      ),
+    ),
+  );
+  const glow = (vertexShader: string, fragmentShader: string): ShaderMaterial =>
+    new ShaderMaterial({
+      uniforms: { time },
+      vertexShader,
+      fragmentShader,
+      transparent: true,
+      depthWrite: false,
+      blending: AdditiveBlending,
+    });
+  // One draw per kind. All four sit at the same depth, so three.js draws them in
+  // the order they are added: planets first, as they write depth, which hides
+  // the glow behind one and still lets the glow in front of it add on top.
+  const uploads = [
+    addInstanced(scene, kit, {
+      base: ball,
+      batch: instances.planets,
+      material: new ShaderMaterial({
+        vertexShader: PLANET_VERTEX,
+        fragmentShader: PLANET_FRAGMENT,
+        transparent: true,
+      }),
+    }),
+    addInstanced(scene, kit, {
+      base: quad,
+      batch: instances.discs,
+      material: glow(DISC_VERTEX, DISC_FRAGMENT),
+    }),
+    addInstanced(scene, kit, {
+      base: quad,
+      batch: instances.bodies,
+      material: glow(STAR_INSTANCED_VERTEX, STAR_INSTANCED_FRAGMENT),
+    }),
+    addInstanced(scene, kit, {
+      base: ring,
+      batch: instances.pulses,
+      line: true,
+      material: new ShaderMaterial({
+        vertexShader: PULSE_VERTEX,
+        fragmentShader: PULSE_FRAGMENT,
         transparent: true,
         depthWrite: false,
-        blending: AdditiveBlending,
       }),
-    );
-    return new Mesh(quad, material);
-  };
-
-  const discFor = (star: SkyStar): Mesh<PlaneGeometry, ShaderMaterial> | null => {
-    const mass = massOf(star);
-    if (!mass) return null;
-    const disc = new Mesh(
-      quad,
-      owned.own(
-        new ShaderMaterial({
-          uniforms: {
-            ink: { value: new Color(mass.colour) },
-            weight: { value: mass.weight },
-            seed: { value: (star.spin * 53) % 41 },
-            time: { value: 0 },
-            turn: { value: 0 },
-            inner: { value: 0.2 },
-            star: { value: 0.1 },
-            detail: { value: 0 },
-            opacity: { value: 0 },
-          },
-          vertexShader: QUAD_VERTEX,
-          fragmentShader: DISC_FRAGMENT,
-          transparent: true,
-          depthWrite: false,
-          blending: AdditiveBlending,
-        }),
-      ),
-    );
-    scene.add(disc);
-    return disc;
-  };
-  const ball = owned.own(new SphereGeometry(1, 16, 12));
-  const tones = PLANET_TONES.map((hex) => new Color(hex));
-  const planetsFor = (
-    star: SkyStar,
-  ): { planet: IssuePlanet; mesh: Mesh<SphereGeometry, ShaderMaterial> }[] =>
-    issuePlanets(star).map((planet) => {
-      const mesh = new Mesh(
-        ball,
-        owned.own(
-          new ShaderMaterial({
-            uniforms: {
-              tone: { value: tones[planet.tone] },
-              star: { value: vec(star.ax, star.ay, star.az) },
-              opacity: { value: 0 },
-            },
-            vertexShader: PLANET_VERTEX,
-            fragmentShader: PLANET_FRAGMENT,
-            transparent: true,
-          }),
-        ),
-      );
-      scene.add(mesh);
-      return { planet, mesh };
-    });
-
-  const circle = Array.from({ length: 65 }, (_, i) =>
-    vec(Math.cos((i / 64) * Math.PI * 2), Math.sin((i / 64) * Math.PI * 2)),
-  );
-  const points = data.stars
-    .filter((star) => !star.custom)
-    .map((star) => {
-      const body = starQuad(star);
-      scene.add(body);
-      const pulse = kit.line(circle, star.colour, 0.3);
-      scene.add(pulse);
-      return { star, body, pulse, disc: discFor(star), planets: planetsFor(star) };
-    });
+    }),
+  ];
   const connections = data.clusters
     .filter((c) => c.stars.length > 1 && !c.arm)
     .map((cluster) => {
@@ -381,63 +346,9 @@ function buildScene3D(
       for (const { cloud, x, y, z, phase } of clouds) {
         place(cloud.position, x + Math.sin(t * 0.035 + phase) * 50, y, z);
       }
-      for (const { star, body, pulse, disc, planets } of points) {
-        const grow = f.born(star);
-        const tw =
-          0.78 +
-          Math.sin(t * star.twinkleRate + star.twinkle) * 0.16 +
-          Math.sin(t * star.twinkleRate * 2.7 + star.twinkle * 1.7) * 0.07;
-        const r = star.mag * Math.max(cam.scale, 0.42) * grow;
-        // Magnitude is data: cancel perspective shrinkage at each sprite's depth.
-        const unit = 1 / (cam.scale * camera.depth(star.az));
-        place(body.position, star.ax, star.ay, star.az);
-        body.scale.setScalar(r * STAR_QUAD_REACH * 2 * unit);
-        const look = body.material.uniforms;
-        const detail = smoothstep(FAR_CORE_PX, NEAR_CORE_PX, r * FAR_DISC);
-        look['detail'].value = detail;
-        look['disc'].value = FAR_DISC + (NEAR_DISC - FAR_DISC) * detail;
-        look['time'].value = f.frozen ? 0 : t;
-        look['opacity'].value = f.dim(star) * grow * (0.7 + tw * 0.3);
-        const turn = systemTurn(star.spin, t, f.frozen);
-        const drawn = look['disc'].value as number;
-        if (disc) {
-          const mass = massOf(star);
-          const reach = (mass?.reach ?? 1) * r;
-          const u = disc.material.uniforms;
-          disc.visible = f.chart === 'prs' && grow > 0;
-          disc.position.copy(body.position);
-          disc.scale.setScalar(reach * DISC_QUAD_MARGIN * 2 * unit);
-          u['turn'].value = turn;
-          u['inner'].value = (drawn * DISC_CLEARANCE * r) / Math.max(reach, 0.001);
-          u['star'].value = (drawn * r) / Math.max(reach, 0.001);
-          u['time'].value = f.frozen ? 0 : t;
-          u['detail'].value = detail;
-          u['opacity'].value = f.dim(star) * grow;
-        }
-        for (const { planet, mesh } of planets) {
-          // Each issue's world, in the disc's tilted plane, turned as the disc turns.
-          const angle = planet.phase + (f.frozen ? 0 : t * planet.speed);
-          const ox = Math.cos(angle) * planet.orbit * r;
-          const oy = Math.sin(angle) * planet.orbit * r * SYSTEM_TILT;
-          const sx = ox * Math.cos(turn) - oy * Math.sin(turn);
-          const sy = ox * Math.sin(turn) + oy * Math.cos(turn);
-          mesh.visible = detail > 0.02 && grow > 0;
-          place(
-            mesh.position,
-            star.ax + sx * unit,
-            star.ay + sy * unit,
-            star.az + Math.sin(angle) * planet.orbit * r * unit,
-          );
-          mesh.scale.setScalar(Math.max(planet.size * r, MIN_PLANET_PX / 2) * unit);
-          mesh.material.uniforms['star'].value.copy(body.position);
-          mesh.material.uniforms['opacity'].value = f.dim(star) * grow * detail;
-        }
-        const phase = (t * 0.42 + star.spin) % 1;
-        pulse.visible = star.urgent && !f.frozen;
-        pulse.position.copy(body.position);
-        pulse.scale.setScalar(r * (1.4 + phase * 4.2) * unit);
-        (pulse.material as LineBasicMaterial).opacity = f.dim(star) * grow * (1 - phase) * 0.34;
-      }
+      time.value = f.frozen ? 0 : t;
+      instances.update(f, (z) => camera.depth(z));
+      for (const upload of uploads) upload();
       for (const { object, cluster } of connections) {
         updateSegments(f, object, cluster.stars);
         (object.material as LineBasicMaterial).opacity =

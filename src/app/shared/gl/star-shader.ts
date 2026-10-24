@@ -15,11 +15,12 @@ export const STAR_TYPES: readonly StarType[] = ['bright', 'giant', 'veiled', 'ca
 export const STAR_VERTEX = `varying vec2 vUv;
   void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;
 
-/** Types, numbered as STAR_TYPES orders them: bright, giant, veiled, calm. */
-export const STAR_FRAGMENT = `${SIMPLEX_GLSL}
+/** Types, numbered as STAR_TYPES orders them: bright, giant, veiled, calm. The
+ *  star's own inputs arrive through `inputs`: uniforms for one star, or
+ *  varyings from an instance's attributes for many. */
+const starFragment = (inputs: string): string => `${SIMPLEX_GLSL}
   varying vec2 vUv;
-  uniform vec3 ink;
-  uniform float type, seed, time, detail, opacity, activity, disc;
+  ${inputs}
   void main() {
     // q is in disc radii: the disc's edge is at length(q) == 1.
     vec2 q = (vUv - .5) * 2. * ${STAR_QUAD_REACH.toFixed(4)} / disc;
@@ -71,3 +72,24 @@ export const STAR_FRAGMENT = `${SIMPLEX_GLSL}
     vec3 colour = mix(simple, detailed, detail) * edge * opacity;
     gl_FragColor = vec4(colour, 1.);
   }`;
+
+export const STAR_FRAGMENT = starFragment(`uniform vec3 ink;
+  uniform float type, seed, time, detail, opacity, activity, disc;`);
+
+/** Many stars in one draw: each instance carries the inputs STAR_FRAGMENT takes
+ *  as uniforms. `aKind` is (type, activity, seed) and `aState` is (detail, disc, opacity). */
+export const STAR_INSTANCED_VERTEX = `attribute vec3 aPos, aInk, aKind, aState;
+  attribute float aSize;
+  varying vec2 vUv;
+  varying vec3 ink;
+  varying float type, activity, seed, detail, disc, opacity;
+  void main() {
+    vUv = uv; ink = aInk;
+    type = aKind.x; activity = aKind.y; seed = aKind.z;
+    detail = aState.x; disc = aState.y; opacity = aState.z;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position * aSize + aPos, 1.);
+  }`;
+
+export const STAR_INSTANCED_FRAGMENT = starFragment(`varying vec3 ink;
+  varying float type, activity, seed, detail, disc, opacity;
+  uniform float time;`);
